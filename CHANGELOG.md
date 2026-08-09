@@ -1,5 +1,11 @@
 # Changelog
 
+## v3.39 - Obstacle Character Pass
+
+- Ajoute une architecture de variantes par type d’obstacle, avec sous-pool tiré au début de chaque génération de niveau.
+- Première vague de variantes satiriques pour le crâne de T-Rex, le smartphone cassé, le fût radioactif, la batterie et le sac poubelle.
+- Les variantes enrichissent les obstacles sans changer leurs collisions ni leur silhouette de gameplay.
+
 ## v3.38 - Vector Performance Pass
 
 - Restaure les zones toxiques sous forme de pollution diffuse, sans contour fermé ni scale animé.

@@ -39,3 +39,11 @@ Le découpage de `index.html` en modules doit être progressif. Une seule famill
 - Les sons de bruit réutilisent un AudioBuffer persistant.
 - Les `shadowBlur` sont réservés aux feedbacks ponctuels.
 - Le profiler est opt-in via `?perf=1` afin de ne pas coûter en production.
+
+
+## v3.39 — Variantes d’obstacles
+
+- Chaque famille d’obstacles peut déclarer un catalogue de variantes visuelles et satiriques.
+- Au début de la génération du niveau, un sous-pool est tiré pour chaque famille concernée.
+- Le spawn choisit ensuite une variante dans ce sous-pool, ce qui garde de la variété sans rendre le niveau visuellement incohérent.
+- Les variantes ne modifient ni la collision ni la silhouette de lecture rapide ; elles enrichissent seulement le caractère de l’obstacle.

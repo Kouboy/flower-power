@@ -2,18 +2,16 @@
 
 ## Jalon actuel
 
-### v3.38 Vector Performance Pass
+### v3.39 Obstacle Character Pass
 
-- Restaurer les zones toxiques diffuses.
-- Éliminer la chute de performances à l’approche de la surface.
-- Mettre en cache le décor et le parterre mature.
-- Consolider les requêtes collision / proximité / frôlement.
-- Réduire les allocations audio et Canvas récurrentes.
-- Mesurer sur mobile avec `?perf=1`.
+- Ajouter une architecture de variantes par type d’obstacle.
+- Tirer un sous-pool de variantes en début de génération du niveau.
+- Enrichir une première vague d’obstacles avec des détails satiriques lisibles.
+- Préserver strictement les silhouettes et collisions existantes.
 
 ## Prochain jalon
 
-À décider après validation de la v3.38 sur Android. Ne pas ajouter de contenu tant que la surface n’est pas fluide avec un parterre dense.
+Après validation de la v3.39 : choisir si la prochaine passe porte sur davantage d’obstacles, sur le polish visuel du sous-sol ou sur la progression.
 
 ## Ensuite
 

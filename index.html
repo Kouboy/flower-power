@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-<title>Flower Power v3.38 Vector Performance Pass</title>
+<title>Flower Power v3.39 Obstacle Character Pass</title>
 <style>
   :root{--bg:#15110e;--ui:#f7e9c7;--muted:#cdbb91;--soil:#221912;--light:#ffe59a;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -29,7 +29,7 @@
     <h1>Flower Power</h1>
     <p>Guide une pousse depuis la graine jusqu’au jour.</p>
     <p>Évite les déchets enfouis et les limaces de lixiviat. Les zones toxiques diffuses dévient la croissance.</p>
-    <p>Version vectorielle : aucune image externe, aucune dépendance aux sprites.</p>
+    <p>Version vectorielle : aucune image externe, aucune dépendance aux sprites, variantes satiriques par pool de niveau.</p>
     <p><b>Maintiens / touche l’écran</b> : ton doigt indique la direction de croissance. Frôle les obstacles sans les toucher pour générer des <b>ÉcoCrédits™</b> (<b>Ɇ</b>).</p>
     <div class="legend">
       <div class="pill">☣ Zones toxiques : déviation</div>
@@ -43,13 +43,13 @@
       <div class="pill">♻ Frôlement maintenu : ÉcoCrédits™</div>
     </div>
     <div class="hint">TOUCHE POUR COMMENCER</div>
-    <p class="small">Prototype v3.38 · Vector Performance Pass · Canvas autonome · ÉcoCrédits™ · SFX</p>
+    <p class="small">Prototype v3.39 · Obstacle Character Pass · variantes d’obstacles · Canvas autonome · ÉcoCrédits™ · SFX</p>
   </div>
 </div>
 <script>
 (() => {
   'use strict';
-  console.info('Flower Power v3.38 Vector Performance Pass');
+  console.info('Flower Power v3.39 Obstacle Character Pass');
 
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d', { alpha:false });
@@ -127,6 +127,59 @@
     {a:.53,b:.74,c:'rgba(47,31,23,.20)'},
     {a:.74,b:1,c:'rgba(8,6,5,.28)'}
   ];
+
+
+  // v3.39 OBSTACLE CHARACTER PASS -----------------------------------------
+  // Chaque famille d'obstacles peut embarquer plusieurs variantes satiriques.
+  // Un sous-pool est tiré au début de la génération du niveau, afin de varier
+  // les plaisirs sans transformer chaque écran en vitrine illisible.
+  const OBSTACLE_VARIANT_CATALOG={
+    trex:[
+      {id:'anti_nuke',placard:'NON NUC.',stick:'#f5e8b6',ink:'#402616'},
+      {id:'museum',tag:'MUSÉE ?',tagFill:'#d8c49a',ink:'#3d2a1e'},
+      {id:'memory',placard:'PLUS ÇA',stick:'#e4ef9b',ink:'#24320d'}
+    ],
+    phone:[
+      {id:'eco_app',label:'ECO',accent:'#87d96d',panel:'#1f4730'},
+      {id:'co2_app',label:'CO2',accent:'#7ad8d8',panel:'#173b46'},
+      {id:'green_app',label:'BIO',accent:'#d9e86f',panel:'#48511a'}
+    ],
+    nuclear:[
+      {id:'neutralise',label:'NEUTRE',fill:'#f5e68e',ink:'#3d2a0c'},
+      {id:'offset',label:'OFFSET',fill:'#d8f17d',ink:'#27310d'},
+      {id:'greenplus',label:'VERT+',fill:'#bdf2bf',ink:'#17311d'}
+    ],
+    battery:[
+      {id:'eco_plus',label:'ECO+',fill:'#dcef87',ink:'#27310d'},
+      {id:'recy',label:'RECY',fill:'#a5e4b4',ink:'#15331d'},
+      {id:'charge',label:'100%',fill:'#f3e58b',ink:'#3b2b0d'}
+    ],
+    trashbag:[
+      {id:'bio',label:'BIO',fill:'#dced84',ink:'#26320c'},
+      {id:'tri',label:'TRI',fill:'#a9e2f2',ink:'#17313c'},
+      {id:'compost',label:'COMP.',fill:'#f0df8a',ink:'#3f2d10'}
+    ]
+  };
+  let levelObstacleVariantPools={};
+  function pickSubset(arr,count){
+    const src=arr.slice(), out=[];
+    while(src.length && out.length<count){ out.push(src.splice(Math.floor(rand()*src.length),1)[0]); }
+    return out;
+  }
+  function buildLevelObstacleVariantPools(){
+    levelObstacleVariantPools={};
+    for(const kind in OBSTACLE_VARIANT_CATALOG){
+      const all=OBSTACLE_VARIANT_CATALOG[kind];
+      const count=Math.min(all.length, all.length<=2?all.length:(2+(rand()<.38?1:0)));
+      levelObstacleVariantPools[kind]=pickSubset(all,count);
+    }
+  }
+  function assignSolidVariant(o){
+    if(!o) return o;
+    const pool=levelObstacleVariantPools[o.kind];
+    if(pool && pool.length) o.variant=pool[Math.floor(rand()*pool.length)];
+    return o;
+  }
 
   const soilCache=document.createElement('canvas');
   const soilCacheCtx=soilCache.getContext('2d',{alpha:false});
@@ -701,6 +754,7 @@
     const worldScale=clamp((worldBottom()-game.surfaceY)/(H-game.surfaceY),1,2.45);
     spawnGrid=makeSpawnGrid(top,bottom);
     generateSafePath();
+    buildLevelObstacleVariantPools();
 
     // Barrières partielles : elles cassent le "chemin tout droit au centre" tout en laissant un passage calculé.
     function addGateBlock(x,y,w,h,kind='concrete'){
@@ -779,7 +833,7 @@
       for(let tries=0;tries<90 && !placed;tries++){
         const cell=pickCell(c=>c.r>0 && c.r<spawnGrid.rows-1 && !(c.c===2 && c.r>spawnGrid.rows-3) && (tries>28 || depthBand(c.y)===preferred));
         const pos=cellPos(cell,.27);
-        const o=preparePixelSolid(makeSolidCandidate(pos));
+        const o=preparePixelSolid(assignSolidVariant(makeSolidCandidate(pos)));
         if(objectFits(o)){
           game.solids.push(prepareSolidPerf(o)); placed=true;
         }else{
@@ -1637,6 +1691,27 @@
     ctx.closePath(); ctx.fill();
   }
 
+
+  function assetSticker(x,y,w,h,text,fill='#f0df8a',ink='#2c1d10',rot=0){
+    ctx.save(); ctx.translate(x,y); ctx.rotate(rot);
+    ctx.fillStyle=fill; roundRect(-w/2,-h/2,w,h,Math.min(5,h*.32)); ctx.fill();
+    ctx.strokeStyle='rgba(22,14,9,.62)'; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.fillStyle=ink; ctx.font=`900 ${Math.max(7,Math.min(11,h*.68))}px system-ui,sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(text,0,.5);
+    ctx.restore();
+  }
+
+  function assetPlacard(x,y,text,fill='#efe2a6',ink='#351f13',rot=-.1){
+    ctx.save(); ctx.translate(x,y); ctx.rotate(rot);
+    ctx.strokeStyle='#5b452f'; ctx.lineWidth=2.3; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(-2,4); ctx.lineTo(-10,20); ctx.stroke();
+    ctx.fillStyle=fill; roundRect(-22,-10,44,19,4); ctx.fill();
+    ctx.strokeStyle='rgba(22,14,9,.68)'; ctx.lineWidth=1.6; ctx.stroke();
+    ctx.fillStyle=ink; ctx.font='900 8px system-ui,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(text,0,-.5);
+    ctx.restore();
+  }
+
   function drawRadiationSymbol(cx=0,cy=0,r=22){
     ctx.save(); ctx.translate(cx,cy);
     ctx.fillStyle='#16120d';
@@ -1657,7 +1732,7 @@
     ctx.restore();
   }
 
-  function drawAssetBarrel(x,y,s=1){
+  function drawAssetBarrel(x,y,s=1,variant=null){
     ctx.save(); ctx.translate(x,y); ctx.scale(s,s);
     ctx.shadowColor='rgba(197,255,57,.22)'; ctx.shadowBlur=10;
     ctx.fillStyle='#d49a24'; roundRect(-32,-40,64,80,11); ctx.fill();
@@ -1669,13 +1744,14 @@
     ctx.fillStyle='rgba(255,221,76,.98)'; ctx.beginPath(); ctx.ellipse(0,1,27,26,0,0,TAU); ctx.fill();
     ctx.strokeStyle='rgba(32,24,10,.72)'; ctx.lineWidth=2.4; ctx.stroke();
     drawRadiationSymbol(0,2,25);
+    if(variant) assetSticker(0,-29,36,12,variant.label,variant.fill,variant.ink,0.06);
     ctx.strokeStyle='rgba(61,36,19,.55)'; ctx.lineWidth=2;
     ctx.beginPath(); ctx.moveTo(-20,-27); ctx.lineTo(-10,-15); ctx.lineTo(-21,-4); ctx.moveTo(19,12); ctx.lineTo(9,24); ctx.lineTo(18,32); ctx.stroke();
     assetDrip(-22,-37,19,6); assetDrip(24,-27,17,5); assetDrip(24,24,14,5); assetDrip(-25,31,12,4);
     ctx.restore();
   }
 
-  function drawAssetBattery(x,y,s=1){
+  function drawAssetBattery(x,y,s=1,variant=null){
     ctx.save(); ctx.translate(x,y); ctx.scale(s,s);
     ctx.shadowColor='rgba(145,255,89,.20)'; ctx.shadowBlur=8;
     ctx.fillStyle='#1f2023';
@@ -1684,6 +1760,7 @@
     ctx.fillStyle='#f0cc4a'; roundRect(-22,-13,47,25,5); ctx.fill();
     ctx.strokeStyle='rgba(17,12,9,.55)'; ctx.lineWidth=1.4; ctx.stroke();
     ctx.fillStyle='#17140f'; ctx.font='900 24px system-ui,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('⚡',2,0);
+    if(variant) assetSticker(-2,18,34,11,variant.label,variant.fill,variant.ink,-0.06);
     ctx.fillStyle='#7e4d2a'; roundRect(-27,-34,15,12,3); ctx.fill();
     ctx.fillStyle='#a6afb3'; roundRect(13,-34,15,12,3); ctx.fill();
     assetDrip(-29,-11,17,5,'#95bb38'); assetDrip(30,-3,20,5,'#95bb38');
@@ -1691,7 +1768,7 @@
     ctx.restore();
   }
 
-  function drawAssetTrex(x,y,s=1){
+  function drawAssetTrex(x,y,s=1,variant=null){
     ctx.save(); ctx.translate(x,y); ctx.scale(s,s);
     ctx.fillStyle='#e8deb5';
     ctx.beginPath();
@@ -1701,6 +1778,8 @@
     ctx.fillStyle='#fff9db';
     for(let i=0;i<5;i++){ ctx.beginPath(); ctx.moveTo(10+i*4,5); ctx.lineTo(12+i*4,12); ctx.lineTo(15+i*4,5); ctx.fill(); }
     ctx.strokeStyle='rgba(86,63,41,.6)'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-25,3); ctx.lineTo(28,4); ctx.stroke();
+    if(variant?.placard) assetPlacard(-5,-25,variant.placard,variant.stick||'#efe2a6',variant.ink||'#351f13',-0.12);
+    if(variant?.tag) assetSticker(18,-18,24,10,variant.tag,variant.tagFill||'#d8c49a',variant.ink||'#3d2a1e',0.32);
     ctx.restore();
   }
 
@@ -1716,6 +1795,25 @@
     ctx.strokeStyle='#c9994c'; ctx.lineWidth=3; ctx.lineCap='round';
     ctx.beginPath(); ctx.moveTo(-18,44); ctx.lineTo(-6,44); ctx.moveTo(6,44); ctx.lineTo(18,44); ctx.stroke();
     assetDrip(18,31,10,3,'#7ca11f');
+    ctx.restore();
+  }
+
+
+  function drawAssetPhone(x,y,s=1,variant=null){
+    ctx.save(); ctx.translate(x,y); ctx.scale(s,s);
+    ctx.fillStyle='#17191c'; roundRect(-22,-34,44,68,9); ctx.fill();
+    ctx.fillStyle='rgba(92,154,175,.36)'; roundRect(-16,-26,32,46,5); ctx.fill();
+    const panel=variant?.panel||'#21423a';
+    const accent=variant?.accent||'#86d86e';
+    ctx.fillStyle=panel; roundRect(-14,-23,28,18,4); ctx.fill();
+    ctx.fillStyle=accent; roundRect(-11,-20,22,12,3); ctx.fill();
+    ctx.fillStyle='rgba(18,20,17,.72)'; ctx.font='900 7px system-ui,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(variant?.label||'ECO',0,-14);
+    ctx.fillStyle='rgba(232,245,250,.74)';
+    for(let gy=0; gy<2; gy++) for(let gx=0; gx<2; gx++) roundRect(-11+gx*12,-2+gy*11,8,8,2), ctx.fill();
+    ctx.strokeStyle='rgba(220,245,255,.36)'; ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.moveTo(-12,-7); ctx.lineTo(10,15); ctx.moveTo(-4,18); ctx.lineTo(12,-10); ctx.stroke();
+    ctx.fillStyle='rgba(235,245,255,.55)'; ctx.beginPath(); ctx.arc(0,26,2.7,0,TAU); ctx.fill();
     ctx.restore();
   }
 
@@ -1838,7 +1936,7 @@
     ctx.restore();
   }
 
-  function drawAssetTrashBag(x,y,s=1){
+  function drawAssetTrashBag(x,y,s=1,variant=null){
     ctx.save(); ctx.translate(x,y); ctx.scale(s,s);
     ctx.globalAlpha=.24; ctx.fillStyle='#080403'; ctx.beginPath(); ctx.ellipse(0,38,45,15,0,0,TAU); ctx.fill(); ctx.globalAlpha=1;
     ctx.fillStyle='#171714';
@@ -1848,6 +1946,7 @@
     ctx.fill(); ctx.strokeStyle='rgba(22,13,8,.78)'; ctx.lineWidth=2.4; ctx.stroke();
     ctx.fillStyle='rgba(88,96,72,.28)'; ctx.beginPath(); ctx.ellipse(-10,3,16,29,-.22,0,TAU); ctx.fill();
     ctx.strokeStyle='rgba(235,219,172,.18)'; ctx.lineWidth=2; roughLine(-22,-12,21,-19,2,7); ctx.stroke(); roughLine(-28,13,26,20,1.6,7); ctx.stroke();
+    if(variant) assetSticker(7,3,28,12,variant.label,variant.fill,variant.ink,0.12);
     ctx.fillStyle='#0b0806'; ctx.beginPath(); ctx.ellipse(0,-42,17,8,0,0,TAU); ctx.fill();
     ctx.restore();
   }
@@ -2185,7 +2284,7 @@
       }else if(o.kind==='solar'){
         drawAssetSolarPanel(0,0,solidVisualScale(o));
       }else if(o.kind==='trashbag'){
-        drawAssetTrashBag(0,0,solidVisualScale(o));
+        drawAssetTrashBag(0,0,solidVisualScale(o),o.variant||null);
       }else if(o.kind==='server'){
         drawAssetServerRack(0,0,solidVisualScale(o));
       }else if(o.kind==='drone'){
@@ -2209,7 +2308,7 @@
         ctx.strokeStyle='rgba(0,0,0,.55)'; ctx.lineWidth=2; ctx.stroke();
         ctx.fillStyle='rgba(0,0,0,.38)'; ctx.font='800 13px system-ui,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('!',0,0);
       }else if(o.kind==='nuclear'){
-        drawAssetBarrel(0,0,Math.min((o.w||54)/56,(o.h||70)/72)*1.32);
+        drawAssetBarrel(0,0,Math.min((o.w||54)/56,(o.h||70)/72)*1.32,o.variant||null);
       }else if(o.kind==='fossil'){
         ctx.strokeStyle='rgba(235,220,176,.92)'; ctx.lineWidth=7; ctx.lineCap='round';
         ctx.beginPath(); ctx.moveTo(-o.w*.34,0); ctx.lineTo(o.w*.34,0); ctx.stroke();
@@ -2235,17 +2334,13 @@
       }else if(o.kind==='battery'){
         drawAssetBattery(0,0,Math.min((o.w||72)/72,(o.h||46)/52)*1.22);
       }else if(o.kind==='phone'){
-        ctx.fillStyle='#17191c'; roundRect(-o.w/2,-o.h/2,o.w,o.h,9); ctx.fill();
-        ctx.fillStyle='rgba(92,154,175,.36)'; roundRect(-o.w*.37,-o.h*.38,o.w*.74,o.h*.68,5); ctx.fill();
-        ctx.strokeStyle='rgba(220,245,255,.36)'; ctx.lineWidth=1.4;
-        ctx.beginPath(); ctx.moveTo(-o.w*.25,-o.h*.14); ctx.lineTo(o.w*.22,o.h*.17); ctx.moveTo(-o.w*.10,o.h*.22); ctx.lineTo(o.w*.28,-o.h*.18); ctx.stroke();
-        ctx.fillStyle='rgba(235,245,255,.55)'; ctx.beginPath(); ctx.arc(0,o.h*.39,2.7,0,Math.PI*2); ctx.fill();
+        drawAssetPhone(0,0,Math.min((o.w||42)/44,(o.h||66)/68)*1.16,o.variant||null);
       }else if(o.kind==='arcade'){
         drawAssetArcade(0,0,Math.min((o.w||56)/52,(o.h||84)/78)*1.18);
       }else if(o.kind==='sign'){
         drawAssetPanel(0,-2,Math.min((o.w||76)/76,(o.h||50)/62)*1.14,o.label||'BIO');
       }else if(o.kind==='trex'){
-        drawAssetTrex(0,0,Math.min((o.w||90)/88,(o.h||56)/56)*1.20);
+        drawAssetTrex(0,0,Math.min((o.w||90)/88,(o.h||56)/56)*1.20,o.variant||null);
       }else if(o.kind==='mascot'){
         ctx.fillStyle='#8b5b3f'; roundRect(-o.w*.33,-o.h*.20,o.w*.66,o.h*.62,10); ctx.fill();
         ctx.fillStyle='#c9875b'; ctx.beginPath(); ctx.arc(0,-o.h*.25,o.w*.24,0,Math.PI*2); ctx.fill();
