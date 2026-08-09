@@ -2,29 +2,22 @@
 
 ## Jalon actuel
 
-### v3.40 Full Obstacle Character Pass
+### v3.41 Visual Slice
 
-- Étendre les variantes à toutes les familles d'obstacles solides.
-- Rendre chaque famille plus satirique et plus mémorable sans dégrader sa silhouette.
-- Supprimer tout flip horizontal pour les assets textuels.
-- Préserver les performances acquises en v3.38.
+- Valider sur smartphone la lisibilité réelle de six familles redesignées.
+- Comparer le cadrage A avec le cadrage B (+18 %, pousse ralentie).
+- Vérifier que les détails racontent l'objet sans dépendre de micro-textes.
+- Évaluer le T-Rex talisman rare en contexte.
+- Vérifier l'intégration sans ombres portées.
 
-## Prochain jalon
+## Après validation
 
-Après validation mobile : compléter les variantes qui fonctionnent le mieux, puis reprendre le polish du sous-sol et de la progression.
+Étendre le langage visuel retenu aux autres familles d'obstacles, puis aux autres power-ups. Ne pas généraliser avant validation mobile du slice.
 
-## Ensuite
-
-### Refactorisation prudente
+## Refactorisation prudente
 
 1. Extraire le CSS.
 2. Extraire la configuration et les constantes.
 3. Extraire les fonctions de rendu.
 4. Extraire les entités et collisions.
 5. Conserver une version jouable à chaque étape.
-
-### Publication
-
-- Activer GitHub Pages après stabilisation.
-- Ajouter une capture légère au README.
-- Préparer une build mobile partageable sans installation.

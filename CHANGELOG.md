@@ -1,5 +1,16 @@
 # Changelog
 
+## v3.41 - Visual Slice
+
+- Vertical slice sur six familles : smartphone, batterie, fût nucléaire, drone, sac poubelle et T-Rex.
+- Remplace le principe « asset + sticker » par des morphologies et détails intégrés : écrans actifs, coque ouverte, cellules visibles, réparation, nid, caméra pendante, déchets inclus, pousses prisonnières, mise en scène muséale, etc.
+- Ajoute le T-Rex talisman « NON AUX ESSAIS NUCLÉAIRES » comme rencontre rare : 0 ou 1 fois par partie, jamais miroir. `?talisman=1` force sa présence pour les tests.
+- Supprime les ombres portées des obstacles, power-ups et limaces de lixiviat du sous-sol.
+- Ajoute trois morphologies de limaces de lixiviat, dont une avec fragments de déchets incorporés.
+- Redessine la source d'eau comme poche organique prise entre des racines.
+- Ajoute un test A/B depuis l'écran titre : A = cadrage actuel ; B = zoom +18 %, pousse -12 % et densité solide légèrement réduite.
+- Le mode B réduit aussi l'amplitude du zoom de frôlement pour éviter un cadrage excessif.
+
 ## v3.40 - Full Obstacle Character Pass
 
 - Étend le système de variantes à toutes les familles d’obstacles solides, hors zones toxiques et lixiviat.

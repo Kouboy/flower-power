@@ -6,7 +6,7 @@ Le prototype mêle arcade mobile, satire écologique et esthétique de livre pou
 
 ## Version actuelle
 
-**v3.40 Full Obstacle Character Pass**
+**v3.41 Visual Slice**
 
 Cette branche revient à un rendu Canvas sobre et vectoriel :
 
@@ -49,7 +49,7 @@ flower-power/
     └── README.md
 ```
 
-La v3.40 reste volontairement monolithique pour préserver une base jouable. Le découpage en modules viendra progressivement, avec un test navigateur après chaque étape.
+La v3.41 reste volontairement monolithique pour préserver une base jouable. Le découpage en modules viendra progressivement, avec un test navigateur après chaque étape.
 
 ## Statut
 
@@ -63,3 +63,8 @@ Ajouter `?perf=1` à l'URL affiche le profiler intégré (FPS et coût update/re
 ## Variantes d’obstacles
 
 La v3.40 introduit un catalogue de variantes satiriques pour toutes les familles d’obstacles solides. Deux variantes par famille sont tirées au début de chaque génération puis distribuées en alternance. Les variantes comportant du texte sont automatiquement rendues sans miroir afin de préserver leur lisibilité.
+
+
+## v3.41 — Visual Slice
+
+Cette version ne cherche pas encore à refaire les 23 familles. Elle valide d'abord le langage visuel sur six familles fortes : smartphone, batterie, fût nucléaire, drone, sac poubelle et T-Rex. Les détails sont intégrés à la structure de l'objet plutôt que plaqués sous forme de stickers. L'écran titre permet de comparer le cadrage A et le cadrage B (+18 %, croissance ralentie). Le T-Rex « NON AUX ESSAIS NUCLÉAIRES » est une rencontre signature rare, limitée à une apparition maximum par partie.

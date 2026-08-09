@@ -49,3 +49,13 @@ Le découpage de `index.html` en modules doit être progressif. Une seule famill
 - `mirrorSafe: false` neutralise le flip horizontal pour tous les objets portant du texte ou une signalétique orientée.
 - Les textes satiriques sont pré-rastérisés dans un cache de canvases offscreen pour éviter de multiplier les `fillText` coûteux à chaque frame.
 - La couche de caractère reste purement visuelle : aucune variante ne modifie collision, hitbox, danger ou scoring.
+
+
+## v3.41 — Lisibilité et satire intégrée
+
+- Un détail satirique important doit survivre à une lecture smartphone à distance normale.
+- Le texte est un outil parmi d'autres, pas le support par défaut du gag.
+- Les variantes du vertical slice modifient la morphologie ou la mise en scène de l'objet, pas seulement sa surface.
+- Les objets souterrains n'utilisent plus d'ombre portée ; leur intégration repose sur le contour, la matière et la superposition.
+- Le T-Rex « NON AUX ESSAIS NUCLÉAIRES » est un asset signature rare, non flippable, limité à une apparition par partie au maximum.
+- Le test d'échelle B est un cadrage +18 % accompagné d'une pousse -12 % et d'une densité solide -8 % pour préserver l'anticipation.

@@ -1,4 +1,4 @@
-# Variantes d’obstacles — v3.40
+# Variantes d’obstacles — base v3.40 / slice v3.41
 
 Principe : la silhouette gameplay reste stable. La variante ajoute un micro-récit satirique court, plus quelques détails matériels. Les textes sont pré-rastérisés et les objets textuels ne sont jamais mirorrés.
 
@@ -29,3 +29,8 @@ Principe : la silhouette gameplay reste stable. La variante ajoute un micro-réc
 | Roche | protection, compensation et déplacement du vivant | NATURA ? / 2000, COMPENSÉ / m², BIOTOPE / DÉPLACÉ |
 
 Le catalogue `OBSTACLE_VARIANTS` est la source de vérité. En génération, un sous-pool de deux variantes par famille est choisi, avec possibilité d’une troisième dans les niveaux avancés.
+
+
+## Slice v3.41
+
+Les familles `phone`, `battery`, `nuclear`, `drone`, `trashbag` et `trex` servent de laboratoire. Leur variante agit désormais sur la morphologie ou la mise en scène et n'utilise plus le sticker générique. Le T-Rex anti-nucléaire est sorti du pool normal : c'est un asset signature rare.
