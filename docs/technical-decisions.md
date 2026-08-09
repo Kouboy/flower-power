@@ -29,3 +29,13 @@
 ## Refactorisation
 
 Le découpage de `index.html` en modules doit être progressif. Une seule famille de fonctions est extraite à la fois, suivie d'un test desktop et mobile. Aucun grand déménagement de code en une seule passe.
+
+
+## v3.38 — Budget de rendu
+
+- Le décor sol/surface statique est pré-rendu dans un canvas offscreen et recopié par tranche visible.
+- Les fleurs matures sont baked dans un cache de surface ; seules les fleurs en éclosion restent animées individuellement.
+- Les collisions utilisent une broad phase puis une seule requête consolidée par frame.
+- Les sons de bruit réutilisent un AudioBuffer persistant.
+- Les `shadowBlur` sont réservés aux feedbacks ponctuels.
+- Le profiler est opt-in via `?perf=1` afin de ne pas coûter en production.

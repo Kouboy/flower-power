@@ -1,5 +1,16 @@
 # Changelog
 
+## v3.38 - Vector Performance Pass
+
+- Restaure les zones toxiques sous forme de pollution diffuse, sans contour fermé ni scale animé.
+- Met en cache le décor statique sol/surface dans un canvas offscreen.
+- Bake les fleurs matures dans un canvas offscreen : le parterre persiste mais ne multiplie plus les drawcalls.
+- Regroupe collision, frôlement, proximité caméra et lixiviat dans une seule requête de danger par frame.
+- Ajoute une broad phase avant les calculs SDF et supprime plusieurs allocations temporaires de collision.
+- Réutilise un buffer de bruit audio au lieu d'en reconstruire un à chaque frottement.
+- Réduit les shadowBlur coûteux et cache le formatage des ÉcoCrédits™ du HUD.
+- Ajoute un profiler optionnel via `?perf=1`.
+
 Toutes les évolutions notables de Flower Power sont consignées ici.
 
 ## [3.37] - 2026-07-12

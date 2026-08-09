@@ -1,14 +1,19 @@
 # Roadmap
 
+## Jalon actuel
+
+### v3.38 Vector Performance Pass
+
+- Restaurer les zones toxiques diffuses.
+- Éliminer la chute de performances à l’approche de la surface.
+- Mettre en cache le décor et le parterre mature.
+- Consolider les requêtes collision / proximité / frôlement.
+- Réduire les allocations audio et Canvas récurrentes.
+- Mesurer sur mobile avec `?perf=1`.
+
 ## Prochain jalon
 
-### v3.38 Vector Cohesion Pass
-
-- Uniformiser les déchets vectoriels.
-- Revoir le bruit et la densité de la terre.
-- Clarifier la surface et l'éclosion.
-- Stabiliser poches de poison et limaces de lixiviat.
-- Vérifier les collisions et le frôlement.
+À décider après validation de la v3.38 sur Android. Ne pas ajouter de contenu tant que la surface n’est pas fluide avec un parterre dense.
 
 ## Ensuite
 
