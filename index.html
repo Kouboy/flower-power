@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-<title>Flower Power v3.39 Obstacle Character Pass</title>
+<title>Flower Power v3.40 Full Obstacle Character Pass</title>
 <style>
   :root{--bg:#15110e;--ui:#f7e9c7;--muted:#cdbb91;--soil:#221912;--light:#ffe59a;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -29,7 +29,7 @@
     <h1>Flower Power</h1>
     <p>Guide une pousse depuis la graine jusqu’au jour.</p>
     <p>Évite les déchets enfouis et les limaces de lixiviat. Les zones toxiques diffuses dévient la croissance.</p>
-    <p>Version vectorielle : aucune image externe, aucune dépendance aux sprites, variantes satiriques par pool de niveau.</p>
+    <p>Version vectorielle : aucune image externe, aucune dépendance aux sprites. Chaque déchet possède maintenant plusieurs variantes satiriques.</p>
     <p><b>Maintiens / touche l’écran</b> : ton doigt indique la direction de croissance. Frôle les obstacles sans les toucher pour générer des <b>ÉcoCrédits™</b> (<b>Ɇ</b>).</p>
     <div class="legend">
       <div class="pill">☣ Zones toxiques : déviation</div>
@@ -43,13 +43,13 @@
       <div class="pill">♻ Frôlement maintenu : ÉcoCrédits™</div>
     </div>
     <div class="hint">TOUCHE POUR COMMENCER</div>
-    <p class="small">Prototype v3.39 · Obstacle Character Pass · variantes d’obstacles · Canvas autonome · ÉcoCrédits™ · SFX</p>
+    <p class="small">Prototype v3.40 · Full Obstacle Character Pass · variantes satiriques · Canvas autonome · ÉcoCrédits™ · SFX</p>
   </div>
 </div>
 <script>
 (() => {
   'use strict';
-  console.info('Flower Power v3.39 Obstacle Character Pass');
+  console.info('Flower Power v3.40 Full Obstacle Character Pass');
 
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d', { alpha:false });
@@ -129,55 +129,192 @@
   ];
 
 
-  // v3.39 OBSTACLE CHARACTER PASS -----------------------------------------
-  // Chaque famille d'obstacles peut embarquer plusieurs variantes satiriques.
-  // Un sous-pool est tiré au début de la génération du niveau, afin de varier
-  // les plaisirs sans transformer chaque écran en vitrine illisible.
-  const OBSTACLE_VARIANT_CATALOG={
-    trex:[
-      {id:'anti_nuke',placard:'NON NUC.',stick:'#f5e8b6',ink:'#402616'},
-      {id:'museum',tag:'MUSÉE ?',tagFill:'#d8c49a',ink:'#3d2a1e'},
-      {id:'memory',placard:'PLUS ÇA',stick:'#e4ef9b',ink:'#24320d'}
+  // v3.40 FULL OBSTACLE CHARACTER PASS ------------------------------------
+  // Chaque famille solide possède plusieurs micro-récits satiriques.
+  // En début de génération, deux variantes par famille sont tirées dans le
+  // catalogue puis distribuées en alternance. Cela évite la répétition tout
+  // en gardant un "vocabulaire" cohérent pour chaque niveau.
+  const OBSTACLE_VARIANTS={
+    cone:[
+      {id:'travaux_verts',label:'VERT',sub:'TRAVAUX',accent:'#d9ed71',paper:'#f2e6b0',mirrorSafe:false},
+      {id:'provisoire',label:'2050',sub:'PROV.',accent:'#f1cf63',paper:'#f4e1a0',mirrorSafe:false},
+      {id:'zero_risque',label:'0 RISQUE',sub:'CERT.',accent:'#9de0bd',paper:'#dce9b9',mirrorSafe:false},
+      {id:'chantier_plus',label:'CHANTIER+',sub:'RSE',accent:'#a8d7ee',paper:'#e8e1ad',mirrorSafe:false}
     ],
-    phone:[
-      {id:'eco_app',label:'ECO',accent:'#87d96d',panel:'#1f4730'},
-      {id:'co2_app',label:'CO2',accent:'#7ad8d8',panel:'#173b46'},
-      {id:'green_app',label:'BIO',accent:'#d9e86f',panel:'#48511a'}
+    extinguisher:[
+      {id:'plan_b',label:'PLAN B',sub:'VIDE',accent:'#f1cf63',paper:'#f1e2b1',mirrorSafe:false},
+      {id:'resilience',label:'RÉSIL.',sub:'2030',accent:'#b7dd78',paper:'#e5e4a8',mirrorSafe:false},
+      {id:'anti_feu',label:'ANTI-FEU',sub:'OPTI.',accent:'#f08b73',paper:'#f1d4a5',mirrorSafe:false},
+      {id:'secours',label:'SECOURS',sub:'LIGHT',accent:'#8fd5dc',paper:'#d9e8b7',mirrorSafe:false}
     ],
-    nuclear:[
-      {id:'neutralise',label:'NEUTRE',fill:'#f5e68e',ink:'#3d2a0c'},
-      {id:'offset',label:'OFFSET',fill:'#d8f17d',ink:'#27310d'},
-      {id:'greenplus',label:'VERT+',fill:'#bdf2bf',ink:'#17311d'}
+    sign:[
+      {id:'zone_verte',label:'ZONE VERTE',sub:'SAUF ICI',accent:'#a7d772',paper:'#efe2ab',mirrorSafe:false},
+      {id:'compense',label:'COMPENSÉ',sub:'AILLEURS',accent:'#8bd2bd',paper:'#e9dfac',mirrorSafe:false},
+      {id:'nature_plus',label:'NATURE+',sub:'CERTIFIÉ',accent:'#c8df76',paper:'#ede4b0',mirrorSafe:false},
+      {id:'biodiv',label:'BIODIV.',sub:'EN COURS',accent:'#86c8e2',paper:'#eee0a8',mirrorSafe:false}
     ],
-    battery:[
-      {id:'eco_plus',label:'ECO+',fill:'#dcef87',ink:'#27310d'},
-      {id:'recy',label:'RECY',fill:'#a5e4b4',ink:'#15331d'},
-      {id:'charge',label:'100%',fill:'#f3e58b',ink:'#3b2b0d'}
+    solar:[
+      {id:'net_zero',label:'NET ZÉRO',sub:'2050',accent:'#9fda83',paper:'#dfe9b2',mirrorSafe:false},
+      {id:'green_roi',label:'GREEN ROI',sub:'+12%',accent:'#ebd06d',paper:'#e8e4b0',mirrorSafe:false},
+      {id:'a_plus',label:'A+++',sub:'CASSÉ',accent:'#83d5c0',paper:'#e5e2ab',mirrorSafe:false},
+      {id:'saas',label:'SOLEIL',sub:'AS A SERVICE',accent:'#eebd6c',paper:'#efe0a8',mirrorSafe:false}
+    ],
+    drone:[
+      {id:'eco_scan',label:'ECO SCAN',sub:'OK',accent:'#a6dc78',paper:'#dde5b1',mirrorSafe:false},
+      {id:'smart_nature',label:'SMART',sub:'NATURE v5',accent:'#7ed5d7',paper:'#e0e5ad',mirrorSafe:false},
+      {id:'planet_ai',label:'PLANÈTE IA',sub:'BETA',accent:'#d6c07e',paper:'#ebe0af',mirrorSafe:false},
+      {id:'biodiv_auto',label:'BIODIV.',sub:'AUTO',accent:'#8dd1a7',paper:'#e6dfaa',mirrorSafe:false}
+    ],
+    scooter:[
+      {id:'zfe',label:'ZFE',sub:'READY',accent:'#9bd878',paper:'#e8e2ae',mirrorSafe:false},
+      {id:'free_float',label:'FREE',sub:'FLOAT',accent:'#7ecbd6',paper:'#e9dfaa',mirrorSafe:false},
+      {id:'mobility',label:'MOBILITÉ+',sub:'2%',accent:'#e6c66b',paper:'#eadfa7',mirrorSafe:false},
+      {id:'climate_pass',label:'CLIMAT',sub:'PASS',accent:'#9fd38a',paper:'#e6e3ac',mirrorSafe:false}
     ],
     trashbag:[
-      {id:'bio',label:'BIO',fill:'#dced84',ink:'#26320c'},
-      {id:'tri',label:'TRI',fill:'#a9e2f2',ink:'#17313c'},
-      {id:'compost',label:'COMP.',fill:'#f0df8a',ink:'#3f2d10'}
+      {id:'bio',label:'BIO',sub:'90 J',accent:'#b8dc71',paper:'#e5e4ab',mirrorSafe:false},
+      {id:'tri',label:'TRI',sub:'PRESQUE',accent:'#89d3dd',paper:'#e4e1a9',mirrorSafe:false},
+      {id:'compost',label:'COMPOST',sub:'THÉORIQUE',accent:'#d8ca76',paper:'#ebe0a7',mirrorSafe:false},
+      {id:'zero_waste',label:'0 DÉCHET',sub:'SAC 48',accent:'#a5d087',paper:'#e4e2a9',mirrorSafe:false}
+    ],
+    battery:[
+      {id:'green100',label:'100%',sub:'GREEN',accent:'#bddd78',paper:'#e8e2aa',mirrorSafe:false},
+      {id:'recy',label:'RECY',sub:'À VOIR',accent:'#91d7b2',paper:'#e3e5ad',mirrorSafe:false},
+      {id:'eco_plus',label:'ECO+',sub:'LITHIUM',accent:'#e7ce70',paper:'#ebe0a5',mirrorSafe:false},
+      {id:'second_life',label:'2e VIE',sub:'FIN',accent:'#87cedc',paper:'#e2e1aa',mirrorSafe:false}
+    ],
+    phone:[
+      {id:'eco_app',label:'ECO APP',sub:'99+',accent:'#8bdd72',paper:'#dfe5ac',mirrorSafe:false},
+      {id:'co2_app',label:'CO₂',sub:'-0.2%',accent:'#7ad4df',paper:'#e0e3ad',mirrorSafe:false},
+      {id:'green_streak',label:'GREEN',sub:'365 J',accent:'#d4dc72',paper:'#e9e0a9',mirrorSafe:false},
+      {id:'offset_active',label:'OFFSET',sub:'ACTIF',accent:'#9bd09a',paper:'#e3e3ad',mirrorSafe:false}
+    ],
+    plastic:[
+      {id:'recycled',label:'100%',sub:'RECYCLÉ*',accent:'#8ed6cf',paper:'#e1e5ad',mirrorSafe:false},
+      {id:'ocean',label:'OCÉAN',sub:'FRIENDLY',accent:'#75cde1',paper:'#e4e2aa',mirrorSafe:false},
+      {id:'bioplastic',label:'BIO',sub:'PLASTIC',accent:'#bdd978',paper:'#e9dfa5',mirrorSafe:false},
+      {id:'circular',label:'CIRCULAIRE',sub:'1 FOIS',accent:'#d9c772',paper:'#e7e2aa',mirrorSafe:false}
+    ],
+    canister:[
+      {id:'biofuel',label:'BIOFUEL',sub:'PREMIUM',accent:'#add277',paper:'#e7e1a8',mirrorSafe:false},
+      {id:'pure_water',label:'EAU PURE',sub:'TECH',accent:'#7fd3dc',paper:'#e0e5af',mirrorSafe:false},
+      {id:'green_solvent',label:'SOLVANT',sub:'VERT',accent:'#c8d773',paper:'#e7dfa6',mirrorSafe:false},
+      {id:'neutral',label:'NEUTRE',sub:'CERT.',accent:'#9ccf9b',paper:'#e2e5ad',mirrorSafe:false}
+    ],
+    concrete:[
+      {id:'low_c',label:'BAS C',sub:'BÉTON',accent:'#9fd18e',paper:'#dfdfb1',mirrorSafe:false},
+      {id:'hqe',label:'HQE',sub:'MASSIF',accent:'#89cfd4',paper:'#e4e0aa',mirrorSafe:false},
+      {id:'durable',label:'DURABLE',sub:'80 ANS',accent:'#d8c576',paper:'#e7dfa6',mirrorSafe:false},
+      {id:'green_rc',label:'VERT',sub:'ARMÉ',accent:'#a8d37a',paper:'#e5e2aa',mirrorSafe:false}
+    ],
+    pipe:[
+      {id:'potable',label:'EAU',sub:'POTABLE ?',accent:'#83d1de',paper:'#e1e5ad',mirrorSafe:false},
+      {id:'reuse',label:'RÉUSE',sub:'2040',accent:'#9bd291',paper:'#e6e1aa',mirrorSafe:false},
+      {id:'smart_network',label:'RÉSEAU',sub:'SMART',accent:'#7fc8dd',paper:'#e0e3ab',mirrorSafe:false},
+      {id:'optimized_leak',label:'FUITE',sub:'OPTI.',accent:'#dec36c',paper:'#e9dfa7',mirrorSafe:false}
+    ],
+    microwave:[
+      {id:'eco_mode',label:'ECO MODE',sub:'ON',accent:'#a7d97d',paper:'#e3e4ad',mirrorSafe:false},
+      {id:'aplus',label:'A+++',sub:'2009',accent:'#dbd173',paper:'#e9dfa5',mirrorSafe:false},
+      {id:'low_power',label:'LOW POWER',sub:'1800 W',accent:'#83ced9',paper:'#e1e2aa',mirrorSafe:false},
+      {id:'green_ready',label:'GREEN',sub:'READY',accent:'#9bd18a',paper:'#e4e2a9',mirrorSafe:false}
+    ],
+    server:[
+      {id:'green_cloud',label:'GREEN',sub:'CLOUD',accent:'#99da7b',paper:'#dfe3ad',mirrorSafe:false},
+      {id:'green_ai',label:'IA',sub:'VERTE',accent:'#7dd0da',paper:'#e2e2aa',mirrorSafe:false},
+      {id:'netzero_dc',label:'NET ZERO',sub:'DC',accent:'#c8d36f',paper:'#e7dfa7',mirrorSafe:false},
+      {id:'carbon_api',label:'CARBONE',sub:'API',accent:'#d6bd70',paper:'#e8dfa8',mirrorSafe:false}
+    ],
+    tire:[
+      {id:'eco_tyre',label:'ECO TYRE',sub:'SUV',accent:'#a8d27b',paper:'#e4e1aa',mirrorSafe:false},
+      {id:'low_co2',label:'LOW CO₂',sub:'XL',accent:'#83ceda',paper:'#e0e4ac',mirrorSafe:false},
+      {id:'recy18',label:'RECY',sub:'18%',accent:'#d5ce70',paper:'#e7e0a8',mirrorSafe:false},
+      {id:'green_grip',label:'GREEN',sub:'GRIP PRO',accent:'#9bd38e',paper:'#e4e2ab',mirrorSafe:false}
+    ],
+    arcade:[
+      {id:'save_earth',label:'SAVE EARTH',sub:'GAME OVER',accent:'#a6dc73',paper:'#e3e2a9',mirrorSafe:false},
+      {id:'climate_hero',label:'CLIMATE',sub:'HERO',accent:'#7fd0db',paper:'#e1e3aa',mirrorSafe:false},
+      {id:'eco_run',label:'ECO RUN',sub:'INSERT Ɇ',accent:'#dec46c',paper:'#e9dfa8',mirrorSafe:false},
+      {id:'oneup',label:'1UP',sub:'PLANÈTE',accent:'#9fd28c',paper:'#e3e1aa',mirrorSafe:false}
+    ],
+    sarcophagus:[
+      {id:'zero_waste',label:'0 DÉCHET',sub:'ÉTERNEL',accent:'#aed477',paper:'#e8dfa6',mirrorSafe:false},
+      {id:'climate_plan',label:'PLAN CLIMAT',sub:'RIP',accent:'#7fcbd5',paper:'#e2e1a9',mirrorSafe:false},
+      {id:'future2050',label:'FUTUR',sub:'2050',accent:'#d7c672',paper:'#e9dfa6',mirrorSafe:false},
+      {id:'durable_life',label:'DURABLE',sub:'À VIE',accent:'#98d08d',paper:'#e4e2aa',mirrorSafe:false}
+    ],
+    nuclear:[
+      {id:'neutral',label:'NEUTRE',sub:'VALIDÉ',accent:'#b6d879',paper:'#e7e0a6',mirrorSafe:false},
+      {id:'offset',label:'OFFSET',sub:'x100',accent:'#84ceda',paper:'#e0e3aa',mirrorSafe:false},
+      {id:'greenplus',label:'VERT+',sub:'ISO',accent:'#d9ca72',paper:'#e7e1a9',mirrorSafe:false},
+      {id:'transition',label:'TRANSITION',sub:'LOT 7',accent:'#9bd08b',paper:'#e4e1a8',mirrorSafe:false}
+    ],
+    trex:[
+      {id:'anti_nuke',label:'NON NUCL.',sub:'MERCI',accent:'#cfda76',paper:'#efe1a9',mirrorSafe:false},
+      {id:'never_again',label:'PLUS ÇA',sub:'-65 Ma',accent:'#7fcfd7',paper:'#e4e2aa',mirrorSafe:false},
+      {id:'protected',label:'SITE PROT.',sub:'ENFIN',accent:'#9dd188',paper:'#e7e1a7',mirrorSafe:false},
+      {id:'not_fossil',label:'PAS FOSSILE',sub:'JURÉ',accent:'#dfc36d',paper:'#e9dea5',mirrorSafe:false}
+    ],
+    fossil:[
+      {id:'local',label:'LOCAL',sub:'-65 Ma',accent:'#d6c46f',paper:'#e9dfa8',mirrorSafe:false},
+      {id:'heritage',label:'HÉRITAGE',sub:'CARBONE',accent:'#9bcf8d',paper:'#e4e2aa',mirrorSafe:false},
+      {id:'biofossil',label:'FOSSILE',sub:'BIO',accent:'#abd478',paper:'#e6e0a8',mirrorSafe:false},
+      {id:'scope3',label:'TRACE',sub:'SCOPE 3',accent:'#83ced9',paper:'#e1e3aa',mirrorSafe:false}
+    ],
+    mascot:[
+      {id:'eco_kid',label:'ECO KID',sub:'2024',accent:'#aad67a',paper:'#e5e0a8',mirrorSafe:false},
+      {id:'green_buddy',label:'GREEN',sub:'BUDDY',accent:'#7fced8',paper:'#e1e3aa',mirrorSafe:false},
+      {id:'planet_club',label:'PLANÈTE',sub:'CLUB',accent:'#d9c56f',paper:'#e8dfa6',mirrorSafe:false},
+      {id:'junior_rse',label:'JUNIOR',sub:'RSE',accent:'#9cd08b',paper:'#e5e1a9',mirrorSafe:false}
+    ],
+    rock:[
+      {id:'protected_zone',label:'ZONE',sub:'PROT.',accent:'#a9d37a',paper:'#e5e2aa',mirrorSafe:false},
+      {id:'natura',label:'NATURA ?',sub:'2000',accent:'#7fcdd7',paper:'#e1e3a9',mirrorSafe:false},
+      {id:'compensated',label:'COMPENSÉ',sub:'m²',accent:'#d8c46f',paper:'#e8dfa6',mirrorSafe:false},
+      {id:'biotope',label:'BIOTOPE',sub:'DÉPLACÉ',accent:'#9ccf8b',paper:'#e5e1a9',mirrorSafe:false}
+    ],
+    treasure:[
+      {id:'green_fund',label:'FONDS',sub:'VERT',accent:'#a4d47c',paper:'#e5e1a8',mirrorSafe:false},
+      {id:'climate_credit',label:'CRÉDIT',sub:'CLIMAT',accent:'#7fcdd7',paper:'#e1e3aa',mirrorSafe:false},
+      {id:'subvention',label:'SUBV.',sub:'PILOTE',accent:'#dac46d',paper:'#e9dfa6',mirrorSafe:false},
+      {id:'eco_budget',label:'BUDGET',sub:'ÉCO',accent:'#9bcf8d',paper:'#e4e2aa',mirrorSafe:false}
     ]
   };
   let levelObstacleVariantPools={};
-  function pickSubset(arr,count){
-    const src=arr.slice(), out=[];
-    while(src.length && out.length<count){ out.push(src.splice(Math.floor(rand()*src.length),1)[0]); }
-    return out;
+  let levelObstacleVariantCursor={};
+  const satireStickerCache=new Map();
+  function shuffleSeeded(list){
+    const a=list.slice();
+    for(let i=a.length-1;i>0;i--){ const j=Math.floor(rand()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+    return a;
   }
   function buildLevelObstacleVariantPools(){
-    levelObstacleVariantPools={};
-    for(const kind in OBSTACLE_VARIANT_CATALOG){
-      const all=OBSTACLE_VARIANT_CATALOG[kind];
-      const count=Math.min(all.length, all.length<=2?all.length:(2+(rand()<.38?1:0)));
-      levelObstacleVariantPools[kind]=pickSubset(all,count);
+    levelObstacleVariantPools={}; levelObstacleVariantCursor={};
+    for(const kind in OBSTACLE_VARIANTS){
+      const all=shuffleSeeded(OBSTACLE_VARIANTS[kind]);
+      const count=Math.min(all.length,2+(level>=8 && rand()<.55?1:0));
+      levelObstacleVariantPools[kind]=all.slice(0,count);
+      levelObstacleVariantCursor[kind]=Math.floor(rand()*Math.max(1,count));
+      // Pré-rastérise les libellés pendant la génération, pas lors de leur première apparition à l'écran.
+      for(const v of levelObstacleVariantPools[kind]) getSatireSticker(v);
     }
   }
-  function assignSolidVariant(o){
+  function nextObstacleVariant(kind){
+    const pool=levelObstacleVariantPools[kind]||OBSTACLE_VARIANTS[kind];
+    if(!pool||!pool.length) return null;
+    const c=levelObstacleVariantCursor[kind]||0;
+    levelObstacleVariantCursor[kind]=c+1;
+    return pool[c%pool.length];
+  }
+  function assignObstacleVariant(o){
     if(!o) return o;
-    const pool=levelObstacleVariantPools[o.kind];
-    if(pool && pool.length) o.variant=pool[Math.floor(rand()*pool.length)];
+    const v=nextObstacleVariant(o.kind);
+    if(v){
+      o.variant=v;
+      // Un texte en miroir reste techniquement du texte, mais surtout une mauvaise blague.
+      if(v.mirrorSafe===false) o.flip=1;
+      if(o.kind==='sign') o.label=v.label;
+    }
     return o;
   }
 
@@ -759,7 +896,7 @@
     // Barrières partielles : elles cassent le "chemin tout droit au centre" tout en laissant un passage calculé.
     function addGateBlock(x,y,w,h,kind='concrete'){
       if(w<44) return;
-      const o={kind,x,y,w,h,a:rr(-.12,.12)};
+      const o=assignObstacleVariant({kind,x,y,w,h,a:rr(-.12,.12),flip:1});
       if(objectFits(o)) game.solids.push(prepareSolidPerf(o));
     }
     const gateCount=1+Math.min(3,Math.floor(level/8));
@@ -833,7 +970,7 @@
       for(let tries=0;tries<90 && !placed;tries++){
         const cell=pickCell(c=>c.r>0 && c.r<spawnGrid.rows-1 && !(c.c===2 && c.r>spawnGrid.rows-3) && (tries>28 || depthBand(c.y)===preferred));
         const pos=cellPos(cell,.27);
-        const o=preparePixelSolid(assignSolidVariant(makeSolidCandidate(pos)));
+        const o=preparePixelSolid(assignObstacleVariant(makeSolidCandidate(pos)));
         if(objectFits(o)){
           game.solids.push(prepareSolidPerf(o)); placed=true;
         }else{
@@ -1692,23 +1829,137 @@
   }
 
 
-  function assetSticker(x,y,w,h,text,fill='#f0df8a',ink='#2c1d10',rot=0){
-    ctx.save(); ctx.translate(x,y); ctx.rotate(rot);
-    ctx.fillStyle=fill; roundRect(-w/2,-h/2,w,h,Math.min(5,h*.32)); ctx.fill();
-    ctx.strokeStyle='rgba(22,14,9,.62)'; ctx.lineWidth=1.5; ctx.stroke();
-    ctx.fillStyle=ink; ctx.font=`900 ${Math.max(7,Math.min(11,h*.68))}px system-ui,sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(text,0,.5);
+  function stickerKey(v){ return [v.id,v.label,v.sub,v.accent,v.paper].join('|'); }
+  function offscreenRoundRect(g,x,y,w,h,r){
+    r=Math.min(r,w*.5,h*.5); g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath();
+  }
+  function getSatireSticker(v){
+    const key=stickerKey(v);
+    if(satireStickerCache.has(key)) return satireStickerCache.get(key);
+    const c=document.createElement('canvas'); c.width=144; c.height=58;
+    const g=c.getContext('2d');
+    g.clearRect(0,0,c.width,c.height);
+    g.fillStyle=v.paper||'#e7e0ac';
+    offscreenRoundRect(g,3,3,138,52,9); g.fill();
+    g.strokeStyle='rgba(38,24,13,.68)'; g.lineWidth=3; g.stroke();
+    g.fillStyle=v.accent||'#a8d579'; offscreenRoundRect(g,8,8,128,17,6); g.fill();
+    g.fillStyle='#23180f'; g.textAlign='center'; g.textBaseline='middle';
+    g.font='900 20px system-ui,sans-serif'; g.fillText(v.label||'',72,18);
+    g.font='800 14px system-ui,sans-serif'; g.fillText(v.sub||'',72,40);
+    // Faux petit sceau réglementaire. Assez fin pour évoquer un audit, assez vain pour ne servir à rien.
+    g.strokeStyle='rgba(35,24,15,.52)'; g.lineWidth=2; g.beginPath(); g.arc(126,42,6,0,TAU); g.stroke();
+    g.beginPath(); g.moveTo(122,42); g.lineTo(125,45); g.lineTo(131,38); g.stroke();
+    satireStickerCache.set(key,c); return c;
+  }
+  function drawSatireSticker(v,x,y,w,h,rot=0){
+    if(!v) return;
+    const c=getSatireSticker(v);
+    ctx.save(); ctx.translate(x,y); ctx.rotate(rot); ctx.drawImage(c,-w/2,-h/2,w,h); ctx.restore();
+  }
+  function drawTinyQr(x,y,s=1){
+    ctx.save(); ctx.translate(x,y); ctx.fillStyle='rgba(25,20,14,.72)';
+    const q=2.2*s;
+    for(const [ix,iy] of [[0,0],[1,0],[3,0],[0,1],[2,1],[3,1],[1,2],[3,2],[0,3],[2,3]]) ctx.fillRect((ix-1.5)*q,(iy-1.5)*q,q*.78,q*.78);
     ctx.restore();
   }
+  function drawLeafStamp(x,y,s=1,c='#5d8f42'){
+    ctx.save(); ctx.translate(x,y); ctx.scale(s,s); ctx.fillStyle=c;
+    ctx.beginPath(); ctx.moveTo(0,7); ctx.quadraticCurveTo(-11,-2,-2,-10); ctx.quadraticCurveTo(10,-8,8,3); ctx.quadraticCurveTo(5,9,0,7); ctx.fill();
+    ctx.strokeStyle='rgba(30,45,22,.65)'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(-5,3); ctx.lineTo(5,-4); ctx.stroke(); ctx.restore();
+  }
+  function drawCrackMark(x,y,s=1,c='rgba(238,241,222,.62)'){
+    ctx.save(); ctx.translate(x,y); ctx.scale(s,s); ctx.strokeStyle=c; ctx.lineWidth=1.4; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(0,-8); ctx.lineTo(-2,-2); ctx.lineTo(3,2); ctx.lineTo(-4,8); ctx.moveTo(-2,-2); ctx.lineTo(-7,0); ctx.moveTo(3,2); ctx.lineTo(8,5); ctx.stroke(); ctx.restore();
+  }
+  function drawWarningTape(x,y,w,rot=0){
+    ctx.save(); ctx.translate(x,y); ctx.rotate(rot); ctx.fillStyle='rgba(232,197,75,.82)'; ctx.fillRect(-w/2,-3,w,6);
+    ctx.strokeStyle='rgba(54,37,18,.62)'; ctx.lineWidth=2;
+    for(let xx=-w/2+2;xx<w/2;xx+=10){ ctx.beginPath(); ctx.moveTo(xx,-3); ctx.lineTo(xx+6,3); ctx.stroke(); }
+    ctx.restore();
+  }
+  function drawBolt(x,y,r=2){ ctx.fillStyle='rgba(28,22,16,.76)'; ctx.beginPath(); ctx.arc(x,y,r,0,TAU); ctx.fill(); }
 
-  function assetPlacard(x,y,text,fill='#efe2a6',ink='#351f13',rot=-.1){
-    ctx.save(); ctx.translate(x,y); ctx.rotate(rot);
-    ctx.strokeStyle='#5b452f'; ctx.lineWidth=2.3; ctx.lineCap='round';
-    ctx.beginPath(); ctx.moveTo(-2,4); ctx.lineTo(-10,20); ctx.stroke();
-    ctx.fillStyle=fill; roundRect(-22,-10,44,19,4); ctx.fill();
-    ctx.strokeStyle='rgba(22,14,9,.68)'; ctx.lineWidth=1.6; ctx.stroke();
-    ctx.fillStyle=ink; ctx.font='900 8px system-ui,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(text,0,-.5);
+  function drawObstacleCharacter(o){
+    const v=o.variant; if(!v) return;
+    const w=o.w||((o.r||28)*2), h=o.h||((o.r||28)*2);
+    ctx.save(); ctx.shadowBlur=0; ctx.shadowColor='rgba(0,0,0,0)'; ctx.shadowOffsetY=0; ctx.globalAlpha=.96;
+    switch(o.kind){
+      case 'cone':
+        drawSatireSticker(v,0,h*.12,Math.min(42,w*.62),16,-.04); drawWarningTape(0,h*.31,w*.72,.02); drawCrackMark(w*.17,h*.18,.7,'rgba(66,37,22,.60)');
+        break;
+      case 'extinguisher':
+        drawSatireSticker(v,0,h*.05,Math.min(38,w*.70),18,.02);
+        ctx.strokeStyle='rgba(238,221,175,.75)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(w*.12,-h*.34,6,0,TAU); ctx.stroke(); ctx.strokeStyle='#d6a642'; ctx.beginPath(); ctx.moveTo(w*.12,-h*.34); ctx.lineTo(w*.16,-h*.39); ctx.stroke();
+        drawTinyQr(-w*.15,h*.28,.7);
+        break;
+      case 'sign':
+        drawSatireSticker(v,0,-h*.06,Math.min(w*.74,62),22,0); drawTinyQr(w*.27,h*.12,.7); drawCrackMark(-w*.28,-h*.08,.65,'rgba(51,36,21,.48)');
+        break;
+      case 'solar':
+        drawSatireSticker(v,w*.16,h*.17,Math.min(50,w*.42),18,-.03); drawCrackMark(-w*.18,-h*.02,1.05,'rgba(224,244,255,.72)'); drawLeafStamp(-w*.34,h*.22,.55,'rgba(189,224,98,.78)');
+        break;
+      case 'drone':
+        drawSatireSticker(v,0,0,Math.min(44,w*.38),17,.02); drawTinyQr(-w*.26,-h*.18,.7); ctx.fillStyle='rgba(226,72,62,.92)'; ctx.beginPath(); ctx.arc(w*.12,h*.13,3,0,TAU); ctx.fill(); drawCrackMark(w*.32,-h*.18,.8,'rgba(25,18,13,.72)');
+        break;
+      case 'scooter':
+        drawSatireSticker(v,-w*.04,-h*.05,Math.min(46,w*.47),17,-.02); drawTinyQr(w*.23,-h*.08,.65); ctx.strokeStyle='rgba(139,191,62,.72)'; ctx.lineWidth=2.4; ctx.beginPath(); ctx.moveTo(-w*.20,h*.20); ctx.quadraticCurveTo(-w*.11,h*.38,0,h*.30); ctx.stroke();
+        break;
+      case 'trashbag':
+        drawSatireSticker(v,w*.06,h*.07,Math.min(48,w*.55),20,.09); drawTinyQr(-w*.20,h*.24,.72); drawLeafStamp(-w*.20,-h*.06,.55,'rgba(143,185,75,.66)');
+        break;
+      case 'battery':
+        drawSatireSticker(v,0,h*.08,Math.min(46,w*.60),18,-.04); drawTinyQr(w*.24,-h*.15,.65); ctx.fillStyle='rgba(156,191,59,.78)'; ctx.beginPath(); ctx.arc(-w*.31,h*.12,3,0,TAU); ctx.arc(-w*.27,h*.20,2.2,0,TAU); ctx.fill();
+        break;
+      case 'phone':
+        drawSatireSticker(v,0,-h*.12,Math.min(32,w*.74),18,0); drawTinyQr(0,h*.12,.62); ctx.fillStyle='rgba(225,70,62,.92)'; ctx.beginPath(); ctx.arc(w*.22,-h*.31,3,0,TAU); ctx.fill(); drawCrackMark(w*.08,h*.12,.8);
+        break;
+      case 'plastic':
+        drawSatireSticker(v,0,0,Math.min(54,w*.58),18,-.04); drawLeafStamp(w*.30,-h*.14,.5,'rgba(199,224,106,.70)'); drawCrackMark(-w*.30,h*.08,.7,'rgba(228,246,251,.44)');
+        break;
+      case 'canister':
+        drawSatireSticker(v,0,h*.05,Math.min(42,w*.72),18,.02); drawTinyQr(w*.18,-h*.25,.62); drawWarningTape(0,-h*.16,w*.65,.01);
+        break;
+      case 'concrete':
+        drawSatireSticker(v,0,0,Math.min(58,w*.62),18,-.03); drawTinyQr(w*.30,h*.18,.65); ctx.strokeStyle='rgba(99,65,44,.72)'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(-w*.48,-h*.33); ctx.lineTo(-w*.55,-h*.55); ctx.moveTo(w*.45,h*.31); ctx.lineTo(w*.53,h*.54); ctx.stroke();
+        break;
+      case 'pipe':
+        drawSatireSticker(v,0,0,Math.min(56,w*.52),16,0); drawTinyQr(w*.31,0,.55); ctx.fillStyle='rgba(104,165,66,.78)'; ctx.beginPath(); ctx.ellipse(-w*.30,h*.42,4,7,0,0,TAU); ctx.fill();
+        break;
+      case 'microwave':
+        drawSatireSticker(v,w*.26,h*.20,Math.min(40,w*.36),17,0); drawLeafStamp(w*.30,-h*.20,.48,'rgba(184,217,94,.75)'); drawCrackMark(-w*.15,-h*.06,1.0,'rgba(221,243,244,.70)');
+        break;
+      case 'server':
+        drawSatireSticker(v,0,-h*.28,Math.min(46,w*.58),17,0); drawTinyQr(w*.25,h*.30,.62);
+        ctx.fillStyle=v.accent; for(let i=0;i<3;i++){ ctx.beginPath(); ctx.arc(-w*.23+i*7,h*.28,2,0,TAU); ctx.fill(); }
+        break;
+      case 'tire':
+        drawSatireSticker(v,0,h*.28,Math.min(48,w*.48),17,-.05); ctx.strokeStyle='rgba(183,184,171,.78)'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(w*.28,-h*.24); ctx.lineTo(w*.40,-h*.38); ctx.stroke(); drawBolt(w*.40,-h*.38,2.2);
+        break;
+      case 'arcade':
+        drawSatireSticker(v,0,-h*.13,Math.min(42,w*.65),19,0); drawTinyQr(-w*.21,h*.28,.62); ctx.fillStyle=v.accent; ctx.beginPath(); ctx.arc(w*.16,h*.16,3,0,TAU); ctx.fill();
+        break;
+      case 'sarcophagus':
+        drawSatireSticker(v,0,h*.02,Math.min(48,w*.64),19,-.02); drawLeafStamp(-w*.20,h*.26,.48,'rgba(139,183,67,.72)'); drawCrackMark(w*.18,-h*.22,.82,'rgba(66,40,22,.62)');
+        break;
+      case 'nuclear':
+        drawSatireSticker(v,0,-h*.28,Math.min(44,w*.62),17,.02); drawTinyQr(w*.22,h*.29,.62); ctx.strokeStyle='rgba(70,42,22,.72)'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(-w*.24,h*.26,7,0,TAU); ctx.stroke(); ctx.fillStyle='rgba(70,42,22,.75)'; ctx.font='900 7px system-ui,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('OK',-w*.24,h*.26);
+        break;
+      case 'trex':
+        drawSatireSticker(v,-w*.05,-h*.48,Math.min(52,w*.60),20,-.08); ctx.strokeStyle='#5f4932'; ctx.lineWidth=2.4; ctx.beginPath(); ctx.moveTo(-w*.12,-h*.37); ctx.lineTo(-w*.25,h*.08); ctx.stroke(); drawWarningTape(w*.18,h*.18,w*.38,.10);
+        break;
+      case 'fossil':
+        drawSatireSticker(v,0,-h*.25,Math.min(50,w*.52),17,.03); drawTinyQr(w*.27,h*.10,.58); drawBolt(-w*.28,h*.13,2.2);
+        break;
+      case 'mascot':
+        drawSatireSticker(v,0,h*.17,Math.min(42,w*.62),17,0); drawTinyQr(w*.22,h*.34,.60); ctx.strokeStyle='rgba(31,20,13,.78)'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-w*.16,-h*.30); ctx.lineTo(-w*.07,-h*.22); ctx.moveTo(-w*.07,-h*.30); ctx.lineTo(-w*.16,-h*.22); ctx.stroke();
+        break;
+      case 'rock':
+        drawSatireSticker(v,0,0,Math.min(50,w*.72),17,-.08); drawTinyQr(w*.18,h*.20,.55); ctx.strokeStyle=v.accent; ctx.lineWidth=2.4; ctx.beginPath(); ctx.moveTo(-w*.26,h*.18); ctx.lineTo(w*.26,h*.18); ctx.stroke();
+        break;
+      case 'treasure':
+        drawSatireSticker(v,0,h*.10,Math.min(48,w*.65),18,0); drawTinyQr(w*.24,-h*.15,.62); drawLeafStamp(-w*.23,-h*.10,.45,'rgba(177,213,91,.80)');
+        break;
+    }
     ctx.restore();
   }
 
@@ -1732,7 +1983,7 @@
     ctx.restore();
   }
 
-  function drawAssetBarrel(x,y,s=1,variant=null){
+  function drawAssetBarrel(x,y,s=1){
     ctx.save(); ctx.translate(x,y); ctx.scale(s,s);
     ctx.shadowColor='rgba(197,255,57,.22)'; ctx.shadowBlur=10;
     ctx.fillStyle='#d49a24'; roundRect(-32,-40,64,80,11); ctx.fill();
@@ -1744,14 +1995,13 @@
     ctx.fillStyle='rgba(255,221,76,.98)'; ctx.beginPath(); ctx.ellipse(0,1,27,26,0,0,TAU); ctx.fill();
     ctx.strokeStyle='rgba(32,24,10,.72)'; ctx.lineWidth=2.4; ctx.stroke();
     drawRadiationSymbol(0,2,25);
-    if(variant) assetSticker(0,-29,36,12,variant.label,variant.fill,variant.ink,0.06);
     ctx.strokeStyle='rgba(61,36,19,.55)'; ctx.lineWidth=2;
     ctx.beginPath(); ctx.moveTo(-20,-27); ctx.lineTo(-10,-15); ctx.lineTo(-21,-4); ctx.moveTo(19,12); ctx.lineTo(9,24); ctx.lineTo(18,32); ctx.stroke();
     assetDrip(-22,-37,19,6); assetDrip(24,-27,17,5); assetDrip(24,24,14,5); assetDrip(-25,31,12,4);
     ctx.restore();
   }
 
-  function drawAssetBattery(x,y,s=1,variant=null){
+  function drawAssetBattery(x,y,s=1){
     ctx.save(); ctx.translate(x,y); ctx.scale(s,s);
     ctx.shadowColor='rgba(145,255,89,.20)'; ctx.shadowBlur=8;
     ctx.fillStyle='#1f2023';
@@ -1760,7 +2010,6 @@
     ctx.fillStyle='#f0cc4a'; roundRect(-22,-13,47,25,5); ctx.fill();
     ctx.strokeStyle='rgba(17,12,9,.55)'; ctx.lineWidth=1.4; ctx.stroke();
     ctx.fillStyle='#17140f'; ctx.font='900 24px system-ui,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('⚡',2,0);
-    if(variant) assetSticker(-2,18,34,11,variant.label,variant.fill,variant.ink,-0.06);
     ctx.fillStyle='#7e4d2a'; roundRect(-27,-34,15,12,3); ctx.fill();
     ctx.fillStyle='#a6afb3'; roundRect(13,-34,15,12,3); ctx.fill();
     assetDrip(-29,-11,17,5,'#95bb38'); assetDrip(30,-3,20,5,'#95bb38');
@@ -1768,7 +2017,7 @@
     ctx.restore();
   }
 
-  function drawAssetTrex(x,y,s=1,variant=null){
+  function drawAssetTrex(x,y,s=1){
     ctx.save(); ctx.translate(x,y); ctx.scale(s,s);
     ctx.fillStyle='#e8deb5';
     ctx.beginPath();
@@ -1778,8 +2027,6 @@
     ctx.fillStyle='#fff9db';
     for(let i=0;i<5;i++){ ctx.beginPath(); ctx.moveTo(10+i*4,5); ctx.lineTo(12+i*4,12); ctx.lineTo(15+i*4,5); ctx.fill(); }
     ctx.strokeStyle='rgba(86,63,41,.6)'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-25,3); ctx.lineTo(28,4); ctx.stroke();
-    if(variant?.placard) assetPlacard(-5,-25,variant.placard,variant.stick||'#efe2a6',variant.ink||'#351f13',-0.12);
-    if(variant?.tag) assetSticker(18,-18,24,10,variant.tag,variant.tagFill||'#d8c49a',variant.ink||'#3d2a1e',0.32);
     ctx.restore();
   }
 
@@ -1795,25 +2042,6 @@
     ctx.strokeStyle='#c9994c'; ctx.lineWidth=3; ctx.lineCap='round';
     ctx.beginPath(); ctx.moveTo(-18,44); ctx.lineTo(-6,44); ctx.moveTo(6,44); ctx.lineTo(18,44); ctx.stroke();
     assetDrip(18,31,10,3,'#7ca11f');
-    ctx.restore();
-  }
-
-
-  function drawAssetPhone(x,y,s=1,variant=null){
-    ctx.save(); ctx.translate(x,y); ctx.scale(s,s);
-    ctx.fillStyle='#17191c'; roundRect(-22,-34,44,68,9); ctx.fill();
-    ctx.fillStyle='rgba(92,154,175,.36)'; roundRect(-16,-26,32,46,5); ctx.fill();
-    const panel=variant?.panel||'#21423a';
-    const accent=variant?.accent||'#86d86e';
-    ctx.fillStyle=panel; roundRect(-14,-23,28,18,4); ctx.fill();
-    ctx.fillStyle=accent; roundRect(-11,-20,22,12,3); ctx.fill();
-    ctx.fillStyle='rgba(18,20,17,.72)'; ctx.font='900 7px system-ui,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(variant?.label||'ECO',0,-14);
-    ctx.fillStyle='rgba(232,245,250,.74)';
-    for(let gy=0; gy<2; gy++) for(let gx=0; gx<2; gx++) roundRect(-11+gx*12,-2+gy*11,8,8,2), ctx.fill();
-    ctx.strokeStyle='rgba(220,245,255,.36)'; ctx.lineWidth=1.4;
-    ctx.beginPath(); ctx.moveTo(-12,-7); ctx.lineTo(10,15); ctx.moveTo(-4,18); ctx.lineTo(12,-10); ctx.stroke();
-    ctx.fillStyle='rgba(235,245,255,.55)'; ctx.beginPath(); ctx.arc(0,26,2.7,0,TAU); ctx.fill();
     ctx.restore();
   }
 
@@ -1936,7 +2164,7 @@
     ctx.restore();
   }
 
-  function drawAssetTrashBag(x,y,s=1,variant=null){
+  function drawAssetTrashBag(x,y,s=1){
     ctx.save(); ctx.translate(x,y); ctx.scale(s,s);
     ctx.globalAlpha=.24; ctx.fillStyle='#080403'; ctx.beginPath(); ctx.ellipse(0,38,45,15,0,0,TAU); ctx.fill(); ctx.globalAlpha=1;
     ctx.fillStyle='#171714';
@@ -1946,7 +2174,6 @@
     ctx.fill(); ctx.strokeStyle='rgba(22,13,8,.78)'; ctx.lineWidth=2.4; ctx.stroke();
     ctx.fillStyle='rgba(88,96,72,.28)'; ctx.beginPath(); ctx.ellipse(-10,3,16,29,-.22,0,TAU); ctx.fill();
     ctx.strokeStyle='rgba(235,219,172,.18)'; ctx.lineWidth=2; roughLine(-22,-12,21,-19,2,7); ctx.stroke(); roughLine(-28,13,26,20,1.6,7); ctx.stroke();
-    if(variant) assetSticker(7,3,28,12,variant.label,variant.fill,variant.ink,0.12);
     ctx.fillStyle='#0b0806'; ctx.beginPath(); ctx.ellipse(0,-42,17,8,0,0,TAU); ctx.fill();
     ctx.restore();
   }
@@ -2271,7 +2498,8 @@
         if(drawPixelSolidSprite(o)){ ctx.restore(); continue; }
       }
       ctx.translate(o.x,o.y); ctx.rotate(o.a||0);
-      if(o.flip) ctx.scale(o.flip,1);
+      const visualFlip=(o.variant&&o.variant.mirrorSafe===false)?1:(o.flip||1);
+      if(visualFlip!==1) ctx.scale(visualFlip,1);
       ctx.shadowColor='rgba(0,0,0,.28)'; ctx.shadowBlur=1.5; ctx.shadowOffsetY=1.5;
       if(o.kind==='extinguisher'){
         drawAssetExtinguisher(0,0,solidVisualScale(o));
@@ -2284,7 +2512,7 @@
       }else if(o.kind==='solar'){
         drawAssetSolarPanel(0,0,solidVisualScale(o));
       }else if(o.kind==='trashbag'){
-        drawAssetTrashBag(0,0,solidVisualScale(o),o.variant||null);
+        drawAssetTrashBag(0,0,solidVisualScale(o));
       }else if(o.kind==='server'){
         drawAssetServerRack(0,0,solidVisualScale(o));
       }else if(o.kind==='drone'){
@@ -2308,7 +2536,7 @@
         ctx.strokeStyle='rgba(0,0,0,.55)'; ctx.lineWidth=2; ctx.stroke();
         ctx.fillStyle='rgba(0,0,0,.38)'; ctx.font='800 13px system-ui,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('!',0,0);
       }else if(o.kind==='nuclear'){
-        drawAssetBarrel(0,0,Math.min((o.w||54)/56,(o.h||70)/72)*1.32,o.variant||null);
+        drawAssetBarrel(0,0,Math.min((o.w||54)/56,(o.h||70)/72)*1.32);
       }else if(o.kind==='fossil'){
         ctx.strokeStyle='rgba(235,220,176,.92)'; ctx.lineWidth=7; ctx.lineCap='round';
         ctx.beginPath(); ctx.moveTo(-o.w*.34,0); ctx.lineTo(o.w*.34,0); ctx.stroke();
@@ -2334,13 +2562,17 @@
       }else if(o.kind==='battery'){
         drawAssetBattery(0,0,Math.min((o.w||72)/72,(o.h||46)/52)*1.22);
       }else if(o.kind==='phone'){
-        drawAssetPhone(0,0,Math.min((o.w||42)/44,(o.h||66)/68)*1.16,o.variant||null);
+        ctx.fillStyle='#17191c'; roundRect(-o.w/2,-o.h/2,o.w,o.h,9); ctx.fill();
+        ctx.fillStyle='rgba(92,154,175,.36)'; roundRect(-o.w*.37,-o.h*.38,o.w*.74,o.h*.68,5); ctx.fill();
+        ctx.strokeStyle='rgba(220,245,255,.36)'; ctx.lineWidth=1.4;
+        ctx.beginPath(); ctx.moveTo(-o.w*.25,-o.h*.14); ctx.lineTo(o.w*.22,o.h*.17); ctx.moveTo(-o.w*.10,o.h*.22); ctx.lineTo(o.w*.28,-o.h*.18); ctx.stroke();
+        ctx.fillStyle='rgba(235,245,255,.55)'; ctx.beginPath(); ctx.arc(0,o.h*.39,2.7,0,Math.PI*2); ctx.fill();
       }else if(o.kind==='arcade'){
         drawAssetArcade(0,0,Math.min((o.w||56)/52,(o.h||84)/78)*1.18);
       }else if(o.kind==='sign'){
         drawAssetPanel(0,-2,Math.min((o.w||76)/76,(o.h||50)/62)*1.14,o.label||'BIO');
       }else if(o.kind==='trex'){
-        drawAssetTrex(0,0,Math.min((o.w||90)/88,(o.h||56)/56)*1.20,o.variant||null);
+        drawAssetTrex(0,0,Math.min((o.w||90)/88,(o.h||56)/56)*1.20);
       }else if(o.kind==='mascot'){
         ctx.fillStyle='#8b5b3f'; roundRect(-o.w*.33,-o.h*.20,o.w*.66,o.h*.62,10); ctx.fill();
         ctx.fillStyle='#c9875b'; ctx.beginPath(); ctx.arc(0,-o.h*.25,o.w*.24,0,Math.PI*2); ctx.fill();
@@ -2352,6 +2584,7 @@
         ctx.strokeStyle='rgba(229,207,162,.12)'; ctx.lineWidth=2; ctx.stroke();
         ctx.scale(1/o.sx,1/o.sy);
       }
+      drawObstacleCharacter(o);
       ctx.shadowColor='rgba(0,0,0,0)'; ctx.shadowBlur=0; ctx.shadowOffsetY=0;
       if(!['nuclear','sarcophagus','scooter','battery','arcade','sign','trex','tire','solar','trashbag','server','drone','extinguisher','microwave','cone'].includes(o.kind)) inkObject(o);
       ctx.restore();
@@ -2726,7 +2959,7 @@
     const x=W-8,y=8,w=126,h=112; ctx.globalAlpha=.90; ctx.fillStyle='rgba(5,7,6,.78)'; roundRect(x-w,y,w,h,8); ctx.fill();
     ctx.globalAlpha=1; ctx.textAlign='left'; ctx.textBaseline='top'; ctx.font='700 10px monospace'; ctx.fillStyle='#d8ff8b';
     const xx=x-w+8;
-    ctx.fillText('PERF v3.38',xx,y+7); ctx.fillStyle='#e9e2c9';
+    ctx.fillText('PERF v3.40',xx,y+7); ctx.fillStyle='#e9e2c9';
     ctx.fillText('FPS      '+perf.fps.toFixed(0),xx,y+22);
     ctx.fillText('update   '+perf.update.toFixed(2)+' ms',xx,y+34);
     ctx.fillText('render   '+perf.render.toFixed(2)+' ms',xx,y+46);

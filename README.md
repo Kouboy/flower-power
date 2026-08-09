@@ -6,7 +6,7 @@ Le prototype mêle arcade mobile, satire écologique et esthétique de livre pou
 
 ## Version actuelle
 
-**v3.38 Vector Performance Pass**
+**v3.40 Full Obstacle Character Pass**
 
 Cette branche revient à un rendu Canvas sobre et vectoriel :
 
@@ -40,6 +40,7 @@ flower-power/
 ├── .gitignore
 ├── docs/
 │   ├── game-design.md
+│   ├── obstacle-variants.md
 │   ├── technical-decisions.md
 │   ├── visual-direction.md
 │   ├── test-checklist.md
@@ -48,12 +49,17 @@ flower-power/
     └── README.md
 ```
 
-La v3.38 reste volontairement monolithique pour préserver une base jouable. Le découpage en modules viendra progressivement, avec un test navigateur après chaque étape.
+La v3.40 reste volontairement monolithique pour préserver une base jouable. Le découpage en modules viendra progressivement, avec un test navigateur après chaque étape.
 
 ## Statut
 
-Prototype en développement. La priorité actuelle est de stabiliser le rendu vectoriel et le feeling de pousse avant toute refactorisation importante.
+Prototype en développement. La priorité actuelle est de pousser la personnalité du sous-sol sans sacrifier la lisibilité ni les performances acquises en v3.38.
 
 ## Diagnostic performances
 
 Ajouter `?perf=1` à l'URL affiche le profiler intégré (FPS et coût update/render/sol/hazards/plante).
+
+
+## Variantes d’obstacles
+
+La v3.40 introduit un catalogue de variantes satiriques pour toutes les familles d’obstacles solides. Deux variantes par famille sont tirées au début de chaque génération puis distribuées en alternance. Les variantes comportant du texte sont automatiquement rendues sans miroir afin de préserver leur lisibilité.

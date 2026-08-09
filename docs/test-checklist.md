@@ -41,3 +41,13 @@
 - Ajouter `?perf=1` et relever FPS, update, render, soil, hazards et plant près de la surface.
 - Vérifier les zones toxiques diffuses : lisibles sans bord dur, mais règle de contamination compréhensible.
 - Vérifier que le son de frottement reste continu sans micro-freezes.
+
+
+## v3.40 — Variantes d’obstacles
+
+- Vérifier qu’aucun texte, écran ou sticker lisible n’apparaît en miroir.
+- Relancer plusieurs parties et confirmer que les variantes d’une même famille changent d’un niveau à l’autre.
+- Vérifier que deux variantes au moins d’une même famille peuvent coexister dans un niveau sans répétition immédiate systématique.
+- Vérifier que chaque famille solide générée possède un détail satirique lisible ou identifiable.
+- Vérifier que les détails décoratifs ne modifient pas la collision : une pancarte, un sticker ou un câble ne doit pas ajouter de hitbox invisible.
+- Vérifier avec `?perf=1` que la passe de détails n’introduit pas de chute notable par rapport à v3.38.

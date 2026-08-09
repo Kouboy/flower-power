@@ -1,10 +1,14 @@
 # Changelog
 
-## v3.39 - Obstacle Character Pass
+## v3.40 - Full Obstacle Character Pass
 
-- Ajoute une architecture de variantes par type d’obstacle, avec sous-pool tiré au début de chaque génération de niveau.
-- Première vague de variantes satiriques pour le crâne de T-Rex, le smartphone cassé, le fût radioactif, la batterie et le sac poubelle.
-- Les variantes enrichissent les obstacles sans changer leurs collisions ni leur silhouette de gameplay.
+- Étend le système de variantes à toutes les familles d’obstacles solides, hors zones toxiques et lixiviat.
+- Tire un sous-pool de variantes au début de chaque génération de niveau puis les distribue en alternance.
+- Désactive automatiquement le miroir pour toute variante comportant du texte lisible.
+- Ajoute des micro-récits satiriques : greenwashing, compensation, techno-solutionnisme, labels absurdes, audits, apps éco-responsables, signalétique réglementaire et branding "vert".
+- Enrichit chaque obstacle avec 1 détail satirique principal et plusieurs détails secondaires (QR fictifs, sceaux, fissures, rubalise, jauges, corrosion, leds, étiquettes, marquages).
+- Conserve les collisions et silhouettes de gameplay de la v3.38.
+- Les libellés sont pré-rastérisés dans de petits canvases offscreen afin de limiter le coût de `fillText` en jeu.
 
 ## v3.38 - Vector Performance Pass
 

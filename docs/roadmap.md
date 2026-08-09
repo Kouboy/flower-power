@@ -2,16 +2,16 @@
 
 ## Jalon actuel
 
-### v3.39 Obstacle Character Pass
+### v3.40 Full Obstacle Character Pass
 
-- Ajouter une architecture de variantes par type d’obstacle.
-- Tirer un sous-pool de variantes en début de génération du niveau.
-- Enrichir une première vague d’obstacles avec des détails satiriques lisibles.
-- Préserver strictement les silhouettes et collisions existantes.
+- Étendre les variantes à toutes les familles d'obstacles solides.
+- Rendre chaque famille plus satirique et plus mémorable sans dégrader sa silhouette.
+- Supprimer tout flip horizontal pour les assets textuels.
+- Préserver les performances acquises en v3.38.
 
 ## Prochain jalon
 
-Après validation de la v3.39 : choisir si la prochaine passe porte sur davantage d’obstacles, sur le polish visuel du sous-sol ou sur la progression.
+Après validation mobile : compléter les variantes qui fonctionnent le mieux, puis reprendre le polish du sous-sol et de la progression.
 
 ## Ensuite
 
