@@ -1,0 +1,98 @@
+{
+  "format": "flower-power-asset",
+  "formatVersion": 1,
+  "id": "trashbag",
+  "kind": "obstacle",
+  "variant": "default",
+  "pool": "standard",
+  "source": {
+    "file": "trashBag.png",
+    "width": 298,
+    "height": 301
+  },
+  "render": {
+    "worldWidth": 80,
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "mirrorSafe": true
+  },
+  "collision": {
+    "type": "polygon",
+    "coordinateSpace": "sourcePixelsRelativeToPivot",
+    "points": [
+      [
+        -23.972,
+        -123.913
+      ],
+      [
+        -2.862,
+        -93.091
+      ],
+      [
+        -80.549,
+        -64.381
+      ],
+      [
+        -119.815,
+        9.507
+      ],
+      [
+        -131.637,
+        53.839
+      ],
+      [
+        -122.348,
+        111.682
+      ],
+      [
+        -26.084,
+        140.393
+      ],
+      [
+        119.158,
+        122.238
+      ],
+      [
+        136.469,
+        95.216
+      ],
+      [
+        138.158,
+        50.039
+      ],
+      [
+        117.469,
+        -3.582
+      ],
+      [
+        116.203,
+        -33.559
+      ],
+      [
+        46.115,
+        -97.736
+      ],
+      [
+        71.026,
+        -111.247
+      ],
+      [
+        57.515,
+        -134.468
+      ],
+      [
+        11.494,
+        -142.913
+      ]
+    ],
+    "grazeRadius": 16,
+    "flyoverEligible": true
+  },
+  "spawn": {
+    "signature": false,
+    "maxPerRun": null,
+    "weight": 1
+  }
+}

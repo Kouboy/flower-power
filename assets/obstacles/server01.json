@@ -1,0 +1,66 @@
+{
+  "format": "flower-power-asset",
+  "formatVersion": 1,
+  "id": "server01",
+  "kind": "obstacle",
+  "variant": "default",
+  "pool": "standard",
+  "source": {
+    "file": "server01.png",
+    "width": 302,
+    "height": 292
+  },
+  "render": {
+    "worldWidth": 80,
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "mirrorSafe": true
+  },
+  "collision": {
+    "type": "polygon",
+    "coordinateSpace": "sourcePixelsRelativeToPivot",
+    "points": [
+      [
+        -142.474,
+        -71.958
+      ],
+      [
+        32.134,
+        -140.119
+      ],
+      [
+        68.68,
+        -122.426
+      ],
+      [
+        89.564,
+        -79.209
+      ],
+      [
+        134.811,
+        102.941
+      ],
+      [
+        74.771,
+        119.473
+      ],
+      [
+        -26.165,
+        127.015
+      ],
+      [
+        -110.569,
+        115.703
+      ]
+    ],
+    "grazeRadius": 16,
+    "flyoverEligible": true
+  },
+  "spawn": {
+    "signature": false,
+    "maxPerRun": null,
+    "weight": 1
+  }
+}

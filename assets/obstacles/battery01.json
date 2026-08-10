@@ -1,0 +1,90 @@
+{
+  "format": "flower-power-asset",
+  "formatVersion": 1,
+  "id": "battery01",
+  "kind": "obstacle",
+  "variant": "default",
+  "pool": "standard",
+  "source": {
+    "file": "battery01.png",
+    "width": 291,
+    "height": 273
+  },
+  "render": {
+    "worldWidth": 80,
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "mirrorSafe": true
+  },
+  "collision": {
+    "type": "polygon",
+    "coordinateSpace": "sourcePixelsRelativeToPivot",
+    "points": [
+      [
+        -106.863,
+        -115.387
+      ],
+      [
+        -117.911,
+        -96.973
+      ],
+      [
+        -140.989,
+        -75.859
+      ],
+      [
+        -140.989,
+        -60.638
+      ],
+      [
+        -136.324,
+        -57.937
+      ],
+      [
+        -134.851,
+        34.13
+      ],
+      [
+        -139.27,
+        41.741
+      ],
+      [
+        -140.007,
+        57.453
+      ],
+      [
+        74.815,
+        108.028
+      ],
+      [
+        137.666,
+        52.789
+      ],
+      [
+        140.367,
+        -85.925
+      ],
+      [
+        127.846,
+        -104.83
+      ],
+      [
+        -65.371,
+        -134.291
+      ],
+      [
+        -102.935,
+        -120.788
+      ]
+    ],
+    "grazeRadius": 16,
+    "flyoverEligible": true
+  },
+  "spawn": {
+    "signature": false,
+    "maxPerRun": null,
+    "weight": 1
+  }
+}

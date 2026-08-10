@@ -1,0 +1,90 @@
+{
+  "format": "flower-power-asset",
+  "formatVersion": 1,
+  "id": "coffin01",
+  "kind": "obstacle",
+  "variant": "default",
+  "pool": "standard",
+  "source": {
+    "file": "coffin01.png",
+    "width": 316,
+    "height": 323
+  },
+  "render": {
+    "worldWidth": 80,
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "mirrorSafe": true
+  },
+  "collision": {
+    "type": "polygon",
+    "coordinateSpace": "sourcePixelsRelativeToPivot",
+    "points": [
+      [
+        -154.588,
+        39.763
+      ],
+      [
+        -152.988,
+        61.358
+      ],
+      [
+        -143.924,
+        67.49
+      ],
+      [
+        -134.593,
+        124.543
+      ],
+      [
+        -47.947,
+        157.869
+      ],
+      [
+        117.88,
+        43.496
+      ],
+      [
+        128.811,
+        31.765
+      ],
+      [
+        152.272,
+        -14.09
+      ],
+      [
+        154.138,
+        -91.672
+      ],
+      [
+        129.611,
+        -98.87
+      ],
+      [
+        136.543,
+        -122.598
+      ],
+      [
+        128.811,
+        -150.325
+      ],
+      [
+        52.829,
+        -158.856
+      ],
+      [
+        -27.685,
+        -118.332
+      ]
+    ],
+    "grazeRadius": 16,
+    "flyoverEligible": true
+  },
+  "spawn": {
+    "signature": false,
+    "maxPerRun": null,
+    "weight": 1
+  }
+}

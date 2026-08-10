@@ -1,0 +1,58 @@
+{
+  "format": "flower-power-asset",
+  "formatVersion": 1,
+  "id": "microwave",
+  "kind": "obstacle",
+  "variant": "default",
+  "pool": "standard",
+  "source": {
+    "file": "microWave.png",
+    "width": 322,
+    "height": 232
+  },
+  "render": {
+    "worldWidth": 80,
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "mirrorSafe": true
+  },
+  "collision": {
+    "type": "polygon",
+    "coordinateSpace": "sourcePixelsRelativeToPivot",
+    "points": [
+      [
+        -156.178,
+        -84.532
+      ],
+      [
+        -62.052,
+        -114.719
+      ],
+      [
+        157.436,
+        -85.161
+      ],
+      [
+        151.147,
+        68.711
+      ],
+      [
+        85.741,
+        112.945
+      ],
+      [
+        -155.759,
+        65.357
+      ]
+    ],
+    "grazeRadius": 16,
+    "flyoverEligible": true
+  },
+  "spawn": {
+    "signature": false,
+    "maxPerRun": null,
+    "weight": 1
+  }
+}

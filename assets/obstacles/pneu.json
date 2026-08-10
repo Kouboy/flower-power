@@ -1,0 +1,74 @@
+{
+  "format": "flower-power-asset",
+  "formatVersion": 1,
+  "id": "pneu",
+  "kind": "obstacle",
+  "variant": "default",
+  "pool": "standard",
+  "source": {
+    "file": "pneu.png",
+    "width": 336,
+    "height": 220
+  },
+  "render": {
+    "worldWidth": 80,
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "mirrorSafe": true
+  },
+  "collision": {
+    "type": "polygon",
+    "coordinateSpace": "sourcePixelsRelativeToPivot",
+    "points": [
+      [
+        -109.541,
+        90.293
+      ],
+      [
+        -162.267,
+        39.551
+      ],
+      [
+        -146.96,
+        -52.012
+      ],
+      [
+        -115.21,
+        -75.257
+      ],
+      [
+        -24.781,
+        -52.862
+      ],
+      [
+        87.759,
+        -108.707
+      ],
+      [
+        145.588,
+        -81.21
+      ],
+      [
+        165.148,
+        26.228
+      ],
+      [
+        129.43,
+        76.403
+      ],
+      [
+        55.726,
+        86.325
+      ]
+    ],
+    "grazeRadius": 16,
+    "flyoverEligible": true
+  },
+  "spawn": {
+    "signature": false,
+    "maxPerRun": null,
+    "weight": 1
+  }
+}

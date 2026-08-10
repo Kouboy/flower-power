@@ -1,0 +1,114 @@
+{
+  "format": "flower-power-asset",
+  "formatVersion": 1,
+  "id": "traficcone",
+  "kind": "obstacle",
+  "variant": "default",
+  "pool": "standard",
+  "source": {
+    "file": "traficCone.png",
+    "width": 270,
+    "height": 302
+  },
+  "render": {
+    "worldWidth": 80,
+    "pivot": [
+      0.5,
+      0.5
+    ],
+    "mirrorSafe": true
+  },
+  "collision": {
+    "type": "polygon",
+    "coordinateSpace": "sourcePixelsRelativeToPivot",
+    "points": [
+      [
+        -118.188,
+        74.558
+      ],
+      [
+        -129.589,
+        90.25
+      ],
+      [
+        -95.347,
+        102.944
+      ],
+      [
+        -30.994,
+        132.168
+      ],
+      [
+        -0.884,
+        139.843
+      ],
+      [
+        41.624,
+        130.692
+      ],
+      [
+        97.416,
+        120.951
+      ],
+      [
+        130.183,
+        107.372
+      ],
+      [
+        113.652,
+        71.653
+      ],
+      [
+        74.096,
+        61.321
+      ],
+      [
+        57.565,
+        -5.393
+      ],
+      [
+        69.963,
+        -73.288
+      ],
+      [
+        91.217,
+        -122.586
+      ],
+      [
+        69.668,
+        -143.84
+      ],
+      [
+        43.396,
+        -142.364
+      ],
+      [
+        -11.511,
+        -70.927
+      ],
+      [
+        -40.145,
+        7.3
+      ],
+      [
+        -55.79,
+        52.17
+      ],
+      [
+        -87.967,
+        55.712
+      ],
+      [
+        -103.907,
+        68.996
+      ]
+    ],
+    "grazeRadius": 16,
+    "flyoverEligible": true
+  },
+  "spawn": {
+    "signature": false,
+    "maxPerRun": null,
+    "weight": 1
+  }
+}
