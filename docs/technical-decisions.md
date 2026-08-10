@@ -9,8 +9,9 @@
 
 ## Rendu
 
-- Direction vectorielle procédurale.
-- Pas de sprites PNG pour le gameplay courant.
+- Terrain, pousse, fluides et fallback en Canvas procédural.
+- Obstacles détaillés authorés en PNG transparent, avec métadonnées JSON produites par l’Asset Editor.
+- Les collisions des assets authorés utilisent leurs polygones exportés plutôt qu’une approximation visuelle.
 - Pas de dépendance à des fichiers externes au lancement.
 - La pousse reste procédurale.
 
@@ -59,3 +60,11 @@ Le découpage de `index.html` en modules doit être progressif. Une seule famill
 - Les objets souterrains n'utilisent plus d'ombre portée ; leur intégration repose sur le contour, la matière et la superposition.
 - Le T-Rex « NON AUX ESSAIS NUCLÉAIRES » est un asset signature rare, non flippable, limité à une apparition par partie au maximum.
 - Le test d'échelle B est un cadrage +18 % accompagné d'une pousse -12 % et d'une densité solide -8 % pour préserver l'anticipation.
+
+
+## v3.41.1 — Pipeline d’assets authorés
+
+- Le JSON exporté par l’éditeur est la source de vérité pour `worldWidth`, pivot, `mirrorSafe`, collision, graze et éligibilité au flyover.
+- Les fichiers JSON d’origine ne sont pas modifiés lors de l’intégration. Un manifeste local fait le pont entre leurs `id` actuels et les `kind` historiques du moteur.
+- Le T-Rex signature est géré comme un asset distinct des T-Rex ordinaires.
+- Les power-ups ne sont plus générés avec le terrain. Leur prochaine implémentation doit être déclenchée par le flyover et mesurer la prise de risque.

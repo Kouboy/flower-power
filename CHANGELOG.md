@@ -1,5 +1,14 @@
 # Changelog
 
+## v3.41.1 - Asset Ingestion Test
+
+- Intègre 11 familles de déchets sous forme de PNG transparents authorés avec l’Asset Editor.
+- Utilise les polygones de collision, pivots, tailles monde, règles de miroir et rayons de graze exportés dans les JSON.
+- Conserve le T-Rex « NON AUX ESSAIS NUCLÉAIRES » comme asset signature rare, 0 ou 1 fois par partie ; `?talisman=1` le force pour les tests.
+- Conserve les exports PNG + JSON intacts dans `assets/obstacles/` et génère un `manifest.js` compatible avec l’ouverture directe de `index.html`.
+- Garde un fallback vectoriel pour les familles non encore authorées ou en cas d’échec de chargement d’un PNG.
+- Supprime la génération de power-ups avec le niveau : leur futur spawn sera exclusivement déclenché par les flyovers et relatif à la prise de risque.
+
 ## v3.41 - Visual Slice
 
 - Vertical slice sur six familles : smartphone, batterie, fût nucléaire, drone, sac poubelle et T-Rex.

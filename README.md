@@ -6,15 +6,15 @@ Le prototype mêle arcade mobile, satire écologique et esthétique de livre pou
 
 ## Version actuelle
 
-**v3.41 Visual Slice**
+**v3.41.1 Asset Ingestion Test**
 
-Cette branche revient à un rendu Canvas sobre et vectoriel :
+Cette passe teste le pipeline hybride retenu :
 
-- aucun sprite PNG ;
-- aucune dépendance externe ;
-- pousse procédurale ;
-- obstacles et dangers dessinés en Canvas ;
-- prototype autonome dans `index.html`.
+- pousse, terrain, fluides et éléments de secours toujours dessinés en Canvas ;
+- obstacles authorés en PNG transparent lorsque disponibles ;
+- collisions polygonales exportées par le Flower Power Asset Editor ;
+- aucune bibliothèque externe ;
+- ouverture directe de `index.html` conservée grâce à un manifeste local.
 
 ## Lancer le jeu
 
@@ -38,6 +38,8 @@ flower-power/
 ├── README.md
 ├── CHANGELOG.md
 ├── .gitignore
+├── assets/
+│   └── obstacles/   # PNG + JSON authorés + manifest.js
 ├── docs/
 │   ├── game-design.md
 │   ├── obstacle-variants.md
@@ -49,11 +51,11 @@ flower-power/
     └── README.md
 ```
 
-La v3.41 reste volontairement monolithique pour préserver une base jouable. Le découpage en modules viendra progressivement, avec un test navigateur après chaque étape.
+La v3.41.1 reste volontairement monolithique pour préserver une base jouable. Le découpage en modules viendra progressivement, avec un test navigateur après chaque étape.
 
 ## Statut
 
-Prototype en développement. La priorité actuelle est de pousser la personnalité du sous-sol sans sacrifier la lisibilité ni les performances acquises en v3.38.
+Prototype en développement. La priorité actuelle est de valider en jeu le pipeline PNG + collision polygonale et l’échelle mobile avant de produire toutes les familles.
 
 ## Diagnostic performances
 
@@ -68,3 +70,8 @@ La v3.40 introduit un catalogue de variantes satiriques pour toutes les familles
 ## v3.41 — Visual Slice
 
 Cette version ne cherche pas encore à refaire les 23 familles. Elle valide d'abord le langage visuel sur six familles fortes : smartphone, batterie, fût nucléaire, drone, sac poubelle et T-Rex. Les détails sont intégrés à la structure de l'objet plutôt que plaqués sous forme de stickers. L'écran titre permet de comparer le cadrage A et le cadrage B (+18 %, croissance ralentie). Le T-Rex « NON AUX ESSAIS NUCLÉAIRES » est une rencontre signature rare, limitée à une apparition maximum par partie.
+
+
+## Power-ups
+
+Depuis la v3.41.1, aucun power-up n’est placé par la génération du niveau. La prochaine étape doit les faire naître uniquement après un flyover réussi, avec une nature et une valeur relatives à la prise de risque.

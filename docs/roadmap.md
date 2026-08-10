@@ -2,17 +2,22 @@
 
 ## Jalon actuel
 
-### v3.41 Visual Slice
+### v3.41.1 Asset Ingestion Test
 
-- Valider sur smartphone la lisibilité réelle de six familles redesignées.
-- Comparer le cadrage A avec le cadrage B (+18 %, pousse ralentie).
-- Vérifier que les détails racontent l'objet sans dépendre de micro-textes.
-- Évaluer le T-Rex talisman rare en contexte.
-- Vérifier l'intégration sans ombres portées.
+- Valider le chargement des PNG authorés sur desktop et smartphone.
+- Vérifier que `worldWidth` donne la bonne échelle en modes A et B.
+- Tester les polygones de collision en situation réelle.
+- Vérifier que le rayon de graze exporté correspond au flyover attendu.
+- Évaluer le coût des collisions détaillées, notamment le T-Rex signature.
+- Confirmer qu'aucun texte orienté n'est retourné lorsque `mirrorSafe=false`.
+
+## Étape suivante
+
+Prototyper le système central de récompense : `flyover -> prise de risque -> spawn dynamique de power-up`. Aucun power-up ne doit être pré-généré. Commencer avec un seul type de récompense avant d'équilibrer plusieurs tiers.
 
 ## Après validation
 
-Étendre le langage visuel retenu aux autres familles d'obstacles, puis aux autres power-ups. Ne pas généraliser avant validation mobile du slice.
+Produire les autres familles d'assets avec l'éditeur, puis enrichir les pools et variantes sans revenir au système de stickers procéduraux.
 
 ## Refactorisation prudente
 

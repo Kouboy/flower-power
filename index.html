@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-<title>Flower Power v3.41 Visual Slice</title>
+<title>Flower Power v3.41.1 Asset Ingestion Test</title>
 <style>
   :root{--bg:#15110e;--ui:#f7e9c7;--muted:#cdbb91;--soil:#221912;--light:#ffe59a;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -32,16 +32,14 @@
     <h1>Flower Power</h1>
     <p>Guide une pousse depuis la graine jusqu’au jour.</p>
     <p>Évite les déchets enfouis et les limaces de lixiviat. Les zones toxiques diffuses dévient la croissance.</p>
-    <p>Version vectorielle : aucune image externe, aucune dépendance aux sprites. Chaque déchet possède maintenant plusieurs variantes satiriques.</p>
+    <p>Test d’intégration : 11 familles de déchets utilisent maintenant tes PNG authorés et leurs polygones de collision. Le reste conserve le rendu vectoriel de secours.</p>
     <p><b>Maintiens / touche l’écran</b> : ton doigt indique la direction de croissance. Frôle les obstacles sans les toucher pour générer des <b>ÉcoCrédits™</b> (<b>Ɇ</b>).</p>
     <div class="legend">
       <div class="pill">☣ Zones toxiques : déviation</div>
       <div class="pill">🐌 Limaces : rupture</div>
       <div class="pill">⚙ Déchets : rupture</div>
-      <div class="pill">💧 Source claire : contrôle stabilisé</div>
-      <div class="pill">◇ Ambre fossile : invulnérabilité</div>
-      <div class="pill">✽ Pollen rare : +1 fleur</div>
-      <div class="pill">✹ Spore : nettoie une zone</div>
+      <div class="pill">🌱 Power-ups : désactivés dans ce test</div>
+      <div class="pill">↗ Prochaine étape : spawn par flyover</div>
       <div class="pill">☀ Jour : éclosion</div>
       <div class="pill">♻ Frôlement maintenu : ÉcoCrédits™</div>
     </div>
@@ -50,13 +48,14 @@
       <button id="scaleB" type="button">B · +18% / POUSSE −12%</button>
     </div>
     <div class="hint">TOUCHE POUR COMMENCER</div>
-    <p class="small">Prototype v3.41 · Visual Slice · A/B échelle · satire intégrée · Canvas autonome · ÉcoCrédits™ · SFX</p>
+    <p class="small">Prototype v3.41.1 · Asset Ingestion Test · PNG + collisions authorées · A/B échelle · ÉcoCrédits™ · SFX</p>
   </div>
 </div>
+<script src="assets/obstacles/manifest.js"></script>
 <script>
 (() => {
   'use strict';
-  console.info('Flower Power v3.41 Visual Slice');
+  console.info('Flower Power v3.41.1 Asset Ingestion Test');
 
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d', { alpha:false });
@@ -366,6 +365,8 @@
   }
   function assignObstacleVariant(o){
     if(!o) return o;
+    // Conserver l'orientation tirée par le générateur : un futur PNG authoré doit suivre son propre mirrorSafe, pas celui des anciennes variantes Canvas.
+    if(o._candidateFlip==null) o._candidateFlip=o.flip||1;
     const v=nextObstacleVariant(o.kind);
     if(v){
       o.variant=v;
@@ -384,12 +385,77 @@
   const FLOWER_CACHE_TOP=-126, FLOWER_CACHE_H=144;
   let flowerCacheDirty=true;
 
-  // v3.38 VECTOR PERFORMANCE PASS : aucune image externe, aucun masque PNG.
-  // Ces helpers restent uniquement pour préserver les appels du gameplay hérité.
-  function isPixelSolidKind(_kind){ return false; }
-  function preparePixelSolid(o){ o.pixelAsset=false; return o; }
-  function drawPixelSolidSprite(_o){ return false; }
-  function pixelMaskDistance(_o,_x,_y){ return 9999; }
+  // v3.41.1 ASSET INGESTION TEST
+  // Les exports de l'Asset Editor restent intacts dans assets/obstacles/.
+  // manifest.js est généré depuis leurs JSON pour rester compatible avec une ouverture directe en file://.
+  const AUTHORED_ASSETS=window.FLOWER_POWER_AUTHORED_ASSETS||{};
+  const AUTHORED_KIND_KEYS={
+    tire:'tire',solar:'solar',trashbag:'trashbag',server:'server',drone:'drone',
+    extinguisher:'extinguisher',microwave:'microwave',cone:'cone',nuclear:'nuclear',
+    battery:'battery',sarcophagus:'sarcophagus'
+  };
+  function authoredAssetKeyForSolid(o){
+    if(!o) return null;
+    if(o.kind==='trex' && o.variant && o.variant.signature) return 'trex_signature';
+    return AUTHORED_KIND_KEYS[o.kind]||null;
+  }
+  function hasAuthoredAsset(o){ return !!(o&&o.pixelAsset&&o._asset); }
+  function preloadAuthoredAssets(){
+    const jobs=[];
+    for(const a of Object.values(AUTHORED_ASSETS)){
+      a._ready=false; a._failed=false;
+      const img=new Image(); a._image=img;
+      jobs.push(new Promise(resolve=>{
+        img.onload=()=>{a._ready=true;resolve(true);};
+        img.onerror=()=>{a._failed=true;console.warn('Asset PNG non chargé',a.runtime&&a.runtime.src);resolve(false);};
+      }));
+      img.src=(a.runtime&&a.runtime.src)||a.source.file;
+    }
+    return Promise.all(jobs);
+  }
+  const authoredAssetsReady=preloadAuthoredAssets();
+  function preparePixelSolid(o){
+    if(!o) return o;
+    const key=authoredAssetKeyForSolid(o), a=key?AUTHORED_ASSETS[key]:null;
+    if(!a){o.pixelAsset=false;return o;}
+    o.pixelAsset=true; o._assetKey=key; o._asset=a;
+    const worldW=Number(a.render&&a.render.worldWidth)||80;
+    const srcW=Math.max(1,Number(a.source&&a.source.width)||1);
+    const srcH=Math.max(1,Number(a.source&&a.source.height)||1);
+    const worldH=worldW*srcH/srcW;
+    o.w=worldW; o.h=worldH;
+    o._assetWorldW=worldW; o._assetWorldH=worldH; o._assetScale=worldW/srcW;
+    // Le JSON de l'asset est l'autorité sur la possibilité de miroir.
+    o._assetFlip=(a.render&&a.render.mirrorSafe===false)?1:(o._candidateFlip||o.flip||1);
+    o.flip=o._assetFlip;
+    const pts=(a.collision&&Array.isArray(a.collision.points)?a.collision.points:[]);
+    o._assetCollision=pts.map(pt=>[pt[0]*o._assetScale*o._assetFlip,pt[1]*o._assetScale]);
+    o._assetGrazeRadius=Math.max(0,Number(a.collision&&a.collision.grazeRadius)||0);
+    o._assetFlyoverEligible=!(a.collision&&a.collision.flyoverEligible===false);
+    let br=Math.hypot(worldW,worldH)*.5;
+    for(const pt of o._assetCollision) br=Math.max(br,Math.hypot(pt[0],pt[1]));
+    o._assetBroadR=br;
+    return o;
+  }
+  function drawPixelSolidSprite(o){
+    const a=o&&o._asset, img=a&&a._image;
+    if(!a||!a._ready||!img) return false;
+    const pivot=(a.render&&a.render.pivot)||[.5,.5];
+    const w=o._assetWorldW||o.w||80, h=o._assetWorldH||o.h||80;
+    ctx.rotate(o.a||0);
+    if((o._assetFlip||1)!==1) ctx.scale(o._assetFlip,1);
+    ctx.shadowColor='rgba(0,0,0,0)';ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
+    ctx.drawImage(img,-pivot[0]*w,-pivot[1]*h,w,h);
+    return true;
+  }
+  function pixelMaskDistance(o,px,py){
+    if(!hasAuthoredAsset(o)||!o._assetCollision||o._assetCollision.length<3) return 9999;
+    const dx=px-o.x,dy=py-o.y;
+    const ca=o._ca!==undefined?o._ca:Math.cos(-(o.a||0));
+    const sa=o._sa!==undefined?o._sa:Math.sin(-(o.a||0));
+    const x=dx*ca-dy*sa,y=dx*sa+dy*ca;
+    return sdPolyLocal(x,y,o._assetCollision);
+  }
 
   const game={
     surfaceY:90,
@@ -848,6 +914,11 @@
   }
   function objectFits(o){
     if(o.x<26||o.x>W-26||o.y<game.surfaceY+48||o.y>worldBottom()-118) return false;
+    if(hasAuthoredAsset(o)){
+      for(const p of objectSamples(o)){
+        if(p.x<18||p.x>W-18||p.y<game.surfaceY+34||p.y>worldBottom()-100) return false;
+      }
+    }
     if(!clearOfSafePathObject(o,8)) return false;
     return true;
   }
@@ -1043,7 +1114,7 @@
       for(let tries=0;tries<80 && !signatureTrexSpawned;tries++){
         const cell=pickCell(c=>!c.used && c.r>1 && c.r<spawnGrid.rows-2 && depthK(c.y)>.55);
         const pos=cellPos(cell,.12);
-        const o={kind:'trex',x:pos.x,y:pos.y,w:112,h:74,a:rr(-.18,.18),flip:1,variant:{id:'anti_nuke_signature',signature:true,mirrorSafe:false,useSticker:false}};
+        const o=preparePixelSolid({kind:'trex',x:pos.x,y:pos.y,w:112,h:74,a:rr(-.18,.18),flip:1,variant:{id:'anti_nuke_signature',signature:true,mirrorSafe:false,useSticker:false}});
         if(objectFits(o)){ game.solids.push(prepareSolidPerf(o)); signatureTrexSpawned=true; }
         else cell.used=false;
       }
@@ -1102,27 +1173,16 @@
       }
     }
 
-    // Bonus placés après les dangers, dans des poches atteignables.
-    // Les bombes n'apparaissent que quand il existe de vrais clusters à nettoyer.
-    const used=[];
-    const bonusCount=Math.round((3+Math.min(4,Math.floor(d*.16)))*worldScale*.62);
-    const clusters=wasteClusters();
-    const allowBomb=level>=6 && clusters.length>0 && (game.solids.length+game.toxics.length+game.leaks.length)>=13;
-    let bombsPlaced=0;
-    for(let i=0;i<bonusCount;i++){
-      const roll=rand();
-      let type;
-      if(allowBomb && bombsPlaced<1 && roll>.78){ type='bomb'; bombsPlaced++; }
-      else type=roll<.38?'water':(roll<.62?'amber':'bud');
-      const b=placeBonus(type,used);
-      if(b) game.bonuses.push(b);
-    }
+    // v3.41.1 : aucun power-up n'est pré-généré avec le niveau.
+    // Le tableau reste vide jusqu'à l'implémentation flyover -> prise de risque -> spawn dynamique.
+    game.bonuses=[];
   }
 
   async function startGame(){
     if(state==='starting') return;
     state='starting';
     ensureAudio(); sfx('start');
+    await authoredAssetsReady;
     await settleViewportAfterFullscreen();
     setWorldMetrics();
     // Terrain et graine sont générés seulement après stabilisation du viewport.
@@ -1177,7 +1237,7 @@
     return Math.sqrt((lx*lx)/(rx*rx)+(ly*ly)/(ry*ry));
   }
   function solidHitPad(o){
-    if(isPixelSolidKind(o.kind)) return 0;
+    if(hasAuthoredAsset(o)) return 0;
     // v3.7 mercy pass : les collisions doivent suivre l'objet, pas son rectangle fiscal imaginaire.
     if(o.kind==='trex') return -18;
     if(o.kind==='scooter') return -13;
@@ -1262,7 +1322,7 @@
   }
   function solidVisualScale(o){
     if(o._visualScale) return o._visualScale;
-    if(isPixelSolidKind(o.kind)) return 1;
+    if(hasAuthoredAsset(o)) return 1;
     if(o.kind==='nuclear') return Math.min((o.w||54)/56,(o.h||70)/72)*1.32;
     if(o.kind==='battery') return Math.min((o.w||72)/72,(o.h||46)/52)*1.22;
     if(o.kind==='trex') return Math.min((o.w||90)/88,(o.h||56)/56)*1.20;
@@ -1329,7 +1389,7 @@
     return inside?-d:d;
   }
   function solidSpriteDistance(o,px,py){
-    if(isPixelSolidKind(o.kind)) return pixelMaskDistance(o,px,py);
+    if(hasAuthoredAsset(o)) return pixelMaskDistance(o,px,py);
     const dx=px-o.x, dy=py-o.y;
     const ca=o._ca!==undefined?o._ca:Math.cos(-(o.a||0));
     const sa=o._sa!==undefined?o._sa:Math.sin(-(o.a||0));
@@ -1413,6 +1473,7 @@
     return d;
   }
   function solidGrazeBand(o){
+    if(hasAuthoredAsset(o)) return o._assetFlyoverEligible?(o._assetGrazeRadius||0):0;
     if(o.kind==='trex') return 34;
     if(o.kind==='scooter') return 32;
     if(o.kind==='sarcophagus') return 31;
@@ -1654,7 +1715,7 @@
   function setMessage(txt,dur=1.1){ message=txt; messageTimer=dur; }
 
   function approxRadius(o){
-    if(isPixelSolidKind(o.kind)) return Math.hypot(o.w||40,o.h||40)*.42;
+    if(hasAuthoredAsset(o)) return o._assetBroadR||Math.hypot(o.w||40,o.h||40)*.5;
     if(o.kind==='rock') return Math.max(o.r*o.sx,o.r*o.sy);
     return Math.hypot(o.w||40,o.h||24)*.5;
   }
@@ -2722,7 +2783,7 @@
     for(const o of game.solids){
       if(!worldYInView(o.y,Math.max(44,approxRadius(o))+90)) continue;
       ctx.save();
-      if(isPixelSolidKind(o.kind)){
+      if(hasAuthoredAsset(o) && o._asset && o._asset._ready){
         ctx.translate(o.x,o.y);
         if(drawPixelSolidSprite(o)){ ctx.restore(); continue; }
       }
@@ -3180,7 +3241,7 @@
     const x=W-8,y=8,w=126,h=112; ctx.globalAlpha=.90; ctx.fillStyle='rgba(5,7,6,.78)'; roundRect(x-w,y,w,h,8); ctx.fill();
     ctx.globalAlpha=1; ctx.textAlign='left'; ctx.textBaseline='top'; ctx.font='700 10px monospace'; ctx.fillStyle='#d8ff8b';
     const xx=x-w+8;
-    ctx.fillText('PERF v3.41',xx,y+7); ctx.fillStyle='#e9e2c9';
+    ctx.fillText('PERF v3.41.1',xx,y+7); ctx.fillStyle='#e9e2c9';
     ctx.fillText('FPS      '+perf.fps.toFixed(0),xx,y+22);
     ctx.fillText('update   '+perf.update.toFixed(2)+' ms',xx,y+34);
     ctx.fillText('render   '+perf.render.toFixed(2)+' ms',xx,y+46);

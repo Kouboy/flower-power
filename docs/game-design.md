@@ -22,7 +22,7 @@ Une graine tente de rejoindre la surface dans une terre saturée de pollution. L
 ## Récompenses et systèmes
 
 - ÉcoCrédits™ pour les frôlements prolongés.
-- Power-ups de contrôle, protection ou nettoyage.
+- Power-ups de contrôle, protection ou nettoyage, jamais pré-générés : ils naissent après un flyover réussi et leur nature/valeur dépend de la prise de risque (proximité, durée et progression autour de l’obstacle).
 - Fleur produite à la surface.
 
 ## Hors-scope actuel

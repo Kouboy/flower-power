@@ -2,7 +2,7 @@
 
 ## Direction actuelle
 
-Une illustration Canvas sobre, vectorielle et légèrement sale :
+Un hybride Canvas + assets PNG authorés, sobre, lisible et légèrement sale :
 
 - formes simples ;
 - silhouettes immédiatement lisibles ;
@@ -28,3 +28,8 @@ Chaque obstacle doit raconter une petite absurdité à lui seul. La silhouette r
 ## v3.41 — Vertical slice visuel
 
 La satire ne doit pas ressembler à une collection de stickers. Sur les six familles pilotes, le gag est porté par la structure : écran encore actif, objet éventré, réparation absurde, accessoire devenu habitat, contenu visible ou mise en scène. Les textes restent courts, gros et rares. Aucun obstacle, bonus ou organisme souterrain n'a d'ombre portée.
+
+
+## v3.41.1 — Assets authorés
+
+Les obstacles détaillés peuvent désormais être peints en PNG transparent. Le Canvas conserve le terrain, la pousse, les fluides, les effets et les familles sans asset final. Le PNG n’autorise pas pour autant les micro-détails gratuits : l’asset doit rester lisible à l’échelle smartphone définie par `worldWidth`. Les collisions et le rayon de flyover sont authorés séparément dans l’éditeur.
