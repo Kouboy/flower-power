@@ -22,7 +22,11 @@ Une graine tente de rejoindre la surface dans une terre saturée de pollution. L
 ## Récompenses et systèmes
 
 - ÉcoCrédits™ pour les frôlements prolongés.
-- Power-ups de contrôle, protection ou nettoyage, jamais pré-générés : ils naissent après un flyover réussi et leur nature/valeur dépend de la prise de risque (proximité, durée et progression autour de l’obstacle).
+- Aucun power-up n’est pré-généré : les récompenses naissent uniquement d’un flyover réussi et leur nature dépend principalement de la durée, pondérée par la proximité et la progression autour de l’obstacle.
+- **Pollen/fleur** : récompense de score différée, ajoute une fleur à l’arrivée et ne modifie pas le gameplay immédiat.
+- **Goutte d’eau** : crée un bouclier organique visible, à usage unique, qui absorbe la prochaine collision directe.
+- **Spore** : nettoyage ponctuel de zone pour les flyovers les plus engagés.
+- Un seul power-up gameplay peut être actif à la fois. Tant qu’il agit, aucun autre power-up gameplay ne peut apparaître ; le pollen/fleur est la seule exception.
 - Fleur produite à la surface.
 
 ## Hors-scope actuel

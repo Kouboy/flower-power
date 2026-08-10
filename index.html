@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-<title>Flower Power v3.42 Flyover PowerUps Prototype</title>
+<title>Flower Power v3.42.4 Spore Reward Gate Fix</title>
 <style>
   :root{--bg:#15110e;--ui:#f7e9c7;--muted:#cdbb91;--soil:#221912;--light:#ffe59a;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -48,14 +48,14 @@
       <button id="scaleB" type="button">B · +18% / POUSSE −12%</button>
     </div>
     <div class="hint">TOUCHE POUR COMMENCER</div>
-    <p class="small">Prototype v3.42 · Flyover PowerUps Prototype · PNG + collisions authorées · flyover → power-up · ÉcoCrédits™ · SFX</p>
+    <p class="small">Prototype v3.42.4 · Spore Reward Gate Fix · PNG + collisions authorées · flyover → power-up · ÉcoCrédits™ · SFX</p>
   </div>
 </div>
 <script src="assets/obstacles/manifest.js"></script>
 <script>
 (() => {
   'use strict';
-  console.info('Flower Power v3.42 Flyover PowerUps Prototype');
+  console.info('Flower Power v3.42.4 Spore Reward Gate Fix');
 
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d', { alpha:false });
@@ -113,6 +113,12 @@
   let speedTimer=0;
   let flowerPower=1;
   let flowerBonus=0;
+  // v3.42.1 : un seul power-up gameplay actif à la fois.
+  // La goutte crée une membrane organique qui reste jusqu'à la prochaine collision.
+  // Le pollen/fleur est une récompense de score et ne consomme jamais ce slot.
+  let organicShield=0;
+  let shieldBreakGrace=0;
+  let sporeEffectTimer=0;
   let recentToxic=0;
   let stemAge=0;
   let leakHitCooldown=0;
@@ -745,6 +751,8 @@
         tone(620,.055,'sawtooth',.055*intensity,0,null,1.45); noise(.070,.048*intensity,2100,'bandpass',0);
       }else if(kind==='water'){
         tone(260,.15,'sine',.050,0,null,1.35); tone(520,.20,'sine',.040,.04,null,.76); noise(.18,.030,1200,'bandpass',0);
+      }else if(kind==='shieldBreak'){
+        noise(.16,.070,1800,'highpass',0); tone(420,.11,'triangle',.050,0,null,.62); tone(210,.16,'sine',.040,.035,null,.52);
       }else if(kind==='amber'){
         tone(740,.16,'sine',.060,0,null,1.18); tone(1110,.24,'triangle',.040,.08,null,.92);
       }else if(kind==='bud'){
@@ -773,7 +781,7 @@
     game.trail=[{x:game.tip.x,y:game.tip.y}];
     game.cameraY=maxCameraY(); game.cameraTargetY=game.cameraY;
     guideX=game.tip.x; guideY=game.tip.y-140;
-    toxicTimer=0; corruptionTimer=0; bloomTimer=0; invincibleTimer=0; invincibleMax=0; speedTimer=0; flowerPower=1; flowerBonus=0; leakHitCooldown=0; tipHazardQuery={solid:null,toxic:0,leak:0,danger:0};
+    toxicTimer=0; corruptionTimer=0; bloomTimer=0; invincibleTimer=0; invincibleMax=0; speedTimer=0; flowerPower=1; flowerBonus=0; organicShield=0; shieldBreakGrace=0; sporeEffectTimer=0; leakHitCooldown=0; tipHazardQuery={solid:null,toxic:0,leak:0,danger:0};
     stemAge=0; statusText=''; recentToxic=0; growthScrapeTimer=0;
   }
   function launchPreparedStem(){
@@ -1648,8 +1656,9 @@
   function bonusSpawnClear(x,y,r=15){
     if(x<30+r || x>W-30-r) return false;
     if(y<game.surfaceY+42 || y>worldBottom()-52) return false;
-    // Toujours devant la pousse : le joueur ne doit jamais devoir faire demi-tour.
-    if(y>game.tip.y-30) return false;
+    // Toujours devant la pousse : jamais derrière. Près de la surface, on tolère un écart plus court.
+    const minVerticalLead=(game.tip.y-game.surfaceY<105)?16:30;
+    if(y>game.tip.y-minVerticalLead) return false;
     for(const o of game.solids){
       const dx=x-o.x,dy=y-o.y, br=(o._broadR||approxRadius(o)+32)+r+8;
       if(dx*dx+dy*dy>br*br) continue;
@@ -1669,42 +1678,79 @@
     const d=clampUpAngle(game.dir.x,game.dir.y,48);
     const nx=-d.y, ny=d.x;
     const outward=game.tip.x>=obj.x?1:-1;
-    const baseAhead=80+risk*24;
+    // Plus on approche de la surface, moins on dispose de profondeur devant la pousse.
+    // On comprime alors la distance de spawn plutôt que de créer une longue zone morte sans récompenses.
+    const availableUp=Math.max(0,game.tip.y-(game.surfaceY+48));
+    const idealAhead=80+risk*24;
+    const baseAhead=Math.max(38,Math.min(idealAhead,availableUp-7));
+    const minProjection=availableUp<92?32:58;
     const attempts=[
-      [baseAhead,34,outward],[baseAhead+14,44,outward],[baseAhead-8,48,-outward],
-      [baseAhead+25,29,-outward],[baseAhead+34,38,outward],[baseAhead+8,25,-outward]
+      [baseAhead,34,outward],[baseAhead+10,42,outward],[Math.max(34,baseAhead-10),46,-outward],
+      [baseAhead+18,28,-outward],[baseAhead+25,36,outward],[Math.max(32,baseAhead-5),23,-outward],
+      [Math.max(30,baseAhead-16),18,outward],[Math.max(30,baseAhead-16),18,-outward]
     ];
     for(const [ahead,lat,side] of attempts){
       const x=game.tip.x+d.x*ahead+nx*lat*side;
       const y=game.tip.y+d.y*ahead+ny*lat*side;
       const projection=(x-game.tip.x)*d.x+(y-game.tip.y)*d.y;
-      if(projection<58) continue;
+      if(projection<minProjection) continue;
       if(bonusSpawnClear(x,y,16)) return {x,y};
     }
     return null;
   }
 
+  function gameplayPowerUpActive(){
+    // Seuls les effets gameplay réellement actifs ferment le robinet à récompenses.
+    // Un bonus simplement présent dans le monde, raté ou en train de disparaître ne bloque jamais les suivants.
+    // L'ambre est un vestige dormant et ne participe plus à cette règle.
+    return organicShield>0 || sporeEffectTimer>0;
+  }
+
+  function flyoverRewardType(a){
+    // La durée décide d'abord de la nature du cadeau ; le risque sert de garde-fou.
+    // Petit flyover qualifié : pollen/fleur (score uniquement).
+    // Passage soutenu : goutte -> bouclier organique.
+    // Passage très long et serré : spore de nettoyage.
+    if(a.effectiveTime>=.82 && a.risk>=.66) return 'bomb';
+    if(a.effectiveTime>=.52 && a.risk>=.48) return 'water';
+    return 'bud';
+  }
+
   function spawnFlyoverBonus(obj,g,a){
     if(!a.qualified || !solidFlyoverEligible(obj)) return false;
-    // Un beau passage est nécessaire avant que le sous-sol ne rende quoi que ce soit.
     if(a.risk<.40 || a.effectiveTime<.30) return false;
+
+    const type=flyoverRewardType(a);
+    const gameplayReward=type!=='bud';
+
+    // Règle radicale : tant qu'un power-up gameplay agit, aucun autre power-up
+    // gameplay n'apparaît. Pas de file d'attente, pas de spawn différé.
+    // Le pollen/fleur est explicitement hors slot et reste autorisé.
+    if(gameplayReward && gameplayPowerUpActive()){
+      obj._flyoverRewarded=true;
+      if(FLY_DEBUG){
+        flyDebugText=`${type.toUpperCase()} bloqué · power-up actif · ${(a.risk*100|0)}%`;
+        flyDebugTimer=2.0;
+      }
+      return false;
+    }
+
     const pos=findFlyoverBonusSpawn(obj,a.risk);
     if(!pos){
       if(FLY_DEBUG){flyDebugText=`FLY ${a.rawTime.toFixed(2)}s · ${(a.risk*100|0)}% · spawn bloqué`;flyDebugTimer=2.2;}
       return false;
     }
-    // Pour ce prototype la durée reste le déterminant principal de la nature du bonus.
-    const elite=a.effectiveTime>=.78 && a.risk>=.66;
-    const type=elite?'bomb':'water';
+
     const formMax=.48;
     game.bonuses.push({
-      type,x:pos.x,y:pos.y,r:type==='bomb'?16:15,phase:rr(0,TAU),collected:false,
+      type,x:pos.x,y:pos.y,r:type==='bomb'?16:(type==='bud'?13:15),phase:rr(0,TAU),collected:false,
       forming:formMax,formMax,age:0,originX:obj.x,originY:obj.y,
       flyRisk:a.risk,flyTime:a.effectiveTime,spawnedBy:'flyover'
     });
     obj._flyoverRewarded=true;
     sfx('ready');
-    setMessage(elite?'FLYOVER RISQUÉ : SPORE LIBÉRÉE':'FLYOVER : SOURCE LIBÉRÉE',.95);
+    const msg=type==='bomb'?'FLYOVER RISQUÉ : SPORE LIBÉRÉE':(type==='water'?'FLYOVER : GOUTTE LIBÉRÉE':'FLYOVER : POLLEN LIBÉRÉ');
+    setMessage(msg,.95);
     if(FLY_DEBUG){flyDebugText=`${type.toUpperCase()} · ${a.rawTime.toFixed(2)}s (${a.effectiveTime.toFixed(2)} utile) · ${(a.risk*100|0)}%`;flyDebugTimer=2.6;}
     return true;
   }
@@ -1920,24 +1966,65 @@
     screenShake=Math.max(screenShake,.22+.035*solidCleaned);
   }
 
+  function shatterOrganicShield(kind='impact'){
+    if(organicShield<=0) return false;
+    organicShield=0;
+    shieldBreakGrace=.48;
+    cancelEcoGrazes();
+    sfx('shieldBreak');
+
+    // Le bouclier absorbe le choc sans confisquer la direction donnée par le joueur.
+    // On sort seulement la pointe du collider en reculant sur sa trajectoire actuelle,
+    // puis on restaure exactement le vecteur de croissance. Aucun relâcher/réappuyer nécessaire.
+    const keepDirX=game.dir.x, keepDirY=game.dir.y;
+    const back=26;
+    game.tip.x=clamp(game.tip.x-keepDirX*back,14,W-14);
+    game.tip.y=clamp(game.tip.y-keepDirY*back,game.surfaceY+2,worldBottom()-22);
+    game.dir.x=keepDirX;
+    game.dir.y=keepDirY;
+
+    // Si le doigt est toujours maintenu, recale immédiatement le guide sur son intention
+    // actuelle plutôt que de laisser un impact visuel donner l'impression d'un contrôle décroché.
+    if(pointer.down){
+      guideX=pointer.x;
+      const y01=clamp(pointer.y/H,0,1);
+      guideY=game.tip.y-lerp(185,92,y01);
+    }
+
+    game.effects.push({type:'shieldBreak',kind,x:game.tip.x,y:game.tip.y,life:.62,max:.62,r:31,phase:rr(0,TAU)});
+    flashParticles(game.tip.x,game.tip.y,'shield',46);
+    screenShake=Math.max(screenShake,.16);
+    setMessage('BOUCLIER ORGANIQUE : MEMBRANE ROMPUE',.92);
+    return true;
+  }
+
   function collectBonus(b){
     b.collected=true;
     if(b.type==='water'){
-      speedTimer=Math.max(speedTimer,3.8);
+      // La goutte n'adoucit plus le pilotage : elle crée une protection physique,
+      // visible, à usage unique et sans durée artificielle.
+      organicShield=1;
       sfx('water');
-      setMessage('SOURCE CLAIRE : CONTRÔLE STABILISÉ',1.15);
+      setMessage('GOUTTE D’EAU : BOUCLIER ORGANIQUE',1.15);
       flashParticles(b.x,b.y,'water',34);
       game.effects.push({type:'pickup',kind:'water',x:b.x,y:b.y,life:.55,max:.55,r:16});
     }else if(b.type==='amber'){
+      // Héritage dormant des anciens prototypes. Il n'est plus généré par le niveau.
       invincibleTimer=Math.max(invincibleTimer,3.25); invincibleMax=Math.max(invincibleMax, invincibleTimer);
       sfx('amber');
       setMessage('AMBRE FOSSILE : INVULNÉRABLE',1.15);
       flashParticles(b.x,b.y,'amber',34);
       game.effects.push({type:'pickup',kind:'amber',x:b.x,y:b.y,life:.55,max:.55,r:16});
     }else if(b.type==='bomb'){
+      // La spore est un effet instantané : dès que l'explosion a eu lieu, son slot
+      // gameplay est libre. L'animation de l'explosion vit dans game.effects et ne
+      // doit pas bloquer l'apparition de nouvelles récompenses de flyover.
+      sporeEffectTimer=0;
       setMessage('SPORE : ZONE NETTOYÉE',1.18);
       detonateBomb(b.x,b.y);
     }else{
+      // Le pollen n'est pas un power-up gameplay : il affecte uniquement le score
+      // et la floraison à l'arrivée, donc il reste autorisé même sous bouclier/spore.
       flowerBonus++;
       sfx('bud');
       setMessage('POLLEN RARE : +1 FLEUR',1.05);
@@ -2007,6 +2094,8 @@
     if(corruptionTimer>0) corruptionTimer-=dt;
     if(invincibleTimer>0){ invincibleTimer-=dt; if(invincibleTimer<=0){ invincibleTimer=0; invincibleMax=0; } }
     if(speedTimer>0) speedTimer-=dt;
+    if(shieldBreakGrace>0) shieldBreakGrace=Math.max(0,shieldBreakGrace-dt);
+    if(sporeEffectTimer>0) sporeEffectTimer=Math.max(0,sporeEffectTimer-dt);
     if(leakHitCooldown>0) leakHitCooldown-=dt;
     if(screenShake>0) screenShake-=dt;
     updateCamera(dt);
@@ -2033,8 +2122,16 @@
     for(let i=game.bonuses.length-1;i>=0;i--){
       const b=game.bonuses[i]; b.age=(b.age||0)+dt;
       if((b.forming||0)>0) b.forming=Math.max(0,b.forming-dt);
-      // Une récompense ratée reste un choix raté, pas un objet éternel dans le monde.
-      if(b.collected || (b.forming<=0 && game.tip.y<b.y-155) || b.age>9.5) game.bonuses.splice(i,1);
+      // Une récompense ratée reste un choix raté. Sa disparition n'active rien, ne met rien en attente
+      // et ne ferme surtout pas le reward gate des flyovers suivants.
+      const missed=(b.forming<=0 && game.tip.y<b.y-155) || b.age>9.5;
+      if(b.collected || missed){
+        if(missed && !b.collected){
+          game.effects.push({type:'pickup',kind:b.type,x:b.x,y:b.y,life:.26,max:.26,r:11,fadeOnly:true});
+          if(FLY_DEBUG){ flyDebugText=`${b.type.toUpperCase()} raté · gate ${gameplayPowerUpActive()?'FERMÉ':'LIBRE'}`; flyDebugTimer=1.5; }
+        }
+        game.bonuses.splice(i,1);
+      }
     }
     if(state==='bloom'){ bloomTimer-=dt; if(bloomTimer<=0){ state='fadeOut'; transitionTimer=.46; fadeAlpha=0; } return; }
     if(state==='fadeOut'){ transitionTimer-=dt; fadeAlpha=clamp(1-transitionTimer/.46,0,1); if(transitionTimer<=0){ generateSoil(); prepareStem(); state='fadeIn'; transitionTimer=.48; fadeAlpha=1; } return; }
@@ -2044,7 +2141,7 @@
     stemAge+=dt;
 
     const controlled=pointer.down;
-    const waterControl=speedTimer>0;
+    const waterControl=speedTimer>0; // compatibilité d'anciens builds ; la goutte v3.42.1 ne l'active plus.
     const boost=waterControl ? .84 : 1;
     // Les tiges accélèrent à chaque floraison et même pendant une pousse longue.
     const globalRamp=Math.max(0,stemCount-1)*2.7 + score*1.35;
@@ -2110,38 +2207,46 @@
     const inv=invincibleTimer>0;
     tipHazardQuery=queryTipHazards(game.tip.x,game.tip.y,t);
     const solid=tipHazardQuery.solid;
-    if(solid && !inv){
-      const names={pipe:'rupture : tuyau',concrete:'rupture : béton',canister:'rupture : bidon',plastic:'rupture : plastique',nuclear:'rupture : fût irradié',fossil:'rupture : fossile',trex:'rupture : crâne enfoui',sarcophagus:'rupture : cercueil',treasure:'rupture : coffre enterré',scooter:'rupture : trottinette fossile',battery:'rupture : batterie',phone:'rupture : smartphone fossile',arcade:'rupture : borne d’arcade',sign:'rupture : panneau',mascot:'rupture : mascotte enfouie',tire:'rupture : pneu écrasé',solar:'rupture : panneau solaire',trashbag:'rupture : sac gonflé',server:'rupture : rack serveur',drone:'rupture : drone cassé',extinguisher:'rupture : extincteur vide',microwave:'rupture : micro-ondes',cone:'rupture : cône mou',rock:'rupture : gravats'};
-      die(names[solid.kind]||'rupture : déchet','impact'); return; }
-    if(solid && inv){ statusText='ambre actif'; }
-
     const tox=tipHazardQuery.toxic;
     const leak=tipHazardQuery.leak;
+
     if(inv){
       toxicTimer=0;
       if(solid||tox>0||leak>0) statusText='ambre actif';
-    }else{
-      if(leak>0){
-        screenShake=.24;
-        flashParticles(game.tip.x,game.tip.y,'acid',28);
-        die('lixiviat vivant : pointe brûlée','acid');
+      updateEcoGrazes(dt,tipHazardQuery);
+      return;
+    }
+
+    if(solid && shieldBreakGrace<=0){
+      if(organicShield>0){ shatterOrganicShield('impact'); return; }
+      const names={pipe:'rupture : tuyau',concrete:'rupture : béton',canister:'rupture : bidon',plastic:'rupture : plastique',nuclear:'rupture : fût irradié',fossil:'rupture : fossile',trex:'rupture : crâne enfoui',sarcophagus:'rupture : cercueil',treasure:'rupture : coffre enterré',scooter:'rupture : trottinette fossile',battery:'rupture : batterie',phone:'rupture : smartphone fossile',arcade:'rupture : borne d’arcade',sign:'rupture : panneau',mascot:'rupture : mascotte enfouie',tire:'rupture : pneu écrasé',solar:'rupture : panneau solaire',trashbag:'rupture : sac gonflé',server:'rupture : rack serveur',drone:'rupture : drone cassé',extinguisher:'rupture : extincteur vide',microwave:'rupture : micro-ondes',cone:'rupture : cône mou',rock:'rupture : gravats'};
+      die(names[solid.kind]||'rupture : déchet','impact'); return;
+    }
+
+    if(leak>0 && shieldBreakGrace<=0){
+      if(organicShield>0){ shatterOrganicShield('acid'); return; }
+      screenShake=.24;
+      flashParticles(game.tip.x,game.tip.y,'acid',28);
+      die('lixiviat vivant : pointe brûlée','acid');
+      return;
+    }
+
+    // La membrane protège un choc, pas une exposition prolongée à la pollution diffuse.
+    if(tox>0){
+      toxicTimer+=dt*.72;
+      corruptionTimer=Math.max(corruptionTimer,.28);
+      if(recentToxic<=0){ sfx('contaminate'); setMessage('ZONE TOXIQUE : CROISSANCE DÉVIÉE',.82); recentToxic=.72; flashParticles(game.tip.x,game.tip.y,'acid',8); }
+      if(toxicTimer>.82){
+        screenShake=.22;
+        flashParticles(game.tip.x,game.tip.y,'acid',30);
+        die('pointe brûlée dans une zone toxique','acid');
         return;
       }
-      if(tox>0){
-        toxicTimer+=dt*.72;
-        corruptionTimer=Math.max(corruptionTimer,.28);
-        if(recentToxic<=0){ sfx('contaminate'); setMessage('ZONE TOXIQUE : CROISSANCE DÉVIÉE',.82); recentToxic=.72; flashParticles(game.tip.x,game.tip.y,'acid',8); }
-        if(toxicTimer>.82){
-          screenShake=.22;
-          flashParticles(game.tip.x,game.tip.y,'acid',30);
-          die('pointe brûlée dans une zone toxique','acid');
-          return;
-        }
-      }else{
-        toxicTimer=Math.max(0,toxicTimer-dt*3.6);
-      }
-      updateEcoGrazes(dt,tipHazardQuery);
+    }else{
+      toxicTimer=Math.max(0,toxicTimer-dt*3.6);
     }
+    updateEcoGrazes(dt,tipHazardQuery);
+
   }
 
   function roundRect(x,y,w,h,r){
@@ -3121,11 +3226,11 @@
       const x=om*om*ox+2*om*u*bendX+u*u*b.x;
       const y=om*om*oy+2*om*u*bendY+u*u*b.y;
       ctx.globalAlpha=.26+.62*u;
-      ctx.fillStyle=b.type==='bomb'?'#cfff68':'#9de7ff';
+      ctx.fillStyle=b.type==='bomb'?'#cfff68':(b.type==='bud'?'#fff0a2':'#9de7ff');
       ctx.beginPath(); ctx.arc(x,y,1.7+2.1*u,0,TAU); ctx.fill();
     }
     ctx.globalAlpha=.55+.35*p;
-    ctx.strokeStyle=b.type==='bomb'?'rgba(202,255,105,.88)':'rgba(163,231,255,.88)';
+    ctx.strokeStyle=b.type==='bomb'?'rgba(202,255,105,.88)':(b.type==='bud'?'rgba(255,239,154,.90)':'rgba(163,231,255,.88)');
     ctx.lineWidth=1.5;
     ctx.beginPath(); ctx.arc(b.x,b.y,24*(1-p)+9,0,TAU); ctx.stroke();
     ctx.restore();
@@ -3168,6 +3273,42 @@
     ctx.restore();
   }
 
+
+  function drawOrganicShield(){
+    if(state!=='running' || organicShield<=0) return;
+    const x=game.tip.x, y=game.tip.y;
+    const pulse=.5+.5*Math.sin(t*4.2);
+    const r=23.5+pulse*1.25;
+    ctx.save(); ctx.translate(x,y);
+    ctx.shadowBlur=0;
+
+    // Membrane irrégulière, aqueuse et végétale : volontairement pas une bulle sci-fi parfaite.
+    ctx.beginPath();
+    const pts=18;
+    for(let i=0;i<=pts;i++){
+      const a=i*TAU/pts;
+      const wob=1+Math.sin(a*3+t*2.0)*.035+Math.sin(a*5-t*1.5)*.024;
+      const rr=r*wob;
+      const px=Math.cos(a)*rr, py=Math.sin(a)*rr*.91;
+      if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.closePath();
+    ctx.fillStyle='rgba(133,224,194,.115)'; ctx.fill();
+    ctx.strokeStyle='rgba(181,246,215,.86)'; ctx.lineWidth=2.15; ctx.stroke();
+
+    // Nervures/veines assez grosses pour survivre sur smartphone.
+    ctx.strokeStyle='rgba(229,255,229,.38)'; ctx.lineWidth=1.25; ctx.lineCap='round';
+    for(let i=0;i<4;i++){
+      const a=-1.12+i*.74+Math.sin(t*.8+i)*.05;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a)*5,Math.sin(a)*4);
+      ctx.quadraticCurveTo(Math.cos(a+.30)*r*.58,Math.sin(a+.30)*r*.42,Math.cos(a)*r*.84,Math.sin(a)*r*.76);
+      ctx.stroke();
+    }
+    ctx.fillStyle='rgba(223,255,229,.68)';
+    ctx.beginPath(); ctx.ellipse(-r*.35,-r*.42,2.5,4.5,-.55,0,TAU); ctx.fill();
+    ctx.restore();
+  }
 
   function drawShieldGauge(){
     if(state!=='running') return;
@@ -3247,6 +3388,7 @@
     }
 
     if(state==='running'){
+      drawOrganicShield();
       ctx.save(); ctx.translate(game.tip.x,game.tip.y);
       ctx.shadowColor='rgba(225,255,180,.55)'; ctx.shadowBlur=9;
       ctx.fillStyle=invincibleTimer>0?'#fff0a6':(corruptionTimer>0?'#d8ff58':'#f4ffd6'); ctx.beginPath(); ctx.arc(0,0,7.6,0,Math.PI*2); ctx.fill();
@@ -3336,6 +3478,20 @@
           ctx.quadraticCurveTo(e.x+Math.cos(ang+.25)*end*.58,e.y+Math.sin(ang+.25)*end*.58,e.x+Math.cos(ang)*end,e.y+Math.sin(ang)*end);
           ctx.stroke();
         }
+      }else if(e.type==='shieldBreak'){
+        const r=e.r*(.72+1.18*k);
+        ctx.strokeStyle=`rgba(196,255,222,${.86*a})`; ctx.lineWidth=2.8*(1-k)+.9;
+        ctx.beginPath(); ctx.arc(e.x,e.y,r,0,TAU); ctx.stroke();
+        ctx.fillStyle=`rgba(135,235,199,${.07*a})`; ctx.beginPath(); ctx.arc(e.x,e.y,r*.72,0,TAU); ctx.fill();
+        ctx.fillStyle=`rgba(218,255,229,${.80*a})`;
+        for(let i=0;i<12;i++){
+          const ang=(e.phase||0)+i*TAU/12;
+          const d=10+(28+10*(i%3))*k;
+          const xx=e.x+Math.cos(ang)*d, yy=e.y+Math.sin(ang)*d*.86;
+          ctx.save(); ctx.translate(xx,yy); ctx.rotate(ang+k*1.8);
+          ctx.beginPath(); ctx.moveTo(-4,-1); ctx.quadraticCurveTo(0,-4,5,0); ctx.quadraticCurveTo(0,3,-4,1); ctx.closePath(); ctx.fill();
+          ctx.restore();
+        }
       }else if(e.type==='hit'){
         const r=e.r*(.55+1.2*k);
         ctx.strokeStyle=e.kind==='acid'?`rgba(217,255,88,${.95*a})`:`rgba(255,112,78,${.95*a})`;
@@ -3417,6 +3573,11 @@
           ctx.strokeStyle='rgba(35,22,14,.42)'; ctx.lineWidth=.7; ctx.strokeRect(-p.r*1.1,-p.r*.7,p.r*2.2,p.r*1.4);
           ctx.restore(); continue;
         }
+        if(p.type==='shield'){
+          ctx.fillStyle='rgba(202,255,222,.92)';
+          ctx.beginPath(); ctx.moveTo(-p.r*1.4,0); ctx.quadraticCurveTo(0,-p.r,p.r*1.6,0); ctx.quadraticCurveTo(0,p.r*.8,-p.r*1.4,0); ctx.fill();
+          ctx.restore(); continue;
+        }
         if(p.type==='water') ctx.fillStyle='#93ddff';
         else if(p.type==='amber') ctx.fillStyle='#ffd66f';
         else if(p.type==='bud') ctx.fillStyle='#cfff9a';
@@ -3451,6 +3612,8 @@
 
     let effect='';
     if(corruptionTimer>0) effect+='croissance déviée';
+    if(organicShield>0) effect+=(effect?' · ':'')+'bouclier organique';
+    if(sporeEffectTimer>0) effect+=(effect?' · ':'')+'spore active';
     if(invincibleTimer>0) effect+=(effect?' · ':'')+'ambre '+invincibleTimer.toFixed(1)+'s';
     if(flowerBonus>0) effect+=(effect?' · ':'')+'pollen +'+flowerBonus;
     if(effect){
@@ -3491,7 +3654,7 @@
     const x=W-8,y=8,w=126,h=112; ctx.globalAlpha=.90; ctx.fillStyle='rgba(5,7,6,.78)'; roundRect(x-w,y,w,h,8); ctx.fill();
     ctx.globalAlpha=1; ctx.textAlign='left'; ctx.textBaseline='top'; ctx.font='700 10px monospace'; ctx.fillStyle='#d8ff8b';
     const xx=x-w+8;
-    ctx.fillText('PERF v3.42',xx,y+7); ctx.fillStyle='#e9e2c9';
+    ctx.fillText('PERF v3.42.4',xx,y+7); ctx.fillStyle='#e9e2c9';
     ctx.fillText('FPS      '+perf.fps.toFixed(0),xx,y+22);
     ctx.fillText('update   '+perf.update.toFixed(2)+' ms',xx,y+34);
     ctx.fillText('render   '+perf.render.toFixed(2)+' ms',xx,y+46);

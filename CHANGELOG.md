@@ -1,4 +1,31 @@
+## v3.42.4 — Spore Reward Gate Fix
+
+- La spore-bombe libère immédiatement le slot de power-up dès son explosion.
+- Son animation d'explosion reste purement visuelle et ne bloque plus les récompenses de flyover suivantes.
+
+## v3.42.3 — Shield Steering Fix
+- Le bris du bouclier organique ne modifie plus le vecteur de direction de la pousse.
+- La pointe recule légèrement hors du collider, mais conserve exactement l'intention de pilotage en cours.
+- Si le doigt reste maintenu, le guide est recalé immédiatement sur la position du pointeur.
+
 # Changelog
+
+## v3.42.2 — Reward Gate Fix
+- Un power-up raté ou simplement présent dans le monde ne bloque jamais les récompenses suivantes.
+- Le verrou gameplay ne dépend plus que du bouclier organique ou de la spore réellement actifs.
+- Spawn des récompenses adaptatif près de la surface pour éviter une zone morte sans positions valides.
+- `?flydebug=1` indique désormais si le gate est libre lorsqu'un bonus raté disparaît.
+
+## v3.42.1 — Organic Shield & Reward Gate
+- la Goutte d’eau ne stabilise plus les contrôles : elle crée un bouclier organique visible autour de la pointe ;
+- le bouclier reste actif sans timer et absorbe une collision solide ou un contact direct avec le lixiviat, puis vole en éclats ;
+- une courte grâce et un léger recul évitent la mort immédiate dans le même collider après la rupture ;
+- le bouclier ne protège pas d’une exposition prolongée aux zones toxiques diffuses ;
+- un seul power-up gameplay peut être actif : pendant cet état, les flyovers continuent de scorer mais ne font pas apparaître de nouveau power-up gameplay ;
+- aucune récompense bloquée n’est mise en attente ;
+- le pollen/fleur est explicitement hors slot gameplay et peut apparaître même sous bouclier ou pendant l’effet d’une spore ;
+- les tiers de flyover sont désormais : pollen pour un passage qualifié court, goutte/bouclier pour un passage soutenu, spore pour un passage très long et risqué ;
+- nouveaux feedbacks visuels et sonores de membrane organique et de rupture.
 
 ## v3.42 — Flyover PowerUps Prototype
 - aucun power-up n'est généré avec le niveau ;

@@ -6,7 +6,7 @@ Le prototype mêle arcade mobile, satire écologique et esthétique de livre pou
 
 ## Version actuelle
 
-**v3.42 Flyover PowerUps Prototype**
+**v3.42.1 Flyover PowerUps Prototype**
 
 Cette passe teste le pipeline hybride retenu :
 

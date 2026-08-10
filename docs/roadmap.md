@@ -2,22 +2,25 @@
 
 ## Jalon actuel
 
-### v3.42 Flyover PowerUps Prototype
+### v3.42.1 Organic Shield & Reward Gate
 
-- Vérifier que le flyover exige bien une vraie progression autour puis au-dessus de l’obstacle.
-- Régler les seuils de durée/proximité afin qu’un simple frôlement rapporte des ÉcoCrédits™ sans forcément produire de power-up.
-- Valider le placement prédictif : devant la pousse, latéralement décalé, accessible mais pas offert.
-- Tester la lisibilité de la matérialisation obstacle → power-up sur smartphone.
-- Vérifier que la Source apparaît sur un beau flyover et que la Spore reste une récompense nettement plus rare.
-- Utiliser `?flydebug=1` si les seuils doivent être diagnostiqués.
+- Valider sur smartphone que la membrane est immédiatement identifiable autour de la pointe.
+- Vérifier qu’un choc brise le bouclier de façon spectaculaire sans entraîner une mort à la frame suivante.
+- Vérifier que le bouclier protège les solides et le lixiviat mais pas l’exposition toxique prolongée.
+- Tester la lisibilité des trois tiers de flyover : pollen → goutte/bouclier → spore.
+- Confirmer que les flyovers continuent à rapporter des ÉcoCrédits™ sous power-up actif, mais qu’aucune Goutte/Spore supplémentaire n’apparaît.
+- Confirmer que le pollen reste générable pendant un bouclier actif.
+- Utiliser `?flydebug=1` pour régler les seuils si la distribution paraît trop généreuse ou trop radine.
 
 ## Étape suivante
 
-Une fois la boucle agréable, régler précisément les tiers de récompense et décider s’il faut réintroduire une récompense intermédiaire (pollen/ambre) ou rester sur un système volontairement compact.
+### v3.43 Visual Cohesion Pass
+
+Revoir tige, sous-sol, surface et fleurs pour les rapprocher du langage graphique des sprites authorés, sans figer la pousse procédurale.
 
 ## Après validation
 
-Produire les autres familles d'assets avec l'éditeur, puis enrichir les pools et variantes sans revenir au système de stickers procéduraux.
+Poursuivre la production des autres assets et variantes via l’éditeur, puis régler finement l’économie des flyovers et la rareté des récompenses.
 
 ## Refactorisation prudente
 

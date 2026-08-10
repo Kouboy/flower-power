@@ -87,3 +87,13 @@ Le découpage de `index.html` en modules doit être progressif. Une seule famill
 - Dans ce prototype, la durée utile pilote principalement la nature de la récompense : Source claire pour un flyover qualifié, Spore pour un flyover long et très risqué.
 - Le spawn est prédictif : devant la pointe, latéralement décalé, puis rejeté s'il tombe dans un solide, une zone toxique, un trajet de lixiviat ou trop près d'un autre bonus.
 - Une récompense ratée disparaît une fois suffisamment derrière la pointe.
+
+
+## v3.42.1 — Slot de power-up et bouclier organique
+- `organicShield` est un état binaire sans durée : la Goutte l’active, la prochaine collision solide ou avec le lixiviat le consomme.
+- La rupture applique une très courte fenêtre de grâce et recule légèrement la pointe pour éviter une seconde collision dans le même collider à la frame suivante.
+- Les zones toxiques diffuses ignorent le bouclier : elles restent une exposition continue et non un choc discret.
+- `gameplayPowerUpActive()` centralise la règle d’exclusivité des effets gameplay.
+- Lorsqu’un flyover aurait produit une Goutte ou une Spore pendant qu’un power-up gameplay est actif, le spawn est supprimé et n’est jamais mis en file d’attente.
+- Le pollen (`bud`) est une récompense hors slot : il modifie uniquement `flowerBonus`, donc reste autorisé pendant un power-up actif.
+- Les tiers actuels servent au tuning, pas de contrat définitif : pollen (court), goutte (soutenu), spore (long + risqué).

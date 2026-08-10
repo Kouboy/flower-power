@@ -51,3 +51,16 @@
 - Vérifier que chaque famille solide générée possède un détail satirique lisible ou identifiable.
 - Vérifier que les détails décoratifs ne modifient pas la collision : une pancarte, un sticker ou un câble ne doit pas ajouter de hitbox invisible.
 - Vérifier avec `?perf=1` que la passe de détails n’introduit pas de chute notable par rapport à v3.38.
+
+
+## v3.42.1 — Power-up / bouclier
+- [ ] Flyover court qualifié : le pollen peut apparaître.
+- [ ] Flyover soutenu sans power-up actif : une Goutte peut apparaître.
+- [ ] Ramasser la Goutte affiche clairement une membrane organique autour de la pointe.
+- [ ] Collision solide sous membrane : survie, rupture visible, pas de double-hit immédiat.
+- [ ] Contact direct avec une limace de lixiviat sous membrane : survie et rupture.
+- [ ] Zone toxique prolongée sous membrane : la contamination continue et peut tuer.
+- [ ] Sous bouclier, un flyover qui devrait produire Goutte/Spore ne fait apparaître aucun power-up gameplay.
+- [ ] Sous bouclier, un flyover de tier pollen peut toujours produire le bonus de fleur.
+- [ ] La Spore bloque brièvement un autre spawn gameplay pendant son effet visuel.
+- [ ] Aucune récompense gameplay bloquée n’apparaît plus tard en différé.
