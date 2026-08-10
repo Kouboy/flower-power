@@ -68,3 +68,12 @@ Le découpage de `index.html` en modules doit être progressif. Une seule famill
 - Les fichiers JSON d’origine ne sont pas modifiés lors de l’intégration. Un manifeste local fait le pont entre leurs `id` actuels et les `kind` historiques du moteur.
 - Le T-Rex signature est géré comme un asset distinct des T-Rex ordinaires.
 - Les power-ups ne sont plus générés avec le terrain. Leur prochaine implémentation doit être déclenchée par le flyover et mesurer la prise de risque.
+
+## v3.41.2 — Collision gameplay ≠ encombrement visuel
+- Le polygone authoré reste l'autorité pour collision et graze.
+- Le placement utilise une empreinte visuelle séparée basée sur le rectangle rendu du sprite, rotation comprise.
+- Une marge de respiration est ajoutée à cette empreinte avant le test SAT contre les obstacles déjà placés.
+- Les overlaps entre obstacles solides sont interdits.
+- La densité est une cible, pas un quota : après plusieurs tentatives infructueuses, le générateur abandonne l'obstacle plutôt que de forcer sa pose.
+- Le T-Rex signature réserve son emplacement avant la population standard.
+- Toxiques et lixiviat ne sont pas concernés : leur superposition avec les objets fait partie du langage du sous-sol.

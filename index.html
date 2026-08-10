@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-<title>Flower Power v3.41.1 Asset Ingestion Test</title>
+<title>Flower Power v3.41.3 Toxic Overlay Pass</title>
 <style>
   :root{--bg:#15110e;--ui:#f7e9c7;--muted:#cdbb91;--soil:#221912;--light:#ffe59a;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -48,14 +48,14 @@
       <button id="scaleB" type="button">B · +18% / POUSSE −12%</button>
     </div>
     <div class="hint">TOUCHE POUR COMMENCER</div>
-    <p class="small">Prototype v3.41.1 · Asset Ingestion Test · PNG + collisions authorées · A/B échelle · ÉcoCrédits™ · SFX</p>
+    <p class="small">Prototype v3.41.3 · Toxic Overlay Pass · PNG + collisions authorées · zéro overlap solide · ÉcoCrédits™ · SFX</p>
   </div>
 </div>
 <script src="assets/obstacles/manifest.js"></script>
 <script>
 (() => {
   'use strict';
-  console.info('Flower Power v3.41.1 Asset Ingestion Test');
+  console.info('Flower Power v3.41.3 Toxic Overlay Pass');
 
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d', { alpha:false });
@@ -385,7 +385,7 @@
   const FLOWER_CACHE_TOP=-126, FLOWER_CACHE_H=144;
   let flowerCacheDirty=true;
 
-  // v3.41.1 ASSET INGESTION TEST
+  // v3.41.3 VISUAL SPACING PASS
   // Les exports de l'Asset Editor restent intacts dans assets/obstacles/.
   // manifest.js est généré depuis leurs JSON pour rester compatible avec une ouverture directe en file://.
   const AUTHORED_ASSETS=window.FLOWER_POWER_AUTHORED_ASSETS||{};
@@ -912,14 +912,86 @@
     }
     return true;
   }
-  function objectFits(o){
-    if(o.x<26||o.x>W-26||o.y<game.surfaceY+48||o.y>worldBottom()-118) return false;
+  // Empreinte visuelle distincte de la collision gameplay.
+  // Les PNG authorés sont volontairement protégés par leur rectangle de rendu entier :
+  // un pixel transparent/une collision permissive ne doit jamais autoriser un collage visuel.
+  function solidVisualPadding(o){
+    const explicit=Number(o&&o._asset&&o._asset.spawn&&o._asset.spawn.visualPadding);
+    if(Number.isFinite(explicit)) return Math.max(0,explicit);
+    if(o&&o.variant&&o.variant.signature) return 12;
+    if(hasAuthoredAsset(o)) return 7;
+    if(o&&o.kind==='rock') return 5;
+    if(o&&(o.kind==='pipe'||o.kind==='concrete')) return 4;
+    return 6;
+  }
+  function transformLocalPoint(o,x,y){
+    const a=o.a||0, ca=Math.cos(a), sa=Math.sin(a);
+    return {x:o.x+x*ca-y*sa,y:o.y+x*sa+y*ca};
+  }
+  function solidVisualFootprint(o,includePadding=true){
+    if(!o) return [];
+    const pad=includePadding?solidVisualPadding(o):0;
+    if(o.kind==='rock'){
+      const rx=Math.max(2,o.r*o.sx+pad), ry=Math.max(2,o.r*o.sy+pad);
+      const pts=[];
+      for(let i=0;i<8;i++){
+        const t=i*TAU/8;
+        pts.push(transformLocalPoint(o,Math.cos(t)*rx,Math.sin(t)*ry));
+      }
+      return pts;
+    }
+    let left,right,top,bottom;
     if(hasAuthoredAsset(o)){
-      for(const p of objectSamples(o)){
-        if(p.x<18||p.x>W-18||p.y<game.surfaceY+34||p.y>worldBottom()-100) return false;
+      const a=o._asset, pivot=(a.render&&a.render.pivot)||[.5,.5];
+      const w=o._assetWorldW||o.w||80, h=o._assetWorldH||o.h||80;
+      left=-pivot[0]*w-pad; right=(1-pivot[0])*w+pad;
+      top=-pivot[1]*h-pad; bottom=(1-pivot[1])*h+pad;
+      if((o._assetFlip||1)<0){ const nl=-right,nr=-left; left=nl;right=nr; }
+    }else{
+      const w=Math.max(4,o.w||40), h=Math.max(4,o.h||20);
+      left=-w*.5-pad;right=w*.5+pad;top=-h*.5-pad;bottom=h*.5+pad;
+    }
+    return [
+      transformLocalPoint(o,left,top),transformLocalPoint(o,right,top),
+      transformLocalPoint(o,right,bottom),transformLocalPoint(o,left,bottom)
+    ];
+  }
+  function polyAxisRange(poly,ax,ay){
+    let min=Infinity,max=-Infinity;
+    for(const p of poly){ const d=p.x*ax+p.y*ay; if(d<min)min=d;if(d>max)max=d; }
+    return [min,max];
+  }
+  function convexPolysOverlap(a,b){
+    if(a.length<3||b.length<3) return false;
+    for(const poly of [a,b]){
+      for(let i=0;i<poly.length;i++){
+        const p=poly[i],q=poly[(i+1)%poly.length];
+        const ex=q.x-p.x,ey=q.y-p.y,len=Math.hypot(ex,ey)||1;
+        const ax=-ey/len,ay=ex/len;
+        const ar=polyAxisRange(a,ax,ay),br=polyAxisRange(b,ax,ay);
+        // Toucher juste la marge est autorisé ; la moindre pénétration visuelle ne l'est pas.
+        if(ar[1]<=br[0]+.01||br[1]<=ar[0]+.01) return false;
       }
     }
+    return true;
+  }
+  function clearOfSolidVisuals(o){
+    const fp=solidVisualFootprint(o,true);
+    if(fp.length<3) return true;
+    for(const other of game.solids){
+      const op=other._visualFootprint||solidVisualFootprint(other,true);
+      if(convexPolysOverlap(fp,op)) return false;
+    }
+    return true;
+  }
+  function objectFits(o){
+    if(o.x<26||o.x>W-26||o.y<game.surfaceY+48||o.y>worldBottom()-118) return false;
+    const visible=solidVisualFootprint(o,false);
+    for(const p of visible){
+      if(p.x<18||p.x>W-18||p.y<game.surfaceY+34||p.y>worldBottom()-100) return false;
+    }
     if(!clearOfSafePathObject(o,8)) return false;
+    if(!clearOfSolidVisuals(o)) return false;
     return true;
   }
 
@@ -1092,12 +1164,24 @@
       return {kind:'rock',x:pos.x,y:pos.y,r:rr(18,34),sx:rr(.8,1.32),sy:rr(.75,1.24),a:rr(0,Math.PI)};
     }
 
-    const solidCount=Math.round((6+Math.min(6,Math.floor(d*.18)))*worldScale*.84*(viewScaleMode==='B'?.92:1)); // v2.2 : moins d’objets, plus de silhouette
+    // Talisman rare : on le réserve AVANT le mobilier courant afin que son grand PNG
+    // dispose toujours de sa propre respiration visuelle. Il reste 0 ou 1 fois par partie.
+    if(signatureTrexArmed && !signatureTrexSpawned && level>=signatureTrexTargetLevel){
+      for(let tries=0;tries<110 && !signatureTrexSpawned;tries++){
+        const cell=pickCell(c=>!c.used && c.r>1 && c.r<spawnGrid.rows-2 && depthK(c.y)>.55);
+        const pos=cellPos(cell,.10);
+        const o=preparePixelSolid({kind:'trex',x:pos.x,y:pos.y,w:112,h:74,a:rr(-.18,.18),flip:1,variant:{id:'anti_nuke_signature',signature:true,mirrorSafe:false,useSticker:false}});
+        if(objectFits(o)){ game.solids.push(prepareSolidPerf(o)); signatureTrexSpawned=true; }
+        else cell.used=false;
+      }
+    }
+
+    const solidCount=Math.round((6+Math.min(6,Math.floor(d*.18)))*worldScale*.84*(viewScaleMode==='B'?.92:1)); // v3.41.3 : cible, jamais quota forcé
     for(let i=0;i<solidCount;i++){
       let placed=false;
       const preferred=i%3===0?'upper':(i%3===1?'middle':'deep');
-      for(let tries=0;tries<90 && !placed;tries++){
-        const cell=pickCell(c=>c.r>0 && c.r<spawnGrid.rows-1 && !(c.c===2 && c.r>spawnGrid.rows-3) && (tries>28 || depthBand(c.y)===preferred));
+      for(let tries=0;tries<110 && !placed;tries++){
+        const cell=pickCell(c=>c.r>0 && c.r<spawnGrid.rows-1 && !(c.c===2 && c.r>spawnGrid.rows-3) && (tries>34 || depthBand(c.y)===preferred));
         const pos=cellPos(cell,.27);
         const o=preparePixelSolid(assignObstacleVariant(makeSolidCandidate(pos)));
         if(objectFits(o)){
@@ -1106,18 +1190,7 @@
           cell.used=false;
         }
       }
-    }
-
-    // Talisman rare : décidé une seule fois par partie. S'il est armé, on tente de le placer
-    // à partir de son niveau cible, puis plus jamais après une apparition réussie.
-    if(signatureTrexArmed && !signatureTrexSpawned && level>=signatureTrexTargetLevel){
-      for(let tries=0;tries<80 && !signatureTrexSpawned;tries++){
-        const cell=pickCell(c=>!c.used && c.r>1 && c.r<spawnGrid.rows-2 && depthK(c.y)>.55);
-        const pos=cellPos(cell,.12);
-        const o=preparePixelSolid({kind:'trex',x:pos.x,y:pos.y,w:112,h:74,a:rr(-.18,.18),flip:1,variant:{id:'anti_nuke_signature',signature:true,mirrorSafe:false,useSticker:false}});
-        if(objectFits(o)){ game.solids.push(prepareSolidPerf(o)); signatureTrexSpawned=true; }
-        else cell.used=false;
-      }
+      // Si la place manque, on accepte un décor moins dense plutôt que de superposer deux assets.
     }
 
     const toxicCount=Math.round((3+Math.min(4,Math.floor(d*.14)))*worldScale*.70);
@@ -1318,6 +1391,7 @@
     o._visualScale=solidVisualScale(o);
     o._grazeBand=solidGrazeBand(o);
     o._broadR=approxRadius(o)+o._grazeBand+10;
+    o._visualFootprint=solidVisualFootprint(o,true);
     return o;
   }
   function solidVisualScale(o){
@@ -2694,29 +2768,53 @@
     if(y1>y0) ctx.drawImage(soilCache,0,y0,W,y1-y0,0,y0,W,y1-y0);
   }
 
+  function drawToxicZoneBase(o){
+    const breathe=.94+Math.sin(t*1.15+o.pulse)*.035;
+    ctx.save(); ctx.translate(o.x,o.y); ctx.rotate(o.a);
+    ctx.globalAlpha=.72+breathe*.08;
+    ctx.fillStyle='rgba(121,145,48,.12)'; ctx.beginPath(); ctx.ellipse(0,0,o.rx*1.24,o.ry*1.20,0,0,TAU); ctx.fill();
+    ctx.fillStyle='rgba(145,177,55,.13)';
+    for(const q of o.lobes||[]){
+      const rr=q.r; ctx.beginPath(); ctx.ellipse(Math.cos(q.a)*o.rx*rr,Math.sin(q.a)*o.ry*rr,o.rx*q.sx,o.ry*q.sy,q.a*.22,0,TAU); ctx.fill();
+    }
+    ctx.fillStyle='rgba(105,137,39,.17)'; ctx.beginPath(); ctx.ellipse(0,1,o.rx*.80,o.ry*.72,0,0,TAU); ctx.fill();
+    ctx.fillStyle='rgba(180,207,67,.15)'; ctx.beginPath(); ctx.ellipse(-o.rx*.12,-o.ry*.08,o.rx*.47,o.ry*.38,.14,0,TAU); ctx.fill();
+    for(const q of o.specks||[]){
+      ctx.fillStyle=q.light?'rgba(205,229,92,.30)':'rgba(42,55,23,.25)';
+      ctx.beginPath(); ctx.arc(q.x*o.rx,q.y*o.ry,q.r,0,TAU); ctx.fill();
+    }
+    // Deux bulles discrètes seulement, animation en alpha/position et jamais en scale.
+    ctx.globalAlpha=.22+.08*Math.sin(t*1.8+o.pulse); ctx.strokeStyle='rgba(211,232,103,.48)'; ctx.lineWidth=1.2;
+    ctx.beginPath(); ctx.arc(-o.rx*.20,-o.ry*.16,3.1,0,TAU); ctx.stroke();
+    ctx.beginPath(); ctx.arc(o.rx*.22,o.ry*.12,2.2,0,TAU); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawToxicZoneOverlay(o){
+    const breathe=.94+Math.sin(t*1.15+o.pulse)*.035;
+    ctx.save(); ctx.translate(o.x,o.y); ctx.rotate(o.a);
+    ctx.globalCompositeOperation='source-over';
+    // Une pellicule toxique légère passe devant les sprites pour mieux les enrober.
+    ctx.globalAlpha=.18 + breathe*.06;
+    ctx.fillStyle='rgba(191,226,82,.22)';
+    ctx.beginPath(); ctx.ellipse(0,0,o.rx*.92,o.ry*.84,0,0,TAU); ctx.fill();
+    ctx.fillStyle='rgba(109,144,39,.20)';
+    for(const q of o.lobes||[]){
+      const rr=Math.max(.18,q.r-.05);
+      ctx.beginPath();
+      ctx.ellipse(Math.cos(q.a)*o.rx*rr,Math.sin(q.a)*o.ry*rr,o.rx*q.sx*.72,o.ry*q.sy*.72,q.a*.18,0,TAU);
+      ctx.fill();
+    }
+    ctx.strokeStyle='rgba(216,240,116,.20)'; ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.ellipse(-o.rx*.06,-o.ry*.03,o.rx*.56,o.ry*.46,.18,0,TAU); ctx.stroke();
+    ctx.restore();
+  }
+
   function drawHazards(){
-    // Zones toxiques diffuses : la pollution imprègne la terre au lieu de devenir un objet fermé.
+    // Zones toxiques diffuses : sous-couche dans la terre, puis léger voile au-dessus des sprites.
     for(const o of game.toxics){
       if(!worldYInView(o.y,Math.max(o.rx||40,o.ry||40)+90)) continue;
-      const breathe=.94+Math.sin(t*1.15+o.pulse)*.035;
-      ctx.save(); ctx.translate(o.x,o.y); ctx.rotate(o.a);
-      ctx.globalAlpha=.72+breathe*.08;
-      ctx.fillStyle='rgba(121,145,48,.12)'; ctx.beginPath(); ctx.ellipse(0,0,o.rx*1.24,o.ry*1.20,0,0,TAU); ctx.fill();
-      ctx.fillStyle='rgba(145,177,55,.13)';
-      for(const q of o.lobes||[]){
-        const rr=q.r; ctx.beginPath(); ctx.ellipse(Math.cos(q.a)*o.rx*rr,Math.sin(q.a)*o.ry*rr,o.rx*q.sx,o.ry*q.sy,q.a*.22,0,TAU); ctx.fill();
-      }
-      ctx.fillStyle='rgba(105,137,39,.17)'; ctx.beginPath(); ctx.ellipse(0,1,o.rx*.80,o.ry*.72,0,0,TAU); ctx.fill();
-      ctx.fillStyle='rgba(180,207,67,.15)'; ctx.beginPath(); ctx.ellipse(-o.rx*.12,-o.ry*.08,o.rx*.47,o.ry*.38,.14,0,TAU); ctx.fill();
-      for(const q of o.specks||[]){
-        ctx.fillStyle=q.light?'rgba(205,229,92,.30)':'rgba(42,55,23,.25)';
-        ctx.beginPath(); ctx.arc(q.x*o.rx,q.y*o.ry,q.r,0,TAU); ctx.fill();
-      }
-      // Deux bulles discrètes seulement, animation en alpha/position et jamais en scale.
-      ctx.globalAlpha=.22+.08*Math.sin(t*1.8+o.pulse); ctx.strokeStyle='rgba(211,232,103,.48)'; ctx.lineWidth=1.2;
-      ctx.beginPath(); ctx.arc(-o.rx*.20,-o.ry*.16,3.1,0,TAU); ctx.stroke();
-      ctx.beginPath(); ctx.arc(o.rx*.22,o.ry*.12,2.2,0,TAU); ctx.stroke();
-      ctx.restore();
+      drawToxicZoneBase(o);
     }
 
     // Limaces de lixiviat : mêmes trajectoires que les anciennes limaces, mais incarnées.
@@ -2874,6 +2972,12 @@
       ctx.shadowColor='rgba(0,0,0,0)'; ctx.shadowBlur=0; ctx.shadowOffsetY=0;
       if(!['nuclear','sarcophagus','scooter','battery','arcade','sign','trex','tire','solar','trashbag','server','drone','extinguisher','microwave','cone'].includes(o.kind)) inkObject(o);
       ctx.restore();
+    }
+
+    // Voile toxique au-dessus des sprites pour que la pollution semble vraiment les recouvrir.
+    for(const o of game.toxics){
+      if(!worldYInView(o.y,Math.max(o.rx||40,o.ry||40)+90)) continue;
+      drawToxicZoneOverlay(o);
     }
   }
 
@@ -3241,7 +3345,7 @@
     const x=W-8,y=8,w=126,h=112; ctx.globalAlpha=.90; ctx.fillStyle='rgba(5,7,6,.78)'; roundRect(x-w,y,w,h,8); ctx.fill();
     ctx.globalAlpha=1; ctx.textAlign='left'; ctx.textBaseline='top'; ctx.font='700 10px monospace'; ctx.fillStyle='#d8ff8b';
     const xx=x-w+8;
-    ctx.fillText('PERF v3.41.1',xx,y+7); ctx.fillStyle='#e9e2c9';
+    ctx.fillText('PERF v3.41.3',xx,y+7); ctx.fillStyle='#e9e2c9';
     ctx.fillText('FPS      '+perf.fps.toFixed(0),xx,y+22);
     ctx.fillText('update   '+perf.update.toFixed(2)+' ms',xx,y+34);
     ctx.fillText('render   '+perf.render.toFixed(2)+' ms',xx,y+46);

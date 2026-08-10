@@ -6,7 +6,7 @@ Le prototype mêle arcade mobile, satire écologique et esthétique de livre pou
 
 ## Version actuelle
 
-**v3.41.1 Asset Ingestion Test**
+**v3.41.3 Toxic Overlay Pass**
 
 Cette passe teste le pipeline hybride retenu :
 
@@ -51,7 +51,7 @@ flower-power/
     └── README.md
 ```
 
-La v3.41.1 reste volontairement monolithique pour préserver une base jouable. Le découpage en modules viendra progressivement, avec un test navigateur après chaque étape.
+La v3.41.3 reste volontairement monolithique pour préserver une base jouable. Le découpage en modules viendra progressivement, avec un test navigateur après chaque étape.
 
 ## Statut
 

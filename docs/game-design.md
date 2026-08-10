@@ -30,3 +30,7 @@ Une graine tente de rejoindre la surface dans une terre saturée de pollution. L
 - Retour au pixel-art.
 - Refonte complète du gameplay.
 - Framework ou moteur externe.
+
+
+### Lisibilité des obstacles
+Les obstacles solides ne se chevauchent jamais visuellement. Leur collision peut rester plus petite que leur illustration afin d'autoriser des flyovers généreux, mais la génération réserve l'espace graphique complet de chaque asset. La lisibilité prime sur le quota de densité.

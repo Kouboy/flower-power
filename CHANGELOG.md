@@ -1,3 +1,12 @@
+## v3.41.3 - Toxic Overlay Pass
+- Les obstacles solides ne peuvent plus se chevaucher visuellement.
+- Ajout d'une empreinte visuelle distincte du polygone de collision gameplay.
+- Chaque obstacle possède une marge de respiration ; les PNG authorés utilisent 7 unités par défaut, le T-Rex signature 12.
+- Le générateur préfère réduire localement la densité plutôt que forcer un placement qui overlap.
+- Le T-Rex signature est placé avant les obstacles courants afin que son grand set-piece réserve son espace.
+- Zones toxiques et lixiviat restent libres de passer derrière/devant les obstacles : ils ne participent pas à cette règle d'espacement.
+- Aucun changement au principe prévu : les futurs power-ups seront engendrés uniquement par les flyovers et leur valeur dépendra de la prise de risque.
+
 # Changelog
 
 ## v3.41.1 - Asset Ingestion Test

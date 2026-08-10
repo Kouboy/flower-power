@@ -2,7 +2,7 @@
 
 ## Jalon actuel
 
-### v3.41.1 Asset Ingestion Test
+### v3.41.2 Visual Spacing Pass
 
 - Valider le chargement des PNG authorés sur desktop et smartphone.
 - Vérifier que `worldWidth` donne la bonne échelle en modes A et B.
