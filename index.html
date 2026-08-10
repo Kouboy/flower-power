@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-<title>Flower Power v3.41.3 Toxic Overlay Pass</title>
+<title>Flower Power v3.42 Flyover PowerUps Prototype</title>
 <style>
   :root{--bg:#15110e;--ui:#f7e9c7;--muted:#cdbb91;--soil:#221912;--light:#ffe59a;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -38,8 +38,8 @@
       <div class="pill">☣ Zones toxiques : déviation</div>
       <div class="pill">🐌 Limaces : rupture</div>
       <div class="pill">⚙ Déchets : rupture</div>
-      <div class="pill">🌱 Power-ups : désactivés dans ce test</div>
-      <div class="pill">↗ Prochaine étape : spawn par flyover</div>
+      <div class="pill">🌱 Power-ups : engendrés par les flyovers</div>
+      <div class="pill">↗ Flyover risqué : meilleure récompense</div>
       <div class="pill">☀ Jour : éclosion</div>
       <div class="pill">♻ Frôlement maintenu : ÉcoCrédits™</div>
     </div>
@@ -48,14 +48,14 @@
       <button id="scaleB" type="button">B · +18% / POUSSE −12%</button>
     </div>
     <div class="hint">TOUCHE POUR COMMENCER</div>
-    <p class="small">Prototype v3.41.3 · Toxic Overlay Pass · PNG + collisions authorées · zéro overlap solide · ÉcoCrédits™ · SFX</p>
+    <p class="small">Prototype v3.42 · Flyover PowerUps Prototype · PNG + collisions authorées · flyover → power-up · ÉcoCrédits™ · SFX</p>
   </div>
 </div>
 <script src="assets/obstacles/manifest.js"></script>
 <script>
 (() => {
   'use strict';
-  console.info('Flower Power v3.41.3 Toxic Overlay Pass');
+  console.info('Flower Power v3.42 Flyover PowerUps Prototype');
 
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d', { alpha:false });
@@ -127,6 +127,8 @@
 
   // v3.38 PERFORMANCE PASS -------------------------------------------------
   const PERF_ENABLED=new URLSearchParams(location.search).get('perf')==='1';
+  const FLY_DEBUG=new URLSearchParams(location.search).get('flydebug')==='1';
+  let flyDebugText='', flyDebugTimer=0;
   const perf={fps:60,update:0,render:0,soil:0,hazards:0,plant:0,bonuses:0,effects:0};
   let tipHazardQuery={solid:null,toxic:0,leak:0,danger:0};
   let noiseBuffer=null;
@@ -385,7 +387,7 @@
   const FLOWER_CACHE_TOP=-126, FLOWER_CACHE_H=144;
   let flowerCacheDirty=true;
 
-  // v3.41.3 VISUAL SPACING PASS
+  // v3.42 VISUAL SPACING PASS
   // Les exports de l'Asset Editor restent intacts dans assets/obstacles/.
   // manifest.js est généré depuis leurs JSON pour rester compatible avec une ouverture directe en file://.
   const AUTHORED_ASSETS=window.FLOWER_POWER_AUTHORED_ASSETS||{};
@@ -1176,7 +1178,7 @@
       }
     }
 
-    const solidCount=Math.round((6+Math.min(6,Math.floor(d*.18)))*worldScale*.84*(viewScaleMode==='B'?.92:1)); // v3.41.3 : cible, jamais quota forcé
+    const solidCount=Math.round((6+Math.min(6,Math.floor(d*.18)))*worldScale*.84*(viewScaleMode==='B'?.92:1)); // v3.42 : cible, jamais quota forcé
     for(let i=0;i<solidCount;i++){
       let placed=false;
       const preferred=i%3===0?'upper':(i%3===1?'middle':'deep');
@@ -1586,8 +1588,13 @@
 
   function beginOrUpdateGraze(obj,info,dt,mul=1){
     let g=obj.grazeState;
+    const relY=game.tip.y-(obj.y||game.tip.y);
     if(!g){
-      g=obj.grazeState={time:0,score:0,peak:0,lastX:info.x,lastY:info.y,kind:info.kind,active:true,mul};
+      g=obj.grazeState={
+        time:0,score:0,peak:0,lastX:info.x,lastY:info.y,kind:info.kind,active:true,mul,
+        startRelY:relY,minRelY:relY,maxRelY:relY,lastRelY:relY,
+        intensityTime:0,effectiveTime:0,path:0,prevTipX:game.tip.x,prevTipY:game.tip.y
+      };
       sfx('grazeStart',info.intensity||.6);
     }
     g.active=true;
@@ -1597,6 +1604,14 @@
     g.lastY=lerp(g.lastY,info.y,.35);
     g.kind=info.kind;
     g.mul=mul;
+    g.minRelY=Math.min(g.minRelY,relY);
+    g.maxRelY=Math.max(g.maxRelY,relY);
+    g.lastRelY=relY;
+    g.intensityTime+=info.intensity*dt;
+    // La durée "utile" est pondérée par la proximité : traîner loin de l'objet paie moins.
+    g.effectiveTime+=dt*(.45+.55*info.intensity);
+    g.path+=Math.hypot(game.tip.x-g.prevTipX,game.tip.y-g.prevTipY);
+    g.prevTipX=game.tip.x; g.prevTipY=game.tip.y;
     // Durée minimum : avant ça, le frôlement chauffe mais ne rapporte rien.
     const MIN_GRAZE_TIME=.22;
     if(g.time>MIN_GRAZE_TIME){
@@ -1606,6 +1621,92 @@
     }
     activeGrazeGlow=Math.max(activeGrazeGlow,info.intensity);
     if(info.kind==='leak') obj.hitFlash=Math.max(obj.hitFlash||0,.08+.18*info.intensity);
+  }
+
+  function solidFlyoverEligible(obj){
+    if(!obj || obj._flyoverRewarded) return false;
+    if(obj._assetFlyoverEligible===false) return false;
+    return true;
+  }
+
+  function assessFlyover(obj,g){
+    const h=Math.max(36,obj._assetWorldH||obj.h||approxRadius(obj)*1.35);
+    const exitRelY=game.tip.y-obj.y;
+    const minAdvance=clamp(h*.27,17,42);
+    const directionalAdvance=g.startRelY-exitRelY;
+    const startedBelowOrBeside=g.startRelY>-clamp(h*.10,6,16);
+    const exitedAbove=exitRelY<-clamp(h*.08,6,14);
+    const progress=clamp(directionalAdvance/Math.max(28,h*.62),0,1);
+    const avgIntensity=g.time>0?g.intensityTime/g.time:0;
+    const duration=clamp((g.effectiveTime-.20)/.95,0,1);
+    const proximity=clamp(avgIntensity*.62+g.peak*.38,0,1);
+    const risk=clamp(duration*.47+proximity*.36+progress*.17,0,1);
+    const qualified=g.time>=.27 && g.peak>=.20 && startedBelowOrBeside && exitedAbove && directionalAdvance>=minAdvance && progress>=.42;
+    return {qualified,risk,progress,avgIntensity,effectiveTime:g.effectiveTime,rawTime:g.time,directionalAdvance,exitRelY};
+  }
+
+  function bonusSpawnClear(x,y,r=15){
+    if(x<30+r || x>W-30-r) return false;
+    if(y<game.surfaceY+42 || y>worldBottom()-52) return false;
+    // Toujours devant la pousse : le joueur ne doit jamais devoir faire demi-tour.
+    if(y>game.tip.y-30) return false;
+    for(const o of game.solids){
+      const dx=x-o.x,dy=y-o.y, br=(o._broadR||approxRadius(o)+32)+r+8;
+      if(dx*dx+dy*dy>br*br) continue;
+      if(solidSpriteDistance(o,x,y)<r+13) return false;
+    }
+    for(const o of game.toxics){ if(toxicIntensityAt(o,x,y)>.10) return false; }
+    for(const l of game.leaks){
+      const ca=Math.cos(l.angle),sa=Math.sin(l.angle);
+      const ax=l.x-ca*l.len*.5,ay=l.y-sa*l.len*.5,bx=l.x+ca*l.len*.5,by=l.y+sa*l.len*.5;
+      if(distPointToSegment(x,y,ax,ay,bx,by)<l.r+r+22) return false;
+    }
+    for(const b of game.bonuses){ if(!b.collected && Math.hypot(x-b.x,y-b.y)<58) return false; }
+    return true;
+  }
+
+  function findFlyoverBonusSpawn(obj,risk){
+    const d=clampUpAngle(game.dir.x,game.dir.y,48);
+    const nx=-d.y, ny=d.x;
+    const outward=game.tip.x>=obj.x?1:-1;
+    const baseAhead=80+risk*24;
+    const attempts=[
+      [baseAhead,34,outward],[baseAhead+14,44,outward],[baseAhead-8,48,-outward],
+      [baseAhead+25,29,-outward],[baseAhead+34,38,outward],[baseAhead+8,25,-outward]
+    ];
+    for(const [ahead,lat,side] of attempts){
+      const x=game.tip.x+d.x*ahead+nx*lat*side;
+      const y=game.tip.y+d.y*ahead+ny*lat*side;
+      const projection=(x-game.tip.x)*d.x+(y-game.tip.y)*d.y;
+      if(projection<58) continue;
+      if(bonusSpawnClear(x,y,16)) return {x,y};
+    }
+    return null;
+  }
+
+  function spawnFlyoverBonus(obj,g,a){
+    if(!a.qualified || !solidFlyoverEligible(obj)) return false;
+    // Un beau passage est nécessaire avant que le sous-sol ne rende quoi que ce soit.
+    if(a.risk<.40 || a.effectiveTime<.30) return false;
+    const pos=findFlyoverBonusSpawn(obj,a.risk);
+    if(!pos){
+      if(FLY_DEBUG){flyDebugText=`FLY ${a.rawTime.toFixed(2)}s · ${(a.risk*100|0)}% · spawn bloqué`;flyDebugTimer=2.2;}
+      return false;
+    }
+    // Pour ce prototype la durée reste le déterminant principal de la nature du bonus.
+    const elite=a.effectiveTime>=.78 && a.risk>=.66;
+    const type=elite?'bomb':'water';
+    const formMax=.48;
+    game.bonuses.push({
+      type,x:pos.x,y:pos.y,r:type==='bomb'?16:15,phase:rr(0,TAU),collected:false,
+      forming:formMax,formMax,age:0,originX:obj.x,originY:obj.y,
+      flyRisk:a.risk,flyTime:a.effectiveTime,spawnedBy:'flyover'
+    });
+    obj._flyoverRewarded=true;
+    sfx('ready');
+    setMessage(elite?'FLYOVER RISQUÉ : SPORE LIBÉRÉE':'FLYOVER : SOURCE LIBÉRÉE',.95);
+    if(FLY_DEBUG){flyDebugText=`${type.toUpperCase()} · ${a.rawTime.toFixed(2)}s (${a.effectiveTime.toFixed(2)} utile) · ${(a.risk*100|0)}%`;flyDebugTimer=2.6;}
+    return true;
   }
 
   function finishGraze(obj,award=true){
@@ -1619,8 +1720,14 @@
     const peakBonus=Math.pow(g.peak,2.2)*360;
     const raw=(g.score+holdBonus+peakBonus);
     const amount=Math.round(raw/25)*25;
-    if(amount>=75){
-      addEcoCredits(g.lastX,g.lastY,amount,g.kind||'solid');
+    if(amount>=75) addEcoCredits(g.lastX,g.lastY,amount,g.kind||'solid');
+    if(g.kind==='solid'){
+      const a=assessFlyover(obj,g);
+      spawnFlyoverBonus(obj,g,a);
+      if(FLY_DEBUG && !a.qualified && g.time>=.24){
+        flyDebugText=`pas flyover · ${g.time.toFixed(2)}s · prog ${(a.progress*100|0)}% · risque ${(a.risk*100|0)}%`;
+        flyDebugTimer=1.65;
+      }
     }
   }
 
@@ -1922,6 +2029,13 @@
       const e=game.effects[i]; e.life-=dt; if(e.life<=0) game.effects.splice(i,1);
     }
     if(game.effects.length>42) game.effects.splice(0,game.effects.length-42);
+    if(flyDebugTimer>0) flyDebugTimer-=dt;
+    for(let i=game.bonuses.length-1;i>=0;i--){
+      const b=game.bonuses[i]; b.age=(b.age||0)+dt;
+      if((b.forming||0)>0) b.forming=Math.max(0,b.forming-dt);
+      // Une récompense ratée reste un choix raté, pas un objet éternel dans le monde.
+      if(b.collected || (b.forming<=0 && game.tip.y<b.y-155) || b.age>9.5) game.bonuses.splice(i,1);
+    }
     if(state==='bloom'){ bloomTimer-=dt; if(bloomTimer<=0){ state='fadeOut'; transitionTimer=.46; fadeAlpha=0; } return; }
     if(state==='fadeOut'){ transitionTimer-=dt; fadeAlpha=clamp(1-transitionTimer/.46,0,1); if(transitionTimer<=0){ generateSoil(); prepareStem(); state='fadeIn'; transitionTimer=.48; fadeAlpha=1; } return; }
     if(state==='fadeIn'){ transitionTimer-=dt; fadeAlpha=clamp(transitionTimer/.48,0,1); if(transitionTimer<=0){ fadeAlpha=0; state='ready'; setMessage('TOUCHE POUR POUSSER',2.2); sfx('ready'); } return; }
@@ -1990,7 +2104,7 @@
     if(game.tip.y<=game.surfaceY){ bloom(); return; }
 
     for(const b of game.bonuses){
-      if(!b.collected && dist(game.tip.x,game.tip.y,b.x,b.y)<b.r+9) collectBonus(b);
+      if(!b.collected && (b.forming||0)<=0 && dist(game.tip.x,game.tip.y,b.x,b.y)<b.r+9) collectBonus(b);
     }
 
     const inv=invincibleTimer>0;
@@ -2974,16 +3088,55 @@
       ctx.restore();
     }
 
-    // Voile toxique au-dessus des sprites pour que la pollution semble vraiment les recouvrir.
-    for(const o of game.toxics){
-      if(!worldYInView(o.y,Math.max(o.rx||40,o.ry||40)+90)) continue;
-      drawToxicZoneOverlay(o);
+  }
+
+  function drawBonusGlyph(b,scale=1,alpha=1){
+    ctx.save(); ctx.translate(b.x,b.y); ctx.scale(scale,scale); ctx.globalAlpha*=alpha;
+    const bob=(b.forming||0)>0?0:Math.sin(t*3+b.phase)*2;
+    ctx.translate(0,bob); ctx.shadowBlur=0;
+    if(b.type==='water') drawAssetSource(0,0,1);
+    else if(b.type==='amber') drawAssetAmber(0,0,1);
+    else if(b.type==='bomb') drawAssetSpore(0,0,1);
+    else drawAssetPollen(0,0,1);
+    ctx.restore();
+  }
+
+  function drawBonusManifestation(b){
+    const max=Math.max(.01,b.formMax||.48);
+    const p=clamp(1-(b.forming||0)/max,0,1);
+    const ox=b.originX??b.x, oy=b.originY??b.y;
+    const bendX=(ox+b.x)*.5+(b.x-ox)*.08;
+    const bendY=(oy+b.y)*.5-18;
+    ctx.save();
+    // Filament qui semble extraire la récompense de l'obstacle puis la condense devant la pousse.
+    ctx.strokeStyle=`rgba(210,255,126,${.14+.36*Math.sin(p*Math.PI)})`;
+    ctx.lineWidth=1.3+1.1*(1-p);
+    ctx.setLineDash([3,5]);
+    ctx.beginPath(); ctx.moveTo(ox,oy); ctx.quadraticCurveTo(bendX,bendY,b.x,b.y); ctx.stroke();
+    ctx.setLineDash([]);
+    for(let i=0;i<5;i++){
+      const u=clamp(p*1.35-i*.13,0,1);
+      if(u<=0) continue;
+      const om=1-u;
+      const x=om*om*ox+2*om*u*bendX+u*u*b.x;
+      const y=om*om*oy+2*om*u*bendY+u*u*b.y;
+      ctx.globalAlpha=.26+.62*u;
+      ctx.fillStyle=b.type==='bomb'?'#cfff68':'#9de7ff';
+      ctx.beginPath(); ctx.arc(x,y,1.7+2.1*u,0,TAU); ctx.fill();
     }
+    ctx.globalAlpha=.55+.35*p;
+    ctx.strokeStyle=b.type==='bomb'?'rgba(202,255,105,.88)':'rgba(163,231,255,.88)';
+    ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.arc(b.x,b.y,24*(1-p)+9,0,TAU); ctx.stroke();
+    ctx.restore();
+    const appear=clamp((p-.42)/.58,0,1);
+    if(appear>0) drawBonusGlyph(b,.22+.78*(1-Math.pow(1-appear,2)),appear);
   }
 
   function drawBonuses(){
     for(const b of game.bonuses){
-      if(b.collected || !worldYInView(b.y,80)) continue;
+      if(b.collected || !worldYInView(b.y,100)) continue;
+      if((b.forming||0)>0){ drawBonusManifestation(b); continue; }
       ctx.save();
       ctx.globalAlpha=.34;
       const pocket=ctx.createRadialGradient(b.x,b.y,2,b.x,b.y,38);
@@ -2992,20 +3145,7 @@
       pocket.addColorStop(1,'rgba(255,237,168,0)');
       ctx.fillStyle=pocket; ctx.beginPath(); ctx.arc(b.x,b.y,38,0,TAU); ctx.fill();
       ctx.restore();
-
-      const bob=Math.sin(t*3+b.phase)*2;
-      ctx.save(); ctx.translate(b.x,b.y+bob);
-      ctx.shadowBlur=0;
-      if(b.type==='water'){
-        drawAssetSource(0,0,1);
-      }else if(b.type==='amber'){
-        drawAssetAmber(0,0,1);
-      }else if(b.type==='bomb'){
-        drawAssetSpore(0,0,1);
-      }else{
-        drawAssetPollen(0,0,1);
-      }
-      ctx.restore();
+      drawBonusGlyph(b,1,1);
     }
   }
 
@@ -3320,6 +3460,12 @@
       ctx.fillStyle='#fff1b7'; ctx.fillText(effect,W/2,H-88);
     }
 
+    if(FLY_DEBUG && flyDebugTimer>0 && flyDebugText){
+      ctx.font='700 12px ui-monospace,SFMono-Regular,Consolas,monospace'; ctx.textAlign='center';
+      ctx.fillStyle='rgba(7,5,4,.70)'; roundRect(28,68,W-56,24,12); ctx.fill();
+      ctx.fillStyle='#d8ff58'; ctx.fillText(flyDebugText,W/2,73);
+    }
+
     if(state==='ready'){
       ctx.globalAlpha=.92; ctx.font='800 18px system-ui,-apple-system,Segoe UI,sans-serif'; ctx.textAlign='center';
       ctx.fillStyle='rgba(7,5,4,.56)'; roundRect(34,H-126,W-68,34,17); ctx.fill();
@@ -3345,7 +3491,7 @@
     const x=W-8,y=8,w=126,h=112; ctx.globalAlpha=.90; ctx.fillStyle='rgba(5,7,6,.78)'; roundRect(x-w,y,w,h,8); ctx.fill();
     ctx.globalAlpha=1; ctx.textAlign='left'; ctx.textBaseline='top'; ctx.font='700 10px monospace'; ctx.fillStyle='#d8ff8b';
     const xx=x-w+8;
-    ctx.fillText('PERF v3.41.3',xx,y+7); ctx.fillStyle='#e9e2c9';
+    ctx.fillText('PERF v3.42',xx,y+7); ctx.fillStyle='#e9e2c9';
     ctx.fillText('FPS      '+perf.fps.toFixed(0),xx,y+22);
     ctx.fillText('update   '+perf.update.toFixed(2)+' ms',xx,y+34);
     ctx.fillText('render   '+perf.render.toFixed(2)+' ms',xx,y+46);
@@ -3361,12 +3507,19 @@
     ctx.save(); ctx.globalAlpha=clamp(fadeAlpha,0,1); ctx.fillStyle='#020201'; ctx.fillRect(0,0,W,H); ctx.restore();
   }
 
+  function drawToxicOverlays(){
+    for(const o of game.toxics){
+      if(!worldYInView(o.y,Math.max(o.rx||40,o.ry||40)+90)) continue;
+      drawToxicZoneOverlay(o);
+    }
+  }
+
   function drawWorld(){
-    if(!PERF_ENABLED){ drawSoil(); drawHazards(); drawBonuses(); drawPlant(); drawGrazeFeedback(); drawEffects(); drawParticles(); return; }
+    if(!PERF_ENABLED){ drawSoil(); drawHazards(); drawBonuses(); drawPlant(); drawToxicOverlays(); drawGrazeFeedback(); drawEffects(); drawParticles(); return; }
     let p=performance.now(),q; drawSoil(); q=performance.now(); perf.soil=lerp(perf.soil,q-p,.10); p=q;
     drawHazards(); q=performance.now(); perf.hazards=lerp(perf.hazards,q-p,.10); p=q;
     drawBonuses(); q=performance.now(); perf.bonuses=lerp(perf.bonuses,q-p,.10); p=q;
-    drawPlant(); q=performance.now(); perf.plant=lerp(perf.plant,q-p,.10); p=q;
+    drawPlant(); drawToxicOverlays(); q=performance.now(); perf.plant=lerp(perf.plant,q-p,.10); p=q;
     drawGrazeFeedback(); drawEffects(); drawParticles(); q=performance.now(); perf.effects=lerp(perf.effects,q-p,.10);
   }
   function draw(){

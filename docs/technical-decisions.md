@@ -77,3 +77,13 @@ Le découpage de `index.html` en modules doit être progressif. Une seule famill
 - La densité est une cible, pas un quota : après plusieurs tentatives infructueuses, le générateur abandonne l'obstacle plutôt que de forcer sa pose.
 - Le T-Rex signature réserve son emplacement avant la population standard.
 - Toxiques et lixiviat ne sont pas concernés : leur superposition avec les objets fait partie du langage du sous-sol.
+
+
+## v3.42 — Power-ups issus du flyover
+- Aucun power-up n'est placé pendant la génération du niveau.
+- Le système réutilise l'enveloppe de graze des collisions authorées.
+- La qualification exige une progression ascendante réelle autour puis au-dessus de l'obstacle ; un simple stationnement dans la zone de graze ne suffit pas.
+- La prise de risque combine durée utile, proximité et progression.
+- Dans ce prototype, la durée utile pilote principalement la nature de la récompense : Source claire pour un flyover qualifié, Spore pour un flyover long et très risqué.
+- Le spawn est prédictif : devant la pointe, latéralement décalé, puis rejeté s'il tombe dans un solide, une zone toxique, un trajet de lixiviat ou trop près d'un autre bonus.
+- Une récompense ratée disparaît une fois suffisamment derrière la pointe.

@@ -1,3 +1,15 @@
+# Changelog
+
+## v3.42 — Flyover PowerUps Prototype
+- aucun power-up n'est généré avec le niveau ;
+- les solides suivent maintenant un flyover directionnel (durée, proximité, progression réelle au-dessus de l'obstacle) ;
+- un flyover qualifié peut libérer une Source claire ; un passage long et très risqué peut libérer une Spore ;
+- la récompense apparaît devant la pousse mais volontairement décalée de sa trajectoire, après recherche d'une position libre ;
+- matérialisation par filament entre l'obstacle et la récompense ;
+- un obstacle ne libère au maximum qu'une récompense ;
+- `?flydebug=1` affiche les mesures de qualification pour le réglage ;
+- le voile des zones toxiques est rendu après les sprites, y compris les nouveaux power-ups.
+
 ## v3.41.3 - Toxic Overlay Pass
 - Les obstacles solides ne peuvent plus se chevaucher visuellement.
 - Ajout d'une empreinte visuelle distincte du polygone de collision gameplay.

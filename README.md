@@ -6,7 +6,7 @@ Le prototype mêle arcade mobile, satire écologique et esthétique de livre pou
 
 ## Version actuelle
 
-**v3.41.3 Toxic Overlay Pass**
+**v3.42 Flyover PowerUps Prototype**
 
 Cette passe teste le pipeline hybride retenu :
 
@@ -51,11 +51,11 @@ flower-power/
     └── README.md
 ```
 
-La v3.41.3 reste volontairement monolithique pour préserver une base jouable. Le découpage en modules viendra progressivement, avec un test navigateur après chaque étape.
+La v3.42 reste volontairement monolithique pour préserver une base jouable. Le découpage en modules viendra progressivement, avec un test navigateur après chaque étape.
 
 ## Statut
 
-Prototype en développement. La priorité actuelle est de valider en jeu le pipeline PNG + collision polygonale et l’échelle mobile avant de produire toutes les familles.
+Prototype en développement. La priorité actuelle est de valider la boucle flyover → prise de risque → apparition dynamique d’un power-up, tout en conservant le pipeline PNG + collisions authorées.
 
 ## Diagnostic performances
 
@@ -74,4 +74,4 @@ Cette version ne cherche pas encore à refaire les 23 familles. Elle valide d'ab
 
 ## Power-ups
 
-Depuis la v3.41.1, aucun power-up n’est placé par la génération du niveau. La prochaine étape doit les faire naître uniquement après un flyover réussi, avec une nature et une valeur relatives à la prise de risque.
+Depuis la v3.41.1, aucun power-up n’est placé par la génération du niveau. En v3.42, un flyover qualifié peut faire naître une Source claire devant la pousse ; un flyover plus long et très risqué peut libérer une Spore. La position est recherchée devant la graine mais décalée de sa trajectoire, et refusée si elle tombe dans un danger ou un obstacle.

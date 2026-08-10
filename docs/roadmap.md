@@ -2,18 +2,18 @@
 
 ## Jalon actuel
 
-### v3.41.2 Visual Spacing Pass
+### v3.42 Flyover PowerUps Prototype
 
-- Valider le chargement des PNG authorés sur desktop et smartphone.
-- Vérifier que `worldWidth` donne la bonne échelle en modes A et B.
-- Tester les polygones de collision en situation réelle.
-- Vérifier que le rayon de graze exporté correspond au flyover attendu.
-- Évaluer le coût des collisions détaillées, notamment le T-Rex signature.
-- Confirmer qu'aucun texte orienté n'est retourné lorsque `mirrorSafe=false`.
+- Vérifier que le flyover exige bien une vraie progression autour puis au-dessus de l’obstacle.
+- Régler les seuils de durée/proximité afin qu’un simple frôlement rapporte des ÉcoCrédits™ sans forcément produire de power-up.
+- Valider le placement prédictif : devant la pousse, latéralement décalé, accessible mais pas offert.
+- Tester la lisibilité de la matérialisation obstacle → power-up sur smartphone.
+- Vérifier que la Source apparaît sur un beau flyover et que la Spore reste une récompense nettement plus rare.
+- Utiliser `?flydebug=1` si les seuils doivent être diagnostiqués.
 
 ## Étape suivante
 
-Prototyper le système central de récompense : `flyover -> prise de risque -> spawn dynamique de power-up`. Aucun power-up ne doit être pré-généré. Commencer avec un seul type de récompense avant d'équilibrer plusieurs tiers.
+Une fois la boucle agréable, régler précisément les tiers de récompense et décider s’il faut réintroduire une récompense intermédiaire (pollen/ambre) ou rester sur un système volontairement compact.
 
 ## Après validation
 
