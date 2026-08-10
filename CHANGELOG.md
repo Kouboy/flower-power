@@ -20,6 +20,24 @@
 
 # Changelog
 
+## v3.43.16 - Stem Grain Pass
+
+- Renforce le grain interne de la tige avec davantage de mouchetures et de petites stries stables.
+- Garde la silhouette et les nœuds de croissance de la v3.43.15.
+
+## v3.43.15 - Stem Character Pass
+
+- Retravaille la tige souterraine avec un contour plus affirmé, une chair végétale plus mate et une texture interne discrète.
+- Ajoute de petites taches et nœuds de croissance pour casser l'aspect trop lisse.
+- Redessine légèrement la graine et le bourgeon terminal pour mieux coller au langage visuel des sprites.
+
+## v3.43.14 - Surface Cutaway Pass
+
+- Enrichit la transition surface / sous-sol sans toucher au gameplay.
+- Ajoute une croûte de terre irrégulière, des mottes, poches de matière, racines exposées et petits débris végétaux.
+- Casse la frontière trop propre entre gazon et terre afin de mieux assumer la vue en coupe.
+- Tout reste intégré au cache statique du sol pour préserver les performances.
+
 ## v3.43.13 - Inner Stencil Contrast Pass
 
 - Assombrit légèrement la frange intérieure du pochoir, au contact du sprite.
@@ -131,6 +149,24 @@
 - Aucun changement au principe prévu : les futurs power-ups seront engendrés uniquement par les flyovers et leur valeur dépendra de la prise de risque.
 
 # Changelog
+
+## v3.43.16 - Stem Grain Pass
+
+- Renforce le grain interne de la tige avec davantage de mouchetures et de petites stries stables.
+- Garde la silhouette et les nœuds de croissance de la v3.43.15.
+
+## v3.43.15 - Stem Character Pass
+
+- Retravaille la tige souterraine avec un contour plus affirmé, une chair végétale plus mate et une texture interne discrète.
+- Ajoute de petites taches et nœuds de croissance pour casser l'aspect trop lisse.
+- Redessine légèrement la graine et le bourgeon terminal pour mieux coller au langage visuel des sprites.
+
+## v3.43.14 - Surface Cutaway Pass
+
+- Enrichit la transition surface / sous-sol sans toucher au gameplay.
+- Ajoute une croûte de terre irrégulière, des mottes, poches de matière, racines exposées et petits débris végétaux.
+- Casse la frontière trop propre entre gazon et terre afin de mieux assumer la vue en coupe.
+- Tout reste intégré au cache statique du sol pour préserver les performances.
 
 ## v3.43.13 - Inner Stencil Contrast Pass
 

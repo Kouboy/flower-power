@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-<title>Flower Power v3.43.13 Inner Stencil Contrast Pass</title>
+<title>Flower Power v3.43.16 Stem Grain Pass</title>
 <style>
   :root{--bg:#15110e;--ui:#f7e9c7;--muted:#cdbb91;--soil:#221912;--light:#ffe59a;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -48,14 +48,14 @@
       <button id="scaleB" type="button">B · +18% / POUSSE −12%</button>
     </div>
     <div class="hint">TOUCHE POUR COMMENCER</div>
-    <p class="small">Prototype v3.43.13 · Visual Cohesion Pass · PNG + collisions authorées · flyover → power-up · ÉcoCrédits™ · SFX</p>
+    <p class="small">Prototype v3.43.16 · Visual Cohesion Pass · PNG + collisions authorées · flyover → power-up · ÉcoCrédits™ · SFX</p>
   </div>
 </div>
 <script src="assets/obstacles/manifest.js"></script>
 <script>
 (() => {
   'use strict';
-  console.info('Flower Power v3.43.13.1 Soil Richness & Sky Pass');
+  console.info('Flower Power v3.43.16.1 Soil Richness & Sky Pass');
 
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d', { alpha:false });
@@ -3014,6 +3014,68 @@
     g.fillStyle=soil; g.fillRect(0,soilTop,W,wb-soilTop);
     for(const b of SOIL_BANDS){ const y0=lerp(soilTop,wb,b.a), y1=lerp(soilTop,wb,b.b); g.fillStyle=b.c; g.fillRect(0,y0,W,y1-y0); }
 
+    // v3.43.14 : vraie transition de coupe entre la surface et le sous-sol.
+    // Une bande de terre plus vivante évite la frontière « gazon posé sur un rectangle ».
+    g.save();
+    // Croûte irrégulière juste sous l'herbe.
+    g.fillStyle='rgba(70,43,29,.42)';
+    g.beginPath(); g.moveTo(0,soilTop+2);
+    for(let x=0;x<=W;x+=11){
+      const y=soilTop+6 + Math.sin(x*.083+lawnVariant)*3.2 + Math.sin(x*.031+skyVariant)*2.4;
+      g.lineTo(x,y);
+    }
+    for(let x=W;x>=0;x-=14){
+      const y=soilTop+22 + Math.sin(x*.057+1.7)*4.6 + Math.sin(x*.019)*2.8;
+      g.lineTo(x,y);
+    }
+    g.closePath(); g.fill();
+
+    // Petites poches claires et sombres qui cassent la ligne horizontale.
+    for(let i=0;i<48;i++){
+      const x=(i*73 + 19 + lawnVariant*11)%Math.max(1,W);
+      const y=soilTop+7+((i*29+skyVariant*7)%24);
+      const rw=2.2+(i%4)*1.3, rh=1.2+((i*5)%3)*.8;
+      g.fillStyle=i%5===0?'rgba(210,158,105,.26)':(i%3===0?'rgba(45,28,21,.34)':'rgba(112,72,49,.28)');
+      g.beginPath(); g.ellipse(x,y,rw,rh,((i*31)%80)*Math.PI/180,0,TAU); g.fill();
+    }
+
+    // Quelques mottes qui débordent légèrement vers le ciel, comme une coupe de terrain émiettée.
+    for(let i=0;i<22;i++){
+      const x=(i*91+37+lawnVariant*13)%Math.max(1,W);
+      const y=soilTop-1-((i*7)%4);
+      const s=1.5+((i*11)%4)*.7;
+      g.fillStyle=i%3===0?'rgba(83,53,35,.78)':'rgba(118,76,47,.72)';
+      g.beginPath();
+      g.moveTo(x-s*1.2,y+s*.2); g.lineTo(x-s*.2,y-s*.8); g.lineTo(x+s,y-s*.2); g.lineTo(x+s*.7,y+s*.8); g.closePath(); g.fill();
+    }
+
+    // Racines exposées : plus épaisses à la naissance, puis elles se divisent rapidement.
+    g.lineCap='round';
+    for(let i=0;i<18;i++){
+      const x=10+((i*67+23)%Math.max(20,W-20));
+      const len=16+((i*23)%34);
+      g.strokeStyle=i%4===0?'rgba(207,178,121,.50)':'rgba(169,137,94,.42)';
+      g.lineWidth=1.35+(i%3)*.35;
+      g.beginPath();
+      g.moveTo(x,soilTop+2);
+      g.bezierCurveTo(x+Math.sin(i*1.8)*4,soilTop+9,x+Math.cos(i*.73)*8,soilTop+len*.62,x+Math.sin(i*.91)*11,soilTop+len);
+      g.stroke();
+      if(i%2===0){
+        const by=soilTop+len*.48;
+        g.lineWidth=.8;
+        g.beginPath(); g.moveTo(x+Math.sin(i*.6)*3,by); g.lineTo(x+((i%4)-1.5)*5,by+8+(i%5)); g.stroke();
+      }
+    }
+
+    // Fins éclats d'herbe sèche et débris végétaux coincés dans les premiers centimètres.
+    g.strokeStyle='rgba(204,176,108,.28)'; g.lineWidth=.8;
+    for(let i=0;i<28;i++){
+      const x=(i*47+11)%Math.max(1,W), y=soilTop+5+((i*17)%20);
+      const dx=3+((i*5)%6);
+      g.beginPath(); g.moveTo(x,y); g.lineTo(x+(i%2?dx:-dx),y+2+((i*3)%4)); g.stroke();
+    }
+    g.restore();
+
     // Strates irrégulières, plus épaisses et moins "lignes de scan".
     for(let y=soilTop+42;y<wb;y+=58){
       const k=(y-soilTop)/(wb-soilTop); g.globalAlpha=.24-k*.08; g.strokeStyle=k<.30?'#c08a5c':(k<.60?'#815b43':'#4a3329'); g.lineWidth=3.1;
@@ -3543,25 +3605,76 @@ function drawObstacleSoilAnchorUnder(o){
       const last=points[points.length-1]; ctx.lineTo(last.x,last.y);
     };
 
-    // Trait extérieur brun-olive comme sur les sprites : la tige reste lisible sur toutes les strates.
-    ctx.strokeStyle=current?`rgba(45,61,31,${.96*alpha})`:`rgba(48,59,38,${.30*alpha})`;
-    ctx.lineWidth=current?9.2:4.6; tracePath(); ctx.stroke();
-    // Chair végétale plus mate, pas de glow.
-    ctx.strokeStyle=current?`rgba(124,172,79,${.98*alpha})`:`rgba(98,124,74,${.34*alpha})`;
-    ctx.lineWidth=current?6.3:2.8; tracePath(); ctx.stroke();
-    // Nervure claire irrégulière, volontairement discrète.
-    ctx.strokeStyle=current?`rgba(202,220,133,${.62*alpha})`:`rgba(177,192,128,${.18*alpha})`;
-    ctx.lineWidth=current?1.55:.9; tracePath(); ctx.stroke();
+    // Silhouette plus affirmée, proche du langage des sprites : contour sombre, chair végétale mate, ombre interne.
+    ctx.strokeStyle=current?`rgba(34,46,24,${.98*alpha})`:`rgba(43,52,33,${.34*alpha})`;
+    ctx.lineWidth=current?10.6:5.4; tracePath(); ctx.stroke();
 
-    // Quelques nœuds de croissance sur la tige active, assez gros pour être perceptibles sur mobile.
+    ctx.strokeStyle=current?`rgba(82,104,53,${.42*alpha})`:`rgba(70,82,57,${.20*alpha})`;
+    ctx.lineWidth=current?8.4:4.1; tracePath(); ctx.stroke();
+
+    ctx.strokeStyle=current?`rgba(120,165,73,${.98*alpha})`:`rgba(92,122,68,${.35*alpha})`;
+    ctx.lineWidth=current?6.15:2.9; tracePath(); ctx.stroke();
+
+    ctx.strokeStyle=current?`rgba(205,223,128,${.66*alpha})`:`rgba(177,192,128,${.18*alpha})`;
+    ctx.lineWidth=current?1.45:.9; tracePath(); ctx.stroke();
+
+    // Grain interne plus présent : petites mouchetures et stries courtes stables le long de la tige.
+    if(current && points.length>14){
+      const first=Math.max(8,points.length-190);
+      for(let i=first;i<points.length-5;i+=9){
+        const p=points[i], a=points[Math.max(0,i-2)]||p, b=points[Math.min(points.length-1,i+2)]||p;
+        const dx=b.x-a.x, dy=b.y-a.y, d=Math.hypot(dx,dy)||1;
+        const nx=-dy/d, ny=dx/d;
+        const tx=dx/d, ty=dy/d;
+        const grainShift=((i*13)%7)-3;
+        const side=((i%4)<2?1:-1);
+        const gx=p.x + nx*(side*(.65 + (i%3)*.22)) + tx*(grainShift*.10);
+        const gy=p.y + ny*(side*(.65 + (i%3)*.22)) + ty*(grainShift*.10);
+        ctx.fillStyle=`rgba(74,96,45,${.22*alpha})`;
+        ctx.beginPath(); ctx.arc(gx,gy,.72+(i%3)*.14,0,TAU); ctx.fill();
+        if(i%18===0){
+          ctx.strokeStyle=`rgba(58,76,36,${.20*alpha})`; ctx.lineWidth=.8;
+          ctx.beginPath(); ctx.moveTo(gx-tx*1.2,gy-ty*1.2); ctx.lineTo(gx+tx*1.1,gy+ty*1.1); ctx.stroke();
+        }
+        if(i%27===0){
+          ctx.fillStyle=`rgba(214,228,142,${.16*alpha})`;
+          ctx.beginPath(); ctx.ellipse(p.x-nx*.9,p.y-ny*.9,.9,.55,Math.atan2(dy,dx),0,TAU); ctx.fill();
+        }
+      }
+    }
+
+    // Petites taches/anneaux de croissance pour salir la tige et casser l'aspect trop lisse.
+    if(current && points.length>18){
+      const first=Math.max(10,points.length-180);
+      for(let i=first;i<points.length-8;i+=18){
+        const p=points[i], a=points[Math.max(0,i-2)]||p, b=points[Math.min(points.length-1,i+2)]||p;
+        const dx=b.x-a.x, dy=b.y-a.y, d=Math.hypot(dx,dy)||1;
+        const nx=-dy/d, ny=dx/d;
+        const wob=((i*17)%5)-2;
+        ctx.fillStyle=`rgba(84,104,49,${.16*alpha})`;
+        ctx.beginPath(); ctx.ellipse(p.x+nx*(1.2+wob*.08),p.y+ny*(1.2+wob*.08),1.6,1.1,Math.atan2(dy,dx),0,TAU); ctx.fill();
+        if(i%36===0){
+          ctx.fillStyle=`rgba(208,225,136,${.12*alpha})`;
+          ctx.beginPath(); ctx.ellipse(p.x-nx*1.4,p.y-ny*1.4,1.2,.9,Math.atan2(dy,dx),0,TAU); ctx.fill();
+        }
+      }
+    }
+
+    // Quelques nœuds de croissance / petites feuilles primitives, assez gros pour survivre sur smartphone.
     if(current && points.length>34){
-      ctx.fillStyle=`rgba(151,188,94,${.76*alpha})`; ctx.strokeStyle=`rgba(45,61,31,${.68*alpha})`; ctx.lineWidth=1.1;
-      const first=Math.max(18,points.length-150);
-      for(let i=first;i<points.length-18;i+=46){
+      ctx.fillStyle=`rgba(142,182,87,${.82*alpha})`; ctx.strokeStyle=`rgba(38,52,27,${.72*alpha})`; ctx.lineWidth=1.1;
+      const first=Math.max(18,points.length-156);
+      for(let i=first;i<points.length-18;i+=44){
         const a=points[i-2]||points[i], b=points[i+2]||points[i];
-        const ang=Math.atan2(b.y-a.y,b.x-a.x)+(i%92===0?-1:1)*1.05;
-        ctx.save(); ctx.translate(points[i].x,points[i].y); ctx.rotate(ang);
-        ctx.beginPath(); ctx.ellipse(5,0,4.4,2.6,.08,0,TAU); ctx.fill(); ctx.stroke(); ctx.restore();
+        const dx=b.x-a.x, dy=b.y-a.y;
+        const along=Math.atan2(dy,dx);
+        const normal=along + ((i%88===0)?-1.08:1.08);
+        ctx.save(); ctx.translate(points[i].x,points[i].y); ctx.rotate(normal);
+        ctx.beginPath(); ctx.ellipse(5.4,0,4.8,2.8,.10,0,TAU); ctx.fill(); ctx.stroke();
+        ctx.fillStyle=`rgba(203,224,136,${.24*alpha})`;
+        ctx.beginPath(); ctx.ellipse(5.9,-.2,1.8,.9,.12,0,TAU); ctx.fill();
+        ctx.fillStyle=`rgba(142,182,87,${.82*alpha})`;
+        ctx.restore();
       }
     }
     ctx.restore();
@@ -3697,10 +3810,12 @@ function drawObstacleSoilAnchorUnder(o){
 
     if(worldYInView(game.seed.y,38)){
       ctx.save(); ctx.translate(game.seed.x,game.seed.y); ctx.rotate(-.18); ctx.shadowBlur=0;
-      ctx.fillStyle='#c8a36d'; ctx.strokeStyle='#54402d'; ctx.lineWidth=2.2;
-      ctx.beginPath(); ctx.ellipse(0,0,11.5,15.5,0,0,TAU); ctx.fill(); ctx.stroke();
-      ctx.fillStyle='#9b764e'; ctx.beginPath(); ctx.ellipse(2,-1,5.3,9.6,.05,0,TAU); ctx.fill();
-      ctx.strokeStyle='rgba(235,210,158,.52)'; ctx.lineWidth=1.1; ctx.beginPath(); ctx.arc(-1,-1,7.5,-1.6,1.2); ctx.stroke();
+      ctx.fillStyle='#c59d65'; ctx.strokeStyle='#4b3828'; ctx.lineWidth=2.4;
+      ctx.beginPath(); ctx.ellipse(0,0,12.2,16.4,0,0,TAU); ctx.fill(); ctx.stroke();
+      ctx.fillStyle='#8e6b44'; ctx.beginPath(); ctx.ellipse(2.4,0,5.8,10.1,.04,0,TAU); ctx.fill();
+      ctx.fillStyle='rgba(100,73,45,.55)'; ctx.beginPath(); ctx.ellipse(-4.6,3.7,4.6,7.2,-.28,0,TAU); ctx.fill();
+      ctx.strokeStyle='rgba(238,215,159,.56)'; ctx.lineWidth=1.15; ctx.beginPath(); ctx.arc(-1.4,-1.2,8.0,-1.62,1.08); ctx.stroke();
+      ctx.strokeStyle='rgba(77,56,36,.42)'; ctx.lineWidth=1.0; ctx.beginPath(); ctx.moveTo(-1.2,-9.2); ctx.quadraticCurveTo(-4.2,0,-1.2,8.7); ctx.stroke();
       ctx.restore();
     }
 
@@ -3709,13 +3824,17 @@ function drawObstacleSoilAnchorUnder(o){
       const ang=Math.atan2(game.dir.x,-game.dir.y);
       ctx.save(); ctx.translate(game.tip.x,game.tip.y); ctx.rotate(ang); ctx.shadowBlur=0;
       const budFill=corruptionTimer>0?'#b9cc55':(invincibleTimer>0?'#dac56d':'#a6c66f');
-      // Bourgeon terminal : point de contrôle lisible sans boule lumineuse flottante.
-      ctx.fillStyle=budFill; ctx.strokeStyle='#354727'; ctx.lineWidth=2.2;
-      ctx.beginPath(); ctx.moveTo(0,-10); ctx.quadraticCurveTo(8,-2,5,6); ctx.quadraticCurveTo(0,10,-5,6); ctx.quadraticCurveTo(-8,-2,0,-10); ctx.closePath(); ctx.fill(); ctx.stroke();
-      ctx.fillStyle='#718f50';
-      ctx.beginPath(); ctx.ellipse(-7,2,3.7,7,-.72,0,TAU); ctx.fill(); ctx.stroke();
-      ctx.beginPath(); ctx.ellipse(7,3,3.4,6.4,.72,0,TAU); ctx.fill(); ctx.stroke();
-      ctx.strokeStyle='rgba(222,228,153,.58)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(0,-7); ctx.lineTo(0,5); ctx.stroke();
+      // Bourgeon terminal : un peu plus charnu et nervuré, pour mieux dialoguer avec les sprites authorés.
+      ctx.fillStyle='#627d42'; ctx.strokeStyle='#314223'; ctx.lineWidth=2.2;
+      ctx.beginPath(); ctx.ellipse(-7,3,4.1,7.2,-.74,0,TAU); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(7,3.4,3.9,6.8,.74,0,TAU); ctx.fill(); ctx.stroke();
+      ctx.fillStyle=budFill; ctx.strokeStyle='#354727'; ctx.lineWidth=2.3;
+      ctx.beginPath(); ctx.moveTo(0,-11); ctx.quadraticCurveTo(9,-3,6.2,6.4); ctx.quadraticCurveTo(0,11,-6.2,6.4); ctx.quadraticCurveTo(-9,-3,0,-11); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle='rgba(95,125,59,.42)'; ctx.beginPath(); ctx.ellipse(0,3.4,3.6,5.2,0,0,TAU); ctx.fill();
+      ctx.strokeStyle='rgba(229,236,160,.62)'; ctx.lineWidth=1.05; ctx.beginPath(); ctx.moveTo(0,-7.8); ctx.lineTo(0,6.2); ctx.stroke();
+      ctx.strokeStyle='rgba(203,214,141,.36)'; ctx.lineWidth=.9;
+      ctx.beginPath(); ctx.moveTo(0,-3); ctx.quadraticCurveTo(-2.1,1.8,-1.6,5.6); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,-2.6); ctx.quadraticCurveTo(2.0,1.5,1.5,5.4); ctx.stroke();
       ctx.restore();
       drawShieldGauge();
     }
