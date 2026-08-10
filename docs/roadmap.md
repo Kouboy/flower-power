@@ -1,3 +1,7 @@
+## Jalon courant — v3.43 Visual Cohesion Pass
+
+Cohésion visuelle de la tige, du sous-sol, de la surface et des fleurs avec les sprites PNG authorés, sans modifier le gameplay validé de la v3.42.4.
+
 # Roadmap
 
 ## Jalon actuel

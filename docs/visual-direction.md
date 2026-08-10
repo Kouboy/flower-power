@@ -33,3 +33,12 @@ La satire ne doit pas ressembler à une collection de stickers. Sur les six fami
 ## v3.41.1 — Assets authorés
 
 Les obstacles détaillés peuvent désormais être peints en PNG transparent. Le Canvas conserve le terrain, la pousse, les fluides, les effets et les familles sans asset final. Le PNG n’autorise pas pour autant les micro-détails gratuits : l’asset doit rester lisible à l’échelle smartphone définie par `worldWidth`. Les collisions et le rayon de flyover sont authorés séparément dans l’éditeur.
+
+
+## v3.43 — Cohésion du vivant et du terrain
+
+Le vivant procédural ne doit plus donner l'impression d'appartenir à une autre couche graphique que les obstacles PNG. La pousse reste calculée en temps réel, mais adopte le même vocabulaire que les sprites : aplats mats, contour brun/olive, quelques grosses nervures lisibles et aucune lumière décorative gratuite. La pointe est un bourgeon, pas une bille lumineuse.
+
+Le terrain est toujours généré dans un cache offscreen pour préserver les performances. Sa richesse vient de grosses strates irrégulières, pierres, fibres, racines et variations de matière plutôt que d'un bruit fin. La surface doit former une vraie lisière entre la terre et le ciel, avec un bord dessiné et des touffes d'herbe suffisamment épaisses pour rester lisibles sur téléphone.
+
+Les fleurs suivent le même principe : formes simples, généreuses, contourées, avec quelques irrégularités de dessin. Elles doivent fonctionner comme une récompense visuelle à l'arrivée, pas comme une texture décorative miniature.

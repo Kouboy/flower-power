@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-<title>Flower Power v3.42.4 Spore Reward Gate Fix</title>
+<title>Flower Power v3.43.13 Inner Stencil Contrast Pass</title>
 <style>
   :root{--bg:#15110e;--ui:#f7e9c7;--muted:#cdbb91;--soil:#221912;--light:#ffe59a;}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -48,14 +48,14 @@
       <button id="scaleB" type="button">B · +18% / POUSSE −12%</button>
     </div>
     <div class="hint">TOUCHE POUR COMMENCER</div>
-    <p class="small">Prototype v3.42.4 · Spore Reward Gate Fix · PNG + collisions authorées · flyover → power-up · ÉcoCrédits™ · SFX</p>
+    <p class="small">Prototype v3.43.13 · Visual Cohesion Pass · PNG + collisions authorées · flyover → power-up · ÉcoCrédits™ · SFX</p>
   </div>
 </div>
 <script src="assets/obstacles/manifest.js"></script>
 <script>
 (() => {
   'use strict';
-  console.info('Flower Power v3.42.4 Spore Reward Gate Fix');
+  console.info('Flower Power v3.43.13.1 Soil Richness & Sky Pass');
 
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d', { alpha:false });
@@ -140,24 +140,25 @@
   let noiseBuffer=null;
   let hudEcoValue=-1, hudEcoText=ECO_SIGIL+' 0';
 
+  // v3.43 : palette rapprochée des sprites illustrés, moins néon et plus terre/papier.
   const SOIL_SKIES=[
-    ['#3f9cff','#8fd2ff','#d8f2ff','#fff0a8'],
-    ['#66b8ff','#a8dcff','#e8f7ff','#ffe8a3'],
-    ['#517dff','#8bb9ff','#d6e9ff','#fff3b9'],
-    ['#6cc4d8','#ace8ef','#e7fbff','#ffe6a1']
+    ['#6eabb9','#a8ced0','#dbe1c5','#ead49d'],
+    ['#75b2bd','#b4d3cf','#e8e4c5','#eed7a5'],
+    ['#718fae','#aabbd0','#d8d9c8','#ead9aa'],
+    ['#78b4ad','#b8d5c9','#e3e3c2','#efd2a0']
   ];
   const SOIL_LAWNS=[
-    ['rgba(136,211,91,.96)','rgba(72,151,65,.94)','rgba(53,96,43,.52)'],
-    ['rgba(165,220,96,.96)','rgba(91,160,70,.94)','rgba(55,101,47,.52)'],
-    ['rgba(112,204,109,.96)','rgba(58,145,83,.94)','rgba(42,90,55,.52)'],
-    ['rgba(190,218,97,.96)','rgba(106,153,59,.94)','rgba(66,94,40,.52)']
+    ['rgba(132,165,72,.98)','rgba(75,116,57,.98)','rgba(48,79,43,.72)'],
+    ['rgba(151,175,73,.98)','rgba(86,123,57,.98)','rgba(51,81,43,.72)'],
+    ['rgba(113,158,83,.98)','rgba(64,111,68,.98)','rgba(45,76,52,.72)'],
+    ['rgba(164,170,72,.98)','rgba(95,119,55,.98)','rgba(57,78,42,.72)']
   ];
   const SOIL_BANDS=[
-    {a:0,b:.18,c:'rgba(178,113,56,.18)'},
-    {a:.18,b:.34,c:'rgba(125,79,43,.16)'},
-    {a:.34,b:.53,c:'rgba(88,55,34,.17)'},
-    {a:.53,b:.74,c:'rgba(47,31,23,.20)'},
-    {a:.74,b:1,c:'rgba(8,6,5,.28)'}
+    {a:0,b:.18,c:'rgba(189,125,68,.15)'},
+    {a:.18,b:.34,c:'rgba(132,82,48,.15)'},
+    {a:.34,b:.53,c:'rgba(91,56,39,.17)'},
+    {a:.53,b:.74,c:'rgba(48,31,24,.20)'},
+    {a:.74,b:1,c:'rgba(10,7,6,.28)'}
   ];
 
 
@@ -388,6 +389,7 @@
   const soilCache=document.createElement('canvas');
   const soilCacheCtx=soilCache.getContext('2d',{alpha:false});
   let soilCacheValid=false;
+  let soilGrainPattern=null, soilGrainPatternKey='';
   const flowerCache=document.createElement('canvas');
   const flowerCacheCtx=flowerCache.getContext('2d');
   const FLOWER_CACHE_TOP=-126, FLOWER_CACHE_H=144;
@@ -558,7 +560,7 @@
     H=Math.max(520,Math.floor(rect.height||window.innerHeight));
     canvas.width=Math.floor(W*DPR); canvas.height=Math.floor(H*DPR);
     ctx.setTransform(DPR,0,0,DPR,0,0);
-    game.surfaceY=Math.max(62,Math.min(92,H*.105));
+    game.surfaceY=Math.max(82,Math.min(116,H*.136)); // un peu plus de ciel pour laisser respirer la surface et les fleurs
     soilCacheValid=false; flowerCacheDirty=true;
     if(state==='menu'||state==='over'||state==='starting'){
       setWorldMetrics();
@@ -2939,45 +2941,160 @@
     g.beginPath(); g.ellipse(-28,6,26,13,0,0,TAU); g.ellipse(-7,-2,30,18,0,0,TAU); g.ellipse(20,5,28,14,0,0,TAU); g.ellipse(3,10,45,12,0,0,TAU); g.fill();
     g.beginPath(); g.moveTo(-48,8); g.quadraticCurveTo(-24,-10,-3,0); g.quadraticCurveTo(16,-16,44,8); g.stroke(); g.restore();
   }
+
+  function buildSoilGrainPattern(key){
+    if(soilGrainPattern && soilGrainPatternKey===key) return soilGrainPattern;
+    const c=document.createElement('canvas'); c.width=96; c.height=96;
+    const g=c.getContext('2d');
+    g.clearRect(0,0,c.width,c.height);
+    // Vraie couche de grain répétable, plus assumée : poussières sombres, paillettes claires et petites nappes organiques.
+    for(let i=0;i<2400;i++){
+      const x=(i*37 + key.length*11 + (i%7)*13)%c.width;
+      const y=(i*53 + key.length*17 + (i%11)*7)%c.height;
+      const r=(i%23===0)?2:1;
+      const alpha=(i%10===0)?.22:((i%4===0)?.14:.10);
+      g.fillStyle=(i%7===0)?`rgba(238,209,154,${alpha})`:(i%5===0?`rgba(128,87,62,${alpha})`:`rgba(23,15,12,${alpha})`);
+      g.fillRect(x,y,r,r);
+    }
+    // Quelques taches/amas très subtils pour casser le motif trop régulier.
+    for(let i=0;i<36;i++){
+      const x=(i*29 + 9)%c.width, y=(i*31 + 17)%c.height;
+      g.fillStyle=(i%2===0)?'rgba(245,222,171,.08)':'rgba(37,25,20,.07)';
+      g.beginPath(); g.ellipse(x,y,4+(i%3),2.5+((i*5)%3),((i*17)%360)*Math.PI/180,0,TAU); g.fill();
+    }
+    g.globalAlpha=.16;
+    g.strokeStyle='rgba(239,219,180,.45)'; g.lineWidth=.75;
+    for(let i=0;i<54;i++){
+      const x=(i*19)%c.width, y=(i*27 + 7)%c.height;
+      g.beginPath(); g.moveTo(x,y); g.lineTo(x+3+(i%4),y+((i%2)?1:-1)); g.stroke();
+    }
+    g.globalAlpha=1;
+    soilGrainPattern=c; soilGrainPatternKey=key;
+    return c;
+  }
+
   function rebuildSoilCache(){
     const wb=Math.ceil(worldBottom()), soilTop=visualSurfaceY(), g=soilCacheCtx;
     soilCache.width=Math.max(1,Math.ceil(W)); soilCache.height=Math.max(1,wb);
     g.setTransform(1,0,0,1,0,0); g.clearRect(0,0,soilCache.width,soilCache.height);
+
+    // Surface illustrée : ciel légèrement crayeux, moins numérique que le prototype.
     const sp=SOIL_SKIES[skyVariant%SOIL_SKIES.length];
-    const sky=g.createLinearGradient(0,0,0,soilTop+32); sky.addColorStop(0,sp[0]); sky.addColorStop(.42,sp[1]); sky.addColorStop(.78,sp[2]); sky.addColorStop(1,sp[3]);
-    g.fillStyle=sky; g.fillRect(0,0,W,soilTop+33);
+    const sky=g.createLinearGradient(0,0,0,soilTop+34);
+    sky.addColorStop(0,sp[0]); sky.addColorStop(.43,sp[1]); sky.addColorStop(.80,sp[2]); sky.addColorStop(1,sp[3]);
+    g.fillStyle=sky; g.fillRect(0,0,W,soilTop+34);
     drawCloudTo(g,W*.20,game.surfaceY*.36,.58,1); drawCloudTo(g,W*.74,game.surfaceY*.30,.48,-1);
-    g.globalAlpha=.075; g.fillStyle='#1a2a3a';
-    for(let i=0;i<24;i++){ const x=(i*83+skyVariant*19)%W, y=8+((i*47+skyVariant*31)%Math.max(10,game.surfaceY-12)); g.fillRect(x,y,1.4,1.4); }
+    // Grain de papier / poussière atmosphérique, statique et très léger.
+    g.globalAlpha=.11;
+    for(let i=0;i<54;i++){
+      const x=Math.abs((i*83+skyVariant*19)%W), y=7+Math.abs((i*47+skyVariant*31)%Math.max(12,game.surfaceY-12));
+      g.fillStyle=(i%4===0)?'#fff1c8':(i%3===0?'#b0c2bf':'#465f62');
+      g.beginPath(); g.arc(x,y,.7+(i%3)*.38,0,TAU); g.fill();
+    }
     g.globalAlpha=1;
 
+    // Lisière de surface : touffe herbeuse dessinée, bord sombre et quelques mottes.
     const lp=SOIL_LAWNS[lawnVariant%SOIL_LAWNS.length];
-    const lawn=g.createLinearGradient(0,soilTop-14,0,soilTop+13); lawn.addColorStop(0,lp[0]); lawn.addColorStop(.48,lp[1]); lawn.addColorStop(1,lp[2]);
+    const lawn=g.createLinearGradient(0,soilTop-17,0,soilTop+16); lawn.addColorStop(0,lp[0]); lawn.addColorStop(.50,lp[1]); lawn.addColorStop(1,lp[2]);
     g.fillStyle=lawn; g.beginPath(); g.moveTo(0,soilTop);
-    for(let x=0;x<=W;x+=16) g.lineTo(x,soilTop-4+Math.sin(x*.045)*2.2+Math.sin(x*.018)*2.8);
-    g.lineTo(W,soilTop+13); g.lineTo(0,soilTop+13); g.closePath(); g.fill();
-    // Quelques brins fixes : la surface reste vivante sans payer une animation complète à chaque frame.
-    g.strokeStyle='rgba(188,245,126,.62)'; g.lineWidth=1.8;
-    for(let x=5;x<W;x+=18){ const h=8+((x*37)%9); g.beginPath(); g.moveTo(x,soilTop-1+Math.sin(x*.045)*2); g.quadraticCurveTo(x+1.5,soilTop-8-h*.35,x+Math.sin(x*.17)*2.5,soilTop-8-h); g.stroke(); }
+    for(let x=0;x<=W;x+=14) g.lineTo(x,soilTop-4+Math.sin(x*.047)*2.4+Math.sin(x*.019)*3.1);
+    g.lineTo(W,soilTop+16); g.lineTo(0,soilTop+16); g.closePath(); g.fill();
+    g.strokeStyle='rgba(48,58,33,.78)'; g.lineWidth=2.4; g.beginPath(); g.moveTo(0,soilTop);
+    for(let x=0;x<=W;x+=14) g.lineTo(x,soilTop-4+Math.sin(x*.047)*2.4+Math.sin(x*.019)*3.1); g.stroke();
+    g.strokeStyle='rgba(195,211,117,.72)'; g.lineWidth=2.2; g.lineCap='round';
+    for(let x=5;x<W;x+=17){
+      const h=8+((x*37)%11), y0=soilTop-1+Math.sin(x*.045)*2;
+      g.beginPath(); g.moveTo(x,y0); g.quadraticCurveTo(x+1.2,y0-h*.48,x+Math.sin(x*.17)*3,y0-h); g.stroke();
+      if((x/17|0)%4===1){ g.beginPath(); g.moveTo(x+1,y0-4); g.lineTo(x-5,y0-10); g.stroke(); }
+    }
 
-    const soil=g.createLinearGradient(0,soilTop,0,wb); soil.addColorStop(0,'#8d6038'); soil.addColorStop(.16,'#70482c'); soil.addColorStop(.34,'#4c3020'); soil.addColorStop(.57,'#332015'); soil.addColorStop(.78,'#1b110d'); soil.addColorStop(1,'#090504');
+    // Terre : masse riche mais mate, conçue pour accueillir les sprites sans les noyer.
+    const soil=g.createLinearGradient(0,soilTop,0,wb);
+    soil.addColorStop(0,'#936342'); soil.addColorStop(.15,'#764a32'); soil.addColorStop(.34,'#543524'); soil.addColorStop(.57,'#36231a'); soil.addColorStop(.79,'#201510'); soil.addColorStop(1,'#0c0807');
     g.fillStyle=soil; g.fillRect(0,soilTop,W,wb-soilTop);
     for(const b of SOIL_BANDS){ const y0=lerp(soilTop,wb,b.a), y1=lerp(soilTop,wb,b.b); g.fillStyle=b.c; g.fillRect(0,y0,W,y1-y0); }
 
-    // Strates et grain calculés une seule fois par terrain.
-    for(let y=soilTop+39;y<wb;y+=52){
-      const k=(y-soilTop)/(wb-soilTop); g.globalAlpha=.34-k*.11; g.strokeStyle=k<.30?'#b58152':(k<.60?'#76533a':'#3b271d'); g.lineWidth=1.55;
-      g.beginPath(); g.moveTo(0,y); for(let x=0;x<=W;x+=22) g.lineTo(x,y+Math.sin(x*.038+y*.021)*4+Math.sin(x*.012+y*.006)*8); g.stroke();
+    // Strates irrégulières, plus épaisses et moins "lignes de scan".
+    for(let y=soilTop+42;y<wb;y+=58){
+      const k=(y-soilTop)/(wb-soilTop); g.globalAlpha=.24-k*.08; g.strokeStyle=k<.30?'#c08a5c':(k<.60?'#815b43':'#4a3329'); g.lineWidth=3.1;
+      g.beginPath(); g.moveTo(-8,y);
+      for(let x=0;x<=W+12;x+=24) g.lineTo(x,y+Math.sin(x*.036+y*.018)*4.5+Math.sin(x*.011+y*.006)*7.5);
+      g.stroke();
+      g.globalAlpha=.10; g.strokeStyle='#160e0a'; g.lineWidth=1.2; g.stroke();
     }
-    g.globalAlpha=.30;
-    for(let i=0;i<154;i++){
-      const x=Math.abs((i*97+Math.sin(i*12.9)*54)%W), y=soilTop+29+Math.abs((i*173+Math.cos(i)*81)%Math.max(1,wb-soilTop-49));
-      const k=(y-soilTop)/(wb-soilTop); g.fillStyle=k<.30?'#b98354':(k<.62?'#6b4931':'#21150f'); g.fillRect(x,y,1.4+((i*7)%3)*.55,1.4);
+
+    // Petites inclusions, pierres plates, poches claires et vrai grain : matière plus sale, plus enfouie.
+    g.globalAlpha=.46;
+    for(let i=0;i<148;i++){
+      const x=Math.abs((i*97+Math.sin(i*12.9)*54)%W), y=soilTop+24+Math.abs((i*173+Math.cos(i)*81)%Math.max(1,wb-soilTop-46));
+      const k=(y-soilTop)/(wb-soilTop), rw=2.0+((i*7)%5), rh=1.1+((i*11)%3)*.72;
+      g.fillStyle=k<.30?(i%5===0?'#d0a473':'#a8754f'):(k<.62?(i%6===0?'#8f6d55':'#684733'):(i%7===0?'#4d382d':'#2b1c16'));
+      g.beginPath(); g.ellipse(x,y,rw,rh,((i*37)%90)*Math.PI/180,0,TAU); g.fill();
+      if(i%9===0){ g.globalAlpha=.18; g.strokeStyle='#ead3a9'; g.lineWidth=.8; g.stroke(); g.globalAlpha=.46; }
     }
-    g.globalAlpha=.15; g.strokeStyle='#120b08'; g.lineWidth=1;
-    for(let i=0;i<48;i++){
-      const x=Math.abs((i*61+Math.sin(i*8.31)*41)%W), y=soilTop+37+Math.abs((i*107+Math.cos(i*2.2)*65)%Math.max(1,wb-soilTop-67));
-      g.beginPath(); g.moveTo(x,y); g.lineTo(x+rrLocal(x,y,-12,16),y+rrLocal(y,x,-5,7)); g.stroke();
+
+    // Grain fin : une poussière de petits points et miettes, surtout pour casser l'aspect trop lisse.
+    g.globalAlpha=.22;
+    for(let i=0;i<420;i++){
+      const x=Math.abs((i*53+Math.sin(i*5.7)*61)%W), y=soilTop+8+Math.abs((i*131+Math.cos(i*1.9)*49)%Math.max(1,wb-soilTop-14));
+      const k=(y-soilTop)/(wb-soilTop);
+      g.fillStyle=k<.24?(i%5===0?'#d8ad74':(i%2===0?'#7a5036':'#5e3c2c')):(k<.62?(i%4===0?'#8f694f':(i%2===0?'#5a3a2b':'#2b1d17')):(i%3===0?'#4b352b':'#18100d'));
+      g.fillRect(x,y,1+(i%3===0?1:0),1+(i%7===0?1:0));
+    }
+
+    // Petits paquets de terre / miettes sombres, plus visibles près de la surface.
+    g.globalAlpha=.18;
+    for(let i=0;i<94;i++){
+      const x=Math.abs((i*109+23)%W), y=soilTop+14+Math.abs((i*89+Math.sin(i*.8)*37)%Math.max(1,wb-soilTop-28));
+      const k=(y-soilTop)/(wb-soilTop), s=1.2+((i*3)%4);
+      g.fillStyle=k<.35?'#5d3d2d':(k<.7?'#3b261d':'#1a120f');
+      g.beginPath(); g.moveTo(x-s,y); g.lineTo(x+s*.8,y-s*.6); g.lineTo(x+s*1.1,y+s*.2); g.lineTo(x-s*.4,y+s*.9); g.closePath(); g.fill();
+    }
+
+    // Réseau de racines fines près de la surface : le sol a déjà une vie avant l'arrivée du joueur.
+    g.globalAlpha=.34; g.strokeStyle='#b7a06f'; g.lineWidth=1.25; g.lineCap='round';
+    for(let i=0;i<34;i++){
+      const x=8+((i*71+13)%Math.max(20,W-16)); const len=22+((i*29)%62);
+      g.beginPath(); g.moveTo(x,soilTop+8);
+      g.bezierCurveTo(x+Math.sin(i*2.1)*8,soilTop+18+len*.22,x+Math.cos(i*.9)*13,soilTop+len*.72,x+Math.sin(i*1.7)*18,soilTop+len);
+      g.stroke();
+      if(i%3===0){ g.beginPath(); g.moveTo(x+Math.sin(i*.9)*5,soilTop+len*.55); g.lineTo(x-8+Math.cos(i)*6,soilTop+len*.72); g.stroke(); }
+    }
+
+    // Fissures et fibres profondes discrètes.
+    g.globalAlpha=.16; g.strokeStyle='#130c09'; g.lineWidth=1.2;
+    for(let i=0;i<42;i++){
+      const x=Math.abs((i*61+Math.sin(i*8.31)*41)%W), y=soilTop+80+Math.abs((i*107+Math.cos(i*2.2)*65)%Math.max(1,wb-soilTop-110));
+      g.beginPath(); g.moveTo(x,y); g.lineTo(x+rrLocal(x,y,-13,17),y+rrLocal(y,x,-5,8)); g.stroke();
+    }
+    // Fibres secondaires et micro-veines pour salir encore un peu la matière sans la brouiller.
+    g.globalAlpha=.10; g.strokeStyle='rgba(224,188,132,.30)'; g.lineWidth=.85;
+    for(let i=0;i<56;i++){
+      const x=Math.abs((i*41+Math.sin(i*1.7)*57)%W), y=soilTop+36+Math.abs((i*149+Math.cos(i*1.2)*43)%Math.max(1,wb-soilTop-52));
+      g.beginPath(); g.moveTo(x,y);
+      g.quadraticCurveTo(x+((i%2)?7:-7),y+4+((i*3)%8),x+((i%3)-1)*11,y+10+((i*7)%16));
+      g.stroke();
+    }
+
+    // Vraie couche de grain organique : pattern répété sur toute la masse de terre.
+    const grainKey=`${W}|${wb}|${skyVariant}|${lawnVariant}`;
+    const grainCanvas=buildSoilGrainPattern(grainKey);
+    const grainPattern=g.createPattern(grainCanvas,'repeat');
+    if(grainPattern){
+      g.save();
+      g.globalCompositeOperation='overlay';
+      g.globalAlpha=.50;
+      g.fillStyle=grainPattern;
+      g.fillRect(0,soilTop,W,wb-soilTop);
+      g.globalCompositeOperation='multiply';
+      g.globalAlpha=.22;
+      g.fillStyle=grainPattern;
+      g.fillRect(0,soilTop,W,wb-soilTop);
+      g.globalCompositeOperation='screen';
+      g.globalAlpha=.10;
+      g.fillStyle=grainPattern;
+      g.fillRect(0,soilTop,W,wb-soilTop);
+      g.restore();
     }
     g.globalAlpha=1; soilCacheValid=true;
   }
@@ -3027,6 +3144,161 @@
     ctx.strokeStyle='rgba(216,240,116,.20)'; ctx.lineWidth=1.4;
     ctx.beginPath(); ctx.ellipse(-o.rx*.06,-o.ry*.03,o.rx*.56,o.ry*.46,.18,0,TAU); ctx.stroke();
     ctx.restore();
+  }
+
+
+  function obstacleLocalBounds(o){
+    if(hasAuthoredAsset(o)){
+      const a=o._asset, pivot=(a.render&&a.render.pivot)||[.5,.5];
+      const w=o._assetWorldW||o.w||80, h=o._assetWorldH||o.h||80;
+      let left=-pivot[0]*w, right=(1-pivot[0])*w, top=-pivot[1]*h, bottom=(1-pivot[1])*h;
+      if((o._assetFlip||1)<0){ const nl=-right,nr=-left; left=nl; right=nr; }
+      return {left,right,top,bottom,w:right-left,h:bottom-top};
+    }
+    if(o.kind==='rock'){
+      const rx=(o.r||18)*(o.sx||1), ry=(o.r||18)*(o.sy||1);
+      return {left:-rx,right:rx,top:-ry,bottom:ry,w:rx*2,h:ry*2};
+    }
+    const w=Math.max(4,o.w||40), h=Math.max(4,o.h||20);
+    return {left:-w*.5,right:w*.5,top:-h*.5,bottom:h*.5,w,h};
+  }
+
+  function ensureObstacleStencilCache(o,ux,grazePad){
+    const key=`${ux}|${grazePad}|${o._assetWorldW||o.w||0}|${o._assetWorldH||o.h||0}|${o._assetCollision?o._assetCollision.length:0}|${Math.round(o.x||0)}|${Math.round(o.y||0)}|${o.kind||''}`;
+    if(o._stencilCache && o._stencilCache.key===key) return o._stencilCache;
+    if(!(o._assetCollision && o._assetCollision.length>=3)) return null;
+    const pts=o._assetCollision.map(pt=>[pt[0]*ux, pt[1]]);
+    let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+    for(const [x,y] of pts){ if(x<minX) minX=x; if(x>maxX) maxX=x; if(y<minY) minY=y; if(y>maxY) maxY=y; }
+    const pad=Math.max(18,grazePad*3.2);
+    const c=document.createElement('canvas');
+    c.width=Math.max(8,Math.ceil((maxX-minX)+pad*2));
+    c.height=Math.max(8,Math.ceil((maxY-minY)+pad*2));
+    const g=c.getContext('2d');
+    g.clearRect(0,0,c.width,c.height);
+    g.save();
+    g.translate(-minX+pad,-minY+pad);
+    g.lineJoin='round'; g.lineCap='round';
+    const trace=()=>{
+      g.beginPath();
+      g.moveTo(pts[0][0],pts[0][1]);
+      for(let i=1;i<pts.length;i++) g.lineTo(pts[i][0],pts[i][1]);
+      g.closePath();
+    };
+    // Dégradé de base : plus sombre près du sprite, plus diffus à l'extérieur.
+    g.filter='blur(8px)';
+    g.globalAlpha=1;
+    g.strokeStyle='rgba(18,11,8,.16)';
+    g.lineWidth=Math.max(24,grazePad*2.9);
+    trace(); g.stroke();
+    g.filter='blur(4px)';
+    g.strokeStyle='rgba(26,16,12,.26)';
+    g.lineWidth=Math.max(14,grazePad*1.8);
+    trace(); g.stroke();
+    g.filter='blur(1px)';
+    g.strokeStyle='rgba(36,22,16,.32)';
+    g.lineWidth=Math.max(7,grazePad*.9);
+    trace(); g.stroke();
+    g.filter='none';
+    g.fillStyle='rgba(22,13,10,.10)';
+    trace(); g.fill();
+    g.restore();
+
+    // Effilochage granulaire du dégradé : on casse le bord doux avec des trous et des miettes stables.
+    let seed=0;
+    for(let i=0;i<key.length;i++) seed=(seed*1664525 + key.charCodeAt(i) + 1013904223)>>>0;
+    const rnd=()=>{ seed=(seed*1664525 + 1013904223)>>>0; return seed/4294967296; };
+    const cx=c.width*.5, cy=c.height*.5;
+    const rx=Math.max(8,(maxX-minX)*.5 + grazePad*1.7), ry=Math.max(8,(maxY-minY)*.5 + grazePad*1.5);
+    const specks=Math.max(170,Math.round((c.width*c.height)/22));
+    g.save();
+    g.globalCompositeOperation='destination-out';
+    for(let i=0;i<specks;i++){
+      const x=rnd()*c.width, y=rnd()*c.height;
+      const dx=(x-cx)/rx, dy=(y-cy)/ry;
+      const r=Math.sqrt(dx*dx + dy*dy);
+      if(r<.62 || r>1.38) continue;
+      const outer=Math.min(1,Math.max(0,(r-.62)/(.76)));
+      const chance=.28 + outer*.84;
+      if(rnd()>chance) continue;
+      const s=(rnd()<.26?2:1) + (outer>.62 && rnd()<.34 ? 1 : 0);
+      g.globalAlpha=.08 + outer*.30;
+      if(rnd()<.65){
+        g.fillRect(x,y,s,s);
+      }else{
+        g.beginPath(); g.arc(x,y,s*.55,0,TAU); g.fill();
+      }
+    }
+    // Quelques veines de rupture plus longues sur la frange externe.
+    g.globalAlpha=.10;
+    g.lineWidth=1;
+    for(let i=0;i<22;i++){
+      const a=rnd()*TAU;
+      const rr=.82 + rnd()*.34;
+      const x=cx + Math.cos(a)*rx*rr;
+      const y=cy + Math.sin(a)*ry*rr;
+      const len=2 + rnd()*5.5;
+      g.beginPath();
+      g.moveTo(x,y);
+      g.lineTo(x+Math.cos(a)*len, y+Math.sin(a)*len);
+      g.stroke();
+    }
+    g.restore();
+
+    // Quelques grains sombres épars pour que la frange se mélange mieux à la terre.
+    g.save();
+    g.globalCompositeOperation='source-over';
+    for(let i=0;i<Math.max(46,Math.round((c.width+c.height)/6));i++){
+      const x=rnd()*c.width, y=rnd()*c.height;
+      const dx=(x-cx)/rx, dy=(y-cy)/ry;
+      const r=Math.sqrt(dx*dx + dy*dy);
+      if(r<.66 || r>1.28 || rnd()>.36) continue;
+      g.fillStyle=rnd()<.5?'rgba(35,22,16,.10)':'rgba(82,55,38,.07)';
+      g.fillRect(x,y,1+(rnd()>.72?1:0),1);
+    }
+    g.restore();
+
+    o._stencilCache={key,canvas:c,offX:minX-pad,offY:minY-pad};
+    return o._stencilCache;
+  }
+
+function drawObstacleSoilAnchorUnder(o){
+    const b=obstacleLocalBounds(o);
+    const grazePad=Math.max(12,hasAuthoredAsset(o)?(o._assetGrazeRadius||14):14);
+    const anchorFlip=(hasAuthoredAsset(o)&&o._asset&&(o._assetFlip||1)!==1)?o._assetFlip:(((o.variant&&o.variant.mirrorSafe===false)?1:(o.flip||1))!==1?((o.variant&&o.variant.mirrorSafe===false)?1:(o.flip||1)):1);
+    ctx.save();
+    ctx.globalCompositeOperation='multiply';
+
+    if(hasAuthoredAsset(o) && o._assetCollision && o._assetCollision.length>=3){
+      // Pochoir stable : précalculé en cache depuis la collision + zone de graze.
+      // Cela évite le scintillement des filters/strokes recalculés à chaque frame.
+      const ux=anchorFlip!==1?anchorFlip:1; // annule le flip déjà présent dans _assetCollision, car le contexte est lui-même mirrorré.
+      const cache=ensureObstacleStencilCache(o,ux,grazePad);
+      if(cache) ctx.drawImage(cache.canvas, cache.offX, cache.offY);
+    }else{
+      // Fallback vectoriel : gradient plus sombre vers l'objet, plus diffus aux bords.
+      const zoneW=b.w + grazePad*2.4;
+      const zoneH=b.h + grazePad*1.9;
+      const zoneY=(b.top+b.bottom)*.5;
+      ctx.filter='blur(4px)';
+      ctx.globalAlpha=.14;
+      ctx.fillStyle='rgba(18,11,8,.95)';
+      ctx.beginPath(); ctx.ellipse(0,zoneY,zoneW*.66,zoneH*.60,0,0,TAU); ctx.fill();
+      ctx.filter='blur(2px)';
+      ctx.globalAlpha=.18;
+      ctx.fillStyle='rgba(28,17,13,.90)';
+      ctx.beginPath(); ctx.ellipse(0,zoneY,zoneW*.56,zoneH*.50,0,0,TAU); ctx.fill();
+      ctx.filter='none';
+      ctx.globalAlpha=.12;
+      ctx.fillStyle='rgba(45,27,19,.88)';
+      ctx.beginPath(); ctx.ellipse(0,zoneY,zoneW*.42,zoneH*.38,0,0,TAU); ctx.fill();
+    }
+    ctx.filter='none';
+    ctx.restore();
+  }
+
+  function drawObstacleSoilAnchorOver(o){
+    // Désactivé : on évite toute lèvre claire au premier plan.
   }
 
   function drawHazards(){
@@ -3099,6 +3371,12 @@
 
     for(const o of game.solids){
       if(!worldYInView(o.y,Math.max(44,approxRadius(o))+90)) continue;
+      ctx.save();
+      ctx.translate(o.x,o.y); ctx.rotate(o.a||0);
+      const anchorFlip=(hasAuthoredAsset(o)&&o._asset&&(o._assetFlip||1)!==1)?o._assetFlip:(((o.variant&&o.variant.mirrorSafe===false)?1:(o.flip||1))!==1?((o.variant&&o.variant.mirrorSafe===false)?1:(o.flip||1)):1);
+      if(anchorFlip!==1) ctx.scale(anchorFlip,1);
+      drawObstacleSoilAnchorUnder(o);
+      ctx.restore();
       ctx.save();
       if(hasAuthoredAsset(o) && o._asset && o._asset._ready){
         ctx.translate(o.x,o.y);
@@ -3256,20 +3534,36 @@
 
   function drawTrail(points,alpha=1,current=false){
     if(points.length<2) return;
-    ctx.save(); ctx.lineCap='round'; ctx.lineJoin='round';
-    ctx.strokeStyle=current?`rgba(222,255,183,${.95*alpha})`:`rgba(124,151,96,${.23*alpha})`;
-    ctx.shadowColor=current?'rgba(190,255,139,.20)':'rgba(0,0,0,0)'; ctx.shadowBlur=current?4:0;
-    ctx.lineWidth=current?7.2:3.4;
+    ctx.save(); ctx.lineCap='round'; ctx.lineJoin='round'; ctx.shadowBlur=0;
     const step=current?(worldToScreenY(game.tip.y)<160?(points.length>220?4:(points.length>130?3:2)):(points.length>320?3:(points.length>190?2:1))):1;
-    ctx.beginPath(); ctx.moveTo(points[0].x,points[0].y);
-    for(let i=1;i<points.length;i+=step){ctx.lineTo(points[i].x,points[i].y);}
-    const last=points[points.length-1]; ctx.lineTo(last.x,last.y);
-    ctx.stroke();
-    ctx.lineWidth=current?2.15:1.4; ctx.strokeStyle=current?`rgba(255,253,209,${.83*alpha})`:`rgba(196,220,152,${.2*alpha})`;
-    ctx.beginPath(); ctx.moveTo(points[0].x,points[0].y);
-    for(let i=1;i<points.length;i+=step){ctx.lineTo(points[i].x,points[i].y);}
-    ctx.lineTo(last.x,last.y); ctx.stroke();
 
+    const tracePath=()=>{
+      ctx.beginPath(); ctx.moveTo(points[0].x,points[0].y);
+      for(let i=1;i<points.length;i+=step) ctx.lineTo(points[i].x,points[i].y);
+      const last=points[points.length-1]; ctx.lineTo(last.x,last.y);
+    };
+
+    // Trait extérieur brun-olive comme sur les sprites : la tige reste lisible sur toutes les strates.
+    ctx.strokeStyle=current?`rgba(45,61,31,${.96*alpha})`:`rgba(48,59,38,${.30*alpha})`;
+    ctx.lineWidth=current?9.2:4.6; tracePath(); ctx.stroke();
+    // Chair végétale plus mate, pas de glow.
+    ctx.strokeStyle=current?`rgba(124,172,79,${.98*alpha})`:`rgba(98,124,74,${.34*alpha})`;
+    ctx.lineWidth=current?6.3:2.8; tracePath(); ctx.stroke();
+    // Nervure claire irrégulière, volontairement discrète.
+    ctx.strokeStyle=current?`rgba(202,220,133,${.62*alpha})`:`rgba(177,192,128,${.18*alpha})`;
+    ctx.lineWidth=current?1.55:.9; tracePath(); ctx.stroke();
+
+    // Quelques nœuds de croissance sur la tige active, assez gros pour être perceptibles sur mobile.
+    if(current && points.length>34){
+      ctx.fillStyle=`rgba(151,188,94,${.76*alpha})`; ctx.strokeStyle=`rgba(45,61,31,${.68*alpha})`; ctx.lineWidth=1.1;
+      const first=Math.max(18,points.length-150);
+      for(let i=first;i<points.length-18;i+=46){
+        const a=points[i-2]||points[i], b=points[i+2]||points[i];
+        const ang=Math.atan2(b.y-a.y,b.x-a.x)+(i%92===0?-1:1)*1.05;
+        ctx.save(); ctx.translate(points[i].x,points[i].y); ctx.rotate(ang);
+        ctx.beginPath(); ctx.ellipse(5,0,4.4,2.6,.08,0,TAU); ctx.fill(); ctx.stroke(); ctx.restore();
+      }
+    }
     ctx.restore();
   }
 
@@ -3340,24 +3634,46 @@
     ctx.restore();
   }
 
-  function drawCachedFlower(g,f,baseY){
-    const s=f.maxSize||1, pal=f.palette||['#ff6ea8','#ffd166','#fff7ad','#7cffc4'];
-    const stemLen=44+s*18;
-    g.save(); g.translate(f.x,baseY); g.rotate(f.tilt||0);
-    g.strokeStyle='rgba(31,55,17,.88)'; g.lineWidth=4; g.lineCap='round';
-    g.beginPath(); g.moveTo(0,0); g.quadraticCurveTo(-4,-stemLen*.35,0,-stemLen); g.stroke();
-    g.strokeStyle='rgba(177,226,119,.72)'; g.lineWidth=1.7;
-    g.beginPath(); g.moveTo(0,0); g.quadraticCurveTo(-3,-stemLen*.34,0,-stemLen+1); g.stroke();
-    g.fillStyle='rgba(99,153,64,.88)';
-    g.beginPath(); g.ellipse(-7,-stemLen*.42,4.5,9,-.8,0,TAU); g.fill();
-    g.beginPath(); g.ellipse(7,-stemLen*.24,4.5,9,.8,0,TAU); g.fill();
-    g.translate(0,-stemLen);
-    for(let i=0;i<5;i++){
-      g.save(); g.rotate(i*TAU/5); g.fillStyle=pal[i%pal.length]; g.globalAlpha=.94;
-      g.beginPath(); g.ellipse(0,-10*s,5*s,12*s,0,0,TAU); g.fill(); g.restore();
+  function drawIllustratedFlower(g,f,baseY,size,animated=false){
+    const s=Math.max(.04,size||f.maxSize||1), pal=f.palette||['#d97f75','#e0b95d','#eedc9a','#7f9d67'];
+    const stemLen=44+(f.maxSize||1)*18, seed=(f.x||0)*.071+(f.tilt||0)*3.1;
+    g.save(); g.translate(f.x,baseY); g.rotate((f.tilt||0)+(animated?Math.sin((f.age||0)*1.4)*.022:0));
+    g.lineCap='round'; g.lineJoin='round';
+    // Tige à contour dessiné, même logique que la pousse souterraine.
+    g.strokeStyle='#354727'; g.lineWidth=5.4;
+    g.beginPath(); g.moveTo(0,0); g.quadraticCurveTo(-5,-stemLen*.36,0,-stemLen); g.stroke();
+    g.strokeStyle='#7fa75c'; g.lineWidth=3.1;
+    g.beginPath(); g.moveTo(0,0); g.quadraticCurveTo(-4,-stemLen*.35,0,-stemLen+1); g.stroke();
+    g.strokeStyle='rgba(205,218,137,.62)'; g.lineWidth=.9;
+    g.beginPath(); g.moveTo(1,-5); g.quadraticCurveTo(-1,-stemLen*.38,1,-stemLen+3); g.stroke();
+    // Deux feuilles robustes, contour sombre puis aplat.
+    for(const leaf of [[-8,-stemLen*.43,-.82],[8,-stemLen*.25,.82]]){
+      g.save(); g.translate(leaf[0],leaf[1]); g.rotate(leaf[2]);
+      g.fillStyle='#718f50'; g.strokeStyle='#354727'; g.lineWidth=1.7;
+      g.beginPath(); g.ellipse(0,0,5.7,10.6,0,0,TAU); g.fill(); g.stroke();
+      g.strokeStyle='rgba(211,220,143,.55)'; g.lineWidth=.9; g.beginPath(); g.moveTo(0,7); g.lineTo(0,-7); g.stroke();
+      g.restore();
     }
-    g.globalAlpha=1; g.fillStyle=pal[2]||'#fff7b8'; g.beginPath(); g.arc(0,0,4.7*s,0,TAU); g.fill();
+    g.translate(0,-stemLen);
+    // Corolle plus massive et illustrée : 5 pétales irréguliers, contour chaud foncé.
+    const petalCount=5;
+    for(let i=0;i<petalCount;i++){
+      const irregular=.92+.12*Math.sin(seed+i*3.73), plen=(12.2+2.2*Math.sin(seed*.7+i*1.93))*s, pw=(6.5+.8*Math.cos(seed+i*2.4))*s;
+      g.save(); g.rotate(i*TAU/petalCount + .08*Math.sin(seed+i*2.1));
+      g.fillStyle=pal[i%pal.length]; g.strokeStyle='rgba(82,59,42,.78)'; g.lineWidth=Math.max(1.1,1.5*s);
+      g.beginPath(); g.ellipse(0,-plen*.72,pw*irregular,plen,0,0,TAU); g.fill(); g.stroke();
+      g.restore();
+    }
+    g.fillStyle=pal[2]||'#e8cf8a'; g.strokeStyle='rgba(76,57,38,.86)'; g.lineWidth=Math.max(1.1,1.6*s);
+    g.beginPath(); g.arc(0,0,5.8*s,0,TAU); g.fill(); g.stroke();
+    // Quelques gros points au cœur, lisibles plutôt qu'une texture fine.
+    g.fillStyle='rgba(91,69,35,.72)';
+    for(let i=0;i<4;i++){ const a=i*TAU/4+seed; g.beginPath(); g.arc(Math.cos(a)*2.4*s,Math.sin(a)*2.4*s,1.05*s,0,TAU); g.fill(); }
     g.restore();
+  }
+
+  function drawCachedFlower(g,f,baseY){
+    drawIllustratedFlower(g,f,baseY,f.maxSize||1,false);
   }
   function rebuildFlowerCache(){
     flowerCache.width=Math.max(1,Math.ceil(W)); flowerCache.height=FLOWER_CACHE_H;
@@ -3369,7 +3685,7 @@
   function drawFlowerCache(){
     if(!game.bakedFlowers.length) return;
     if(flowerCacheDirty||flowerCache.width!==Math.ceil(W)) rebuildFlowerCache();
-    if(worldYInView(visualSurfaceY()-55,150)) ctx.drawImage(flowerCache,0,visualSurfaceY()+FLOWER_CACHE_TOP);
+    if(worldYInView(visualSurfaceY()-68,185)) ctx.drawImage(flowerCache,0,visualSurfaceY()+FLOWER_CACHE_TOP);
   }
 
   function drawPlant(){
@@ -3380,19 +3696,26 @@
     drawTrail(game.trail,1,true);
 
     if(worldYInView(game.seed.y,38)){
-      ctx.save(); ctx.translate(game.seed.x,game.seed.y);
-      ctx.fillStyle='#d9c187'; ctx.shadowColor='rgba(255,230,151,.45)'; ctx.shadowBlur=10;
-      ctx.beginPath(); ctx.ellipse(0,0,11,15,-.2,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle='rgba(49,32,18,.35)'; ctx.beginPath(); ctx.ellipse(2,-2,5,9,-.2,0,Math.PI*2); ctx.fill();
+      ctx.save(); ctx.translate(game.seed.x,game.seed.y); ctx.rotate(-.18); ctx.shadowBlur=0;
+      ctx.fillStyle='#c8a36d'; ctx.strokeStyle='#54402d'; ctx.lineWidth=2.2;
+      ctx.beginPath(); ctx.ellipse(0,0,11.5,15.5,0,0,TAU); ctx.fill(); ctx.stroke();
+      ctx.fillStyle='#9b764e'; ctx.beginPath(); ctx.ellipse(2,-1,5.3,9.6,.05,0,TAU); ctx.fill();
+      ctx.strokeStyle='rgba(235,210,158,.52)'; ctx.lineWidth=1.1; ctx.beginPath(); ctx.arc(-1,-1,7.5,-1.6,1.2); ctx.stroke();
       ctx.restore();
     }
 
     if(state==='running'){
       drawOrganicShield();
-      ctx.save(); ctx.translate(game.tip.x,game.tip.y);
-      ctx.shadowColor='rgba(225,255,180,.55)'; ctx.shadowBlur=9;
-      ctx.fillStyle=invincibleTimer>0?'#fff0a6':(corruptionTimer>0?'#d8ff58':'#f4ffd6'); ctx.beginPath(); ctx.arc(0,0,7.6,0,Math.PI*2); ctx.fill();
-      ctx.strokeStyle='rgba(57,74,39,.72)'; ctx.lineWidth=2; ctx.stroke();
+      const ang=Math.atan2(game.dir.x,-game.dir.y);
+      ctx.save(); ctx.translate(game.tip.x,game.tip.y); ctx.rotate(ang); ctx.shadowBlur=0;
+      const budFill=corruptionTimer>0?'#b9cc55':(invincibleTimer>0?'#dac56d':'#a6c66f');
+      // Bourgeon terminal : point de contrôle lisible sans boule lumineuse flottante.
+      ctx.fillStyle=budFill; ctx.strokeStyle='#354727'; ctx.lineWidth=2.2;
+      ctx.beginPath(); ctx.moveTo(0,-10); ctx.quadraticCurveTo(8,-2,5,6); ctx.quadraticCurveTo(0,10,-5,6); ctx.quadraticCurveTo(-8,-2,0,-10); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle='#718f50';
+      ctx.beginPath(); ctx.ellipse(-7,2,3.7,7,-.72,0,TAU); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(7,3,3.4,6.4,.72,0,TAU); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle='rgba(222,228,153,.58)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(0,-7); ctx.lineTo(0,5); ctx.stroke();
       ctx.restore();
       drawShieldGauge();
     }
@@ -3400,23 +3723,7 @@
     drawFlowerCache();
     for(const f of game.flowers){
       if(!worldYInView(visualSurfaceY()-70,130)) continue;
-      const s=f.size, pal=f.palette||['#ff6ea8','#ffd166','#fff7ad','#7cffc4'];
-      const baseY=visualSurfaceY(), stemLen=44+f.maxSize*18;
-      ctx.save(); ctx.translate(f.x,baseY); ctx.rotate((f.tilt||0)+Math.sin(f.age*1.4)*.025);
-      ctx.strokeStyle='rgba(31,55,17,.84)'; ctx.lineWidth=4.0; ctx.lineCap='round';
-      ctx.beginPath(); ctx.moveTo(0,0); ctx.quadraticCurveTo(-5,-stemLen*.35,0,-stemLen); ctx.stroke();
-      ctx.strokeStyle='rgba(195,238,139,.78)'; ctx.lineWidth=1.8;
-      ctx.beginPath(); ctx.moveTo(0,0); ctx.quadraticCurveTo(-4,-stemLen*.34,0,-stemLen+1); ctx.stroke();
-      ctx.fillStyle='rgba(105,164,69,.85)';
-      ctx.beginPath(); ctx.ellipse(-8,-stemLen*.42,5,10,-.8,0,TAU); ctx.fill();
-      ctx.beginPath(); ctx.ellipse(8,-stemLen*.24,5,10,.8,0,TAU); ctx.fill();
-      ctx.translate(0,-stemLen);
-      for(let i=0;i<7;i++){
-        ctx.save(); ctx.rotate(i*TAU/7+Math.sin(f.age*.9+i)*.02); ctx.fillStyle=pal[i%pal.length]; ctx.globalAlpha=.95;
-        ctx.beginPath(); ctx.ellipse(0,-11.4*s,5.3*s,14.4*s,0,0,TAU); ctx.fill(); ctx.restore();
-      }
-      ctx.globalAlpha=1; ctx.fillStyle=pal[2]||'#fff7b8'; ctx.beginPath(); ctx.arc(0,0,5*s,0,TAU); ctx.fill();
-      ctx.restore();
+      drawIllustratedFlower(ctx,f,visualSurfaceY(),f.size,true);
     }
   }
 
@@ -3654,7 +3961,7 @@
     const x=W-8,y=8,w=126,h=112; ctx.globalAlpha=.90; ctx.fillStyle='rgba(5,7,6,.78)'; roundRect(x-w,y,w,h,8); ctx.fill();
     ctx.globalAlpha=1; ctx.textAlign='left'; ctx.textBaseline='top'; ctx.font='700 10px monospace'; ctx.fillStyle='#d8ff8b';
     const xx=x-w+8;
-    ctx.fillText('PERF v3.42.4',xx,y+7); ctx.fillStyle='#e9e2c9';
+    ctx.fillText('PERF v3.43',xx,y+7); ctx.fillStyle='#e9e2c9';
     ctx.fillText('FPS      '+perf.fps.toFixed(0),xx,y+22);
     ctx.fillText('update   '+perf.update.toFixed(2)+' ms',xx,y+34);
     ctx.fillText('render   '+perf.render.toFixed(2)+' ms',xx,y+46);

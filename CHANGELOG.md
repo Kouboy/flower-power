@@ -1,3 +1,13 @@
+## v3.43.2 — Visual Cohesion Pass
+
+- rapproche la pousse, la terre, la surface et les fleurs du langage illustré des sprites PNG ;
+- remplace le glow de la tige et de la pointe par un dessin végétal mat, contour sombre + chair verte + nervure claire ;
+- transforme la pointe de pousse en bourgeon terminal lisible plutôt qu'en orb lumineuse ;
+- enrichit le sous-sol en cache offscreen : strates épaisses, inclusions, pierres plates, fibres et réseau de racines superficielles ;
+- désature légèrement ciel et pelouse pour mieux laisser respirer les déchets authorés ;
+- redessine les fleurs avec tiges/feuilles contourées, cinq pétales irréguliers et cœur plus massif ;
+- aucun changement aux collisions, au flyover, aux power-ups ou à l'économie de score de la v3.42.4.
+
 ## v3.42.4 — Spore Reward Gate Fix
 
 - La spore-bombe libère immédiatement le slot de power-up dès son explosion.
@@ -9,6 +19,80 @@
 - Si le doigt reste maintenu, le guide est recalé immédiatement sur la position du pointeur.
 
 # Changelog
+
+## v3.43.13 - Inner Stencil Contrast Pass
+
+- Assombrit légèrement la frange intérieure du pochoir, au contact du sprite.
+- Conserve la granularité et la transparence progressive des bords extérieurs.
+
+## v3.43.12 - Stronger Granular Falloff Pass
+
+- Pousse davantage la granularité de la frange du pochoir.
+- Augmente le nombre de trous, grains et petites ruptures stables dans le dégradé.
+- Renforce légèrement la lecture sombre près du sprite.
+
+## v3.43.11 - Granular Stencil Falloff Pass
+
+- Remplace l'effacement uniforme du pochoir par un effilochage granulaire stable.
+- Le dégradé reste sombre près du sprite puis se casse en trous, grains et petites ruptures vers l'extérieur.
+- Conserve le cache des pochoirs pour éviter tout scintillement.
+
+## v3.43.10 - Stencil Gradient Cache Pass
+
+- Précalcule les pochoirs des sprites à partir de la collision + graze zone pour supprimer le scintillement.
+- Remplace l'effet uniforme par un vrai dégradé : plus sombre près du sprite, quasi transparent sur les bords.
+- Conserve l'ancrage visuel sans réintroduire les artefacts de silhouette.
+
+## v3.43.9 - Collision Graze Stencil Pass
+
+- Recalcule le pochoir d'ancrage à partir de la collision authorée et du rayon de graze, au lieu de la silhouette brute du PNG.
+- Évite les artefacts provoqués par les câbles, antennes et petits détails parasites.
+- Renforce ainsi à la fois l'ancrage visuel et la lisibilité de la zone de flyover.
+
+## v3.43.8 - Stronger Flyover Stencil Pass
+
+- Renforce nettement le contraste du pochoir de flyover autour des obstacles.
+- Supprime le petit noyau de contact au pied des objets, inadapté à la vue en coupe.
+- Conserve un halo/silhouette sombre centré sur la zone de frôlement pour ancrer et contextualiser les obstacles.
+
+## v3.43.7 - Flyover Stencil Pass
+
+- Remplace le simple pochoir d'enfouissement par un halo sombre qui recouvre grosso modo la zone de flyover autour de chaque obstacle.
+- Renforce en même temps l'ancrage des objets et la lisibilité visuelle de la zone de frôlement.
+- Garde un noyau plus compact au pied de l'objet pour l'impression d'enfoncement.
+
+## v3.43.6 - Burial Stencil Pass
+
+- Remplace l'ancrage local précédent par un pochoir sombre sous les obstacles.
+- Supprime la petite lèvre de terre au premier plan.
+- Ajoute, pour les assets PNG authorés, une silhouette assombrie et tassée pour donner l'impression qu'ils s'enfoncent dans le sol.
+
+## v3.43.5 - Obstacle Soil Anchoring Pass
+
+- Ajoute un ancrage local des obstacles dans le sol : terre tassée sous les assets, petite lèvre de terre au premier plan, miettes et fibres discrètes.
+- Renforce l'intégration visuelle des sprites sans toucher aux collisions ni au gameplay.
+
+## v3.43.4 - Stronger Organic Grain Pass
+
+- Renforce nettement la présence du grain organique dans le sous-sol.
+- Augmente le contraste et la densité de la couche de texture répétée.
+- Ajoute quelques nappes organiques discrètes pour casser la régularité.
+
+## v3.43.3 - Organic Grain Hotfix
+
+- Corrige le crash au rendu introduit en v3.43.2 par une référence à `soilTheme` inexistante.
+- Conserve la nouvelle couche de grain organique.
+
+## v3.43.2 - Organic Grain Pass
+
+- Ajoute une vraie couche de grain répétée sur toute la terre pour un rendu plus texturé et organique.
+- Renforce la sensation de matière enfouie sans toucher au gameplay.
+
+## v3.43.1 - Soil Richness & Sky Pass
+
+- Enrichit la texture du sous-sol avec davantage de grain, miettes, inclusions et fibres.
+- Laisse apparaître un peu plus de ciel à l'approche de la surface pour mieux respirer et moins couper les fleurs.
+- Ajuste légèrement le seuil d'affichage du cache de fleurs.
 
 ## v3.42.2 — Reward Gate Fix
 - Un power-up raté ou simplement présent dans le monde ne bloque jamais les récompenses suivantes.
@@ -47,6 +131,80 @@
 - Aucun changement au principe prévu : les futurs power-ups seront engendrés uniquement par les flyovers et leur valeur dépendra de la prise de risque.
 
 # Changelog
+
+## v3.43.13 - Inner Stencil Contrast Pass
+
+- Assombrit légèrement la frange intérieure du pochoir, au contact du sprite.
+- Conserve la granularité et la transparence progressive des bords extérieurs.
+
+## v3.43.12 - Stronger Granular Falloff Pass
+
+- Pousse davantage la granularité de la frange du pochoir.
+- Augmente le nombre de trous, grains et petites ruptures stables dans le dégradé.
+- Renforce légèrement la lecture sombre près du sprite.
+
+## v3.43.11 - Granular Stencil Falloff Pass
+
+- Remplace l'effacement uniforme du pochoir par un effilochage granulaire stable.
+- Le dégradé reste sombre près du sprite puis se casse en trous, grains et petites ruptures vers l'extérieur.
+- Conserve le cache des pochoirs pour éviter tout scintillement.
+
+## v3.43.10 - Stencil Gradient Cache Pass
+
+- Précalcule les pochoirs des sprites à partir de la collision + graze zone pour supprimer le scintillement.
+- Remplace l'effet uniforme par un vrai dégradé : plus sombre près du sprite, quasi transparent sur les bords.
+- Conserve l'ancrage visuel sans réintroduire les artefacts de silhouette.
+
+## v3.43.9 - Collision Graze Stencil Pass
+
+- Recalcule le pochoir d'ancrage à partir de la collision authorée et du rayon de graze, au lieu de la silhouette brute du PNG.
+- Évite les artefacts provoqués par les câbles, antennes et petits détails parasites.
+- Renforce ainsi à la fois l'ancrage visuel et la lisibilité de la zone de flyover.
+
+## v3.43.8 - Stronger Flyover Stencil Pass
+
+- Renforce nettement le contraste du pochoir de flyover autour des obstacles.
+- Supprime le petit noyau de contact au pied des objets, inadapté à la vue en coupe.
+- Conserve un halo/silhouette sombre centré sur la zone de frôlement pour ancrer et contextualiser les obstacles.
+
+## v3.43.7 - Flyover Stencil Pass
+
+- Remplace le simple pochoir d'enfouissement par un halo sombre qui recouvre grosso modo la zone de flyover autour de chaque obstacle.
+- Renforce en même temps l'ancrage des objets et la lisibilité visuelle de la zone de frôlement.
+- Garde un noyau plus compact au pied de l'objet pour l'impression d'enfoncement.
+
+## v3.43.6 - Burial Stencil Pass
+
+- Remplace l'ancrage local précédent par un pochoir sombre sous les obstacles.
+- Supprime la petite lèvre de terre au premier plan.
+- Ajoute, pour les assets PNG authorés, une silhouette assombrie et tassée pour donner l'impression qu'ils s'enfoncent dans le sol.
+
+## v3.43.5 - Obstacle Soil Anchoring Pass
+
+- Ajoute un ancrage local des obstacles dans le sol : terre tassée sous les assets, petite lèvre de terre au premier plan, miettes et fibres discrètes.
+- Renforce l'intégration visuelle des sprites sans toucher aux collisions ni au gameplay.
+
+## v3.43.4 - Stronger Organic Grain Pass
+
+- Renforce nettement la présence du grain organique dans le sous-sol.
+- Augmente le contraste et la densité de la couche de texture répétée.
+- Ajoute quelques nappes organiques discrètes pour casser la régularité.
+
+## v3.43.3 - Organic Grain Hotfix
+
+- Corrige le crash au rendu introduit en v3.43.2 par une référence à `soilTheme` inexistante.
+- Conserve la nouvelle couche de grain organique.
+
+## v3.43.2 - Organic Grain Pass
+
+- Ajoute une vraie couche de grain répétée sur toute la terre pour un rendu plus texturé et organique.
+- Renforce la sensation de matière enfouie sans toucher au gameplay.
+
+## v3.43.1 - Soil Richness & Sky Pass
+
+- Enrichit la texture du sous-sol avec davantage de grain, miettes, inclusions et fibres.
+- Laisse apparaître un peu plus de ciel à l'approche de la surface pour mieux respirer et moins couper les fleurs.
+- Ajuste légèrement le seuil d'affichage du cache de fleurs.
 
 ## v3.41.1 - Asset Ingestion Test
 
