@@ -1,7 +1,8 @@
 // core/geom.js — géométrie pure, sans état.
 // Lit     : rien.
 // Écrit   : rien.
-// Expose  : FP.geom.distPointToSegment, FP.geom.toWorld, FP.geom.convexPolysOverlap, FP.geom.clampUpAngle.
+// Expose  : FP.geom.distPointToSegment, FP.geom.toWorld, FP.geom.convexPolysOverlap, FP.geom.clampUpAngle,
+//           FP.geom.pointInPoly, FP.geom.sdPoly.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
@@ -51,5 +52,23 @@
     return { x: Math.sin(a), y: -Math.cos(a) };
   }
 
-  FP.geom = { distPointToSegment, toWorld, convexPolysOverlap, clampUpAngle };
+  function pointInPoly(px, py, pts) {
+    let inside = false;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+      const [xi, yi] = pts[i], [xj, yj] = pts[j];
+      if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside = !inside;
+    }
+    return inside;
+  }
+
+  // Distance signée au contour d'un polygone [[x,y]] : négative à l'intérieur.
+  function sdPoly(px, py, pts) {
+    let d = Infinity;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+      d = Math.min(d, distPointToSegment(px, py, pts[j][0], pts[j][1], pts[i][0], pts[i][1]));
+    }
+    return pointInPoly(px, py, pts) ? -d : d;
+  }
+
+  FP.geom = { distPointToSegment, toWorld, convexPolysOverlap, clampUpAngle, pointInPoly, sdPoly };
 })();

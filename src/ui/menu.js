@@ -1,5 +1,5 @@
 // ui/menu.js — écran titre et démarrage d'une partie.
-// Lit     : l'élément #menu, FP.view (via createRun), FP.level.startRun.
+// Lit     : l'élément #menu, FP.view (via createRun), FP.level.startRun, FP.plant.launch.
 // Écrit   : FP.state.current (nouveau run), state.mode ; à chaque redimensionnement, la taille de vue du run.
 // Expose  : rien.
 (function () {
@@ -10,13 +10,15 @@
   function startRun() {
     const state = FP.state.createRun();
     FP.level.startRun(state);
-    state.mode = 'playing';
+    FP.plant.launch(state);
     FP.state.current = state;
     menu.style.display = 'none';
   }
 
   window.addEventListener('pointerdown', (e) => {
-    if (FP.state.current && FP.state.current.mode !== 'menu') return;
+    // Écran titre ou fin de partie : un appui démarre un run neuf.
+    const mode = FP.state.current && FP.state.current.mode;
+    if (mode !== 'menu' && mode !== 'over') return;
     e.preventDefault();
     startRun();
   });

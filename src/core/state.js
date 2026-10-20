@@ -31,7 +31,7 @@
     const s = pickSeed(seed);
     const height = worldHeightFor(dims.H);
     return {
-      mode: 'menu',          // 'menu' | 'playing' | 'dying' | 'bloom'
+      mode: 'menu',          // 'menu' | 'ready' | 'playing' | 'dying' | 'bloom' | 'over'
       time: 0,
       seed: s,
       level: 0,
@@ -48,6 +48,8 @@
         skyVariant: 0, lawnVariant: 0, safePath: [], safeRadius: 0,
         solids: [], toxics: [], leaks: []
       },
+      query: { solid: null, danger: 0, near: null },          // requête de pointe de la frame (world/collision.js)
+      flow: { timer: 0, message: '', messageTimer: 0 },       // déroulé de partie (play/flow.js)
       graze: { active: new Map(), combo: 0, comboTimer: 0 },
       power: { shield: false, shieldGrace: 0, sporeTimer: 0, bonuses: [] },
       score: { eco: 0, flowers: 0, flowerBonus: 0 },

@@ -87,6 +87,26 @@
       trailStep: 8.6, trailMax: 340
     },
 
+    // Déroulé de partie.
+    flow: {
+      dyingTime: .85, bloomTime: 1.55, oldTrailsMax: 6, trailSimplifyPx: 11, deathShake: .28,
+      stemMessageTime: 1.35, deathMessageTime: 1.25, readyMessageTime: 2.2
+    },
+
+    // Textes affichés.
+    text: {
+      ready: 'TOUCHE POUR POUSSER',
+      stem: 'POUSSE ',
+      seedsLeft: ' · graines restantes : ',
+      deathDefault: 'rupture : déchet',
+      death: {
+        server: 'rupture : rack serveur', nuclear: 'rupture : fût irradié', tire: 'rupture : pneu écrasé',
+        sarcophagus: 'rupture : cercueil', drone: 'rupture : drone cassé', solar: 'rupture : panneau solaire',
+        battery: 'rupture : batterie', cone: 'rupture : cône mou', trashbag: 'rupture : sac gonflé',
+        extinguisher: 'rupture : extincteur vide', microwave: 'rupture : micro-ondes', trex_signature: 'rupture : crâne enfoui'
+      }
+    },
+
     // Caméra : suit la pointe à 52 % de la hauteur ; descend plus vite qu'elle ne monte.
     camera: { followRatio: .52, rateDown: 7.8, rateUp: 5.4 },
 
