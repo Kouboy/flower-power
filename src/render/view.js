@@ -1,11 +1,10 @@
 // render/view.js — canvas, densité de pixels et format 9:16.
 // Lit     : FP.config.view, la taille CSS du canvas #game.
-// Écrit   : FP.view.{W,H,DPR}, FP.state.current.world.surfaceY.
+// Écrit   : FP.view.{W,H,DPR} uniquement (jamais l'état de jeu).
 // Expose  : FP.view = { canvas, ctx, W, H, DPR, resize() }.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
-  const { clamp } = FP.math;
 
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d', { alpha: false });
@@ -22,9 +21,6 @@
     canvas.width = Math.floor(view.W * view.DPR);
     canvas.height = Math.floor(view.H * view.DPR);
     ctx.setTransform(view.DPR, 0, 0, view.DPR, 0, 0);
-
-    const state = FP.state.current;
-    if (state) state.world.surfaceY = clamp(view.H * cfg.surfaceRatio, cfg.surfaceMin, cfg.surfaceMax);
   }
 
   window.addEventListener('resize', resize, { passive: true });

@@ -26,3 +26,8 @@ FP.test('config: version et clé de record', () => {
   FP.assertEqual(FP.config.storageKey, 'flower_power_v4_best');
   FP.assertEqual(FP.config.palette.skies.length, 4);
 });
+FP.test('state: surfaceY calculé à la création à partir de la hauteur de vue', () => {
+  FP.assertEqual(FP.state.createRun(1, 783).world.surfaceY, 783 * .136);
+  FP.assertEqual(FP.state.createRun(1, 600).world.surfaceY, 82);
+  FP.assertEqual(FP.state.createRun(1, 2000).world.surfaceY, 116);
+});

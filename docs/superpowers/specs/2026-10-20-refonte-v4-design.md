@@ -99,9 +99,9 @@ FP.state = {
 };
 ```
 
-`createRun(seed)` construit l'état complet ; aucune autre variable mutable globale.
+`createRun(seed, viewH)` construit l'état complet, `world.surfaceY` compris ; aucune autre variable mutable globale.
 
-Ordre d'une frame (`loop.js`) : `input` → `plant.update` → `collision.queryTip` (une seule requête consolidée) → `graze.update` → `powerups.update` → `scoring.update` → `audio.consume(events)` → `render.*` → `events = []`.
+Ordre d'une frame (`loop.js`) : `input` → `plant` → `hazards` → `collision` (une seule requête de pointe consolidée) → `graze` → `powerups` → `scoring` → `camera`, chacun via `update(state, dt)` → `audio.consume(events)` → `render.*` → `events = []`. (Amendé après la revue de l'étape 0 : ajout de `hazards` et `camera`.)
 
 Chaque module gère ses propres timers.
 

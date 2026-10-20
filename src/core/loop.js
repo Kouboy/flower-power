@@ -6,8 +6,9 @@
   'use strict';
   const FP = window.FP = window.FP || {};
 
-  // Ordre de la spec §6. Un système absent (pas encore porté) est simplement sauté.
-  const UPDATE_ORDER = ['input', 'plant', 'collision', 'graze', 'powerups', 'scoring'];
+  // Ordre de la spec §6. Chaque système expose update(state, dt) ; un système absent (pas encore porté) est sauté.
+  // hazards avant collision (les limaces bougent avant la requête de pointe), camera en dernier (suit la pointe).
+  const UPDATE_ORDER = ['input', 'plant', 'hazards', 'collision', 'graze', 'powerups', 'scoring', 'camera'];
 
   function step(state, rawDt) {
     const { maxDt, fallbackDt } = FP.config.loop;

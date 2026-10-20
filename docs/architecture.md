@@ -26,6 +26,7 @@ src/
 │   └── hazards.js    ⏳ (3) zones toxiques + limaces de lixiviat
 ├── play/
 │   ├── plant.js      ⏳ (2) croissance, pilotage, trace
+│   ├── camera.js     ⏳ (2) caméra défilante (FP.camera)
 │   ├── graze.js      ⏳ (4) frôlement + évaluation du flyover
 │   ├── powerups.js   ⏳ (5) pollen, bouclier, spore, exclusivité
 │   └── scoring.js    ⏳ (4) ÉcoCrédits™, combos, records
@@ -68,12 +69,14 @@ L'état de la partie en cours est `FP.state.current`, créé par `FP.state.creat
 
 Toute valeur aléatoire de gameplay passe par `state.rng` (seedé), jamais par `Math.random()`.
 
+`world.surfaceY` est calculé par `createRun` à partir de `FP.view.H` et reste fixe pendant tout le run (comme en v3). `render/view.js` n'écrit jamais dans l'état.
+
 ## Une frame
 
 `FP.loop.step(state, dt)` :
 
 1. `dt` plafonné à `config.loop.maxDt` (dt invalide → `fallbackDt`) ; `state.time += dt` ;
-2. en mode `playing`, `FP[nom].update(state, dt)` pour `input → plant → collision → graze → powerups → scoring` (un système pas encore porté est sauté) ;
+2. en mode `playing`, `FP[nom].update(state, dt)` pour `input → plant → hazards → collision → graze → powerups → scoring → camera` (un système pas encore porté est sauté). **Tout système expose `update(state, dt)`** : par exemple la requête de pointe vit dans `FP.collision.update` ;
 3. `FP.audio.consume(state.events)` ;
 4. `FP.render.frame(state)` ;
 5. `state.events` est vidé.
