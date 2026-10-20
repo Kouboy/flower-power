@@ -75,7 +75,7 @@ L'état de la partie en cours est `FP.state.current`, créé par `FP.state.creat
 
 Toute valeur aléatoire de gameplay passe par `state.rng` (seedé), jamais par `Math.random()`.
 
-`createRun(seed, dims)` fixe pour tout le run `world.width`, `world.viewH`, `world.height` et `world.surfaceY` à partir de la taille de la vue (comme en v3). `render/view.js` n'écrit jamais dans l'état. Seule exception tolérée côté rendu : `render/obstacles.js` met en cache le pochoir d'ancrage sur l'objet solide (`o._stencil`), jamais lu par la simulation.
+`createRun(seed, dims)` fixe pour tout le run `world.width`, `world.height` et `world.surfaceY` à partir de la taille de la vue : le niveau garde ses coordonnées. Si la fenêtre change en cours de partie, `ui/menu.js` appelle `FP.state.applyView` qui met à jour `world.viewH` et ramène la caméra dans ses bornes ; au menu, un run neuf est recréé. Le sol couvre toujours la largeur visible. `render/view.js` n'écrit jamais dans l'état. Seule exception tolérée côté rendu : `render/obstacles.js` met en cache le pochoir d'ancrage sur l'objet solide (`o._stencil`), jamais lu par la simulation.
 
 Un niveau est généré par `FP.level.startRun(state)` (tirage du T-Rex signature puis `generate`) ; `generate` lit uniquement `state.rng`, donc `?seed=N` donne un niveau reproductible dans la v4 (pas le même que dans l'archive v3, qui tirait aussi des éléments retirés).
 

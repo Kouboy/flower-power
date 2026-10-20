@@ -1,7 +1,8 @@
 // render/soil.js — ciel, pelouse et terre illustrés, pré-rendus dans un cache offscreen.
 // Lit     : world.{width,height,surfaceY,skyVariant,lawnVariant}, FP.config.{palette,soil}.
 // Écrit   : rien dans l'état (cache canvas interne).
-// Expose  : FP.soil.draw(ctx, world, cameraY, viewH), FP.soil.surfaceTop(world).
+// Expose  : FP.soil.draw(ctx, world, cameraY, viewW, viewH), FP.soil.surfaceTop(world).
+// Le cache couvre max(world.width, viewW) : une fenêtre élargie en cours de run reste couverte.
 // Porté de la v3.43.16 (rebuildSoilCache, buildSoilGrainPattern, drawCloudTo, rrLocal).
 (function () {
   'use strict';
@@ -213,8 +214,8 @@
     g.globalAlpha = 1;
   }
 
-  function rebuild(world) {
-    const W = Math.max(1, Math.ceil(world.width)), wb = Math.max(1, Math.ceil(world.height)), top = surfaceTop(world);
+  function rebuild(world, viewW) {
+    const W = Math.max(1, Math.ceil(Math.max(world.width, viewW))), wb = Math.max(1, Math.ceil(world.height)), top = surfaceTop(world);
     cache.width = W; cache.height = wb;
     g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, wb);
     drawSky(W, top, world.surfaceY, world.skyVariant);
@@ -223,10 +224,10 @@
   }
 
   // Seule la tranche visible du cache est recopiée.
-  function draw(ctx, world, cameraY, viewH) {
+  function draw(ctx, world, cameraY, viewW, viewH) {
     if (!(world.width > 0 && world.height > 0)) return;
-    const key = `${world.width}|${world.height}|${world.surfaceY}|${world.skyVariant}|${world.lawnVariant}`;
-    if (key !== cacheKey) { rebuild(world); cacheKey = key; }
+    const key = `${Math.max(world.width, viewW)}|${world.height}|${world.surfaceY}|${world.skyVariant}|${world.lawnVariant}`;
+    if (key !== cacheKey) { rebuild(world, viewW); cacheKey = key; }
     const pad = FP.config.soil.viewPad;
     const y0 = Math.max(0, Math.floor(cameraY - pad)), y1 = Math.min(cache.height, Math.ceil(cameraY + viewH + pad));
     if (y1 > y0) ctx.drawImage(cache, 0, y0, cache.width, y1 - y0, 0, y0, cache.width, y1 - y0);

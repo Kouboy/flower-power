@@ -41,3 +41,13 @@ FP.test('state: T-Rex signature désarmé à la création', () => {
   FP.assertEqual(s.signature.armed, false);
   FP.assertEqual(s.signature.spawned, false);
 });
+FP.test('state: applyView suit la nouvelle hauteur de vue et borne la caméra', () => {
+  const s = FP.state.createRun(1, { W: 440, H: 783 });   // height 1840, camera.y 1057
+  FP.state.applyView(s, { W: 600, H: 1000 });
+  FP.assertEqual(s.world.viewH, 1000);
+  FP.assertEqual(s.world.width, 440);                    // la génération garde ses coordonnées
+  FP.assertEqual(s.camera.y, 840);                       // ramenée dans [0, 1840 − 1000]
+  FP.state.applyView(s, { W: 300, H: 500 });
+  FP.assertEqual(s.world.viewH, 500);
+  FP.assertEqual(s.camera.y, 840);                       // toujours dans les bornes, inchangée
+});

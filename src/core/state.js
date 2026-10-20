@@ -1,7 +1,7 @@
 // core/state.js — l'unique objet d'état d'une partie.
 // Lit     : FP.params.seed (graine imposée par l'URL), FP.createRng, FP.config.view, FP.config.world, FP.view.
 // Écrit   : FP.state.current (via ui/menu.js et core/loop.js).
-// Expose  : FP.state.createRun(seed?, dims?), FP.state.current.
+// Expose  : FP.state.createRun(seed?, dims?), FP.state.applyView(state, dims), FP.state.current.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
@@ -52,5 +52,14 @@
     };
   }
 
-  FP.state = { createRun, current: null };
+  // Fenêtre redimensionnée pendant un run : le niveau garde ses coordonnées (largeur, hauteur, surface),
+  // seule la hauteur visible change, et la caméra est ramenée dans ses nouvelles bornes.
+  function applyView(state, dims) {
+    const world = state.world;
+    world.viewH = dims.H;
+    const maxY = Math.max(0, world.height - world.viewH);
+    state.camera.y = Math.max(0, Math.min(maxY, state.camera.y));
+  }
+
+  FP.state = { createRun, applyView, current: null };
 })();

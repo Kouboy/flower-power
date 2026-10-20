@@ -13,7 +13,7 @@
     ctx.save();
     ctx.translate(0, -camY);
     ctx.beginPath(); ctx.rect(-24, camY - 48, W + 48, viewH + 96); ctx.clip();
-    FP.soil.draw(ctx, world, camY, viewH);
+    FP.soil.draw(ctx, world, camY, W, viewH);
     FP.obstacles.draw(ctx, world, camY, viewH);
     ctx.restore();
   }

@@ -10,7 +10,8 @@ Une entrée par commit (voir `AGENTS.md`).
 - `world/level.js` : génération portée de la v3 (grille, chemin sûr, placement sans chevauchement, densité cible, T-Rex signature 1 fois par run) avec des tables d'apparition réduites aux 11 familles PNG ;
 - rendu : sol illustré en cache (ciel, nuages, pelouse, strates, grain, racines), obstacles PNG avec leur ancrage sombre, PNG manquant toléré ;
 - caméra défilante et caméra libre `?freecam=1` ;
-- banc : 46 tests ;
+- fenêtre redimensionnée en cours de partie : le niveau garde ses coordonnées, la hauteur visible et les bornes de caméra suivent, le sol couvre toute la largeur ; au menu, un run neuf est recréé ;
+- banc : 47 tests ;
 - `?seed=N` est reproductible dans la v4 mais ne donne pas le même niveau que l'archive.
 
 ## v4.0.0-etape0 — Squelette
