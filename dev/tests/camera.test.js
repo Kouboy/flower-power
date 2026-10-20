@@ -29,8 +29,15 @@ FP.test('camera: zoom de frôlement monte avec le danger', () => {
   FP.assert(Math.abs(FP.camera.totalZoom(s) - 1.22 * 1.18) < .02);
 });
 FP.test('camera: pas de cadrage hors partie', () => {
-  const s = FP.state.createRun(1, { W: 440, H: 783 }); s.mode = 'dying';
+  const s = FP.state.createRun(1, { W: 440, H: 783 }); s.mode = 'over';
   FP.assertEqual(FP.camera.totalZoom(s), 1);
+});
+FP.test('camera: le cadrage reste pendant la mort (pas de saut de zoom)', () => {
+  const s = FP.state.createRun(1, { W: 440, H: 783 }); s.mode = 'playing'; s.plant.tip = { x: 220, y: 1500 };
+  s.query = { solid: null, danger: 1, near: null };
+  for (let i = 0; i < 60; i++) FP.camera.update(s, 1 / 60);
+  s.mode = 'dying';
+  for (let i = 0; i < 51; i++) { FP.camera.update(s, 1 / 60); FP.assert(FP.camera.totalZoom(s) >= 1.18 - 1e-9, String(FP.camera.totalZoom(s))); }
 });
 FP.test('camera: cible non finie ignorée', () => {
   const s = FP.state.createRun(1, { W: 440, H: 783 }); s.mode = 'playing';

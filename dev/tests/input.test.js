@@ -19,3 +19,10 @@ FP.test('input: point focal sur la graine quand la pousse n’est pas lancée', 
   s.plant.tip = null; s.plant.seed = { x: 120, y: 1700 };
   FP.assertEqual(FP.input.focalX(s), 120);
 });
+FP.test('input: chaque nouvel appui compte, même si un autre pointeur est déjà enfoncé', () => {
+  const s = FP.state.createRun(1, { W: 440, H: 783 });
+  FP.input._inject({ x: 100, y: 200, down: true }); FP.input.update(s);
+  FP.input._inject({ x: 150, y: 220, down: true }); FP.input.update(s);
+  FP.assert(s.input.pressed, 'second appui ignoré');
+  FP.input._inject({ down: false }); FP.input.update(s);
+});

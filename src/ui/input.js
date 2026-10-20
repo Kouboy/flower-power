@@ -1,5 +1,5 @@
 // ui/input.js — pointeur (souris / doigt) → instantané d'entrée par frame.
-// Lit     : événements pointeur du canvas, FP.view (taille affichée), FP.camera.totalZoom, state.plant.{tip,seed}.
+// Lit     : événements pointeur du canvas, FP.view (taille affichée), FP.camera.totalZoom, state.plant.{tip,seed}, state.world.width.
 // Écrit   : state.input = { x (monde), screenX, y (écran, 0..viewH), down, active, pressed (front montant de cette frame) }.
 // Expose  : FP.input.update(state), FP.input.toWorldX(screenX, zoom, focalX), FP.input.focalX(state),
 //           FP.input._inject(partial) — point d'entrée réservé aux tests (simule un événement).
@@ -12,8 +12,9 @@
   // Tampon rempli par les événements, recopié une fois par frame dans l'état.
   const buffer = { x: 0, y: 0, down: false, active: false, pressed: false };
 
+  // Chaque appui compte, même si un autre pointeur est déjà enfoncé ; un bouton resté enfoncé n'émet rien.
   function inject(partial) {
-    if (partial.down && !buffer.down) buffer.pressed = true;
+    if (partial.down) buffer.pressed = true;
     Object.assign(buffer, partial);
     buffer.active = true;
   }
@@ -49,7 +50,14 @@
         y: (e.clientY - rect.top) * (FP.view.H / rect.height)
       };
     };
-    canvas.addEventListener('pointerdown', (e) => { e.preventDefault(); inject({ ...fromEvent(e), down: true }); });
+    canvas.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;                       // clic droit / molette : ignorés
+      e.preventDefault();
+      // Capture : on continue de suivre la souris même hors de la bande de jeu (comme en v3).
+      if (canvas.setPointerCapture) { try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* pointeur déjà relâché */ } }
+      inject({ ...fromEvent(e), down: true });
+    });
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
     canvas.addEventListener('pointermove', (e) => inject(fromEvent(e)));
     // Relâcher hors du canvas ou hors de la fenêtre relâche aussi le contrôle.
     window.addEventListener('pointerup', () => { buffer.down = false; });

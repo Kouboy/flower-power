@@ -11,7 +11,8 @@ Une entrée par commit (voir `AGENTS.md`).
 - caméra : cadrage ×1,18 et zoom de frôlement centrés sur la pointe (ou la graine) ;
 - rendu de la tige (grain, feuilles primitives), de la graine, du bourgeon, du guide et de la trajectoire prévue ; HUD minimal ;
 - obstacles rognés par les bords tant qu'ils restent identifiables (8 px, T-Rex 70 px) ;
-- banc : 75 tests.
+- relecture : le cadrage ×1,18 reste pendant la mort (pas de saut de zoom), clic droit ignoré, pointeur capturé hors de la bande de jeu, chaque appui compte ;
+- banc : 77 tests.
 
 ## v4.0.0-etape1 — Le monde
 

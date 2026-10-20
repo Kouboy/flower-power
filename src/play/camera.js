@@ -10,8 +10,9 @@
 
   const maxY = (world) => Math.max(0, world.height - world.viewH);
 
-  // Le cadrage ×1,18 ne s'applique qu'en jeu (comme en v3 : running, ready, bloom).
-  const FRAMED = { playing: true, ready: true, bloom: true };
+  // Le cadrage ×1,18 s'applique partout sauf au menu et sur l'écran de fin (comme le draw() de la v3) :
+  // pas de saut de zoom au moment d'une rupture.
+  const FRAMED = { playing: true, ready: true, bloom: true, dying: true };
   function totalZoom(state) {
     return FRAMED[state.mode] ? state.camera.zoom * FP.config.camera.framing : 1;
   }
