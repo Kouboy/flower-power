@@ -1,3 +1,23 @@
+# Changelog
+
+Une entrée par commit (voir `AGENTS.md`).
+
+## v4.0.0-etape0 — Squelette
+
+- archive la v3.43.16 jouable dans `archive/v3.43.16/` (référence de gamefeel), avec `?seed=N` pour une génération reproductible ;
+- déplace les docs v3 dans `archive/docs/` et extrait la banque de gags satiriques (`banque-de-gags.js`) ;
+- nouveau squelette en scripts classiques sur `window.FP` : `core/fp.js`, `config.js`, `state.js`, `loop.js`, `render/view.js`, `render/frame.js`, `ui/menu.js` ;
+- état unique `FP.state.createRun(seed)`, boucle à ordre fixe, `dt` plafonné ;
+- banc d'assertions `dev/check.html` (+ `node dev/run-checks.js`) : 18 tests ;
+- contrat d'itération `AGENTS.md`, docs vivantes `docs/design.md` et `docs/architecture.md` ;
+- aucun gameplay encore : le menu lance un écran de fond provisoire.
+
+---
+
+## Historique v3
+
+L'historique ci-dessous est celui du prototype monolithique (ordre d'origine conservé).
+
 ## v3.43.2 — Visual Cohesion Pass
 
 - rapproche la pousse, la terre, la surface et les fleurs du langage illustré des sprites PNG ;
