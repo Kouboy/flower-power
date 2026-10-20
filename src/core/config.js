@@ -27,6 +27,11 @@
       heightRatio: 2.35  // height >= viewH * heightRatio
     },
 
+    level: {
+      // Marge de respiration autour du rectangle rendu de chaque PNG (placement sans chevauchement).
+      padding: { authored: 7, signature: 12 }
+    },
+
     loop: {
       maxDt: .033,      // plafond par frame (onglet revenu d'arrière-plan)
       fallbackDt: .016  // dt invalide (NaN, négatif, nul)
