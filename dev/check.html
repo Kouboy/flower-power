@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Flower Power — check</title>
+<style>
+  body{font:14px/1.5 system-ui,sans-serif;background:#15110e;color:#f7e9c7;margin:24px;}
+  .ok{color:#9be37a}.ko{color:#ff8a7a}
+  #total{font-size:20px;font-weight:800;margin-bottom:12px;}
+  li{margin:2px 0}
+</style>
+</head>
+<body>
+<div id="total">…</div>
+<ul id="list"></ul>
+<!-- Ordre de chargement : sources testées, puis le banc, puis les tests. -->
+<script src="../src/core/fp.js"></script>
+<script src="harness.js"></script>
+<script src="tests/fp.test.js"></script>
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const results = FP.runTests();
+    const okCount = results.filter(r => r.ok).length;
+    const total = document.getElementById('total');
+    total.textContent = okCount + '/' + results.length + ' OK';
+    total.className = okCount === results.length ? 'ok' : 'ko';
+    const list = document.getElementById('list');
+    for (const r of results) {
+      const li = document.createElement('li');
+      li.className = r.ok ? 'ok' : 'ko';
+      li.textContent = (r.ok ? '✔ ' : '✘ ') + r.name + (r.ok ? '' : ' — ' + r.error);
+      list.appendChild(li);
+    }
+  });
+</script>
+</body>
+</html>
