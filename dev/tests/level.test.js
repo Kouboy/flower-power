@@ -20,10 +20,22 @@ FP.test('level: chemin sûr dégagé', () => {
       FP.assert(FP.level.distToSafePath(w, p.x, p.y) >= w.safeRadius, `seed ${seed}: ${o.kind}`);
   }
 });
-FP.test('level: obstacles dans le cadre', () => {
-  const s = gen(1234), w = s.world;
-  for (const o of w.solids) for (const p of FP.catalog.visibleFootprint(o))
-    FP.assert(p.x >= 18 && p.x <= w.width - 18 && p.y >= w.surfaceY + 34 && p.y <= w.height - 100, o.kind);
+FP.test('level: obstacles identifiables (rognés de quelques px au plus)', () => {
+  for (const seed of [1, 2, 3, 1234]) {
+    const s = gen(seed), w = s.world;
+    for (const o of w.solids) for (const p of FP.catalog.visibleFootprint(o))
+      FP.assert(p.x >= -8 && p.x <= w.width + 8 && p.y >= w.surfaceY + 34 && p.y <= w.height - 100, `${seed} ${o.kind}`);
+  }
+});
+FP.test('level: le T-Rex signature trouve sa place sur écran étroit', () => {
+  let placed = 0;
+  for (let seed = 1; seed <= 20; seed++) {
+    const s = FP.state.createRun(seed, { W: 360, H: 780 });
+    s.signature = { armed: true, spawned: false, targetLevel: 1 }; s.level = 1;
+    FP.level.generate(s);
+    if (s.world.solids.some(o => o.kind === 'trex_signature')) placed++;
+  }
+  FP.assert(placed >= 15, `placé ${placed}/20`);
 });
 FP.test('level: densité plausible, familles PNG uniquement', () => {
   const s = gen(1234);

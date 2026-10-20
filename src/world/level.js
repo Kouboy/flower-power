@@ -105,8 +105,9 @@
     const f = FP.config.level.fit, W = world.width;
     if (o.x < f.centerMarginX || o.x > W - f.centerMarginX) return false;
     if (o.y < world.surfaceY + f.centerTop || o.y > world.height - f.centerBottom) return false;
+    const out = o.signature ? f.maxOutside.signature : f.maxOutside.authored;
     for (const p of FP.catalog.visibleFootprint(o)) {
-      if (p.x < f.edgeX || p.x > W - f.edgeX) return false;
+      if (p.x < -out || p.x > W + out) return false;
       if (p.y < world.surfaceY + f.edgeTop || p.y > world.height - f.edgeBottom) return false;
     }
     if (!clearOfSafePath(world, o, f.safeExtra)) return false;

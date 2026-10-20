@@ -43,7 +43,8 @@
         radiusBase: 25, radiusPerLevel: 1.25, radiusMax: 10
       },
       // Où un solide a le droit de se poser.
-      fit: { centerMarginX: 26, centerTop: 48, centerBottom: 118, edgeX: 18, edgeTop: 34, edgeBottom: 100, safeExtra: 8, safeApproxK: .38 },
+      // maxOutside : de combien de px un obstacle peut dépasser du bord gauche/droit (il doit rester identifiable).
+      fit: { centerMarginX: 26, centerTop: 48, centerBottom: 118, maxOutside: { authored: 8, signature: 70 }, edgeTop: 34, edgeBottom: 100, safeExtra: 8, safeApproxK: .38 },
       // Densité cible (jamais un quota forcé). .92 = densité du cadrage B.
       solids: { base: 6, perLevel: .18, maxExtra: 6, scale: .84, framing: .92, worldScaleMax: 2.45, tries: 110, relaxAfter: 34, jitter: .27 }
     },
