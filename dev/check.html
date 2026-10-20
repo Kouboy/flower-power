@@ -15,8 +15,11 @@
 <ul id="list"></ul>
 <!-- Ordre de chargement : sources testées, puis le banc, puis les tests. -->
 <script src="../src/core/fp.js"></script>
+<script src="../src/core/config.js"></script>
+<script src="../src/core/state.js"></script>
 <script src="harness.js"></script>
 <script src="tests/fp.test.js"></script>
+<script src="tests/state.test.js"></script>
 <script>
   window.addEventListener('DOMContentLoaded', () => {
     const results = FP.runTests();
