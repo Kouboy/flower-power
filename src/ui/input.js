@@ -1,6 +1,6 @@
 // ui/input.js — pointeur (souris / doigt) → instantané d'entrée par frame.
-// Lit     : événements pointeur du canvas, FP.view (taille affichée), FP.camera.totalZoom, state.plant.tip.
-// Écrit   : state.input = { x (monde), y (écran, 0..viewH), down, active, pressed (front montant de cette frame) }.
+// Lit     : événements pointeur du canvas, FP.view (taille affichée), FP.camera.totalZoom, state.plant.{tip,seed}.
+// Écrit   : state.input = { x (monde), screenX, y (écran, 0..viewH), down, active, pressed (front montant de cette frame) }.
 // Expose  : FP.input.update(state), FP.input.toWorldX(screenX, zoom, focalX), FP.input.focalX(state),
 //           FP.input._inject(partial) — point d'entrée réservé aux tests (simule un événement).
 // Porté de la v3.43.16 (setPointer).
@@ -23,14 +23,16 @@
     return zoom > 1.002 ? focalX + (screenX - focalX) / zoom : screenX;
   }
 
+  // Point focal du zoom : la pointe, ou la graine tant que la pousse n'est pas lancée.
   function focalX(state) {
-    const W = state.world.width, tip = state.plant.tip;
-    return clamp(tip ? tip.x : W / 2, W * .22, W * .78);
+    const W = state.world.width, p = state.plant.tip || state.plant.seed;
+    return clamp(p.x, W * .22, W * .78);
   }
 
   function update(state) {
     const i = state.input;
     i.x = toWorldX(buffer.x, FP.camera.totalZoom(state), focalX(state));
+    i.screenX = buffer.x;
     i.y = buffer.y;
     i.down = buffer.down;
     i.active = buffer.active;

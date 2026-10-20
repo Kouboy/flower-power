@@ -14,3 +14,8 @@ FP.test('input: front montant une seule frame', () => {
   FP.input.update(s); FP.assert(!s.input.pressed && s.input.down);
   FP.input._inject({ down: false }); FP.input.update(s); FP.assert(!s.input.down);
 });
+FP.test('input: point focal sur la graine quand la pousse n’est pas lancée', () => {
+  const s = FP.state.createRun(1, { W: 440, H: 783 });
+  s.plant.tip = null; s.plant.seed = { x: 120, y: 1700 };
+  FP.assertEqual(FP.input.focalX(s), 120);
+});
