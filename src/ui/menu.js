@@ -1,5 +1,5 @@
 // ui/menu.js — écran titre et démarrage d'une partie.
-// Lit     : l'élément #menu, FP.view.H (via createRun).
+// Lit     : l'élément #menu, FP.view (via createRun), FP.level.startRun.
 // Écrit   : FP.state.current (nouveau run), state.mode.
 // Expose  : rien.
 (function () {
@@ -9,6 +9,7 @@
 
   function startRun() {
     const state = FP.state.createRun();
+    FP.level.startRun(state);
     state.mode = 'playing';
     FP.state.current = state;
     menu.style.display = 'none';
