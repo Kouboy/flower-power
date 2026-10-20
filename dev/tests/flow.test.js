@@ -64,3 +64,12 @@ FP.test('flow: entrer dans un toxique émet toxicEnter et dévie', () => {
   FP.assert(s.events.some(e => e.type === 'toxicEnter'));
   FP.assert(s.plant.corruption > 0);
 });
+FP.test('flow: toute mort secoue autant que la v3 (.28)', () => {
+  for (const cause of ['toxic', 'leak']) {
+    const s = flowRun(); s.world.solids = []; s.camera.shake = 0;
+    if (cause === 'toxic') { toxicAtTip(s); s.plant.toxicTimer = .82; }
+    else { s.world.toxics = []; s.world.leaks = [{ x: s.plant.tip.x, y: s.plant.tip.y, len: 0, angle: 0, r: 12, cx: s.plant.tip.x, cy: s.plant.tip.y, cr: 12, hitFlash: 0 }]; }
+    FP.collision.update(s); FP.flow.update(s, 1 / 60);
+    FP.assertEqual(s.camera.shake, .28, cause);
+  }
+});

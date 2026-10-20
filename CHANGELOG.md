@@ -11,7 +11,8 @@ Une entrée par commit (voir `AGENTS.md`).
 - morts par lixiviat et par brûlure, événements `death` avec `cause` ;
 - rendu : nappes qui respirent (sous et devant les sprites), limaces et sillons (clear, fat, debris), anneau d'exposition, bourgeon jaunâtre, ligne « croissance déviée » ;
 - message central réduit pour tenir dans la largeur ;
-- banc : 95 tests.
+- relecture : toute mort secoue à .28 comme en v3 ; vitesse des limaces réellement plafonnée (phase intégrée — la v3 accélérait sans fin et faisait sauter les limaces) ; plus de saut d'une image à la génération ;
+- banc : 98 tests.
 
 ## v4.0.0-etape2 — La pousse
 

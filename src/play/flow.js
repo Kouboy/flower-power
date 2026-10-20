@@ -40,11 +40,11 @@
   }
 
   // cause : 'solid' | 'leak' | 'toxic' ; kind : famille de l'obstacle (cause solid uniquement).
-  function die(state, cause, kind, reason, shake) {
+  function die(state, cause, kind, reason) {
     const cfg = FP.config.flow, text = FP.config.text, p = state.plant;
     p.reserves -= 1;
     state.events.push({ type: 'death', cause, kind, x: p.tip.x, y: p.tip.y });
-    state.camera.shake = Math.max(state.camera.shake, shake);
+    state.camera.shake = Math.max(state.camera.shake, cfg.deathShake);   // .28 pour toute mort, comme en v3
     if (p.reserves <= 0) { state.mode = 'over'; return; }
     say(state, reason + text.seedsLeft + p.reserves, cfg.deathMessageTime);
     state.mode = 'dying';
@@ -62,7 +62,7 @@
         p.recentToxic = t.messageCooldown;
         state.events.push({ type: 'toxicEnter', x: p.tip.x, y: p.tip.y });
       }
-      if (p.toxicTimer > t.burnAt) die(state, 'toxic', null, FP.config.text.deathToxic, t.burnShake);
+      if (p.toxicTimer > t.burnAt) die(state, 'toxic', null, FP.config.text.deathToxic);
     } else {
       p.toxicTimer = Math.max(0, p.toxicTimer - dt * t.recoveryRate);
     }
@@ -79,8 +79,8 @@
       case 'playing': {
         const q = state.query, text = FP.config.text;
         if (state.plant.tip.y <= state.world.surfaceY) bloom(state);
-        else if (q.solid) die(state, 'solid', q.solid.kind, text.death[q.solid.kind] || text.deathDefault, cfg.deathShake);
-        else if (q.leak > 0) die(state, 'leak', null, text.deathLeak, FP.config.toxic.leakShake);
+        else if (q.solid) die(state, 'solid', q.solid.kind, text.death[q.solid.kind] || text.deathDefault);
+        else if (q.leak > 0) die(state, 'leak', null, text.deathLeak);
         else expose(state, dt);
         break;
       }

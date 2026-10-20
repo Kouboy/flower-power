@@ -104,7 +104,7 @@
     },
 
     // Exposition toxique : ~1,14 s dans une nappe brûle la pointe ; on récupère 5× plus vite.
-    toxic: { exposureRate: .72, recoveryRate: 3.6, burnAt: .82, corruption: .28, messageTime: .82, messageCooldown: .72, burnShake: .22, leakShake: .24 },
+    toxic: { exposureRate: .72, recoveryRate: 3.6, burnAt: .82, corruption: .28, messageTime: .82, messageCooldown: .72 },
 
     // Dangers diffus (v3.43.16).
     hazards: {

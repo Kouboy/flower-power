@@ -19,3 +19,22 @@ FP.test('hazards: le flash de contact s’éteint', () => {
   FP.hazards.update(s, .1); FP.assert(Math.abs(l.hitFlash - .08) < 1e-9);
   FP.hazards.update(s, .1); FP.assertEqual(l.hitFlash, 0);
 });
+FP.test('hazards: vitesse réelle plafonnée même en fin de longue partie', () => {
+  const s = hzRun(), h = FP.config.hazards;
+  s.plant.stemCount = 8; s.score.flowers = 5; s.plant.stemAge = 0; s.time = 180;
+  let maxStep = 0;
+  for (let i = 0; i < 1200; i++) {
+    const before = s.world.leaks.map(l => [l.cx, l.cy]);
+    s.time += 1 / 60; s.plant.stemAge += 1 / 60; FP.hazards.update(s, 1 / 60);
+    s.world.leaks.forEach((l, j) => {
+      const limit = l.len * .5 * l.rate * h.leakRateK * (1 + h.leakScaleMax) / 60;
+      maxStep = Math.max(maxStep, Math.hypot(l.cx - before[j][0], l.cy - before[j][1]) / Math.max(1e-9, limit));
+    });
+  }
+  FP.assert(maxStep <= 1.0001, 'vitesse / plafond = ' + maxStep.toFixed(2));
+});
+FP.test('hazards: position initiale cohérente (pas de saut à la première frame)', () => {
+  const s = hzRun(), l = s.world.leaks[0], c0 = [l.cx, l.cy];
+  FP.hazards.update(s, 1 / 60);
+  FP.assert(Math.hypot(l.cx - c0[0], l.cy - c0[1]) < 3, String(Math.hypot(l.cx - c0[0], l.cy - c0[1])));
+});

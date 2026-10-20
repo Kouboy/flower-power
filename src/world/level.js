@@ -259,9 +259,11 @@
         const leak = {
           x: pos.x, y: pos.y, len, angle, phase: rng.range(0, 6.28), rate: rng.range(c.rate[0], c.rate[1]), r: rng.range(c.r[0], c.r[1]),
           hitFlash: 0, morph: MORPHS[Math.floor(rng.next() * MORPHS.length)], debrisSeed: Math.floor(rng.next() * 99),
-          cx: pos.x, cy: pos.y, cr: 0
+          s: 0, cx: 0, cy: 0, cr: 0
         };
-        leak.cr = leak.r;
+        // Position de départ = celle de la première frame (pas de saut visible).
+        const k0 = (Math.sin(leak.phase) + 1) * .5 - .5;
+        leak.cx = pos.x + Math.cos(angle) * len * k0; leak.cy = pos.y + Math.sin(angle) * len * k0; leak.cr = leak.r;
         const pts = leakPoints(leak);
         const inBounds = pts.every(p => p.x > c.marginX && p.x < W - c.marginX && p.y > world.surfaceY + c.top && p.y < world.height - c.bottom);
         const notBuried = !nearSolid(world, pos.x, pos.y, c.solidPad) && !nearToxic(world, pos.x, pos.y, c.toxicPad);
