@@ -4,7 +4,7 @@
 
 ## Statut
 
-**v4.0.0 en reconstruction — étape 0/7 (squelette).** Le menu s'affiche et lance un fond provisoire ; le gameplay revient étape par étape (voir `docs/superpowers/specs/2026-10-20-refonte-v4-design.md`, §11).
+**v4.0.0 en reconstruction — étape 1/7 (le monde).** Le menu lance un niveau généré (sol illustré, obstacles PNG ancrés) qu'on peut parcourir avec `?freecam=1` ; la pousse revient à l'étape 2. Le gameplay revient étape par étape (voir `docs/superpowers/specs/2026-10-20-refonte-v4-design.md`, §11).
 
 La dernière version jouable complète est la v3.43.16 : `archive/v3.43.16/index.html`.
 
@@ -21,6 +21,7 @@ Aucune installation. Ouvrir `index.html` par double-clic dans un navigateur réc
 ## Paramètres d'URL
 
 - `?seed=N` : génération reproductible (entier ≥ 0).
+- `?freecam=1` : caméra libre (molette, flèches, glisser, Début/Fin) pour inspecter un niveau.
 - `?perf=1` : profiler (FPS, coût update/render). *(revient à l'étape 7)*
 - `?flydebug=1` : réglage des seuils de flyover. *(revient à l'étape 7)*
 
@@ -28,7 +29,7 @@ Aucune installation. Ouvrir `index.html` par double-clic dans un navigateur réc
 
 - Lire `AGENTS.md` (contrat d'itération) puis `docs/architecture.md`.
 - Tests : ouvrir `dev/check.html` (tout doit être vert), ou `node dev/run-checks.js`.
-- Gamefeel : comparer avec `archive/v3.43.16/index.html?seed=N` à taille de fenêtre identique.
+- Gamefeel : comparer le ressenti avec `archive/v3.43.16/index.html` à taille de fenêtre identique (une même graine ne donne pas le même niveau dans les deux versions).
 
 ## Organisation
 

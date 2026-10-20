@@ -151,7 +151,7 @@ Recommandation : itérer avec Claude Code directement sur le dépôt git (modifi
   - flyover synthétique de durée « soutenue » → spawn d'une goutte ;
   - bouclier actif → aucune seconde goutte, mais pollen autorisé ;
   - bris de bouclier → direction de la pousse inchangée.
-- Gamefeel : comparaison manuelle côte à côte avec `archive/v3.43.16/index.html?seed=N`, à partir de l'étape 2.
+- Gamefeel : comparaison manuelle côte à côte avec `archive/v3.43.16/index.html`, à partir de l'étape 2. Elle porte sur le ressenti (densité, lisibilité, look) : une même graine ne donne pas la même disposition dans la v4 et dans l'archive, qui tirait aussi des éléments retirés. (Précisé à l'étape 1.)
 
 ## 10. Documentation et version
 

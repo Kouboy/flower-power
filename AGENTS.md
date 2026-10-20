@@ -16,4 +16,4 @@ Lire `docs/architecture.md` avant toute modification.
 ## Vérifier
 
 - `dev/check.html` (double-clic) doit afficher tout vert. En ligne de commande : `node dev/run-checks.js`.
-- Comparer le gamefeel avec `archive/v3.43.16/index.html?seed=N`, à taille de fenêtre identique.
+- Comparer le ressenti avec `archive/v3.43.16/index.html`, à taille de fenêtre identique (une même graine ne donne pas le même niveau dans les deux versions).

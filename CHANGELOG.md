@@ -2,6 +2,17 @@
 
 Une entrée par commit (voir `AGENTS.md`).
 
+## v4.0.0-etape1 — Le monde
+
+- `core/geom.js` : distance point-segment, transformation locale → monde, SAT entre polygones convexes ;
+- `createRun(seed, {W,H})` fixe largeur, hauteur du monde, hauteur de vue et surface pour tout le run ;
+- `world/catalog.js` : les 12 PNG authorés deviennent des solides (taille, polygone mis à l'échelle, miroir interdit si `mirrorSafe:false`, empreinte visuelle avec marge) ;
+- `world/level.js` : génération portée de la v3 (grille, chemin sûr, placement sans chevauchement, densité cible, T-Rex signature 1 fois par run) avec des tables d'apparition réduites aux 11 familles PNG ;
+- rendu : sol illustré en cache (ciel, nuages, pelouse, strates, grain, racines), obstacles PNG avec leur ancrage sombre, PNG manquant toléré ;
+- caméra défilante et caméra libre `?freecam=1` ;
+- banc : 46 tests ;
+- `?seed=N` est reproductible dans la v4 mais ne donne pas le même niveau que l'archive.
+
 ## v4.0.0-etape0 — Squelette
 
 - archive la v3.43.16 jouable dans `archive/v3.43.16/` (référence de gamefeel), avec `?seed=N` pour une génération reproductible ;

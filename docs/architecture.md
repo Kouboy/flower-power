@@ -16,29 +16,35 @@ Chaque fichier `src/**` commence par un en-tête : rôle, ce qu'il **lit**, ce q
 src/
 ├── core/
 │   ├── fp.js         ✅ window.FP, maths, RNG seedée, paramètres d'URL, stockage sûr
+│   ├── geom.js       ✅ distance point-segment, local→monde, SAT de polygones convexes
 │   ├── config.js     ✅ tous les réglages
 │   ├── state.js      ✅ FP.state.createRun(seed) et FP.state.current
 │   └── loop.js       ✅ FP.loop.step / start, ordre fixe d'une frame
 ├── world/
-│   ├── catalog.js    ⏳ (1) familles + chargement des PNG authorés
-│   ├── level.js      ⏳ (1) génération : chemin sûr, placement SAT, densité
+│   ├── catalog.js    ✅ JSON authorés → solides (taille, collision, miroir, footprint)
+│   ├── level.js      ✅ génération : chemin sûr, placement SAT, densité, T-Rex signature
 │   ├── collision.js  ⏳ (2) distance polygone, broad phase, requête de pointe
 │   └── hazards.js    ⏳ (3) zones toxiques + limaces de lixiviat
 ├── play/
 │   ├── plant.js      ⏳ (2) croissance, pilotage, trace
-│   ├── camera.js     ⏳ (2) caméra défilante (FP.camera)
+│   ├── camera.js     ✅ caméra défilante (FP.camera)
 │   ├── graze.js      ⏳ (4) frôlement + évaluation du flyover
 │   ├── powerups.js   ⏳ (5) pollen, bouclier, spore, exclusivité
 │   └── scoring.js    ⏳ (4) ÉcoCrédits™, combos, records
 ├── render/
 │   ├── view.js       ✅ canvas, DPR, 9:16
-│   ├── frame.js      ✅ FP.render.frame(state) — fond provisoire
-│   └── …             ⏳ soil, obstacles, hazards, plant, flowers, effects, hud
+│   ├── sprites.js    ✅ chargement des PNG, FP.sprites.get(clé)
+│   ├── soil.js       ✅ ciel + pelouse + terre en cache offscreen
+│   ├── obstacles.js  ✅ ancrage sombre en cache + sprite
+│   ├── frame.js      ✅ FP.render.frame(state) : caméra, sol, obstacles
+│   └── …             ⏳ hazards, plant, flowers, effects, hud
 ├── audio/audio.js    ⏳ (7)
 ├── ui/
 │   ├── menu.js       ✅ écran titre → nouveau run
 │   └── input.js      ⏳ (2)
-└── debug/            ⏳ (7) perf.js (?perf=1), flydebug.js (?flydebug=1)
+└── debug/
+    ├── freecam.js    ✅ ?freecam=1 : molette / flèches / glisser
+    └── …             ⏳ (7) perf.js (?perf=1), flydebug.js (?flydebug=1)
 ```
 
 ## Les 4 règles
@@ -69,7 +75,9 @@ L'état de la partie en cours est `FP.state.current`, créé par `FP.state.creat
 
 Toute valeur aléatoire de gameplay passe par `state.rng` (seedé), jamais par `Math.random()`.
 
-`world.surfaceY` est calculé par `createRun` à partir de `FP.view.H` et reste fixe pendant tout le run (comme en v3). `render/view.js` n'écrit jamais dans l'état.
+`createRun(seed, dims)` fixe pour tout le run `world.width`, `world.viewH`, `world.height` et `world.surfaceY` à partir de la taille de la vue (comme en v3). `render/view.js` n'écrit jamais dans l'état. Seule exception tolérée côté rendu : `render/obstacles.js` met en cache le pochoir d'ancrage sur l'objet solide (`o._stencil`), jamais lu par la simulation.
+
+Un niveau est généré par `FP.level.startRun(state)` (tirage du T-Rex signature puis `generate`) ; `generate` lit uniquement `state.rng`, donc `?seed=N` donne un niveau reproductible dans la v4 (pas le même que dans l'archive v3, qui tirait aussi des éléments retirés).
 
 ## Une frame
 
@@ -83,7 +91,7 @@ Toute valeur aléatoire de gameplay passe par `state.rng` (seedé), jamais par `
 
 ## Ordre de chargement
 
-`index.html` charge : `assets/obstacles/manifest.js`, puis `src/core/fp.js`, `config.js`, `state.js`, `src/render/view.js`, `frame.js`, `src/core/loop.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`.
+`index.html` charge : `assets/obstacles/manifest.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `src/play/camera.js`, `src/render/view.js`, `sprites.js`, `soil.js`, `obstacles.js`, `frame.js`, `src/core/loop.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` (pour le catalogue).
 
 Pour ajouter un fichier : une ligne `<script>` après ses dépendances (celles listées dans son en-tête « Lit »), avant `ui/menu.js`. Un fichier de simulation (`core/`, `world/`, `play/`) s'ajoute aussi à `dev/check.html`, avant `harness.js`, avec son fichier de tests dans `dev/tests/`. Les fichiers `render/` et `ui/` ne sont pas chargés par `check.html` (ils ont besoin du DOM).
 
