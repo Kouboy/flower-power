@@ -2,6 +2,17 @@
 
 Une entrée par commit (voir `AGENTS.md`).
 
+## v4.0.0-etape3 — Zones toxiques et lixiviat
+
+- génération des nappes toxiques et des limaces portée de la v3, après les solides ; limaces tenues à l'écart du chemin sûr et placées sans dépendre de la caméra ;
+- `world/hazards.js` : limaces en va-et-vient, de plus en plus vives au fil de la partie (plafonné) ;
+- requête de pointe : intensité toxique, contact lixiviat, frôlement de limace qui fait zoomer ;
+- exposition toxique : message, croissance déviée (tremblement, vitesse −10 %, cône 74°), brûlure après ~1,14 s, récupération 5× plus rapide ;
+- morts par lixiviat et par brûlure, événements `death` avec `cause` ;
+- rendu : nappes qui respirent (sous et devant les sprites), limaces et sillons (clear, fat, debris), anneau d'exposition, bourgeon jaunâtre, ligne « croissance déviée » ;
+- message central réduit pour tenir dans la largeur ;
+- banc : 95 tests.
+
 ## v4.0.0-etape2 — La pousse
 
 - le jeu redevient jouable : croissance et pilotage portés de la v3 (vitesse, rampe par pousse et par fleur, virage, rebond aux bords, trace) ;

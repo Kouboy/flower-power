@@ -4,7 +4,7 @@
 
 ## Statut
 
-**v4.0.0 en reconstruction — étape 2/7 (la pousse) : jouable.** La pousse se pilote, meurt au contact, repart (3 graines), éclot à la surface et passe au niveau suivant. Zones toxiques et lixiviat reviennent à l'étape 3, ÉcoCrédits™ à l'étape 4. Le gameplay revient étape par étape (voir `docs/superpowers/specs/2026-10-20-refonte-v4-design.md`, §11).
+**v4.0.0 en reconstruction — étape 3/7 (zones toxiques et lixiviat) : jouable.** La pousse se pilote, évite obstacles, nappes toxiques (qui dévient puis brûlent) et limaces de lixiviat, repart (3 graines), éclot à la surface et passe au niveau suivant. ÉcoCrédits™ à l'étape 4, power-ups à l'étape 5. Le gameplay revient étape par étape (voir `docs/superpowers/specs/2026-10-20-refonte-v4-design.md`, §11).
 
 La dernière version jouable complète est la v3.43.16 : `archive/v3.43.16/index.html`.
 

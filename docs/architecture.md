@@ -22,12 +22,12 @@ src/
 │   └── loop.js       ✅ FP.loop.step / start, ordre fixe d'une frame
 ├── world/
 │   ├── catalog.js    ✅ JSON authorés → solides (taille, collision, miroir, footprint)
-│   ├── level.js      ✅ génération : chemin sûr, placement SAT, densité, T-Rex signature
-│   ├── collision.js  ✅ requête de pointe : solide touché, danger de frôlement
-│   └── hazards.js    ⏳ (3) zones toxiques + limaces de lixiviat
+│   ├── level.js      ✅ génération : chemin sûr, solides (SAT), T-Rex signature, nappes toxiques, limaces
+│   ├── collision.js  ✅ requête de pointe : solide, intensité toxique, contact lixiviat, danger de frôlement
+│   └── hazards.js    ✅ limaces en mouvement (cx, cy, cr, hitFlash), intensité des nappes
 ├── play/
 │   ├── plant.js      ✅ croissance, pilotage, trace (prepare / launch / update)
-│   ├── flow.js       ✅ mort, éclosion minimale, transitions, fin de partie, messages
+│   ├── flow.js       ✅ morts (solide, lixiviat, brûlure toxique), exposition, éclosion minimale, transitions, messages
 │   ├── camera.js     ✅ défilement, cadrage ×1,18, zoom de frôlement
 │   ├── graze.js      ⏳ (4) frôlement + évaluation du flyover
 │   ├── powerups.js   ⏳ (5) pollen, bouclier, spore, exclusivité
@@ -37,10 +37,11 @@ src/
 │   ├── sprites.js    ✅ chargement des PNG, FP.sprites.get(clé)
 │   ├── soil.js       ✅ ciel + pelouse + terre en cache offscreen
 │   ├── obstacles.js  ✅ ancrage sombre en cache + sprite
+│   ├── hazards.js    ✅ nappes (base + pellicule), limaces et sillons, anneau d'exposition
 │   ├── plant.js      ✅ tige, anciennes traces, graine, bourgeon, guide, cercle du doigt
 │   ├── hud.js        ✅ panneaux, messages, écrans ready / over
 │   ├── frame.js      ✅ FP.render.frame(state) : zoom, caméra, sol, obstacles, plante, HUD
-│   └── …             ⏳ hazards, flowers, effects
+│   └── …             ⏳ flowers, effects
 ├── audio/audio.js    ⏳ (7)
 ├── ui/
 │   ├── menu.js       ✅ écran titre / fin de partie → nouveau run ; redimensionnement
@@ -94,9 +95,15 @@ Un niveau est généré par `FP.level.startRun(state)` (tirage du T-Rex signatur
 
 ## Ordre de chargement
 
-`index.html` charge : `assets/obstacles/manifest.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `src/play/plant.js`, `src/world/collision.js`, `src/play/flow.js`, `src/play/camera.js`, `src/render/view.js`, `sprites.js`, `soil.js`, `obstacles.js`, `plant.js`, `hud.js`, `frame.js`, `src/core/loop.js`, `src/ui/input.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` (pour le catalogue).
+`index.html` charge : `assets/obstacles/manifest.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `hazards.js`, `src/play/plant.js`, `src/world/collision.js`, `src/play/flow.js`, `src/play/camera.js`, `src/render/view.js`, `sprites.js`, `soil.js`, `obstacles.js`, `hazards.js`, `plant.js`, `hud.js`, `frame.js`, `src/core/loop.js`, `src/ui/input.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` (pour le catalogue).
 
 `dev/check.html` charge aussi `src/ui/input.js` (ses écouteurs ne s'installent que si `FP.view` existe).
+
+## Dangers diffus
+
+- Nappes toxiques (`world.toxics`) : pas de choc. La requête de pointe renvoie leur intensité cumulée ; `flow` augmente `plant.toxicTimer` (×.72/s), pose `plant.corruption` (croissance déviée lue par `plant`), et brûle la pointe au-delà de .82 ; hors nappe, le compteur redescend ×3,6/s.
+- Limaces (`world.leaks`) : `hazards.update` calcule leur position courante (`cx, cy, cr`) ; un contact tue (cause `leak`) et pose `hitFlash` ; la couronne de frôlement alimente `query.danger` (zoom).
+- Ordre de dessin (v3) : sol, nappes, limaces, obstacles, plante, pellicule toxique, anneau d'exposition, puis HUD.
 
 ## Modes
 
