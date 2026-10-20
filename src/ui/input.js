@@ -1,5 +1,5 @@
 // ui/input.js — pointeur (souris / doigt) → instantané d'entrée par frame.
-// Lit     : événements pointeur du canvas, FP.view (taille affichée), state.camera.zoom, state.plant.tip.
+// Lit     : événements pointeur du canvas, FP.view (taille affichée), FP.camera.totalZoom, state.plant.tip.
 // Écrit   : state.input = { x (monde), y (écran, 0..viewH), down, active, pressed (front montant de cette frame) }.
 // Expose  : FP.input.update(state), FP.input.toWorldX(screenX, zoom, focalX), FP.input.focalX(state),
 //           FP.input._inject(partial) — point d'entrée réservé aux tests (simule un événement).
@@ -30,7 +30,7 @@
 
   function update(state) {
     const i = state.input;
-    i.x = toWorldX(buffer.x, state.camera.zoom, focalX(state));
+    i.x = toWorldX(buffer.x, FP.camera.totalZoom(state), focalX(state));
     i.y = buffer.y;
     i.down = buffer.down;
     i.active = buffer.active;

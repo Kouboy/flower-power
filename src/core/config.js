@@ -107,8 +107,12 @@
       }
     },
 
-    // Caméra : suit la pointe à 52 % de la hauteur ; descend plus vite qu'elle ne monte.
-    camera: { followRatio: .52, rateDown: 7.8, rateUp: 5.4 },
+    // Caméra : suit la pointe à 52 % de la hauteur. rateDown s'applique quand la caméra remonte vers la surface
+    // (cible au-dessus), rateUp quand elle redescend. framing = cadrage B ×1,18 ; zoom de frôlement jusqu'à +22 %.
+    camera: {
+      followRatio: .52, rateDown: 7.8, rateUp: 5.4,
+      framing: 1.18, grazeZoom: .22, nearIn: 26, nearOut: 18, zoomCurve: 1.55, zoomIn: 30, zoomOut: 22
+    },
 
     loop: {
       maxDt: .033,      // plafond par frame (onglet revenu d'arrière-plan)
