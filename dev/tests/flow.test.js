@@ -35,3 +35,32 @@ FP.test('flow: une partie complète tourne sans exception', () => {
   const s = flowRun(); tick(s, 60 * 40);
   FP.assert(['playing', 'dying', 'bloom', 'ready', 'over'].includes(s.mode));
 });
+const toxicAtTip = (s) => { const o = { x: s.plant.tip.x, y: s.plant.tip.y, rx: 60, ry: 60, a: 0 }; s.world.toxics = [o]; s.world.leaks = []; return o; };
+FP.test('flow: rester dans un toxique brûle la pointe en ~1,14 s', () => {
+  const s = flowRun(); s.world.solids = []; toxicAtTip(s);
+  let t = 0;
+  while (s.mode === 'playing' && t < 3) { FP.collision.update(s); FP.flow.update(s, 1 / 60); t += 1 / 60; }
+  FP.assertEqual(s.mode, 'dying');
+  FP.assert(Math.abs(t - .82 / .72) < .05, String(t));
+  FP.assert(s.events.some(e => e.type === 'death' && e.cause === 'toxic'));
+});
+FP.test('flow: passage bref dans un toxique', () => {
+  const s = flowRun(); s.world.solids = []; toxicAtTip(s);
+  for (let i = 0; i < 40; i++) { FP.collision.update(s); FP.flow.update(s, 1 / 60); }
+  s.world.toxics = [];
+  for (let i = 0; i < 60; i++) { FP.collision.update(s); FP.flow.update(s, 1 / 60); }
+  FP.assertEqual(s.mode, 'playing'); FP.assertEqual(s.plant.toxicTimer, 0);
+});
+FP.test('flow: contact lixiviat → mort', () => {
+  const s = flowRun(); s.world.solids = []; s.world.toxics = [];
+  s.world.leaks = [{ x: s.plant.tip.x, y: s.plant.tip.y, len: 50, angle: 0, r: 12, cx: s.plant.tip.x, cy: s.plant.tip.y, cr: 12, hitFlash: 0 }];
+  FP.collision.update(s); FP.flow.update(s, 0);
+  FP.assertEqual(s.mode, 'dying');
+  FP.assert(s.events.some(e => e.type === 'death' && e.cause === 'leak'));
+});
+FP.test('flow: entrer dans un toxique émet toxicEnter et dévie', () => {
+  const s = flowRun(); s.world.solids = []; toxicAtTip(s);
+  FP.collision.update(s); FP.flow.update(s, 1 / 60);
+  FP.assert(s.events.some(e => e.type === 'toxicEnter'));
+  FP.assert(s.plant.corruption > 0);
+});

@@ -1,5 +1,5 @@
 // play/plant.js — croissance et pilotage de la pousse.
-// Lit     : state.input, state.time, state.score.flowers, state.world.{width,height}, FP.config.plant.
+// Lit     : state.input, state.time, state.rng, state.score.flowers, state.world.{width,height,viewH}, state.plant.corruption, FP.config.plant.
 // Écrit   : state.plant, state.mode (lancement), state.camera.{y,shake}, state.events (stemStart).
 // Expose  : FP.plant.prepare(state), FP.plant.launch(state), FP.plant.speed(state), FP.plant.update(state, dt).
 // Porté de la v3.43.16 (prepareStem, launchPreparedStem, partie « croissance » de update()).
@@ -15,6 +15,7 @@
     p.tip = null;
     p.trail = [];
     p.stemAge = 0;
+    p.corruption = 0; p.toxicTimer = 0; p.recentToxic = 0;
     state.camera.y = Math.max(0, w.height - w.viewH);
   }
 
@@ -35,7 +36,7 @@
     const p = state.plant, s = FP.config.plant.speed;
     const globalRamp = Math.max(0, p.stemCount - 1) * s.perStem + state.score.flowers * s.perFlower;
     const liveRamp = Math.min(s.liveMax, p.stemAge * s.livePerSec);
-    const base = Math.min(s.max, s.base + globalRamp + liveRamp) * s.framing;
+    const base = Math.min(s.max, s.base + globalRamp + liveRamp) * s.framing * (p.corruption > 0 ? FP.config.plant.corrupted.speed : 1);
     return state.input.down ? base * s.controlled : base;
   }
 
@@ -65,9 +66,16 @@
       p.guide.y = p.tip.y - cfg.idleLookAhead;
     }
 
+    const corrupted = p.corruption > 0, cc = cfg.corrupted;
+    if (corrupted) {
+      // Dans la terre contaminée, on ne perd pas de vie : la croissance se tord dans la main.
+      desiredX += Math.sin(state.time * cc.swayFreq + p.tip.y * cc.swayDepth) * cc.swayAmp + Math.sin(state.time * cc.swayFreq2) * cc.swayAmp2;
+      desiredY = Math.min(desiredY + cc.lift, cc.minUp);
+    }
+
     // La tige peut serpenter, mais jamais faire demi-tour : elle cherche le jour.
-    let v = FP.geom.clampUpAngle(desiredX, desiredY, controlled ? cfg.maxAngleControlled : cfg.maxAngleIdle);
-    const steer = controlled ? cfg.steerControlled : cfg.steerIdle;
+    let v = FP.geom.clampUpAngle(desiredX, desiredY, controlled ? (corrupted ? cc.maxAngle : cfg.maxAngleControlled) : cfg.maxAngleIdle);
+    const steer = controlled ? (corrupted ? cc.steerControlled : cfg.steerControlled) : (corrupted ? cc.steerIdle : cfg.steerIdle);
     p.dir.x = lerp(p.dir.x, v.x, clamp(dt * steer, 0, 1));
     p.dir.y = lerp(p.dir.y, v.y, clamp(dt * steer, 0, 1));
     v = FP.geom.clampUpAngle(p.dir.x, p.dir.y, cfg.maxAngleControlled);

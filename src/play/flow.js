@@ -1,7 +1,7 @@
 // play/flow.js — déroulé de partie : mort, éclosion, transitions, fin de partie, messages.
-// Lit     : state.mode, state.query, state.plant, state.input.pressed, state.events, FP.config.{flow,text}.
-// Écrit   : state.mode, state.flow, state.plant.{reserves,oldTrails}, state.score.flowers, state.level,
-//           state.camera.shake, state.events (death, bloom) ; appelle FP.level.generate et FP.plant.prepare/launch.
+// Lit     : state.mode, state.query, state.plant, state.input.pressed, state.events, state.world.surfaceY, FP.config.{flow,text,toxic}.
+// Écrit   : state.mode, state.flow, state.plant.{reserves,oldTrails,corruption,toxicTimer,recentToxic}, state.score.flowers,
+//           state.level, state.camera.shake, state.events (death, bloom, toxicEnter) ; appelle FP.level.generate et FP.plant.prepare/launch.
 // Expose  : FP.flow.update(state, dt), FP.flow.simplifyTrail(points, minStep).
 // Porté de la v3.43.16 (die, bloom, transitions de update()) ; éclosion visuelle et fondu : étape 6.
 (function () {
@@ -39,27 +39,51 @@
     state.flow.messageTimer = 0;
   }
 
-  function die(state, solid) {
+  // cause : 'solid' | 'leak' | 'toxic' ; kind : famille de l'obstacle (cause solid uniquement).
+  function die(state, cause, kind, reason, shake) {
     const cfg = FP.config.flow, text = FP.config.text, p = state.plant;
     p.reserves -= 1;
-    state.events.push({ type: 'death', kind: solid.kind, x: p.tip.x, y: p.tip.y });
-    state.camera.shake = Math.max(state.camera.shake, cfg.deathShake);
+    state.events.push({ type: 'death', cause, kind, x: p.tip.x, y: p.tip.y });
+    state.camera.shake = Math.max(state.camera.shake, shake);
     if (p.reserves <= 0) { state.mode = 'over'; return; }
-    say(state, (text.death[solid.kind] || text.deathDefault) + text.seedsLeft + p.reserves, cfg.deathMessageTime);
+    say(state, reason + text.seedsLeft + p.reserves, cfg.deathMessageTime);
     state.mode = 'dying';
     state.flow.timer = cfg.dyingTime;
   }
 
+  // Nappe toxique : pas de choc mais une exposition qui dévie la croissance, puis brûle la pointe.
+  function expose(state, dt) {
+    const t = FP.config.toxic, p = state.plant;
+    if (state.query.toxic > 0) {
+      p.toxicTimer += dt * t.exposureRate;
+      p.corruption = Math.max(p.corruption, t.corruption);
+      if (p.recentToxic <= 0) {
+        say(state, FP.config.text.toxicEnter, t.messageTime);
+        p.recentToxic = t.messageCooldown;
+        state.events.push({ type: 'toxicEnter', x: p.tip.x, y: p.tip.y });
+      }
+      if (p.toxicTimer > t.burnAt) die(state, 'toxic', null, FP.config.text.deathToxic, t.burnShake);
+    } else {
+      p.toxicTimer = Math.max(0, p.toxicTimer - dt * t.recoveryRate);
+    }
+  }
+
   function update(state, dt) {
-    const cfg = FP.config.flow, f = state.flow;
+    const cfg = FP.config.flow, f = state.flow, p = state.plant;
+    p.corruption = Math.max(0, p.corruption - dt);
+    p.recentToxic = Math.max(0, p.recentToxic - dt);
     for (const e of state.events) if (e.type === 'stemStart') say(state, FP.config.text.stem + e.n, cfg.stemMessageTime);
     if (f.messageTimer > 0) f.messageTimer = Math.max(0, f.messageTimer - dt);
 
     switch (state.mode) {
-      case 'playing':
+      case 'playing': {
+        const q = state.query, text = FP.config.text;
         if (state.plant.tip.y <= state.world.surfaceY) bloom(state);
-        else if (state.query.solid) die(state, state.query.solid);
+        else if (q.solid) die(state, 'solid', q.solid.kind, text.death[q.solid.kind] || text.deathDefault, cfg.deathShake);
+        else if (q.leak > 0) die(state, 'leak', null, text.deathLeak, FP.config.toxic.leakShake);
+        else expose(state, dt);
         break;
+      }
       case 'dying':
         f.timer -= dt;
         if (f.timer <= 0) { FP.level.generate(state); FP.plant.launch(state); say(state, FP.config.text.stem + state.plant.stemCount, cfg.stemMessageTime); }

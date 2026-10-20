@@ -41,7 +41,8 @@
       input: { x: 0, screenX: 0, y: 0, down: false, active: false, pressed: false },   // instantané du pointeur (x monde, y écran)
       plant: {
         seed: { x: 0, y: 0 }, tip: null, dir: { x: 0, y: -1 }, guide: { x: 0, y: 0 },
-        trail: [], oldTrails: [], stemAge: 0, stemCount: 0, reserves: 3
+        trail: [], oldTrails: [], stemAge: 0, stemCount: 0, reserves: 3,
+        corruption: 0, toxicTimer: 0, recentToxic: 0          // exposition toxique (écrite par play/flow.js)
       },
       world: {
         width: dims.W, height, viewH: dims.H, surfaceY: surfaceYFor(dims.H),

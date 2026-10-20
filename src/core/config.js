@@ -98,8 +98,13 @@
       idleGuideRate: 4, idleLookAhead: 140,
       maxAngleControlled: 89, maxAngleIdle: 42, steerControlled: 13.8, steerIdle: 5.4,
       edge: 12, bounceZone: 14, bounce: -.48, bounceShake: .035,
-      trailStep: 8.6, trailMax: 340
+      trailStep: 8.6, trailMax: 340,
+      // Croissance déviée dans la terre contaminée : la tige se tord dans la main, sans demi-tour.
+      corrupted: { swayFreq: 12, swayDepth: .042, swayAmp: .70, swayFreq2: 6.6, swayAmp2: .22, lift: .24, minUp: -.13, maxAngle: 74, steerControlled: 9.2, steerIdle: 4.6, speed: .90 }
     },
+
+    // Exposition toxique : ~1,14 s dans une nappe brûle la pointe ; on récupère 5× plus vite.
+    toxic: { exposureRate: .72, recoveryRate: 3.6, burnAt: .82, corruption: .28, messageTime: .82, messageCooldown: .72, burnShake: .22, leakShake: .24 },
 
     // Dangers diffus (v3.43.16).
     hazards: {
@@ -121,6 +126,10 @@
       stem: 'POUSSE ',
       seedsLeft: ' · graines restantes : ',
       deathDefault: 'rupture : déchet',
+      deathLeak: 'lixiviat vivant : pointe brûlée',
+      deathToxic: 'pointe brûlée dans une zone toxique',
+      toxicEnter: 'ZONE TOXIQUE : CROISSANCE DÉVIÉE',
+      corrupted: 'croissance déviée',
       death: {
         server: 'rupture : rack serveur', nuclear: 'rupture : fût irradié', tire: 'rupture : pneu écrasé',
         sarcophagus: 'rupture : cercueil', drone: 'rupture : drone cassé', solar: 'rupture : panneau solaire',

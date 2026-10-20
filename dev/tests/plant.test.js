@@ -43,3 +43,16 @@ FP.test('plant: prepare pose la graine sans lancer', () => {
   FP.assertEqual(s.plant.tip, null);
   FP.assertEqual(s.plant.seed.y, s.world.height - 46);
 });
+FP.test('plant: déviée mais toujours vers le haut', () => {
+  const s = plantRun(); s.input = { x: 440, y: 400, down: true, active: true, pressed: false };
+  for (let i = 0; i < 300; i++) { s.plant.corruption = .28; s.time += 1 / 60; FP.plant.update(s, 1 / 60); FP.assert(s.plant.dir.y < 0); }
+});
+FP.test('plant: corruption ralentit de 10 %', () => {
+  const s = plantRun(), v = FP.plant.speed(s); s.plant.corruption = .2;
+  FP.assertEqual(FP.plant.speed(s), v * .90);
+});
+FP.test('plant: prepare remet l’exposition à zéro', () => {
+  const s = plantRun(); s.plant.corruption = .2; s.plant.toxicTimer = .5; s.plant.recentToxic = .3;
+  FP.plant.prepare(s);
+  FP.assertEqual(s.plant.corruption + s.plant.toxicTimer + s.plant.recentToxic, 0);
+});
