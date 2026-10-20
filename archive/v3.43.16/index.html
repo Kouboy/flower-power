@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8" />
+<base href="../../" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <title>Flower Power v3.43.16 Stem Grain Pass</title>
 <style>
@@ -130,6 +131,7 @@
   let lawnVariant=0;
   let signatureTrexArmed=false, signatureTrexSpawned=false, signatureTrexTargetLevel=2;
   const FORCE_TALISMAN=new URLSearchParams(location.search).get('talisman')==='1';
+  const SEED_PARAM=(()=>{ const s=new URLSearchParams(location.search).get('seed'); return /^\d+$/.test(s||'')?Number(s):null; })();
 
   // v3.38 PERFORMANCE PASS -------------------------------------------------
   const PERF_ENABLED=new URLSearchParams(location.search).get('perf')==='1';
@@ -1272,10 +1274,10 @@
     setWorldMetrics();
     // Terrain et graine sont générés seulement après stabilisation du viewport.
     score=0; ecoCredits=0; ecoCombo=0; ecoComboTimer=0; cameraZoom=1; cameraZoomTarget=1; cameraNear=0; grazeSustain=0; stopGrazeDrone(true); level=0; reserves=3; stemCount=0; flowerBonus=0; game.oldTrails=[]; game.flowers=[]; game.bakedFlowers=[]; flowerCacheDirty=true; fadeAlpha=0;
-    rngSeed=Math.floor(Math.random()*999999);
-    signatureTrexArmed=FORCE_TALISMAN || Math.random()<.38;
+    rngSeed=SEED_PARAM!==null?SEED_PARAM:Math.floor(Math.random()*999999);
+    signatureTrexArmed=FORCE_TALISMAN || (SEED_PARAM!==null?rand():Math.random())<.38;
     signatureTrexSpawned=false;
-    signatureTrexTargetLevel=1+Math.floor(Math.random()*4);
+    signatureTrexTargetLevel=1+Math.floor((SEED_PARAM!==null?rand():Math.random())*4);
     menu.style.display='none';
     resetRun(true);
   }
