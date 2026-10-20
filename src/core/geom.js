@@ -1,7 +1,7 @@
 // core/geom.js — géométrie pure, sans état.
 // Lit     : rien.
 // Écrit   : rien.
-// Expose  : FP.geom.distPointToSegment, FP.geom.toWorld, FP.geom.convexPolysOverlap.
+// Expose  : FP.geom.distPointToSegment, FP.geom.toWorld, FP.geom.convexPolysOverlap, FP.geom.clampUpAngle.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
@@ -44,5 +44,12 @@
     return true;
   }
 
-  FP.geom = { distPointToSegment, toWorld, convexPolysOverlap };
+  // Direction (x, y) ramenée dans un cône de ±maxDeg autour de la verticale montante.
+  function clampUpAngle(x, y, maxDeg) {
+    const max = maxDeg * Math.PI / 180;
+    const a = Math.max(-max, Math.min(max, Math.atan2(x, -y)));
+    return { x: Math.sin(a), y: -Math.cos(a) };
+  }
+
+  FP.geom = { distPointToSegment, toWorld, convexPolysOverlap, clampUpAngle };
 })();

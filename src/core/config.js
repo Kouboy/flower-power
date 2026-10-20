@@ -75,6 +75,18 @@
     // T-Rex « NON AUX ESSAIS NUCLÉAIRES » : armé dans 38 % des runs, au plus une fois, à partir d'un niveau tiré entre 1 et 4.
     signature: { chance: .38, minLevel: 1, maxLevel: 4, tries: 110, minDepth: .55, jitter: .10, angle: .18 },
 
+    // Pousse (v3.43.16, cadrage B : vitesse ×.88).
+    plant: {
+      seedOffset: 46, startWobble: .07, floorOffset: 22,
+      speed: { base: 76, max: 196, perStem: 2.7, perFlower: 1.35, livePerSec: 1.45, liveMax: 16, framing: .88, controlled: .985 },
+      swayFreq: 1.25, swayDepth: .018, swayAmp: .035,
+      control: { lookAheadTop: 185, lookAheadBottom: 92, guideRate: 10, turnDivisor: 138, turnGain: 1.18, sharpTop: .88, sharpBottom: 1.28, desiredY: -.78 },
+      idleGuideRate: 4, idleLookAhead: 140,
+      maxAngleControlled: 89, maxAngleIdle: 42, steerControlled: 13.8, steerIdle: 5.4,
+      edge: 12, bounceZone: 14, bounce: -.48, bounceShake: .035,
+      trailStep: 8.6, trailMax: 340
+    },
+
     // Caméra : suit la pointe à 52 % de la hauteur ; descend plus vite qu'elle ne monte.
     camera: { followRatio: .52, rateDown: 7.8, rateUp: 5.4 },
 

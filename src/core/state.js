@@ -38,7 +38,11 @@
       rng: FP.createRng(s),
       signature: { armed: false, spawned: false, targetLevel: 0 },  // T-Rex signature, 1 par run max
       camera: { y: Math.max(0, height - dims.H), manual: false, zoom: 1, shake: 0 },
-      plant: { tip: null, dir: null, trail: [], stemAge: 0, reserves: 3 },
+      input: { x: 0, y: 0, down: false, active: false, pressed: false },   // instantané du pointeur (x monde, y écran)
+      plant: {
+        seed: { x: 0, y: 0 }, tip: null, dir: { x: 0, y: -1 }, guide: { x: 0, y: 0 },
+        trail: [], oldTrails: [], stemAge: 0, stemCount: 0, reserves: 3
+      },
       world: {
         width: dims.W, height, viewH: dims.H, surfaceY: surfaceYFor(dims.H),
         skyVariant: 0, lawnVariant: 0, safePath: [], safeRadius: 0,
