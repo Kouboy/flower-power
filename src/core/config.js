@@ -74,6 +74,9 @@
     // T-Rex « NON AUX ESSAIS NUCLÉAIRES » : armé dans 38 % des runs, au plus une fois, à partir d'un niveau tiré entre 1 et 4.
     signature: { chance: .38, minLevel: 1, maxLevel: 4, tries: 110, minDepth: .55, jitter: .10, angle: .18 },
 
+    // Caméra : suit la pointe à 52 % de la hauteur ; descend plus vite qu'elle ne monte.
+    camera: { followRatio: .52, rateDown: 7.8, rateUp: 5.4 },
+
     loop: {
       maxDt: .033,      // plafond par frame (onglet revenu d'arrière-plan)
       fallbackDt: .016  // dt invalide (NaN, négatif, nul)

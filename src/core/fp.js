@@ -27,7 +27,8 @@
     return {
       seed: /^\d+$/.test(seed || '') ? Number(seed) : null,
       perf: q.get('perf') === '1',
-      flydebug: q.get('flydebug') === '1'
+      flydebug: q.get('flydebug') === '1',
+      freecam: q.get('freecam') === '1'
     };
   };
 

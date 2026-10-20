@@ -29,6 +29,7 @@ FP.test('params: perf et flydebug', () => {
   const p = FP.parseParams('?perf=1&flydebug=1');
   FP.assert(p.perf && p.flydebug);
   FP.assert(!FP.parseParams('?perf=0').perf);
+  FP.assert(FP.parseParams('?freecam=1').freecam);
 });
 FP.test('storage: backend qui lève → fallback, pas d’exception', () => {
   const broken = { getItem(){ throw new Error('blocked'); }, setItem(){ throw new Error('blocked'); } };
