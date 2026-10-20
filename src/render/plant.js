@@ -1,5 +1,5 @@
 // render/plant.js — tige, anciennes traces, graine, bourgeon terminal et guide du pointeur.
-// Lit     : state.plant, state.input, state.mode, state.time, state.world.viewH, state.camera.y, FP.config.plant.control.
+// Lit     : state.plant (dont corruption), state.input, state.mode, state.time, state.world.viewH, state.camera.y, FP.config.plant.control.
 // Écrit   : rien (le canvas uniquement).
 // Expose  : FP.plantRender.draw(ctx, state) (repère monde), FP.plantRender.drawFinger(ctx, state) (repère écran).
 // Porté de la v3.43.16 (drawTrail, drawPlant, drawPointer).
@@ -91,12 +91,12 @@
   }
 
   // Bourgeon terminal charnu et nervuré.
-  function drawBud(ctx, tip, dir) {
+  function drawBud(ctx, tip, dir, corrupted) {
     ctx.save(); ctx.translate(tip.x, tip.y); ctx.rotate(Math.atan2(dir.x, -dir.y));
     ctx.fillStyle = '#627d42'; ctx.strokeStyle = '#314223'; ctx.lineWidth = 2.2;
     ctx.beginPath(); ctx.ellipse(-7, 3, 4.1, 7.2, -.74, 0, TAU); ctx.fill(); ctx.stroke();
     ctx.beginPath(); ctx.ellipse(7, 3.4, 3.9, 6.8, .74, 0, TAU); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#a6c66f'; ctx.strokeStyle = '#354727'; ctx.lineWidth = 2.3;
+    ctx.fillStyle = corrupted ? '#b9cc55' : '#a6c66f'; ctx.strokeStyle = '#354727'; ctx.lineWidth = 2.3;
     ctx.beginPath(); ctx.moveTo(0, -11); ctx.quadraticCurveTo(9, -3, 6.2, 6.4); ctx.quadraticCurveTo(0, 11, -6.2, 6.4); ctx.quadraticCurveTo(-9, -3, 0, -11); ctx.closePath(); ctx.fill(); ctx.stroke();
     ctx.fillStyle = 'rgba(95,125,59,.42)'; ctx.beginPath(); ctx.ellipse(0, 3.4, 3.6, 5.2, 0, 0, TAU); ctx.fill();
     ctx.strokeStyle = 'rgba(229,236,160,.62)'; ctx.lineWidth = 1.05; ctx.beginPath(); ctx.moveTo(0, -7.8); ctx.lineTo(0, 6.2); ctx.stroke();
@@ -138,7 +138,7 @@
     const seedVisible = p.seed.y + 38 >= camY - 70 && p.seed.y - 38 <= camY + state.world.viewH + 70;
     if (seedVisible) drawSeed(ctx, p.seed);
     if (state.mode === 'playing' && p.tip) {
-      drawBud(ctx, p.tip, p.dir);
+      drawBud(ctx, p.tip, p.dir, p.corruption > 0);
       if (state.input.down) drawGuide(ctx, state);
     }
   }

@@ -1,5 +1,5 @@
 // render/hud.js — informations à l'écran (repère écran, hors zoom).
-// Lit     : state.mode, state.flow.{message,messageTimer}, state.plant.{reserves,stemCount,trail}, state.score.flowers,
+// Lit     : state.mode, state.flow.{message,messageTimer}, state.plant.{reserves,stemCount,trail,corruption}, state.score.flowers,
 //           state.input.down, FP.view, FP.config.text.
 // Écrit   : rien (le canvas uniquement).
 // Expose  : FP.hud.draw(ctx, state).
@@ -26,11 +26,22 @@
     ctx.fillStyle = '#bda982'; ctx.fillText('élan ' + Math.round(100 + Math.max(0, state.plant.stemCount - 1) * 3) + '%', W - boxW, boxY + 28);
   }
 
+  // Ligne d'effet au-dessus des panneaux (v3 : « croissance déviée », plus tard bouclier, spore…).
+  function drawEffect(ctx, state, W, H) {
+    if (state.mode !== 'playing' || state.plant.corruption <= 0) return;
+    ctx.font = `650 13px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.beginPath(); ctx.roundRect(38, H - 92, W - 76, 22, 11); ctx.fillStyle = 'rgba(12,9,7,.48)'; ctx.fill();
+    ctx.fillStyle = '#fff1b7'; ctx.fillText(FP.config.text.corrupted, W / 2, H - 88);
+  }
+
   function drawMessage(ctx, state, W) {
     const f = state.flow;
     if (f.messageTimer <= 0 || !f.message) return;
     ctx.globalAlpha = clamp(f.messageTimer, 0, 1);
-    ctx.font = `800 20px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    // Le message rétrécit pour tenir dans la largeur (les raisons de mort sont longues sur écran étroit).
+    ctx.font = `800 20px ${FONT}`;
+    const fit = Math.min(1, (W - 24) / Math.max(1, ctx.measureText(f.message).width));
+    ctx.font = `800 ${Math.max(12, Math.floor(20 * fit))}px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     ctx.fillStyle = 'rgba(0,0,0,.38)'; ctx.fillText(f.message, W / 2 + 1, 41);
     ctx.fillStyle = '#fff0ae'; ctx.fillText(f.message, W / 2, 40);
     ctx.globalAlpha = 1;
@@ -61,6 +72,7 @@
     const { W, H } = FP.view;
     ctx.save();
     drawPanels(ctx, state, W, H);
+    drawEffect(ctx, state, W, H);
     if (state.mode === 'ready') drawReady(ctx, W, H);
     drawMessage(ctx, state, W);
     if (state.mode === 'playing' && state.score.flowers === 0 && state.plant.trail.length < 90) {
