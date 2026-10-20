@@ -79,6 +79,9 @@
       fallbackDt: .016  // dt invalide (NaN, négatif, nul)
     },
 
+    // Rendu du sol : la lisière d'herbe est dessinée 11 px sous surfaceY ; marge de tranche visible.
+    soil: { surfaceOffset: 11, viewPad: 70 },
+
     // Palettes v3.43 : plus terre/papier, pour laisser respirer les sprites.
     palette: {
       skies: [
