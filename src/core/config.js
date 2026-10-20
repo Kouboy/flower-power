@@ -21,6 +21,12 @@
       surfaceMax: 116
     },
 
+    // Hauteur du monde : la graine part bien plus bas que l'écran visible.
+    world: {
+      extraMin: 620,     // height >= viewH + extraMin
+      heightRatio: 2.35  // height >= viewH * heightRatio
+    },
+
     loop: {
       maxDt: .033,      // plafond par frame (onglet revenu d'arrière-plan)
       fallbackDt: .016  // dt invalide (NaN, négatif, nul)

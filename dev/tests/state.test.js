@@ -26,8 +26,18 @@ FP.test('config: version et clé de record', () => {
   FP.assertEqual(FP.config.storageKey, 'flower_power_v4_best');
   FP.assertEqual(FP.config.palette.skies.length, 4);
 });
-FP.test('state: surfaceY calculé à la création à partir de la hauteur de vue', () => {
-  FP.assertEqual(FP.state.createRun(1, 783).world.surfaceY, 783 * .136);
-  FP.assertEqual(FP.state.createRun(1, 600).world.surfaceY, 82);
-  FP.assertEqual(FP.state.createRun(1, 2000).world.surfaceY, 116);
+FP.test('state: dimensions du monde à la création', () => {
+  const s = FP.state.createRun(1, { W: 440, H: 783 });
+  FP.assertEqual(s.world.width, 440);
+  FP.assertEqual(s.world.viewH, 783);
+  FP.assertEqual(s.world.height, 1840);          // max(783+620, floor(783*2.35))
+  FP.assertEqual(s.world.surfaceY, 783 * .136);
+  FP.assertEqual(s.camera.y, 1840 - 783);
+  FP.assertEqual(FP.state.createRun(1, { W: 440, H: 600 }).world.surfaceY, 82);
+  FP.assertEqual(FP.state.createRun(1, { W: 440, H: 2000 }).world.surfaceY, 116);
+});
+FP.test('state: T-Rex signature désarmé à la création', () => {
+  const s = FP.state.createRun(1, { W: 440, H: 783 });
+  FP.assertEqual(s.signature.armed, false);
+  FP.assertEqual(s.signature.spawned, false);
 });
