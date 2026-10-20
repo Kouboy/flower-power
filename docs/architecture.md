@@ -16,18 +16,19 @@ Chaque fichier `src/**` commence par un en-tête : rôle, ce qu'il **lit**, ce q
 src/
 ├── core/
 │   ├── fp.js         ✅ window.FP, maths, RNG seedée, paramètres d'URL, stockage sûr
-│   ├── geom.js       ✅ distance point-segment, local→monde, SAT de polygones convexes
+│   ├── geom.js       ✅ distance point-segment, local→monde, SAT, cône vers le haut, distance signée à un polygone
 │   ├── config.js     ✅ tous les réglages
 │   ├── state.js      ✅ FP.state.createRun(seed) et FP.state.current
 │   └── loop.js       ✅ FP.loop.step / start, ordre fixe d'une frame
 ├── world/
 │   ├── catalog.js    ✅ JSON authorés → solides (taille, collision, miroir, footprint)
 │   ├── level.js      ✅ génération : chemin sûr, placement SAT, densité, T-Rex signature
-│   ├── collision.js  ⏳ (2) distance polygone, broad phase, requête de pointe
+│   ├── collision.js  ✅ requête de pointe : solide touché, danger de frôlement
 │   └── hazards.js    ⏳ (3) zones toxiques + limaces de lixiviat
 ├── play/
-│   ├── plant.js      ⏳ (2) croissance, pilotage, trace
-│   ├── camera.js     ✅ caméra défilante (FP.camera)
+│   ├── plant.js      ✅ croissance, pilotage, trace (prepare / launch / update)
+│   ├── flow.js       ✅ mort, éclosion minimale, transitions, fin de partie, messages
+│   ├── camera.js     ✅ défilement, cadrage ×1,18, zoom de frôlement
 │   ├── graze.js      ⏳ (4) frôlement + évaluation du flyover
 │   ├── powerups.js   ⏳ (5) pollen, bouclier, spore, exclusivité
 │   └── scoring.js    ⏳ (4) ÉcoCrédits™, combos, records
@@ -36,12 +37,14 @@ src/
 │   ├── sprites.js    ✅ chargement des PNG, FP.sprites.get(clé)
 │   ├── soil.js       ✅ ciel + pelouse + terre en cache offscreen
 │   ├── obstacles.js  ✅ ancrage sombre en cache + sprite
-│   ├── frame.js      ✅ FP.render.frame(state) : caméra, sol, obstacles
-│   └── …             ⏳ hazards, plant, flowers, effects, hud
+│   ├── plant.js      ✅ tige, anciennes traces, graine, bourgeon, guide, cercle du doigt
+│   ├── hud.js        ✅ panneaux, messages, écrans ready / over
+│   ├── frame.js      ✅ FP.render.frame(state) : zoom, caméra, sol, obstacles, plante, HUD
+│   └── …             ⏳ hazards, flowers, effects
 ├── audio/audio.js    ⏳ (7)
 ├── ui/
-│   ├── menu.js       ✅ écran titre → nouveau run
-│   └── input.js      ⏳ (2)
+│   ├── menu.js       ✅ écran titre / fin de partie → nouveau run ; redimensionnement
+│   └── input.js      ✅ pointeur → state.input (x monde, screenX, y, down, pressed)
 └── debug/
     ├── freecam.js    ✅ ?freecam=1 : molette / flèches / glisser
     └── …             ⏳ (7) perf.js (?perf=1), flydebug.js (?flydebug=1)
@@ -84,14 +87,20 @@ Un niveau est généré par `FP.level.startRun(state)` (tirage du T-Rex signatur
 `FP.loop.step(state, dt)` :
 
 1. `dt` plafonné à `config.loop.maxDt` (dt invalide → `fallbackDt`) ; `state.time += dt` ;
-2. en mode `playing`, `FP[nom].update(state, dt)` pour `input → plant → hazards → collision → graze → powerups → scoring → camera` (un système pas encore porté est sauté). **Tout système expose `update(state, dt)`** : par exemple la requête de pointe vit dans `FP.collision.update` ;
+2. dans tous les modes sauf `menu`, `FP[nom].update(state, dt)` pour `input → plant → hazards → collision → graze → powerups → scoring → flow → camera` (un système pas encore porté est sauté ; chacun décide selon `state.mode`). **Tout système expose `update(state, dt)`** : par exemple la requête de pointe vit dans `FP.collision.update` ;
 3. `FP.audio.consume(state.events)` ;
 4. `FP.render.frame(state)` ;
 5. `state.events` est vidé.
 
 ## Ordre de chargement
 
-`index.html` charge : `assets/obstacles/manifest.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `src/play/camera.js`, `src/render/view.js`, `sprites.js`, `soil.js`, `obstacles.js`, `frame.js`, `src/core/loop.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` (pour le catalogue).
+`index.html` charge : `assets/obstacles/manifest.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `src/play/plant.js`, `src/world/collision.js`, `src/play/flow.js`, `src/play/camera.js`, `src/render/view.js`, `sprites.js`, `soil.js`, `obstacles.js`, `plant.js`, `hud.js`, `frame.js`, `src/core/loop.js`, `src/ui/input.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` (pour le catalogue).
+
+`dev/check.html` charge aussi `src/ui/input.js` (ses écouteurs ne s'installent que si `FP.view` existe).
+
+## Modes
+
+`menu` (écran titre) → `playing` (pousse en vol) → `dying` (0,85 s, puis nouveau niveau et nouvelle pousse) ou `bloom` (1,55 s, puis niveau suivant) → `ready` (graine posée, attend un **nouvel** appui) → `playing`… ; `over` quand il n'y a plus de graines (un appui relance un run neuf).
 
 Pour ajouter un fichier : une ligne `<script>` après ses dépendances (celles listées dans son en-tête « Lit »), avant `ui/menu.js`. Un fichier de simulation (`core/`, `world/`, `play/`) s'ajoute aussi à `dev/check.html`, avant `harness.js`, avec son fichier de tests dans `dev/tests/`. Les fichiers `render/` et `ui/` ne sont pas chargés par `check.html` (ils ont besoin du DOM).
 

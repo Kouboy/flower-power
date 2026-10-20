@@ -4,7 +4,7 @@
 
 ## Statut
 
-**v4.0.0 en reconstruction — étape 1/7 (le monde).** Le menu lance un niveau généré (sol illustré, obstacles PNG ancrés) qu'on peut parcourir avec `?freecam=1` ; la pousse revient à l'étape 2. Le gameplay revient étape par étape (voir `docs/superpowers/specs/2026-10-20-refonte-v4-design.md`, §11).
+**v4.0.0 en reconstruction — étape 2/7 (la pousse) : jouable.** La pousse se pilote, meurt au contact, repart (3 graines), éclot à la surface et passe au niveau suivant. Zones toxiques et lixiviat reviennent à l'étape 3, ÉcoCrédits™ à l'étape 4. Le gameplay revient étape par étape (voir `docs/superpowers/specs/2026-10-20-refonte-v4-design.md`, §11).
 
 La dernière version jouable complète est la v3.43.16 : `archive/v3.43.16/index.html`.
 

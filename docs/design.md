@@ -27,6 +27,7 @@ Les familles sans PNG reviendront une à une avec leurs PNG, via l'Asset Editor.
 - Les solides ne se chevauchent jamais visuellement (empreinte visuelle + marge, test SAT).
 - La densité est une cible, pas un quota : après plusieurs essais, l'obstacle est abandonné.
 - Un chemin sûr existe toujours.
+- Un obstacle peut être rogné par le bord gauche ou droit de l'écran tant qu'il reste identifiable : quelques pixels pour un obstacle courant, une bonne part pour le T-Rex signature (`config.level.fit.maxOutside`).
 - Toxiques et lixiviat peuvent recouvrir les objets.
 
 ## Frôlement et flyover

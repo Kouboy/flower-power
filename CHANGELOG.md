@@ -2,6 +2,17 @@
 
 Une entrée par commit (voir `AGENTS.md`).
 
+## v4.0.0-etape2 — La pousse
+
+- le jeu redevient jouable : croissance et pilotage portés de la v3 (vitesse, rampe par pousse et par fleur, virage, rebond aux bords, trace) ;
+- `ui/input.js` : pointeur → instantané par frame, conversion sous zoom, front montant pour relancer, relâchement hors fenêtre ;
+- `world/collision.js` : requête de pointe sur les polygones authorés, danger de frôlement ;
+- `play/flow.js` : mort et nouvelle pousse sur un nouveau niveau, éclosion minimale (fleur comptée, niveau suivant, « TOUCHE POUR POUSSER »), fin de partie ;
+- caméra : cadrage ×1,18 et zoom de frôlement centrés sur la pointe (ou la graine) ;
+- rendu de la tige (grain, feuilles primitives), de la graine, du bourgeon, du guide et de la trajectoire prévue ; HUD minimal ;
+- obstacles rognés par les bords tant qu'ils restent identifiables (8 px, T-Rex 70 px) ;
+- banc : 75 tests.
+
 ## v4.0.0-etape1 — Le monde
 
 - `core/geom.js` : distance point-segment, transformation locale → monde, SAT entre polygones convexes ;
