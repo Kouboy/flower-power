@@ -1,9 +1,9 @@
 // world/level.js — génération d'un niveau à partir de la graine du run.
 // Lit     : state.rng, state.level, state.world.{width,height,viewH,surfaceY}, state.signature,
 //           FP.config.{level,spawnTables,signature}, FP.catalog, FP.geom.
-// Écrit   : state.world.{skyVariant,lawnVariant,safePath,safeRadius,solids}, state.signature.
+// Écrit   : state.world.{skyVariant,lawnVariant,safePath,safeRadius,solids,toxics,leaks}, state.signature.
 // Expose  : FP.level.startRun(state), FP.level.generate(state),
-//           FP.level.distToSafePath(world,x,y), FP.level.depthK(world,y), FP.level.depthBand(world,y).
+//           FP.level.distToSafePath(world,x,y), FP.level.pathXAt(world,y), FP.level.depthK(world,y), FP.level.depthBand(world,y).
 // Porté de la v3.43.16 (generateSoil, generateSafePath, objectFits…) sans les familles vectorielles ni les portes.
 (function () {
   'use strict';
@@ -142,7 +142,7 @@
 
   function placeSolids(state, grid) {
     const world = state.world, rng = state.rng, s = FP.config.level.solids;
-    const worldScale = clamp((world.height - world.surfaceY) / (world.viewH - world.surfaceY), 1, s.worldScaleMax);
+    const worldScale = worldScaleOf(world);
     const count = Math.round((s.base + Math.min(s.maxExtra, Math.floor(state.level * s.perLevel))) * worldScale * s.scale * s.framing);
     const bands = ['upper', 'middle', 'deep'];
     for (let i = 0; i < count; i++) {
@@ -160,17 +160,133 @@
     }
   }
 
+  // --- Zones toxiques et limaces -------------------------------------------
+
+  function pathXAt(world, y) {
+    const path = world.safePath;
+    if (!path || path.length < 2) return world.width / 2;
+    for (let i = 1; i < path.length; i++) {
+      const a = path[i - 1], b = path[i];
+      if ((y <= a.y && y >= b.y) || (y >= a.y && y <= b.y)) return lerp(a.x, b.x, clamp((y - a.y) / (b.y - a.y || 1), 0, 1));
+    }
+    return path[path.length - 1].x;
+  }
+
+  function worldScaleOf(world) {
+    const s = FP.config.level.solids;
+    return clamp((world.height - world.surfaceY) / (world.viewH - world.surfaceY), 1, s.worldScaleMax);
+  }
+
+  function countFor(c, state) {
+    return Math.round((c.base + Math.min(c.maxExtra, Math.floor(state.level * c.perLevel))) * worldScaleOf(state.world) * c.scale);
+  }
+
+  function placeToxics(state, grid) {
+    const world = state.world, rng = state.rng, c = FP.config.level.toxics;
+    const count = countFor(c, state);
+    for (let i = 0; i < count; i++) {
+      const preferDeep = i % 3 !== 0;
+      let placed = false;
+      for (let tries = 0; tries < c.tries && !placed; tries++) {
+        const cell = pickCell(grid, rng, cl => cl.r > 0 && cl.r < grid.rows - 1 &&
+          (tries > c.relaxAfter || depthK(world, cl.y) > (preferDeep ? c.deepDepth : c.shallowDepth)));
+        const pos = cellPos(grid, rng, cell, c.jitter), big = depthK(world, pos.y) > c.bigDepth;
+        const o = {
+          x: pos.x, y: pos.y,
+          rx: rng.range(c.rx[0], c.rx[1]) * (big ? c.bigRx : 1), ry: rng.range(c.ry[0], c.ry[1]) * (big ? c.bigRy : 1),
+          a: rng.range(0, Math.PI), pulse: rng.range(0, 10), lobes: [], specks: []
+        };
+        for (let q = 0; q < c.lobes; q++) o.lobes.push({ a: rng.range(0, FP.TAU), r: rng.range(.32, .88), sx: rng.range(.28, .58), sy: rng.range(.22, .52) });
+        for (let q = 0; q < c.specks; q++) o.specks.push({ x: rng.range(-.64, .64), y: rng.range(-.58, .58), r: rng.range(1.2, 3.1), light: rng.next() < c.lightChance });
+        if (distToSafePath(world, o.x, o.y) > world.safeRadius + Math.max(o.rx, o.ry) * c.safeK + c.safeExtra) { world.toxics.push(o); placed = true; }
+        else cell.used = false;
+      }
+    }
+  }
+
+  function leakPoints(l) {
+    const ca = Math.cos(l.angle), sa = Math.sin(l.angle), pts = [];
+    for (let i = 0; i <= 8; i++) { const k = -.5 + i / 8; pts.push({ x: l.x + ca * l.len * k, y: l.y + sa * l.len * k }); }
+    return pts;
+  }
+
+  // Rectangle rendu tourné (v3 : pointInRotRect) et ellipse (pointInEllipse), élargis de pad.
+  function nearSolid(world, x, y, pad) {
+    return world.solids.some(o => {
+      const ca = Math.cos(-o.a), sa = Math.sin(-o.a), dx = x - o.x, dy = y - o.y;
+      return Math.abs(dx * ca - dy * sa) < o.w / 2 + pad && Math.abs(dx * sa + dy * ca) < o.h / 2 + pad;
+    });
+  }
+  function nearToxic(world, x, y, pad) {
+    return world.toxics.some(o => {
+      const ca = Math.cos(-o.a), sa = Math.sin(-o.a), dx = x - o.x, dy = y - o.y;
+      const lx = dx * ca - dy * sa, ly = dx * sa + dy * ca, rx = o.rx + pad, ry = o.ry + pad;
+      return (lx * lx) / (rx * rx) + (ly * ly) / (ry * ry) < 1;
+    });
+  }
+  // Toutes les limaces comptent (en v3, celles hors écran étaient ignorées par accident).
+  function nearLeak(world, x, y, pad) {
+    return world.leaks.some(l => {
+      const ca = Math.cos(l.angle), sa = Math.sin(l.angle);
+      return FP.geom.distPointToSegment(x, y, l.x - ca * l.len * .5, l.y - sa * l.len * .5, l.x + ca * l.len * .5, l.y + sa * l.len * .5) < l.r + pad;
+    });
+  }
+
+  const ANGLED = [Math.PI / 8, Math.PI / 5, Math.PI / 3, Math.PI * 2 / 5, Math.PI * 3 / 5, Math.PI * 2 / 3, Math.PI * 4 / 5, Math.PI * 7 / 8];
+  const MORPHS = ['clear', 'fat', 'debris'];
+
+  function placeLeaks(state, grid) {
+    const world = state.world, rng = state.rng, c = FP.config.level.leaks, W = world.width;
+    const count = countFor(c, state);
+    for (let i = 0; i < count; i++) {
+      let placed = false;
+      for (let tries = 0; tries < c.tries && !placed; tries++) {
+        let pos;
+        if (rng.next() < c.nearRouteChance) {
+          const y = rng.range(world.surfaceY + c.routeTop, world.height - c.routeBottom);
+          const side = rng.next() < .5 ? -1 : 1;
+          pos = { x: clamp(pathXAt(world, y) + side * rng.range(c.routeOffset[0], c.routeOffset[1]), c.routeMarginX, W - c.routeMarginX), y };
+        } else {
+          const cell = pickCell(grid, rng, cl => cl.r > 0 && cl.r < grid.rows - 1 && (tries > c.relaxAfter || depthK(world, cl.y) > c.minDepth));
+          pos = cellPos(grid, rng, cell, c.jitter);
+        }
+        const k = depthK(world, pos.y);
+        // Angles très variés : les axes purs deviennent rares.
+        const angle = rng.next() < c.angledChance
+          ? ANGLED[Math.floor(rng.next() * ANGLED.length)] + rng.range(-c.angleJitter, c.angleJitter)
+          : (rng.next() < .5 ? 0 : Math.PI * .5);
+        const len = rng.range(c.len[0], c.len[1]) + Math.min(c.lenLevelMax, state.level * c.lenPerLevel) * rng.next() + k * c.lenDepth;
+        const leak = {
+          x: pos.x, y: pos.y, len, angle, phase: rng.range(0, 6.28), rate: rng.range(c.rate[0], c.rate[1]), r: rng.range(c.r[0], c.r[1]),
+          hitFlash: 0, morph: MORPHS[Math.floor(rng.next() * MORPHS.length)], debrisSeed: Math.floor(rng.next() * 99),
+          cx: pos.x, cy: pos.y, cr: 0
+        };
+        leak.cr = leak.r;
+        const pts = leakPoints(leak);
+        const inBounds = pts.every(p => p.x > c.marginX && p.x < W - c.marginX && p.y > world.surfaceY + c.top && p.y < world.height - c.bottom);
+        const notBuried = !nearSolid(world, pos.x, pos.y, c.solidPad) && !nearToxic(world, pos.x, pos.y, c.toxicPad);
+        const breathing = !nearLeak(world, pos.x, pos.y, c.spacingCenter) && pts.every(p => !nearLeak(world, p.x, p.y, c.spacingPath));
+        // Une limace peut mettre la pression près du chemin, jamais le condamner.
+        const pathOpen = pts.every(p => distToSafePath(world, p.x, p.y) >= world.safeRadius * c.safeK + leak.r);
+        if (inBounds && notBuried && breathing && pathOpen) { world.leaks.push(leak); placed = true; }
+      }
+    }
+  }
+
+
   // --- Points d'entrée -----------------------------------------------------
 
   function generate(state) {
     const world = state.world, rng = state.rng, g = FP.config.level.grid;
-    world.solids = [];
+    world.solids = []; world.toxics = []; world.leaks = [];
     world.skyVariant = Math.floor(rng.next() * 4);
     world.lawnVariant = Math.floor(rng.next() * 4);
     const grid = makeGrid(world.width, world.surfaceY + g.topPad, world.height - g.bottomPad);
     generateSafePath(world, rng, state.level);
     placeSignature(state, grid);
     placeSolids(state, grid);
+    placeToxics(state, grid);
+    placeLeaks(state, grid);
   }
 
   // Début de run : tirage du T-Rex signature, puis premier niveau.
@@ -182,5 +298,5 @@
     generate(state);
   }
 
-  FP.level = { startRun, generate, distToSafePath, depthK, depthBand };
+  FP.level = { startRun, generate, distToSafePath, pathXAt, depthK, depthBand };
 })();

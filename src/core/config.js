@@ -46,7 +46,21 @@
       // maxOutside : de combien de px un obstacle peut dépasser du bord gauche/droit (il doit rester identifiable).
       fit: { centerMarginX: 26, centerTop: 48, centerBottom: 118, maxOutside: { authored: 8, signature: 70 }, edgeTop: 34, edgeBottom: 100, safeExtra: 8, safeApproxK: .38 },
       // Densité cible (jamais un quota forcé). .92 = densité du cadrage B.
-      solids: { base: 6, perLevel: .18, maxExtra: 6, scale: .84, framing: .92, worldScaleMax: 2.45, tries: 110, relaxAfter: 34, jitter: .27 }
+      solids: { base: 6, perLevel: .18, maxExtra: 6, scale: .84, framing: .92, worldScaleMax: 2.45, tries: 110, relaxAfter: 34, jitter: .27 },
+      // Zones toxiques diffuses : plutôt en profondeur, jamais sur le chemin sûr.
+      toxics: {
+        base: 3, perLevel: .14, maxExtra: 4, scale: .70, tries: 80, relaxAfter: 30, jitter: .29,
+        deepDepth: .48, shallowDepth: .30, rx: [30, 58], ry: [23, 48], bigDepth: .58, bigRx: 1.08, bigRy: 1.10,
+        lobes: 6, specks: 7, lightChance: .42, safeK: .62, safeExtra: 4
+      },
+      // Limaces de lixiviat : trajets inclinés, une partie près de la route pour mettre la pression.
+      leaks: {
+        base: 1, perLevel: .10, maxExtra: 3, scale: .68, tries: 120, relaxAfter: 32, jitter: .24, minDepth: .22,
+        nearRouteChance: .46, routeTop: 86, routeBottom: 142, routeOffset: [22, 62], routeMarginX: 42,
+        angledChance: .90, angleJitter: .24, len: [42, 176], lenPerLevel: 3.2, lenLevelMax: 54, lenDepth: 22,
+        rate: [.24, .92], r: [11, 16.2], marginX: 24, top: 48, bottom: 116,
+        solidPad: 20, toxicPad: 8, spacingCenter: 46, spacingPath: 28, safeK: .58
+      }
     },
 
     // Tables d'apparition par bande : poids v3 (largeur de tranche), angle ±a (radians), noFlip si jamais retourné.

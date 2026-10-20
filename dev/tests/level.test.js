@@ -71,3 +71,32 @@ FP.test('level: startRun arme le T-Rex de façon reproductible', () => {
   FP.assertEqual(JSON.stringify(a.signature), JSON.stringify(b.signature));
   FP.assert(a.signature.targetLevel >= 1 && a.signature.targetLevel <= 4);
 });
+FP.test('level: toxiques et limaces générés et déterministes', () => {
+  const pick = s => JSON.stringify([s.world.toxics.map(o => [o.x, o.y, o.rx]), s.world.leaks.map(l => [l.x, l.y, l.len])]);
+  const a = gen(1234), b = gen(1234);
+  FP.assertEqual(pick(a), pick(b));
+  FP.assert(a.world.toxics.length >= 3, String(a.world.toxics.length));
+  FP.assert(a.world.leaks.length >= 1, String(a.world.leaks.length));
+});
+FP.test('level: chemin sûr hors des toxiques', () => {
+  for (const seed of [1, 2, 3, 1234, 99999]) {
+    const w = gen(seed).world;
+    for (const o of w.toxics) FP.assert(FP.level.distToSafePath(w, o.x, o.y) > w.safeRadius + Math.max(o.rx, o.ry) * .62 + 4, `${seed}`);
+  }
+});
+FP.test('level: limaces n’obstruent pas le chemin', () => {
+  for (const seed of [1, 2, 3, 1234, 99999]) {
+    const w = gen(seed).world;
+    for (const l of w.leaks) for (let i = 0; i <= 8; i++) {
+      const k = -.5 + i / 8, x = l.x + Math.cos(l.angle) * l.len * k, y = l.y + Math.sin(l.angle) * l.len * k;
+      FP.assert(FP.level.distToSafePath(w, x, y) >= w.safeRadius * .58 + l.r, `${seed}`);
+    }
+  }
+});
+FP.test('level: limaces dans le cadre', () => {
+  const w = gen(1234).world;
+  for (const l of w.leaks) for (let i = 0; i <= 8; i++) {
+    const k = -.5 + i / 8, x = l.x + Math.cos(l.angle) * l.len * k, y = l.y + Math.sin(l.angle) * l.len * k;
+    FP.assert(x > 24 && x < w.width - 24 && y > w.surfaceY + 48 && y < w.height - 116);
+  }
+});
