@@ -27,3 +27,17 @@ FP.test('geom: sdPoly signe', () => {
   FP.assertEqual(FP.geom.sdPoly(5, 5, sq), -5);
   FP.assertEqual(FP.geom.sdPoly(13, 5, sq), 3);
 });
+FP.test('collision: contact lixiviat', () => {
+  const l = { x: 200, y: 300, len: 100, angle: 0, r: 12, cx: 200, cy: 300, cr: 12 };
+  const q = FP.collision.queryPoint({ solids: [], toxics: [], leaks: [l] }, 205, 300);
+  FP.assert(q.leak > 0 && q.leakHit === l);
+});
+FP.test('collision: frôlement de limace → danger', () => {
+  const l = { x: 200, y: 300, len: 100, angle: 0, r: 12, cx: 200, cy: 300, cr: 12 };
+  const q = FP.collision.queryPoint({ solids: [], toxics: [], leaks: [l] }, 200, 300 + 30);
+  FP.assertEqual(q.leak, 0); FP.assert(q.danger > 0 && q.danger <= .98);
+});
+FP.test('collision: intensité toxique cumulée', () => {
+  const o = { x: 200, y: 300, rx: 40, ry: 30, a: 0 };
+  FP.assertEqual(FP.collision.queryPoint({ solids: [], toxics: [o, o], leaks: [] }, 200, 300).toxic, 2);
+});

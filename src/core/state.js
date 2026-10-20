@@ -48,7 +48,7 @@
         skyVariant: 0, lawnVariant: 0, safePath: [], safeRadius: 0,
         solids: [], toxics: [], leaks: []
       },
-      query: { solid: null, danger: 0, near: null },          // requête de pointe de la frame (world/collision.js)
+      query: { solid: null, danger: 0, near: null, toxic: 0, leak: 0, leakHit: null },          // requête de pointe de la frame (world/collision.js)
       flow: { timer: 0, message: '', messageTimer: 0 },       // déroulé de partie (play/flow.js)
       graze: { active: new Map(), combo: 0, comboTimer: 0 },
       power: { shield: false, shieldGrace: 0, sporeTimer: 0, bonuses: [] },

@@ -101,6 +101,14 @@
       trailStep: 8.6, trailMax: 340
     },
 
+    // Dangers diffus (v3.43.16).
+    hazards: {
+      leakRateK: 1.75, leakScaleMax: 1.45, leakPerStem: .12, leakPerFlower: .035, leakPerSec: .018,
+      leakWobbleFreq: 5, leakWobble: 2, leakHitPad: 6, leakHitGain: 2.4,
+      leakGrazeInner: 7, leakGrazeOuter: 38, leakDangerMax: .98, hitFlash: .18,
+      toxicFalloff: .48, toxicMin: .18
+    },
+
     // Déroulé de partie.
     flow: {
       dyingTime: .85, bloomTime: 1.55, oldTrailsMax: 6, trailSimplifyPx: 11, deathShake: .28,
