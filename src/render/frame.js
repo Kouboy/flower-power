@@ -3,7 +3,7 @@
 // 2. Elle est agrandie sans lissage vers l'écran, avec secousse et zoom.
 // 3. La couche nette (doigt, HUD, debug, fondu) est dessinée par-dessus à pleine résolution.
 // Lit     : FP.config.camera.{zoomEpsilon,focalY}, state.world, state.camera.y, state.plant.{tip,seed}, FP.view, FP.camera.totalZoom, FP.input.focalX,
-//           FP.view.art, FP.px.SCALE, state.flow.fade, FP.soil, FP.hazardsRender, FP.obstacles, FP.powerupsRender, FP.plantRender, FP.flowersRender,
+//           FP.view.art, FP.px.SCALE, state.flow.fade, FP.sky, FP.soil, FP.hazardsRender, FP.obstacles, FP.powerupsRender, FP.plantRender, FP.flowersRender,
 //           FP.effects, FP.particles, FP.hud ; state.camera.shake (secousse) ; FP.perf, FP.flydebug (outils de réglage).
 // Écrit   : rien lui-même (le canvas) ; effects et particles, qu'il appelle, tiennent state.fx.
 // Expose  : FP.render.frame(state).
@@ -35,7 +35,8 @@
   function drawWorld(actx, state, perf) {
     const world = state.world, camY = state.camera.y, viewH = world.viewH, W = FP.view.W;
     let t = perf && performance.now();
-    legacy(actx, camY, (c) => FP.soil.draw(c, world, camY, W, viewH));
+    FP.sky.draw(actx, state);
+    FP.soil.draw(actx, state);
     if (perf) t = perf.mark('soil', t);
     legacy(actx, camY, (c) => { FP.hazardsRender.drawBase(c, state); FP.hazardsRender.drawLeaks(c, state); FP.obstacles.draw(c, world, camY, viewH); });
     if (perf) t = perf.mark('hazards', t);

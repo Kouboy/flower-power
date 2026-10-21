@@ -24,7 +24,8 @@ FP.test('state: graine aléatoire si absente', () => {
 FP.test('config: version et clé de record', () => {
   FP.assertEqual(FP.config.version, '4.0.0');
   FP.assertEqual(FP.config.storageKey, 'flower_power_v4_best');
-  FP.assertEqual(FP.config.palette.skies.length, 4);
+  FP.assertEqual(FP.palette.sky.length, FP.config.level.skyVariants);   // une palette de ciel par variante tirée
+  FP.assertEqual(FP.palette.lawn.length, FP.config.level.lawnVariants);
 });
 FP.test('state: dimensions du monde à la création', () => {
   const s = FP.state.createRun(1, { W: 440, H: 783 });

@@ -17,9 +17,9 @@
 
   // Terre : assombrie et désaturée par rapport à la planche (règle de lisibilité n° 1), 4 teintes proches par strate.
   const strata = {
-    humus: ['#120c0e', '#181012', '#1e1416', '#241a1a'],
-    clay: ['#3e2612', '#4a2e16', '#56361a', '#623e1e'],
-    stone: ['#14141a', '#1a1a22', '#202028', '#282830']
+    humus: ['#130d0e', '#181110', '#1d1512', '#221914'],
+    clay: ['#2a1a10', '#311f12', '#382414', '#3f2a17'],
+    stone: ['#17161c', '#1b1a21', '#1f1e26', '#24232b']
   };
   // Profondeur relative (0 = surface, 1 = fond) où commence la strate suivante.
   const strataBounds = { humus: .22, clay: .62 };
