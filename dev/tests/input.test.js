@@ -26,3 +26,10 @@ FP.test('input: chaque nouvel appui compte, même si un autre pointeur est déj�
   FP.assert(s.input.pressed, 'second appui ignoré');
   FP.input._inject({ down: false }); FP.input.update(s);
 });
+FP.test('input: une touche appuie sans maintenir', () => {
+  const s = FP.state.createRun(1, { W: 440, H: 783 });
+  FP.input._inject({ down: false }); FP.input.update(s);
+  FP.input.press(); FP.input.update(s);
+  FP.assert(s.input.pressed && !s.input.down);
+  FP.input.update(s); FP.assert(!s.input.pressed);
+});

@@ -1,7 +1,7 @@
 // ui/input.js — pointeur (souris / doigt) → instantané d'entrée par frame.
 // Lit     : événements pointeur du canvas, FP.view (taille affichée), FP.camera.totalZoom, state.plant.{tip,seed}, state.world.width.
 // Écrit   : state.input = { x (monde), screenX, y (écran, 0..viewH), down, active, pressed (front montant de cette frame) }.
-// Expose  : FP.input.update(state), FP.input.toWorldX(screenX, zoom, focalX), FP.input.focalX(state),
+// Expose  : FP.input.update(state), FP.input.toWorldX(screenX, zoom, focalX), FP.input.focalX(state), FP.input.press(),
 //           FP.input._inject(partial) — point d'entrée réservé aux tests (simule un événement).
 // Porté de la v3.43.16 (setPointer).
 (function () {
@@ -18,6 +18,9 @@
     Object.assign(buffer, partial);
     buffer.active = true;
   }
+
+  // Touche clavier : un appui ponctuel (lance la pousse en « prêt »), sans prendre le contrôle de la direction.
+  function press() { buffer.pressed = true; }
 
   // Le zoom est centré sur un point focal : on ramène l'abscisse écran dans le monde.
   function toWorldX(screenX, zoom, focalX) {
@@ -65,5 +68,5 @@
     window.addEventListener('blur', () => { buffer.down = false; });
   }
 
-  FP.input = { update, toWorldX, focalX, _inject: inject };
+  FP.input = { update, toWorldX, focalX, press, _inject: inject };
 })();
