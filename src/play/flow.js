@@ -53,6 +53,7 @@
     state.events.push({ type: 'bloom', x: p.tip.x, y: state.world.surfaceY + FP.config.soil.surfaceOffset - 9, count, bonus: state.score.flowerBonus });
     state.mode = 'bloom';
     state.flow.timer = cfg.bloomTime;
+    state.flow.stage = 'show'; state.flow.fade = 0;
     state.flow.messageTimer = 0;
   }
 
@@ -62,10 +63,33 @@
     p.reserves -= 1;
     state.events.push({ type: 'death', cause, kind, x: p.tip.x, y: p.tip.y });
     state.camera.shake = Math.max(state.camera.shake, cfg.deathShake);   // .28 pour toute mort, comme en v3
-    if (p.reserves <= 0) { state.mode = 'over'; return; }
+    if (p.reserves <= 0) { state.mode = 'over'; state.flow.overReason = reason; return; }
     say(state, reason + text.seedsLeft + p.reserves, cfg.deathMessageTime);
     state.mode = 'dying';
     state.flow.timer = cfg.dyingTime;
+  }
+
+  // Éclosion (v3 : bloom → fadeOut → fadeIn → ready) : on admire, fondu au noir, nouveau niveau sous le noir,
+  // puis retour sur la graine. Le niveau n'est régénéré qu'au passage fadeOut → fadeIn.
+  function bloomStages(state, cfg) {
+    const f = state.flow, clamp = FP.math.clamp;
+    if (f.stage === 'show') {
+      if (f.timer <= 0) { f.stage = 'fadeOut'; f.timer = cfg.fadeOutTime; f.fade = 0; }
+    } else if (f.stage === 'fadeOut') {
+      f.fade = clamp(1 - f.timer / cfg.fadeOutTime, 0, 1);
+      if (f.timer <= 0) {
+        FP.level.generate(state);
+        FP.plant.prepare(state);
+        f.stage = 'fadeIn'; f.timer = cfg.fadeInTime; f.fade = 1;
+      }
+    } else if (f.stage === 'fadeIn') {
+      f.fade = clamp(f.timer / cfg.fadeInTime, 0, 1);
+      if (f.timer <= 0) {
+        f.fade = 0; f.stage = 'show';
+        state.mode = 'ready';
+        say(state, FP.config.text.ready, cfg.readyMessageTime);
+      }
+    }
   }
 
   // Nappe toxique : pas de choc mais une exposition qui dévie la croissance, puis brûle la pointe.
@@ -108,12 +132,7 @@
         break;
       case 'bloom':
         f.timer -= dt;
-        if (f.timer <= 0) {
-          FP.level.generate(state);
-          FP.plant.prepare(state);
-          state.mode = 'ready';
-          say(state, FP.config.text.ready, cfg.readyMessageTime);
-        }
+        bloomStages(state, cfg);
         break;
       case 'ready':
         if (state.input.pressed) { FP.plant.launch(state); say(state, FP.config.text.stem + state.plant.stemCount, cfg.stemMessageTime); }

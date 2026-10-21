@@ -22,7 +22,7 @@ FP.test('flow: surface → éclosion puis ready au niveau suivant', () => {
   FP.collision.update(s); FP.flow.update(s, 0);
   FP.assertEqual(s.mode, 'bloom'); FP.assertEqual(s.score.flowers, 1); FP.assertEqual(s.level, 1);
   FP.assertEqual(s.plant.oldTrails.length, 1);
-  FP.flow.update(s, 1.6);
+  for (let i = 0; i < 180; i++) FP.flow.update(s, 1 / 60);   // éclosion 1,55 s + fondus .46 + .48 s
   FP.assertEqual(s.mode, 'ready');
 });
 FP.test('flow: ready exige un nouvel appui', () => {
@@ -106,4 +106,30 @@ FP.test('flow: pas de mort pendant l’éclosion', () => {
   FP.collision.update(s); FP.flow.update(s, 0);
   s.query = { solid: { kind: 'server' }, leak: 0, toxic: 0, danger: 0, grazes: [] };
   FP.flow.update(s, 1 / 60); FP.assertEqual(s.mode, 'bloom'); FP.assertEqual(s.plant.reserves, 3);
+});
+const bloomNow = (s) => { s.plant.tip = { x: 220, y: s.world.surfaceY - 1 }; FP.collision.update(s); FP.flow.update(s, 0); };
+const advance = (s, sec) => { for (let t = 0; t < sec - 1e-9; t += 1 / 60) FP.flow.update(s, 1 / 60); };
+FP.test('flow: fondu sortant puis nouveau niveau puis fondu entrant', () => {
+  const s = flowRun(), before = JSON.stringify(s.world.solids.map(o => [o.x, o.y]));
+  bloomNow(s);
+  advance(s, 1.55 + .23);
+  FP.assertEqual(s.flow.stage, 'fadeOut'); FP.assert(s.flow.fade > .4 && s.flow.fade < .6, String(s.flow.fade));
+  FP.assertEqual(JSON.stringify(s.world.solids.map(o => [o.x, o.y])), before);
+  advance(s, .3);
+  FP.assertEqual(s.flow.stage, 'fadeIn'); FP.assert(s.flow.fade > .5);
+  FP.assert(JSON.stringify(s.world.solids.map(o => [o.x, o.y])) !== before);
+  advance(s, .5);
+  FP.assertEqual(s.mode, 'ready'); FP.assertEqual(s.flow.fade, 0);
+});
+FP.test('flow: le niveau n’est régénéré qu’une fois par éclosion', () => {
+  const s = flowRun(); let n = 0; const gen = FP.level.generate;
+  FP.level.generate = (st) => { n++; gen(st); };
+  try { bloomNow(s); advance(s, 3); } finally { FP.level.generate = gen; }
+  FP.assertEqual(n, 1);
+});
+FP.test('flow: la raison de la dernière mort est gardée pour l’écran de fin', () => {
+  const s = flowRun(); s.plant.reserves = 1;
+  const o = FP.catalog.makeSolid({ kind: 'server', x: 220, y: 900, a: 0, flip: 1 }); s.world.solids.push(o); s.plant.tip = { x: 220, y: 900 };
+  FP.collision.update(s); FP.flow.update(s, 0);
+  FP.assertEqual(s.mode, 'over'); FP.assertEqual(s.flow.overReason, 'rupture : rack serveur');
 });
