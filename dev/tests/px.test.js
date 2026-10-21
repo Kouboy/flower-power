@@ -1,0 +1,24 @@
+// Boîte à outils pixel et palettes : logique pure, testée sur un faux contexte qui retient les pixels écrits.
+const fakeCtx = () => { const px = new Map(); return { px, set fillStyle(c) { this._c = c; }, get fillStyle() { return this._c; }, fillRect(x, y, w, h) { for (let i = 0; i < w; i++) for (let j = 0; j < h; j++) px.set((x + i) + ',' + (y + j), this._c); } }; };
+FP.test('px: conversion monde → pixel d’art arrondie', () => { FP.assertEqual(FP.px.toArt(5), 3); FP.assertEqual(FP.px.toArt(4.9), 2); FP.assertEqual(FP.px.toArt(-3), -1); });
+FP.test('px: un rectangle n’écrit que des pixels entiers', () => { const c = fakeCtx(); FP.px.rect(c, 1, 2, 3, 2, '#fff'); FP.assertEqual(c.px.size, 6); FP.assert([...c.px.keys()].every(k => k.split(',').every(n => Number.isInteger(+n)))); });
+FP.test('px: disque symétrique, rangée centrale de 2r + 1', () => {
+  const c = fakeCtx(); FP.px.disc(c, 10, 10, 4, '#fff');
+  let row = 0; for (let x = 0; x < 20; x++) if (c.px.has(x + ',10')) row++; FP.assertEqual(row, 9);
+  for (const k of c.px.keys()) { const [x, y] = k.split(',').map(Number); FP.assert(c.px.has((20 - x) + ',' + y) && c.px.has(x + ',' + (20 - y))); }
+});
+FP.test('px: anneau creux', () => { const c = fakeCtx(); FP.px.ring(c, 10, 10, 5, '#fff'); FP.assert(!c.px.has('10,10')); FP.assert(c.px.has('15,10') && c.px.has('5,10')); });
+FP.test('px: ligne continue (8-connexe)', () => {
+  const c = fakeCtx(); FP.px.line(c, 0, 0, 9, 4, '#fff');
+  const pts = [...c.px.keys()].map(k => k.split(',').map(Number)).sort((a, b) => a[0] - b[0]);
+  FP.assertEqual(pts.length, 10); for (let i = 1; i < pts.length; i++) FP.assert(Math.abs(pts[i][1] - pts[i - 1][1]) <= 1);
+});
+FP.test('px: tramage 0 = tout A, 16 = tout B, 8 = moitié', () => {
+  const count = (lv) => { const c = fakeCtx(); FP.px.dither(c, 0, 0, 8, 8, 'a', 'b', lv); return [...c.px.values()].filter(v => v === 'b').length; };
+  FP.assertEqual(count(0), 0); FP.assertEqual(count(16), 64); FP.assertEqual(count(8), 32);
+});
+FP.test('palette: aucune couleur de danger dans le décor', () => {
+  const rgb = (h) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const near = (a, b) => Math.hypot(...rgb(a).map((v, i) => v - rgb(b)[i])) < 60;
+  for (const c of FP.palette.decor()) for (const d of FP.palette.danger) FP.assert(!near(c, d), c + ' trop proche de ' + d);
+});
