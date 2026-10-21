@@ -2,7 +2,8 @@
 // Lit     : state.time, state.mode, state.world.{bonuses,viewH}, state.camera.y, state.plant.tip, state.power.shield,
 //           FP.config.soil.viewPad.
 // Écrit   : rien (le canvas uniquement).
-// Expose  : FP.powerupsRender.drawBonuses(ctx, state), FP.powerupsRender.drawShield(ctx, state).
+// Expose  : FP.powerupsRender.drawBonuses(ctx, state) (repère monde, encore en mode hérité), FP.powerupsRender.drawShield(actx, state)
+//           (repère d'art, appelé par render/plant.js).
 // Porté de la v3.43.16 (drawBonuses, drawBonusManifestation, drawBonusGlyph, drawAssetSource/Spore/Pollen, drawOrganicShield).
 (function () {
   'use strict';
@@ -92,30 +93,22 @@
   }
 
   // Membrane irrégulière, aqueuse et végétale : volontairement pas une bulle sci-fi parfaite.
-  function drawShield(ctx, state) {
-    const tip = state.plant.tip, t = state.time;
+  // Membrane organique (repère d'art) : anneau qui ondule, voile tramé, trois nervures, un reflet.
+  function drawShield(g, state) {
+    const { px } = FP, tip = state.plant.tip, t = state.time;
     if (state.mode !== 'playing' || !tip || !state.power.shield) return;
-    const r = 23.5 + (.5 + .5 * Math.sin(t * 4.2)) * 1.25;
-    ctx.save(); ctx.translate(tip.x, tip.y);
-    ctx.beginPath();
-    for (let i = 0; i <= 18; i++) {
-      const a = i * TAU / 18, wob = 1 + Math.sin(a * 3 + t * 2.0) * .035 + Math.sin(a * 5 - t * 1.5) * .024;
-      const x = Math.cos(a) * r * wob, y = Math.sin(a) * r * wob * .91;
-      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    const ax = px.toArt(tip.x), ay = px.toArt(tip.y) - px.toArt(state.camera.y) - 3;
+    const r = 12 + Math.round(.5 + .5 * Math.sin(t * 4.2));
+    for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) {
+      const d = x * x + y * y;
+      if (d <= r * r + r && d > (r - 3) * (r - 3) && ((x + y + Math.floor(t * 6)) & 3) === 0) px.rect(g, ax + x, ay + y, 1, 1, '#8ee0c2');
     }
-    ctx.closePath();
-    ctx.fillStyle = 'rgba(133,224,194,.115)'; ctx.fill();
-    ctx.strokeStyle = 'rgba(181,246,215,.86)'; ctx.lineWidth = 2.15; ctx.stroke();
-    // Nervures assez grosses pour survivre sur smartphone.
-    ctx.strokeStyle = 'rgba(229,255,229,.38)'; ctx.lineWidth = 1.25; ctx.lineCap = 'round';
-    for (let i = 0; i < 4; i++) {
-      const a = -1.12 + i * .74 + Math.sin(t * .8 + i) * .05;
-      ctx.beginPath(); ctx.moveTo(Math.cos(a) * 5, Math.sin(a) * 4);
-      ctx.quadraticCurveTo(Math.cos(a + .30) * r * .58, Math.sin(a + .30) * r * .42, Math.cos(a) * r * .84, Math.sin(a) * r * .76);
-      ctx.stroke();
+    for (let i = 0; i < 24; i++) {
+      const an = i * TAU / 24, wob = 1 + Math.sin(an * 3 + t * 2) * .05;
+      px.rect(g, ax + Math.round(Math.cos(an) * r * wob), ay + Math.round(Math.sin(an) * r * wob * .92), 1, 1, '#c8fde2');
     }
-    ctx.fillStyle = 'rgba(223,255,229,.68)'; ctx.beginPath(); ctx.ellipse(-r * .35, -r * .42, 2.5, 4.5, -.55, 0, TAU); ctx.fill();
-    ctx.restore();
+    for (let i = 0; i < 3; i++) { const an = -1.1 + i * .9; px.line(g, ax + Math.round(Math.cos(an) * 4), ay + Math.round(Math.sin(an) * 4), ax + Math.round(Math.cos(an) * (r - 3)), ay + Math.round(Math.sin(an) * (r - 3)), '#a8f0d0'); }
+    px.rect(g, ax - Math.round(r * .45), ay - Math.round(r * .55), 2, 3, '#effff2');
   }
 
   FP.powerupsRender = { drawBonuses, drawShield };

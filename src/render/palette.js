@@ -1,7 +1,7 @@
 // render/palette.js — palettes nommées du rendu pixel (d'après docs/art/reference-crepuscule.png).
 // Lit     : rien.
 // Écrit   : rien.
-// Expose  : FP.palette.{sky, strata, strataBounds, lawn, stem, hero, flowers, danger, decor()}.
+// Expose  : FP.palette.{sky, strata, strataBounds, lawn, stem, seed, hero, flowers, danger, decor()}.
 // Le vert acide et le violet de `danger` signalent les dangers : ils sont interdits dans le décor (test dev/tests/px.test.js).
 (function () {
   'use strict';
@@ -35,6 +35,9 @@
   // Tige : contour, ombre, corps, reflet ; ancienne tige plus sombre.
   const stem = { outline: '#141c0c', shade: '#2e4a1a', body: '#4f7a2a', light: '#8fbf4a', old: '#2a3a1c', oldLight: '#44602a', leaf: '#5e8c30' };
 
+  // Graine du fond, endormie.
+  const seed = { outline: '#2e2016', body: '#b8915c', shade: '#8e6b44', light: '#dcc08a' };
+
   // Héros (tête-bourgeon) et ses visages.
   const hero = {
     outline: '#141c0c', skin: '#7fb04a', skinShade: '#5a8a34', skinLight: '#a8d066', toxic: '#9bb84a', toxicShade: '#6e8a2e',
@@ -54,5 +57,5 @@
 
   const decor = () => [...sky.flat(), ...strata.humus, ...strata.clay, ...strata.stone, ...lawn.flat()];
 
-  FP.palette = { sky, strata, strataBounds, lawn, stem, hero, flowers, danger, decor };
+  FP.palette = { sky, strata, strataBounds, lawn, stem, seed, hero, flowers, danger, decor };
 })();

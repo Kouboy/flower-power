@@ -43,8 +43,8 @@
     if (perf) t = perf.mark('hazards', t);
     legacy(actx, camY, (c) => FP.powerupsRender.drawBonuses(c, state));
     if (perf) t = perf.mark('bonuses', t);
+    FP.plantRender.draw(actx, state);
     legacy(actx, camY, (c) => {
-      FP.plantRender.draw(c, state);
       FP.flowersRender.draw(c, state);
       FP.hazardsRender.drawExposure(c, state);   // v3 : dans drawPlant, donc sous la pellicule toxique
       FP.hazardsRender.drawOverlay(c, state);
