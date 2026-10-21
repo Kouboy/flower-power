@@ -1,7 +1,7 @@
 // render/frame.js — dessin d'une frame. Lecture seule de l'état.
 // Lit     : state.world, state.camera.y, state.plant.{tip,seed}, FP.view, FP.camera.totalZoom, FP.input.focalX,
 //           state.flow.fade, FP.soil, FP.hazardsRender, FP.obstacles, FP.powerupsRender, FP.plantRender, FP.flowersRender,
-//           FP.effects, FP.particles, FP.hud ; state.camera.shake (secousse).
+//           FP.effects, FP.particles, FP.hud ; state.camera.shake (secousse) ; FP.perf, FP.flydebug (outils de réglage).
 // Écrit   : rien (le canvas uniquement).
 // Expose  : FP.render.frame(state).
 (function () {
@@ -30,15 +30,21 @@
     applyZoom(ctx, state, W, viewH);
     ctx.translate(0, -camY);
     ctx.beginPath(); ctx.rect(-24, camY - 48, W + 48, viewH + 96); ctx.clip();
+    // ?perf=1 : tranches sol / dangers / plante (comme la v3).
+    const perf = FP.perf;
+    let t = perf && performance.now();
     // Ordre v3 : sol, nappes, limaces, obstacles, plante, pellicule toxique, anneau d'exposition.
     FP.soil.draw(ctx, world, camY, W, viewH);
+    if (perf) t = perf.mark('soil', t);
     FP.hazardsRender.drawBase(ctx, state);
     FP.hazardsRender.drawLeaks(ctx, state);
     FP.obstacles.draw(ctx, world, camY, viewH);
+    if (perf) t = perf.mark('hazards', t);
     FP.powerupsRender.drawBonuses(ctx, state);
     FP.plantRender.draw(ctx, state);
     FP.flowersRender.draw(ctx, state);
     FP.hazardsRender.drawOverlay(ctx, state);
+    if (perf) perf.mark('plant', t);
     FP.hazardsRender.drawExposure(ctx, state);
     FP.effects.draw(ctx, state);
     FP.particles.draw(ctx, state);
@@ -46,6 +52,8 @@
 
     FP.plantRender.drawFinger(ctx, state);
     FP.hud.draw(ctx, state);
+    if (FP.flydebug) FP.flydebug.draw(ctx, state);
+    if (perf) perf.draw(ctx, state);
     // Fondu entre deux niveaux, par-dessus tout (v3 : drawFade).
     if (state.flow.fade > 0) {
       ctx.save(); ctx.globalAlpha = Math.min(1, state.flow.fade); ctx.fillStyle = '#020201';

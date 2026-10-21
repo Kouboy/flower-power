@@ -4,7 +4,7 @@
 // Écrit   : state.world.{bonuses,solids,toxics,leaks} (apparition, ramassage, nettoyage par la spore), solid.rewarded,
 //           state.power.{shield,shieldGrace}, state.score.flowerBonus, state.graze.active (objets effacés),
 //           state.query (choc absorbé), state.plant.{tip,guide} (bris), state.events (bonusSpawn, bonusMissed, pickup,
-//           bomb, shieldBreak) ; messages via FP.flow.say ; gains via FP.scoring.awardFlat.
+//           bomb, shieldBreak, flyover — décision du flyover, lue par ?flydebug=1) ; messages via FP.flow.say ; gains via FP.scoring.awardFlat.
 // Bouclier : intercepte les chocs dans update (shatterOrganicShield v3).
 // Expose  : FP.powerups.assess(state, obj, record), FP.powerups.rewardType(a), FP.powerups.onFlyover(state, obj, record),
 //           FP.powerups.update(state, dt).
@@ -94,12 +94,17 @@
     const f = FP.config.flyover, p = FP.config.powerups;
     if (obj.rewarded || !obj.flyoverEligible) return;
     const a = assess(state, obj, r);
-    if (!a.qualified || a.risk < f.minRisk || a.effectiveTime < f.minEffective) return;
+    const report = (outcome, kind) => state.events.push({ type: 'flyover', outcome, kind, risk: a.risk, time: r.time, effective: a.effectiveTime, progress: a.progress });
+    if (!a.qualified || a.risk < f.minRisk || a.effectiveTime < f.minEffective) {
+      if (!a.qualified && r.time >= f.reportMinTime) report('notQualified', null);
+      return;
+    }
     const type = rewardType(a);
     obj.rewarded = true;
-    if (type !== 'pollen' && state.power.shield) return;
+    if (type !== 'pollen' && state.power.shield) { report('blocked', type); return; }
     const pos = findSpawn(state, obj, a.risk);
-    if (!pos) return;
+    if (!pos) { report('noSpot', type); return; }
+    report('spawn', type);
     state.world.bonuses.push({
       type, x: pos.x, y: pos.y, r: p.radius[type], phase: state.rng.range(0, FP.TAU),
       forming: p.formMax, formMax: p.formMax, age: 0, originX: obj.x, originY: obj.y
@@ -200,7 +205,7 @@
       if (playing && b.forming <= 0 && dist(tip.x, tip.y, b.x, b.y) < b.r + p.pickupPad) { collect(state, b); continue; }
       // Une récompense ratée reste un choix raté : elle disparaît sans rien activer.
       const missed = (tip && b.forming <= 0 && tip.y < b.y - p.missedBehind) || b.age > p.maxAge;
-      if (missed) { state.events.push({ type: 'bonusMissed', kind: b.type, x: b.x, y: b.y }); continue; }
+      if (missed) { state.events.push({ type: 'bonusMissed', kind: b.type, x: b.x, y: b.y, gate: state.power.shield ? 'FERMÉ' : 'LIBRE' }); continue; }
       keep.push(b);
     }
     state.world.bonuses = keep;

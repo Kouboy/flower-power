@@ -63,7 +63,7 @@ FP.test('powerups: récompense ratée → disparaît sans effet', () => {
   const s = puRun(); const b = bonusAtTip(s, 'water'); b.y = s.plant.tip.y + 160;
   FP.powerups.update(s, 1 / 60);
   FP.assertEqual(s.world.bonuses.length, 0); FP.assertEqual(s.power.shield, false);
-  FP.assert(s.events.some(e => e.type === 'bonusMissed'));
+  FP.assert(s.events.some(e => e.type === 'bonusMissed' && e.gate === 'LIBRE'));
 });
 FP.test('powerups: trop vieille → disparaît', () => {
   const s = puRun(); const b = bonusAtTip(s, 'water'); b.x += 200; b.y = s.plant.tip.y - 100; b.age = 9.49;
@@ -126,4 +126,17 @@ FP.test('powerups: le bris recale le guide sur l’intention du joueur', () => {
   s.world.solids = [server(s.plant.tip.x, s.plant.tip.y)];
   FP.collision.update(s); FP.powerups.update(s, 1 / 60);
   FP.assertEqual(s.plant.guide.x, 100);
+});
+FP.test('powerups: le flyover annonce sa décision', () => {
+  const s = puRun(); const o = qualifyingFlyover(s); s.power.shield = true;
+  FP.powerups.onFlyover(s, o, record());
+  FP.assert(s.events.some(e => e.type === 'flyover' && e.outcome === 'blocked' && e.kind === 'water'));
+  const s2 = puRun(); const o2 = qualifyingFlyover(s2);
+  FP.powerups.onFlyover(s2, o2, record());
+  FP.assert(s2.events.some(e => e.type === 'flyover' && e.outcome === 'spawn' && e.time === .9 && e.effective === .75));
+});
+FP.test('powerups: un frôlement trop court ne s’annonce pas', () => {
+  const s = puRun(); const o = qualifyingFlyover(s);
+  FP.powerups.onFlyover(s, o, record({ time: .2, effectiveTime: .1, intensityTime: .1, score: 60, peak: .2 }));
+  FP.assert(!s.events.some(e => e.type === 'flyover'));
 });

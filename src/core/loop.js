@@ -1,5 +1,5 @@
 // core/loop.js — boucle principale, ordre fixe d'une frame.
-// Lit     : FP.config.loop, FP.state.current, les modules FP.<système> présents.
+// Lit     : FP.config.loop, FP.state.current, les modules FP.<système> présents, FP.perf (?perf=1).
 // Écrit   : state.time, vide state.events en fin de frame.
 // Expose  : FP.loop.UPDATE_ORDER, FP.loop.step(state, rawDt), FP.loop.start().
 (function () {
@@ -17,6 +17,8 @@
     const { maxDt, fallbackDt } = FP.config.loop;
     const dt = Number.isFinite(rawDt) && rawDt > 0 ? Math.min(rawDt, maxDt) : fallbackDt;
     state.time += dt;
+    const perf = FP.perf;
+    let t = perf && perf.begin(dt);
 
     if (state.mode !== 'menu') {
       for (const name of UPDATE_ORDER) {
@@ -24,7 +26,9 @@
       }
     }
     if (FP.audio) FP.audio.consume(state.events, state, dt);
+    if (perf) t = perf.mark('update', t);
     if (FP.render) FP.render.frame(state);
+    if (perf) perf.mark('render', t);
     state.events.length = 0;
   }
 

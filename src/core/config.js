@@ -134,6 +134,7 @@
       progressK: .62, progressMin: 28, effOffset: .20, effSpan: .95,
       proxAvg: .62, proxPeak: .38, riskDuration: .47, riskProximity: .36, riskProgress: .17,
       minTime: .27, minPeak: .20, minProgress: .42, minRisk: .40, minEffective: .30,
+      reportMinTime: .24,   // ?flydebug=1 : un frôlement plus court n'est pas un essai de flyover
       spore: { time: .82, risk: .66 }, water: { time: .52, risk: .48 }
     },
 
