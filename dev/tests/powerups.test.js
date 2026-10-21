@@ -140,3 +140,22 @@ FP.test('powerups: un frôlement trop court ne s’annonce pas', () => {
   FP.powerups.onFlyover(s, o, record({ time: .2, effectiveTime: .1, intensityTime: .1, score: 60, peak: .2 }));
   FP.assert(!s.events.some(e => e.type === 'flyover'));
 });
+FP.test('powerups: pas de place → l’obstacle peut encore récompenser', () => {
+  const s = puRun(); const o = qualifyingFlyover(s);
+  for (let x = 10; x < 440; x += 25) for (let y = s.world.surfaceY; y < s.plant.tip.y; y += 25) s.world.bonuses.push({ type: 'pollen', x, y, r: 13, phase: 0, forming: 0, formMax: .48, age: 0 });
+  FP.powerups.onFlyover(s, o, record());
+  FP.assert(s.events.some(e => e.type === 'flyover' && e.outcome === 'noSpot')); FP.assert(!o.rewarded);
+});
+FP.test('powerups: une spore ramassée sauve du choc de la même frame', () => {
+  const s = puRun(); const o = server(220, 900); s.world.solids = [o];
+  s.plant.tip = { x: 220, y: 900 }; s.plant.dir = { x: 0, y: -1 };
+  FP.collision.update(s); FP.assert(s.query.solid === o, 'montage : la pointe est dans l’obstacle');
+  s.world.bonuses.push({ type: 'spore', x: 220, y: 900, r: 16, phase: 0, forming: 0, formMax: .48, age: 0 });
+  FP.powerups.update(s, 1 / 60); FP.flow.update(s, 1 / 60);
+  FP.assertEqual(s.query.solid, null); FP.assertEqual(s.mode, 'playing');
+});
+FP.test('powerups: un obstacle déjà récompensé annonce encore « pas flyover »', () => {
+  const s = puRun(); const o = qualifyingFlyover(s); o.rewarded = true; s.plant.tip = { x: 250, y: 930 };
+  FP.powerups.onFlyover(s, o, record({ time: .5 }));
+  FP.assert(s.events.some(e => e.type === 'flyover' && e.outcome === 'notQualified'));
+});

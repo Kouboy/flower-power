@@ -1,6 +1,6 @@
 // play/powerups.js — flyover → récompense (pollen, goutte, spore), ramassage, spore.
 // Lit     : state.mode, state.plant.{tip,dir}, state.input, state.query, state.world, state.power, FP.config.{flyover,powerups,shield,plant,text},
-//           FP.collision.distanceTo, FP.hazards.toxicIntensityAt.
+//           FP.collision.distanceTo, FP.collision.update (requête refaite après une spore), FP.hazards.toxicIntensityAt.
 // Écrit   : state.world.{bonuses,solids,toxics,leaks} (apparition, ramassage, nettoyage par la spore), solid.rewarded,
 //           state.power.{shield,shieldGrace}, state.score.flowerBonus, state.graze.active (objets effacés),
 //           state.query (choc absorbé), state.plant.{tip,guide} (bris), state.events (bonusSpawn, bonusMissed, pickup,
@@ -54,7 +54,7 @@
     const lead = tip.y - w.surfaceY < c.nearSurfaceSpan ? c.leadNearSurface : c.lead;
     if (y > tip.y - lead) return false;
     for (const o of w.solids) {
-      const br = o.broadR + r + 8;
+      const br = o.broadR + r + c.solidPad;
       if ((x - o.x) ** 2 + (y - o.y) ** 2 > br * br) continue;
       if (FP.collision.distanceTo(o, x, y) < r + c.solidPad) return false;
     }
@@ -89,21 +89,23 @@
   }
 
   // Un seul power-up gameplay à la fois : tant que le bouclier tient, ni goutte ni spore (pas de file d'attente).
-  // Le pollen n'est qu'un bonus de score : il reste autorisé. Chaque obstacle ne récompense qu'une fois.
+  // Le pollen n'est qu'un bonus de score : il reste autorisé. Chaque obstacle ne récompense qu'une fois
+  // (une goutte bloquée par le bouclier compte ; un manque de place, non).
   function onFlyover(state, obj, r) {
     const f = FP.config.flyover, p = FP.config.powerups;
-    if (obj.rewarded || !obj.flyoverEligible) return;
+    if (!obj.flyoverEligible) return;
     const a = assess(state, obj, r);
     const report = (outcome, kind) => state.events.push({ type: 'flyover', outcome, kind, risk: a.risk, time: r.time, effective: a.effectiveTime, progress: a.progress });
     if (!a.qualified || a.risk < f.minRisk || a.effectiveTime < f.minEffective) {
       if (!a.qualified && r.time >= f.reportMinTime) report('notQualified', null);
       return;
     }
+    if (obj.rewarded) return;
     const type = rewardType(a);
-    obj.rewarded = true;
-    if (type !== 'pollen' && state.power.shield) { report('blocked', type); return; }
+    if (type !== 'pollen' && state.power.shield) { obj.rewarded = true; report('blocked', type); return; }
     const pos = findSpawn(state, obj, a.risk);
-    if (!pos) { report('noSpot', type); return; }
+    if (!pos) { report('noSpot', type); return; }   // v3 : pas de place → l'obstacle pourra encore récompenser
+    obj.rewarded = true;
     report('spawn', type);
     state.world.bonuses.push({
       type, x: pos.x, y: pos.y, r: p.radius[type], phase: state.rng.range(0, FP.TAU),
@@ -199,16 +201,19 @@
     const p = FP.config.powerups, tip = state.plant.tip, playing = state.mode === 'playing' && tip;
     state.power.shieldGrace = Math.max(0, state.power.shieldGrace - dt);
     const keep = [];
+    let detonated = false;
     for (const b of state.world.bonuses) {
       b.age += dt;
       b.forming = Math.max(0, b.forming - dt);
-      if (playing && b.forming <= 0 && dist(tip.x, tip.y, b.x, b.y) < b.r + p.pickupPad) { collect(state, b); continue; }
+      if (playing && b.forming <= 0 && dist(tip.x, tip.y, b.x, b.y) < b.r + p.pickupPad) { collect(state, b); detonated = detonated || b.type === 'spore'; continue; }
       // Une récompense ratée reste un choix raté : elle disparaît sans rien activer.
       const missed = (tip && b.forming <= 0 && tip.y < b.y - p.missedBehind) || b.age > p.maxAge;
       if (missed) { state.events.push({ type: 'bonusMissed', kind: b.type, x: b.x, y: b.y, gate: state.power.shield ? 'FERMÉ' : 'LIBRE' }); continue; }
       keep.push(b);
     }
     state.world.bonuses = keep;
+    // v3 : le ramassage passe avant la requête de pointe. Une spore qui efface l'obstacle touché sauve la pousse.
+    if (playing && detonated) FP.collision.update(state);
     if (playing) shield(state);
   }
 

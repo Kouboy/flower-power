@@ -47,3 +47,11 @@ FP.test('collision: liste des frôlements', () => {
   const q = FP.collision.queryPoint({ solids: [o], toxics: [], leaks: [l] }, 238, 300);
   FP.assertEqual(q.grazes.length, 1); FP.assertEqual(q.grazes[0].obj, o); FP.assertEqual(q.grazes[0].kind, 'solid');
 });
+FP.test('collision: toutes les limaces touchées clignotent', () => {
+  const s = FP.state.createRun(1, { W: 440, H: 783 }); FP.level.startRun(s); FP.plant.launch(s);
+  s.world.solids = []; s.world.toxics = [];
+  const leak = () => ({ x: s.plant.tip.x, y: s.plant.tip.y, len: 40, angle: 0, r: 12, cx: s.plant.tip.x, cy: s.plant.tip.y, cr: 12, hitFlash: 0 });
+  s.world.leaks = [leak(), leak()];
+  FP.collision.update(s);
+  FP.assert(s.world.leaks.every(l => l.hitFlash > 0));
+});

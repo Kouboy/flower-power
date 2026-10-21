@@ -1,7 +1,7 @@
 // world/collision.js — requête unique de la pointe contre les dangers, une fois par frame.
 // Lit     : state.mode, state.plant.tip, state.world.{solids,toxics,leaks} (leak.cx/cy/cr calculés par world/hazards.js),
 //           FP.hazards.toxicIntensityAt, FP.config.hazards.
-// Écrit   : state.query = { solid, danger, near, toxic, leak, leakHit, grazes } ; leak.hitFlash au contact.
+// Écrit   : state.query = { solid, danger, near, toxic, leak, leakHit, grazes } ; leak.hitFlash de chaque limace touchée.
 //           grazes : un élément { obj, kind:'solid'|'leak', intensity, x, y } par frôlement en cours (play/graze.js).
 // Expose  : FP.collision.update(state), FP.collision.queryPoint(world, x, y), FP.collision.grazeBand(solid),
 //           FP.collision.distanceTo(solid, x, y) (distance signée au polygone).
@@ -40,11 +40,13 @@
   }
 
   // Contact : dans le corps (+6 px) ; frôlement : couronne de r+7 à r+38, qui fait zoomer la caméra.
+  const inContact = (l, x, y) => Math.hypot(x - l.cx, y - l.cy) < l.cr + FP.config.hazards.leakHitPad;
+
   function queryLeaks(q, leaks, x, y) {
     const h = FP.config.hazards;
     for (const l of leaks) {
       const d = Math.hypot(x - l.cx, y - l.cy);
-      if (d < l.cr + h.leakHitPad) {
+      if (inContact(l, x, y)) {
         q.leak += h.leakHitGain * (1 - d / (l.cr + h.leakHitPad));
         if (!q.leakHit) q.leakHit = l;
         continue;
@@ -71,7 +73,8 @@
   function update(state) {
     const tip = state.plant.tip;
     state.query = state.mode === 'playing' && tip ? queryPoint(state.world, tip.x, tip.y) : EMPTY();
-    if (state.query.leakHit) state.query.leakHit.hitFlash = FP.config.hazards.hitFlash;
+    // Toutes les limaces touchées clignotent (v3), pas seulement la première.
+    if (state.query.leakHit) for (const l of state.world.leaks) if (inContact(l, tip.x, tip.y)) l.hitFlash = FP.config.hazards.hitFlash;
   }
 
   FP.collision = { update, queryPoint, grazeBand, distanceTo };

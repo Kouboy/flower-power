@@ -56,6 +56,8 @@
     const active = state.graze.active, q = state.query;
     // Hors jeu, ou contact : tout frôlement en cours est perdu, sans paiement.
     if (state.mode !== 'playing' || q.solid || q.leak > 0) { active.clear(); return; }
+    // Frame de l'éclosion (v3 : bloom() passe avant les frôlements) : rien n'est payé, flow annulera.
+    if (state.plant.tip.y <= state.world.surfaceY) return;
     const seen = new Set();
     for (const info of q.grazes) { track(state, info, dt); seen.add(info.obj); }
     for (const [obj, r] of active) {

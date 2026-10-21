@@ -51,3 +51,9 @@ FP.test('graze: mesures du flyover', () => withAwards(() => {
   FP.assert(Math.abs(r.intensityTime - .25) < 1e-9);
   FP.assert(Math.abs(r.effectiveTime - .5 * (.45 + .55 * .5)) < 1e-9);
 }));
+FP.test('graze: rien n’est payé sur la frame de l’éclosion', () => withAwards(got => {
+  const s = grazeRun(), o = { kind: 'server', x: 100, y: 100, mul: 1 };
+  for (let i = 0; i < 60; i++) { fakeGraze(s, o, .8); FP.graze.update(s, 1 / 60); }
+  s.plant.tip.y = s.world.surfaceY - 1; noGraze(s); FP.graze.update(s, 1 / 60);
+  FP.assertEqual(got.length, 0);
+}));
