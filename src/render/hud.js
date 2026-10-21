@@ -1,9 +1,9 @@
 // render/hud.js — informations à l'écran (repère écran, hors zoom).
 // Lit     : state.mode, state.flow.{message,messageTimer}, state.plant.{reserves,stemCount,trail,corruption},
-//           state.score.{flowers,eco,flowerBonus,combo}, state.power.shield, state.input.down, FP.scoring.records, FP.view, FP.config.text.
+//           state.score.{flowers,eco,flowerBonus,combo}, state.power.shield, state.flow.overReason, state.input.down, FP.scoring.records, FP.view, FP.config.text.
 // Écrit   : rien (le canvas uniquement).
 // Expose  : FP.hud.draw(ctx, state).
-// Porté de la v3.43.16 (drawHUD, panneau de fin de die()) ; le pollen reçu arrive à l'étape 5.
+// Porté de la v3.43.16 (drawHUD, panneau de fin de die()).
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
@@ -71,6 +71,14 @@
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillStyle = '#ffefb4'; ctx.font = `850 30px ${FONT}`;
     ctx.fillText(sc.flowers + ' fleur' + (sc.flowers > 1 ? 's' : ''), W / 2, y0);
+    // Cause de la mort (v3 : <p>${reason}</p>), réduite pour tenir dans la largeur.
+    const reason = state.flow.overReason;
+    if (reason) {
+      ctx.font = `700 16px ${FONT}`;
+      const fit = Math.min(1, (W - 32) / Math.max(1, ctx.measureText(reason).width));
+      ctx.font = `700 ${Math.max(11, Math.floor(16 * fit))}px ${FONT}`; ctx.fillStyle = '#ffb08a';
+      ctx.fillText(reason, W / 2, y0 + 30);
+    }
     ctx.font = `600 16px ${FONT}`;
     const lines = [
       ['#ead9b2', 'Tiges tentées : ' + state.plant.stemCount],
@@ -78,9 +86,9 @@
       ['#ead9b2', 'Meilleur score fleurs : ' + r.flowers],
       ['#ead9b2', 'Meilleurs ÉcoCrédits™ : ' + SIGIL + ' ' + fmt(r.eco)]
     ];
-    lines.forEach(([c, t], i) => { ctx.fillStyle = c; ctx.fillText(t, W / 2, y0 + 44 + i * 26); });
+    lines.forEach(([c, t], i) => { ctx.fillStyle = c; ctx.fillText(t, W / 2, y0 + 64 + i * 26); });
     ctx.fillStyle = '#fff1b7'; ctx.font = `800 18px ${FONT}`;
-    ctx.fillText('TOUCHE POUR RECOMMENCER', W / 2, y0 + 44 + lines.length * 26 + 28);
+    ctx.fillText('TOUCHE POUR RECOMMENCER', W / 2, y0 + 64 + lines.length * 26 + 28);
   }
 
   function draw(ctx, state) {

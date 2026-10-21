@@ -1,9 +1,9 @@
 // render/effects.js — effets visuels : chiffres ÉcoCrédits™, anneaux de frôlement, ramassage, rupture du bouclier,
-// onde de spore, impact à la mort.
-// Lit     : state.events (eco, pickup, shieldBreak, bomb, death), state.time, state.mode, state.graze.active, state.plant.tip.
+// onde de spore, impact à la mort, anneau d'éclosion.
+// Lit     : state.events (eco, pickup, shieldBreak, bomb, death, bloom), state.time, state.mode, state.graze.active, state.plant.tip.
 // Écrit   : state.fx.effects uniquement (réservé au rendu) ; l'aléatoire purement visuel utilise Math.random.
 // Expose  : FP.effects.draw(ctx, state) (repère monde).
-// Porté de la v3.43.16 (drawEffects : eco, pickup, shieldBreak, bomb, hit ; drawGrazeFeedback).
+// Porté de la v3.43.16 (drawEffects : eco, pickup, shieldBreak, bomb, hit, bloom ; drawGrazeFeedback).
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
@@ -28,6 +28,7 @@
       else if (e.type === 'shieldBreak') fx.push({ type: 'shieldBreak', x: e.x, y: e.y, t0, life: .62, r: 31, phase: rand(0, TAU) });
       else if (e.type === 'bomb') fx.push({ type: 'bomb', x: e.x, y: e.y, t0, life: .98, r: e.r });
       else if (e.type === 'death') fx.push({ type: 'hit', acid: e.cause !== 'solid', x: e.x, y: e.y, t0, life: .42, r: 28 });
+      else if (e.type === 'bloom') fx.push({ type: 'bloom', x: e.x, y: e.y, t0, life: 1.18, r: 68 + 13 * (e.bonus || 0) });
     }
     state.fx.effects = state.fx.effects.filter(f => state.time - f.t0 < f.life);
   }
@@ -125,6 +126,15 @@
         ctx.beginPath(); ctx.moveTo(e.x + Math.cos(ang) * r * .16, e.y + Math.sin(ang) * r * .16);
         ctx.quadraticCurveTo(e.x + Math.cos(ang + .25) * end * .58, e.y + Math.sin(ang + .25) * end * .58, e.x + Math.cos(ang) * end, e.y + Math.sin(ang) * end);
         ctx.stroke();
+      }
+    } else if (e.type === 'bloom') {
+      const r = e.r * (.35 + .75 * k);
+      ctx.strokeStyle = `rgba(255,238,147,${.88 * a})`; ctx.lineWidth = 4 * (1 - k) + 1;
+      ctx.beginPath(); ctx.arc(e.x, e.y, r, 0, TAU); ctx.stroke();
+      ctx.globalAlpha = .55 * a; ctx.strokeStyle = '#fff0a0'; ctx.lineWidth = 2;
+      for (let i = 0; i < 10; i++) {
+        const ang = i * TAU / 10 + t * .15;
+        ctx.beginPath(); ctx.moveTo(e.x + Math.cos(ang) * r * .38, e.y + Math.sin(ang) * r * .38); ctx.lineTo(e.x + Math.cos(ang) * r, e.y + Math.sin(ang) * r); ctx.stroke();
       }
     } else if (e.type === 'hit') {
       const r = e.r * (.55 + 1.2 * k), col = e.acid ? '217,255,88' : '255,112,78';

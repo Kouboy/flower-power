@@ -1,6 +1,7 @@
 // render/frame.js — dessin d'une frame. Lecture seule de l'état.
 // Lit     : state.world, state.camera.y, state.plant.{tip,seed}, FP.view, FP.camera.totalZoom, FP.input.focalX,
-//           FP.soil, FP.hazardsRender, FP.obstacles, FP.powerupsRender, FP.plantRender, FP.effects, FP.hud.
+//           state.flow.fade, FP.soil, FP.hazardsRender, FP.obstacles, FP.powerupsRender, FP.plantRender, FP.flowersRender,
+//           FP.effects, FP.hud.
 // Écrit   : rien (le canvas uniquement).
 // Expose  : FP.render.frame(state).
 (function () {
@@ -33,6 +34,7 @@
     FP.obstacles.draw(ctx, world, camY, viewH);
     FP.powerupsRender.drawBonuses(ctx, state);
     FP.plantRender.draw(ctx, state);
+    FP.flowersRender.draw(ctx, state);
     FP.hazardsRender.drawOverlay(ctx, state);
     FP.hazardsRender.drawExposure(ctx, state);
     FP.effects.draw(ctx, state);
@@ -40,6 +42,11 @@
 
     FP.plantRender.drawFinger(ctx, state);
     FP.hud.draw(ctx, state);
+    // Fondu entre deux niveaux, par-dessus tout (v3 : drawFade).
+    if (state.flow.fade > 0) {
+      ctx.save(); ctx.globalAlpha = Math.min(1, state.flow.fade); ctx.fillStyle = '#020201';
+      ctx.fillRect(0, 0, W, FP.view.H); ctx.restore();
+    }
   }
 
   FP.render = { frame };
