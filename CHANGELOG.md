@@ -2,6 +2,15 @@
 
 Une entrée par commit (voir `AGENTS.md`).
 
+## v4.0.0-etape5 — Flyover et power-ups
+
+- nappes toxiques et trajets de limaces peuvent sortir par les bords, tant qu'on en voit au moins la moitié ;
+- flyover : un frôlement qui contourne un obstacle en montant, de près et longtemps, fait naître devant la pointe un pollen (+1 fleur à l'éclosion), une goutte (bouclier organique) ou une spore (nettoyage, 2 000 Ɇ par obstacle) — règles et seuils de la v3 ;
+- un seul power-up gameplay à la fois (le bouclier), pollen hors slot, une récompense par obstacle, récompense ratée qui disparaît ;
+- bouclier : absorbe un choc d'obstacle ou de limace, la pointe recule sans changer de direction, .48 s de grâce ; ne protège pas des nappes toxiques ;
+- rendu : filament de naissance, glyphes source / spore / pollen, membrane, anneaux de ramassage, rupture, onde de spore, impact à la mort ; ligne d'effet du HUD complète ;
+- banc : 141 tests.
+
 ## v4.0.0-etape4 — ÉcoCrédits™
 
 - frôler un obstacle ou une limace sans la toucher accumule un frôlement (rien avant .22 s), payé à la sortie : durée, proximité, pic de proximité ; ×1,18 pour le fût irradié et le T-Rex signature, ×1,12 pour une limace ;

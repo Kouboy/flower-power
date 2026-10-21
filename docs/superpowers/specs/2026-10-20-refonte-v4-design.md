@@ -87,21 +87,24 @@ Chaque fichier `src/**` commence par un en-tête : rôle, ce qu'il lit dans l'é
 ```js
 FP.state = {
   mode: 'menu' | 'ready' | 'playing' | 'dying' | 'bloom' | 'over',
-  time, seed, level,
-  camera: { y, zoom, shake },
-  plant:  { tip, dir, trail, stemAge, reserves },
-  world:  { solids, toxics, leaks, surfaceY, height },
-  graze:  { active /* Map */, combo, comboTimer },
-  power:  { shield, shieldGrace, sporeTimer, bonuses },
-  score:  { eco, flowers, flowerBonus },
-  fx:     { particles, effects, message },
+  time, seed, level, rng, signature,
+  input:  { x, screenX, y, down, active, pressed },
+  camera: { y, manual, near, zoom, shake },
+  plant:  { seed, tip, dir, guide, trail, oldTrails, stemAge, stemCount, reserves, corruption, toxicTimer, recentToxic },
+  world:  { width, height, viewH, surfaceY, skyVariant, lawnVariant, safePath, safeRadius, solids, toxics, leaks, bonuses },
+  query:  { solid, danger, near, toxic, leak, leakHit, grazes },
+  flow:   { timer, message, messageTimer },
+  graze:  { active /* Map objet → frôlement */ },
+  power:  { shield, shieldGrace },
+  score:  { eco, flowers, flowerBonus, combo, comboTimer },
+  fx:     { particles, effects },
   events: []
 };
 ```
 
 `createRun(seed, viewH)` construit l'état complet, `world.surfaceY` compris ; aucune autre variable mutable globale.
 
-Ordre d'une frame (`loop.js`) : `input` → `plant` → `hazards` → `collision` (une seule requête de pointe consolidée) → `graze` → `powerups` → `scoring` → `flow` → `camera`, chacun via `update(state, dt)` et appelé dans tous les modes sauf `menu` → `audio.consume(events)` → `render.*` → `events = []`. (Amendé : `hazards` et `camera` après la revue de l'étape 0 ; `flow` et modes `ready`/`over` à l'étape 2.)
+Ordre d'une frame (`loop.js`) : `input` → `plant` → `hazards` → `collision` (une seule requête de pointe consolidée) → `graze` → `scoring` → `powerups` → `flow` → `camera`, chacun via `update(state, dt)` et appelé dans tous les modes sauf `menu` → `audio.consume(events)` → `render.*` → `events = []`. (Amendé : `hazards` et `camera` après la revue de l'étape 0 ; `flow` et modes `ready`/`over` à l'étape 2 ; forme de l'état complétée, `combo` dans `score`, récompenses dans `world.bonuses`, pas de minuterie de spore, `powerups` après `scoring` aux étapes 4 et 5.)
 
 Chaque module gère ses propres timers.
 
