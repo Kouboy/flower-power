@@ -8,6 +8,7 @@ Une entrée par commit (voir `AGENTS.md`).
 - fleurs illustrées (tige contourée, feuilles, 5 pétales irréguliers, cœur ponctué), fleurs finies en cache ;
 - anneau d'éclosion doré ; transition par fondu au noir (1,55 s d'éclosion, .46 s, nouveau niveau, .48 s) au lieu du saut de caméra ;
 - écran de fin avec la cause de la mort ;
+- relecture : le cache du parterre est reconstruit à chaque nouvelle partie (il pouvait montrer la fleur de la partie précédente) ;
 - banc : 149 tests.
 
 ## v4.0.0-etape5 — Flyover et power-ups

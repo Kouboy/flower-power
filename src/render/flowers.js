@@ -12,7 +12,8 @@
 
   const cache = document.createElement('canvas');
   const cg = cache.getContext('2d');
-  let cacheKey = '';
+  // Le cache dépend de la liste de fleurs du run (nouvelle à chaque partie), du nombre de fleurs finies et de la largeur.
+  let cachedList = null, cachedCount = -1, cachedW = -1;
 
   // Tige contourée comme la pousse souterraine, deux feuilles, cinq pétales irréguliers, cœur ponctué.
   function drawFlower(g, f, baseY, size, animated) {
@@ -57,12 +58,12 @@
 
   function drawCache(ctx, state, baseY, finished) {
     const W = Math.max(1, Math.ceil(FP.view.W));
-    const key = `${W}|${finished.length}|${finished[0] ? finished[0].x : ''}`;
-    if (key !== cacheKey) {
+    const list = state.garden.flowers;
+    if (list !== cachedList || finished.length !== cachedCount || W !== cachedW) {
       cache.width = W; cache.height = CACHE_H;
       cg.clearRect(0, 0, W, CACHE_H);
       for (const f of finished) drawFlower(cg, f, -CACHE_TOP, f.maxSize, false);
-      cacheKey = key;
+      cachedList = list; cachedCount = finished.length; cachedW = W;
     }
     ctx.drawImage(cache, 0, baseY + CACHE_TOP);
   }
