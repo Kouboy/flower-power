@@ -1,7 +1,7 @@
 // core/fp.js — espace de noms global et utilitaires sans état.
 // Lit     : location.search (une fois, au chargement).
 // Écrit   : rien.
-// Expose  : FP.TAU, FP.math, FP.createRng, FP.parseParams, FP.params, FP.storage (readNumber, write, readJSON, writeJSON).
+// Expose  : FP.TAU, FP.math, FP.createRng, FP.parseParams, FP.params, FP.storage (readNumber, write, readJSON, writeJSON, useBackend — banc d'essai).
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
@@ -35,11 +35,15 @@
   FP.params = FP.parseParams(typeof location !== 'undefined' ? location.search : '');
 
   // localStorage peut être absent ou lever (file://, mode strict) : on ne plante jamais.
+  // useBackend : réservé au banc d'essai (dev/harness.js), pour que les tests ne touchent jamais au vrai stockage.
+  let override = null;
   const defaultBackend = () => {
+    if (override) return override;
     try { return window.localStorage || null; } catch (e) { return null; }
   };
 
   FP.storage = {
+    useBackend(backend) { override = backend; },
     readNumber(key, fallback, backend = defaultBackend()) {
       try {
         const raw = backend ? backend.getItem(key) : null;
