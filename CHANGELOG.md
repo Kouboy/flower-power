@@ -2,6 +2,14 @@
 
 Une entrée par commit (voir `AGENTS.md`).
 
+## v4.0.0-etape6 — Éclosion
+
+- à la surface, 1 + pollen fleurs éclosent en éventail (5 palettes v3), poussent en ~.4 s et restent dans un parterre qui garde la mémoire de la partie ;
+- fleurs illustrées (tige contourée, feuilles, 5 pétales irréguliers, cœur ponctué), fleurs finies en cache ;
+- anneau d'éclosion doré ; transition par fondu au noir (1,55 s d'éclosion, .46 s, nouveau niveau, .48 s) au lieu du saut de caméra ;
+- écran de fin avec la cause de la mort ;
+- banc : 149 tests.
+
 ## v4.0.0-etape5 — Flyover et power-ups
 
 - nappes toxiques et trajets de limaces peuvent sortir par les bords, tant qu'on en voit au moins la moitié ;

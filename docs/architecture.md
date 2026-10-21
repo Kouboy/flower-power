@@ -43,7 +43,8 @@ src/
 │   ├── hud.js        ✅ panneaux, messages, écrans ready / over
 │   ├── frame.js      ✅ FP.render.frame(state) : zoom, caméra, sol, obstacles, plante, HUD
 │   ├── effects.js    ✅ chiffres +Ɇ, anneaux de frôlement, ramassage, rupture, onde de spore, impact
-│   └── …             ⏳ flowers, particules
+│   ├── flowers.js    ✅ fleurs illustrées du parterre, cache des fleurs finies
+│   └── …             ⏳ (7) particules
 ├── audio/audio.js    ⏳ (7)
 ├── ui/
 │   ├── menu.js       ✅ écran titre / fin de partie → nouveau run ; redimensionnement
@@ -73,7 +74,8 @@ L'état de la partie en cours est `FP.state.current`, créé par `FP.state.creat
   plant:  { seed, tip, dir, guide, trail, oldTrails, stemAge, stemCount, reserves, corruption, toxicTimer, recentToxic },
   world:  { width, height, viewH, surfaceY, skyVariant, lawnVariant, safePath, safeRadius, solids, toxics, leaks, bonuses },
   query:  { solid, danger, near, toxic, leak, leakHit, grazes },
-  flow:   { timer, message, messageTimer },
+  flow:   { timer, message, messageTimer, stage, fade, overReason },
+  garden: { flowers },
   graze:  { active /* Map objet → frôlement */ },
   power:  { shield, shieldGrace },
   score:  { eco, flowers, flowerBonus, combo, comboTimer },
@@ -123,6 +125,13 @@ Un niveau est généré par `FP.level.startRun(state)` (tirage du T-Rex signatur
 - Un seul power-up gameplay : tant que `power.shield` tient, ni goutte ni spore n'apparaît (pas de file) ; le pollen reste possible. La spore est instantanée et n'occupe jamais le slot.
 - `powerups.update` (après `scoring`, avant `flow`) fait vieillir et ramasser les récompenses (`world.bonuses`, vidées à chaque niveau), puis intercepte un choc solide ou lixiviat : grâce en cours → ignoré ; bouclier → bris (recul de 26 px, direction conservée, .48 s de grâce). Les nappes toxiques ne sont pas concernées.
 - Chaque pousse repart sans bouclier ni pollen (`plant.prepare`). L'éclosion compte `1 + flowerBonus` fleurs.
+
+## Éclosion et parterre
+
+- À la surface, `flow` fait éclore `1 + flowerBonus` fleurs en éventail autour de la pointe (`state.garden.flowers`, tirages via `state.rng`) ; elles poussent dans tous les modes et restent tout le run (un nouveau run repart d'un parterre vide).
+- `render/flowers.js` dessine les fleurs qui poussent et met en cache celles qui ont fini (âge > 1,05 s et taille ≥ 94 %) : le coût de dessin ne grandit pas avec le parterre.
+- Transition (mode `bloom`) : `flow.stage` passe de `show` (1,55 s) à `fadeOut` (.46 s, `flow.fade` 0 → 1), le niveau est régénéré sous le noir, puis `fadeIn` (.48 s, 1 → 0) et `ready`. `frame.js` peint le voile par-dessus tout.
+- À la fin de partie, `flow.overReason` garde la cause de la dernière mort pour l'écran de fin.
 
 ## Modes
 
