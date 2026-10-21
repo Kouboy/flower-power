@@ -33,7 +33,7 @@
     // ?perf=1 : tranches sol / dangers / plante (comme la v3).
     const perf = FP.perf;
     let t = perf && performance.now();
-    // Ordre v3 : sol, nappes, limaces, obstacles, plante, pellicule toxique, anneau d'exposition.
+    // Ordre v3 : sol, nappes, limaces, obstacles, plante, anneau d'exposition, pellicule toxique.
     FP.soil.draw(ctx, world, camY, W, viewH);
     if (perf) t = perf.mark('soil', t);
     FP.hazardsRender.drawBase(ctx, state);
@@ -44,9 +44,9 @@
     if (perf) t = perf.mark('bonuses', t);
     FP.plantRender.draw(ctx, state);
     FP.flowersRender.draw(ctx, state);
+    FP.hazardsRender.drawExposure(ctx, state);   // v3 : dans drawPlant, donc sous la pellicule toxique
     FP.hazardsRender.drawOverlay(ctx, state);
     if (perf) perf.mark('plant', t);
-    FP.hazardsRender.drawExposure(ctx, state);
     FP.effects.draw(ctx, state);
     FP.particles.draw(ctx, state);
     ctx.restore();

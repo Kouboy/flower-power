@@ -1,6 +1,6 @@
 // render/effects.js — effets visuels : chiffres ÉcoCrédits™, anneaux de frôlement, ramassage, rupture du bouclier,
 // onde de spore, impact à la mort, anneau d'éclosion.
-// Lit     : state.events (eco, pickup, shieldBreak, bomb, death, bloom), state.time, state.mode, state.graze.active, state.plant.tip.
+// Lit     : state.events (eco, pickup, bonusMissed, shieldBreak, bomb, death, bloom), state.time, state.mode, state.graze.active, state.plant.tip.
 // Écrit   : state.fx.effects uniquement (réservé au rendu) ; l'aléatoire purement visuel utilise Math.random.
 // Expose  : FP.effects.draw(ctx, state) (repère monde).
 // Porté de la v3.43.16 (drawEffects : eco, pickup, shieldBreak, bomb, hit, bloom ; drawGrazeFeedback).
@@ -25,6 +25,7 @@
           angle: flat ? rand(-.32, .32) : rand(-.34, .34), spin: flat ? rand(-.30, .30) : rand(-.32, .32)
         });
       } else if (e.type === 'pickup') fx.push({ type: 'pickup', kind: e.kind, x: e.x, y: e.y, t0, life: .55, r: 16 });
+      else if (e.type === 'bonusMissed') fx.push({ type: 'pickup', kind: e.kind, x: e.x, y: e.y, t0, life: .26, r: 11 });   // v3 : fondu bref
       else if (e.type === 'shieldBreak') fx.push({ type: 'shieldBreak', x: e.x, y: e.y, t0, life: .62, r: 31, phase: rand(0, TAU) });
       else if (e.type === 'bomb') fx.push({ type: 'bomb', x: e.x, y: e.y, t0, life: .98, r: e.r });
       else if (e.type === 'death') fx.push({ type: 'hit', acid: e.cause !== 'solid', x: e.x, y: e.y, t0, life: .42, r: 28 });

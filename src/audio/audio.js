@@ -51,12 +51,14 @@
     }
 
     // Drone continu du frôlement : proximité = timbre, durée = puissance.
+    // drone(true, freq, filt, q, gain) règle le son ; drone(false, fast) l'arrête : lentement en temps normal,
+    // net sur un choc ou un changement de niveau (v3 : stopGrazeDrone(fast)).
     function setDrone(on, freq, filt, q, gain) {
       const n = ac.currentTime;
       if (!on) {
         if (!drone) return;
-        const d = drone; drone = null;
-        d.gain.gain.cancelScheduledValues(n); d.gain.gain.setTargetAtTime(.0001, n, .055); d.osc.stop(n + .22);
+        const d = drone, fast = freq === true; drone = null;
+        d.gain.gain.cancelScheduledValues(n); d.gain.gain.setTargetAtTime(.0001, n, fast ? .018 : .055); d.osc.stop(n + (fast ? .08 : .22));
         return;
       }
       if (!drone) {
@@ -152,7 +154,10 @@
 
   // --- Sons continus -------------------------------------------------------------
 
-  function updateDrone(b, state) {
+  // Événements qui coupent le drone net (v3 : stopGrazeDrone(true) au choc, à l'éclosion, au nouveau run).
+  const HARD_STOP = new Set(['death', 'shieldBreak', 'bloom', 'runStart']);
+
+  function updateDrone(b, state, events) {
     let intensity = 0, duration = 0;
     if (state.mode === 'playing') {
       for (const g of state.query.grazes || []) {
@@ -161,7 +166,7 @@
       }
     }
     intensity = clamp(intensity, 0, 1);
-    if (intensity <= .02) { b.drone(false); return; }
+    if (intensity <= .02) { b.drone(false, events.some(e => HARD_STOP.has(e.type))); return; }
     const close = Math.pow(intensity, 1.42), held = clamp(duration / 2.1, 0, 1);
     b.drone(true, 180 + close * 1780 + held * 360, 920 + close * 4700 + held * 1200, 5 + close * 18,
       (.024 + Math.min(.175, duration * .058)) * Math.pow(intensity, .66));
@@ -181,7 +186,7 @@
     if (!b) return;
     try {
       for (const e of events) play(e);
-      updateDrone(b, state);
+      updateDrone(b, state, events);
     } catch (e) { /* audio muet plutôt qu'une partie figée */ }
   }
 

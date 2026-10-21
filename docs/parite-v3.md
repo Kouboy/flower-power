@@ -38,4 +38,5 @@ Voir la spec, §7 « Retiré ou archivé » : dessin vectoriel des obstacles, le
 ## Différences connues
 
 - Une même graine ne donne pas le même niveau dans les deux versions : la v3 tirait aussi les éléments retirés.
+- Le bandeau `?flydebug=1` nomme les récompenses avec les noms v4 (`POLLEN`, `SPORE`) là où la v3 écrivait `BUD`, `BOMB`.
 - Les défauts mineurs relevés pendant les relectures de la refonte sont listés dans les plans d'étapes (`docs/superpowers/plans/`) ; ils seront traités après la parité.

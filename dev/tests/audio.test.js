@@ -42,3 +42,10 @@ FP.test('audio: le grattement suit le battement de croissance', () => withBacken
   FP.audio.consume([{ type: 'growthTick', k: .5, near: false }], s, 1 / 60);
   FP.assertEqual(b.calls.filter(c => c[0] === 'noise').length, 2);
 }));
+FP.test('audio: le drone coupe vite sur un choc', () => withBackend(b => {
+  const s = auRun(); s.mode = 'dying';
+  FP.audio.consume([{ type: 'death', cause: 'solid' }], s, 1 / 60);
+  FP.assert(b.calls.some(c => c[0] === 'drone' && c[1] === false && c[2] === true), 'coupure rapide');
+  b.calls.length = 0; FP.audio.consume([], s, 1 / 60);
+  FP.assert(b.calls.some(c => c[0] === 'drone' && c[1] === false && !c[2]), 'coupure lente sinon');
+}));

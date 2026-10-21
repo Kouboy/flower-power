@@ -72,8 +72,9 @@
     const flowers = state.garden.flowers;
     if (!flowers.length) return;
     const baseY = state.world.surfaceY + FP.config.soil.surfaceOffset;
-    const top = state.camera.y - FP.config.soil.viewPad, bottom = state.camera.y + state.world.viewH + FP.config.soil.viewPad;
-    if (baseY + 18 < top || baseY - 200 > bottom) return;      // parterre hors de l'écran
+    // Masquage de la v3 (drawFlowerCache) : centre 68 px au-dessus de la base, marge 185 px.
+    const cy = baseY - 68, top = state.camera.y, bottom = state.camera.y + state.world.viewH;
+    if (cy + 185 < top || cy - 185 > bottom) return;            // parterre hors de l'écran
     const finished = flowers.filter(isFinished);
     if (finished.length) drawCache(ctx, state, baseY, finished);
     for (const f of flowers) if (!isFinished(f)) drawFlower(ctx, f, baseY, f.size, true);
