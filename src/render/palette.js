@@ -1,8 +1,8 @@
 // render/palette.js — palettes nommées du rendu pixel (d'après docs/art/reference-crepuscule.png).
 // Lit     : rien.
 // Écrit   : rien.
-// Expose  : FP.palette.{sky, strata, strataBounds, lawn, stem, seed, hero, flowers, danger, decor()}.
-// Le vert acide et le violet de `danger` signalent les dangers : ils sont interdits dans le décor (test dev/tests/px.test.js).
+// Expose  : FP.palette.{sky, strata, strataBounds, lawn, stem, seed, hero, flowers, toxic, slug, danger, decor()}.
+// Les teintes de `danger` (violet chimique) signalent les dangers : interdites au décor, distinctes de la pousse.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
@@ -54,9 +54,13 @@
     { petal: ['#f08a5a', '#d05a3a', '#902e22'], heart: '#f4d890' }
   ];
 
-  const danger = ['#b4ff3a', '#d8ff58', '#7a3cff', '#c13cff'];
+  // Dangers en violet chimique (v4.1.0) : la pousse est verte, ce qui est toxique est violet.
+  const toxic = { ink: '#1a0a26', dark: '#3c1660', mid: '#7a2cc8', light: '#b45cff', glow: '#e6a0ff' };
+  const slug = { outline: '#1a0a26', body: '#9446d0', clear: '#b070e8', shade: '#4a1a70', spot: '#ffb0f0', eye: '#f0e040', flash: '#ffd8ff' };
+  // Teintes vives qui signalent un danger : interdites au décor, loin des verts de la pousse (tests dans dev/tests/px.test.js).
+  const danger = [toxic.mid, toxic.light, toxic.glow, slug.body, slug.clear, slug.spot, slug.flash];
 
   const decor = () => [...sky.flat(), ...strata.humus, ...strata.clay, ...strata.stone, ...lawn.flat()];
 
-  FP.palette = { sky, strata, strataBounds, lawn, stem, seed, hero, flowers, danger, decor };
+  FP.palette = { sky, strata, strataBounds, lawn, stem, seed, hero, flowers, toxic, slug, danger, decor };
 })();

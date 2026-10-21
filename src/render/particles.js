@@ -71,7 +71,7 @@
     }
   }
 
-  const COLORS = { water: '#93ddff', bud: '#cfff9a', acid: '#d8ff58', bomb: '#a6ff7a', impact: '#ff815f', petal: '#fff1a6', eco: '#cfff78', soil: '#7a5436', chip: '#4a3020', shield: '#caffde' };
+  const COLORS = { water: '#93ddff', bud: '#cfff9a', acid: '#b45cff', bomb: '#a6ff7a', impact: '#ff815f', petal: '#fff1a6', eco: '#cfff78', soil: '#7a5436', chip: '#4a3020', shield: '#caffde' };
 
   // Carré de 1 à 2 pixels d'art : il rétrécit en fin de vie au lieu de devenir transparent.
   function drawOne(g, q, oy) {

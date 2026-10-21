@@ -115,7 +115,7 @@
         const ang = i * TAU / 10 + t * .15;
         if (BAYER[i & 3][2] < a * 16) px.line(g, cx + Math.round(Math.cos(ang) * r * .4), cy + Math.round(Math.sin(ang) * r * .4), cx + Math.round(Math.cos(ang) * r), cy + Math.round(Math.sin(ang) * r), '#fff0a0');
       }
-    } else if (e.type === 'hit') fadeRing(g, cx, cy, Math.round(e.r * (.55 + 1.2 * k) / s), e.acid ? '#d9ff58' : '#ff704e', a, k < .5 ? 3 : 2);
+    } else if (e.type === 'hit') fadeRing(g, cx, cy, Math.round(e.r * (.55 + 1.2 * k) / s), e.acid ? '#b45cff' : '#ff704e', a, k < .5 ? 3 : 2);
   }
 
   // Couche monde (pixels d'art) : anneaux et frôlements.

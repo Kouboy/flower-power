@@ -30,3 +30,9 @@ FP.test('px: contour autour d’un pixel opaque', () => {
   FP.assertEqual(o.width, 3); FP.assertEqual(o.data[(1 * 3 + 0) * 4 + 3], 255); FP.assertEqual(o.data[0 * 4 + 3], 0);   // voisin gauche contouré, coin vide
 });
 FP.test('px: postérisation sur 8 niveaux', () => { const s = { width: 1, height: 1, data: new Uint8ClampedArray([100, 200, 30, 255]) }; const r = FP.px.posterize(s, 8); FP.assert([...r.data.slice(0, 3)].every(v => [0, 36, 73, 109, 146, 182, 219, 255].includes(v))); });
+FP.test('palette: les dangers ne ressemblent pas à la pousse', () => {
+  const rgb = (h) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const dist = (a, b) => Math.hypot(...rgb(a).map((v, i) => v - rgb(b)[i]));
+  const plant = [FP.palette.stem.body, FP.palette.stem.light, FP.palette.stem.leaf, FP.palette.hero.skin, FP.palette.hero.skinLight];
+  for (const d of FP.palette.danger) for (const p of plant) FP.assert(dist(d, p) > 110, d + ' trop proche de ' + p);
+});

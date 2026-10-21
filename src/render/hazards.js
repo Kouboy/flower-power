@@ -1,18 +1,16 @@
 // render/hazards.js — nappes toxiques, limaces de lixiviat et anneau d'exposition, en pixels d'art.
 // Lit     : state.time, state.mode, state.world.{toxics,leaks,viewH}, state.camera.y, state.plant.{tip,toxicTimer},
-//           FP.config.{soil,toxic}, FP.px.
+//           FP.config.{soil,toxic}, FP.px, FP.palette.{toxic,slug}.
 // Écrit   : o._px sur chaque nappe — cache de rendu uniquement, jamais lu par la simulation.
 // Expose  : FP.hazardsRender.{drawBase, drawLeaks, drawOverlay, drawExposure}(actx, state) — repère d'art, caméra appliquée ici.
 // Porté de la v3.43.16 (drawToxicZoneBase, limaces de drawHazards, drawToxicZoneOverlay, anneau toxique de drawShieldGauge).
-// Vert acide et violet : réservés aux dangers (FP.palette.danger), jamais au décor.
+// Couleurs : FP.palette.toxic et FP.palette.slug (violet chimique), réservées aux dangers.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
   const TAU = FP.TAU;
   const { clamp } = FP.math;
   const BAYER = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]];
-  const ACID = { dark: '#3e5c14', mid: '#7fb02a', light: '#b4ff3a', glow: '#d8ff58', ink: '#16200a' };
-  const SLUG = { outline: '#16200a', body: '#8ec84a', clear: '#a6dc62', shade: '#48631d', spot: '#dfff84', flash: '#f5ff62' };
 
   function inView(state, y0, y1) {
     const pad = FP.config.soil.viewPad, top = state.camera.y - pad, bottom = state.camera.y + state.world.viewH + pad;
@@ -45,16 +43,16 @@
         // Bord clairsemé, cœur plus dense ; la pulsation fait varier la densité (8 ↔ 10 niveaux).
         [6, 8].forEach((lv, i) => {
           const level = m > .7 ? lv - 3 : (m > .3 ? lv : lv + 3);
-          if (b < level) { gb[i].fillStyle = m < .3 && b < 3 ? ACID.light : (m < .7 ? ACID.mid : ACID.dark); gb[i].fillRect(x, y, 1, 1); }
+          if (b < level) { gb[i].fillStyle = m < .3 && b < 3 ? FP.palette.toxic.light : (m < .7 ? FP.palette.toxic.mid : FP.palette.toxic.dark); gb[i].fillRect(x, y, 1, 1); }
         });
-        if (m < .8 && b < 2) { gf.fillStyle = ACID.glow; gf.fillRect(x, y, 1, 1); }
+        if (m < .8 && b < 2) { gf.fillStyle = FP.palette.toxic.glow; gf.fillRect(x, y, 1, 1); }
       }
     }
     // Mouchetures claires et sombres, fixes.
     for (const q of o.specks) {
       const wx = q.x * o.rx, wy = q.y * o.ry, cx = Math.cos(o.a), sx = Math.sin(o.a);
       const x = R + Math.round((wx * cx - wy * sx) / s), y = R + Math.round((wx * sx + wy * cx) / s);
-      for (const g of gb) { g.fillStyle = q.light ? ACID.glow : ACID.ink; g.fillRect(x, y, 1, 1); }
+      for (const g of gb) { g.fillStyle = q.light ? FP.palette.toxic.glow : FP.palette.toxic.ink; g.fillRect(x, y, 1, 1); }
     }
     o._px = { base, film, R };
     return o._px;
@@ -69,8 +67,8 @@
       const ax = px.toArt(o.x) - c.R, ay = px.toArt(o.y) - oy - c.R;
       g.drawImage(c.base[phase], ax, ay);
       // Deux bulles qui clignotent.
-      if (Math.sin(t * 1.8 + o.pulse) > .2) px.ring(g, ax + c.R - Math.round(o.rx * .1), ay + c.R - Math.round(o.ry * .08), 2, ACID.glow);
-      if (Math.sin(t * 1.8 + o.pulse + 2) > .4) px.ring(g, ax + c.R + Math.round(o.rx * .11), ay + c.R + Math.round(o.ry * .06), 1, ACID.glow);
+      if (Math.sin(t * 1.8 + o.pulse) > .2) px.ring(g, ax + c.R - Math.round(o.rx * .1), ay + c.R - Math.round(o.ry * .08), 2, FP.palette.toxic.glow);
+      if (Math.sin(t * 1.8 + o.pulse + 2) > .4) px.ring(g, ax + c.R + Math.round(o.rx * .11), ay + c.R + Math.round(o.ry * .06), 1, FP.palette.toxic.glow);
     }
   }
 
@@ -91,25 +89,25 @@
       const q = i / 10 - .5, wob = Math.sin(i * 1.7 + l.phase) * 3.2;
       pts.push([px.toArt(l.x + ca * l.len * q + na * wob), px.toArt(l.y + sa * l.len * q + nb * wob) - oy]);
     }
-    for (let i = 1; i < pts.length; i++) px.line(g, pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1], flash ? ACID.glow : ACID.dark, 3);
-    for (let i = 1; i < pts.length; i += 2) px.line(g, pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1], ACID.ink, 1);
+    for (let i = 1; i < pts.length; i++) px.line(g, pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1], flash ? FP.palette.toxic.glow : FP.palette.toxic.dark, 3);
+    for (let i = 1; i < pts.length; i += 2) px.line(g, pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1], FP.palette.toxic.ink, 1);
   }
 
   function drawSlug(g, l, oy, flash, t) {
     const { px } = FP, s = px.SCALE, r = l.r / s, cx = px.toArt(l.cx), cy = px.toArt(l.cy) - oy;
     const ang = l.angle + Math.sin(t * 3 + l.phase) * .08, ca = Math.cos(ang), sa = Math.sin(ang);
     const rx = r * (l.morph === 'fat' ? 1.38 : (l.morph === 'clear' ? 1.32 : 1.22)), ry = r * (l.morph === 'fat' ? .78 : .63) + Math.sin(t * 8 + l.phase) * .4;
-    const R = Math.ceil(rx) + 2, body = flash ? SLUG.flash : (l.morph === 'clear' ? SLUG.clear : SLUG.body);
+    const R = Math.ceil(rx) + 2, body = flash ? FP.palette.slug.flash : (l.morph === 'clear' ? FP.palette.slug.clear : FP.palette.slug.body);
     const inside = (x, y, k) => { const u = (x * ca + y * sa) / (rx + k), v = (-x * sa + y * ca) / (ry + k); return u * u + v * v <= 1; };
     for (let y = -R; y <= R; y++) for (let x = -R; x <= R; x++) {
-      if (inside(x, y, 0)) px.rect(g, cx + x, cy + y, 1, 1, (-x * sa + y * ca) > ry * .35 ? SLUG.shade : body);
-      else if (inside(x, y, 1)) px.rect(g, cx + x, cy + y, 1, 1, SLUG.outline);
+      if (inside(x, y, 0)) px.rect(g, cx + x, cy + y, 1, 1, (-x * sa + y * ca) > ry * .35 ? FP.palette.slug.shade : body);
+      else if (inside(x, y, 1)) px.rect(g, cx + x, cy + y, 1, 1, FP.palette.slug.outline);
     }
     const at = (u, v) => [cx + Math.round(u * ca - v * sa), cy + Math.round(u * sa + v * ca)];
-    for (const [u, v] of [[-rx * .3, -ry * .4], [rx * .2, -ry * .3]]) { const [x, y] = at(u, v); px.rect(g, x, y, 1, 1, SLUG.spot); }
+    for (const [u, v] of [[-rx * .3, -ry * .4], [rx * .2, -ry * .3]]) { const [x, y] = at(u, v); px.rect(g, x, y, 1, 1, FP.palette.slug.spot); }
     if (l.morph === 'debris') { const [x, y] = at(-rx * .1, 0); px.rect(g, x, y, 2, 1, '#d2b84c'); px.rect(g, x + 2, y + 1, 1, 1, '#6b91a1'); }
     // Deux antennes très bêtes, donc menaçantes à leur manière.
-    for (const v of [-.6, .5]) { const [x0, y0] = at(rx * .7, v * ry * .6), [x1, y1] = at(rx + 2, v * (ry + 2)); px.line(g, x0, y0, x1, y1, SLUG.outline); px.rect(g, x1, y1, 1, 1, ACID.glow); }
+    for (const v of [-.6, .5]) { const [x0, y0] = at(rx * .7, v * ry * .6), [x1, y1] = at(rx + 2, v * (ry + 2)); px.line(g, x0, y0, x1, y1, FP.palette.slug.outline); px.rect(g, x1, y1, 1, 1, FP.palette.slug.eye); }
   }
 
   function drawLeaks(g, state) {
@@ -130,11 +128,11 @@
     const frac = clamp(p.toxicTimer / FP.config.toxic.burnAt, 0, 1);
     if (frac <= .015) return;
     const cx = px.toArt(p.tip.x), cy = px.toArt(p.tip.y) - px.toArt(state.camera.y) - 3, r = 14;
-    px.ring(g, cx, cy, r + 1, ACID.ink, 4);
+    px.ring(g, cx, cy, r + 1, FP.palette.toxic.ink, 4);
     const steps = Math.ceil(TAU * r * 1.5 * frac);
     for (let i = 0; i <= steps; i++) {
       const a = -Math.PI / 2 + TAU * frac * i / Math.max(1, steps);
-      px.rect(g, cx + Math.round(Math.cos(a) * r) - 1, cy + Math.round(Math.sin(a) * r) - 1, 2, 2, ACID.light);
+      px.rect(g, cx + Math.round(Math.cos(a) * r) - 1, cy + Math.round(Math.sin(a) * r) - 1, 2, 2, FP.palette.toxic.light);
     }
   }
 
