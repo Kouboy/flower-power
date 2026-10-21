@@ -1,99 +1,87 @@
-// render/powerups.js — récompenses de flyover (naissance, glyphes) et membrane du bouclier organique.
+// render/powerups.js — récompenses de flyover (naissance, glyphes) et membrane du bouclier organique, en pixels d'art.
 // Lit     : state.time, state.mode, state.world.{bonuses,viewH}, state.camera.y, state.plant.tip, state.power.shield,
-//           FP.config.soil.viewPad.
+//           FP.config.soil.viewPad, FP.px.
 // Écrit   : rien (le canvas uniquement).
-// Expose  : FP.powerupsRender.drawBonuses(ctx, state) (repère monde, encore en mode hérité), FP.powerupsRender.drawShield(actx, state)
-//           (repère d'art, appelé par render/plant.js).
+// Expose  : FP.powerupsRender.drawBonuses(actx, state), FP.powerupsRender.drawShield(actx, state) — repère d'art,
+//           caméra appliquée ici (drawShield est appelé par render/plant.js, sous la tête du héros).
 // Porté de la v3.43.16 (drawBonuses, drawBonusManifestation, drawBonusGlyph, drawAssetSource/Spore/Pollen, drawOrganicShield).
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
   const TAU = FP.TAU;
   const { clamp } = FP.math;
+  const INK = '#141a10';
+  const TINT = { water: '#9de7ff', spore: '#cfff68', pollen: '#fff0a2' };
 
-  // Poche d'eau prise entre deux racines : bonus organique, pas jeton flottant.
-  function drawSource(ctx) {
-    ctx.strokeStyle = '#4e3925'; ctx.lineWidth = 4; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(-22, -16); ctx.quadraticCurveTo(-15, -2, -17, 18); ctx.moveTo(21, -17); ctx.quadraticCurveTo(13, -3, 17, 18); ctx.stroke();
-    ctx.fillStyle = '#3d2e20'; ctx.beginPath(); ctx.ellipse(0, 10, 19, 9, 0, 0, TAU); ctx.fill();
-    const g = ctx.createRadialGradient(-5, -4, 2, 0, 0, 20); g.addColorStop(0, '#efffff'); g.addColorStop(.46, '#7ee0f3'); g.addColorStop(1, '#2b8ba0');
-    ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(0, -15); ctx.quadraticCurveTo(17, -3, 14, 9); ctx.quadraticCurveTo(7, 19, -7, 15); ctx.quadraticCurveTo(-18, 6, -10, -6); ctx.quadraticCurveTo(-5, -13, 0, -15); ctx.fill();
-    ctx.strokeStyle = '#173e48'; ctx.lineWidth = 2.5; ctx.stroke();
-    ctx.fillStyle = '#e9ffff'; ctx.beginPath(); ctx.ellipse(-5, -5, 4, 2, -.5, 0, TAU); ctx.fill();
+  // Goutte prise entre deux racines : contour, corps bleu, ombre, reflet.
+  function drawSource(g, x, y) {
+    const { px } = FP;
+    px.line(g, x - 8, y - 7, x - 7, y + 7, '#4e3925', 2); px.line(g, x + 8, y - 7, x + 7, y + 7, '#4e3925', 2);
+    px.rect(g, x - 6, y + 4, 13, 3, '#3d2e20');
+    px.disc(g, x, y + 1, 5, INK); px.line(g, x, y - 7, x, y - 3, INK, 3);
+    px.disc(g, x, y + 1, 4, '#7ee0f3'); px.rect(g, x, y - 5, 1, 3, '#7ee0f3');
+    px.rect(g, x - 3, y + 2, 7, 2, '#2b8ba0'); px.rect(g, x - 2, y - 1, 2, 2, '#e9ffff');
   }
 
-  function drawSpore(ctx, t) {
-    ctx.fillStyle = '#efe7d3'; ctx.beginPath(); ctx.ellipse(0, -9, 18, 11, 0, Math.PI, 0, true); ctx.fill(); ctx.strokeStyle = '#111b11'; ctx.lineWidth = 2.6; ctx.stroke();
-    ctx.fillStyle = '#ddd4b8'; ctx.beginPath(); ctx.roundRect(-7, 0, 14, 20, 5); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#95bf4f'; for (const [x, y] of [[-9, -11], [0, -14], [8, -10], [12, -5], [-2, -7]]) { ctx.beginPath(); ctx.arc(x, y, 2.5, 0, TAU); ctx.fill(); }
-    ctx.strokeStyle = 'rgba(220,255,196,.95)'; ctx.lineWidth = 2.2; ctx.lineCap = 'round';
-    for (let i = 0; i < 10; i++) { const a = i / 10 * TAU + t * .75; ctx.beginPath(); ctx.moveTo(0, 10); ctx.quadraticCurveTo(Math.cos(a) * 12, 19 + Math.sin(a) * 5, Math.cos(a) * 28, 30 + Math.sin(a) * 10); ctx.stroke(); }
-    ctx.strokeStyle = 'rgba(174,255,122,.55)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 5, 28 + Math.sin(t * 4) * 3, 0, TAU); ctx.stroke();
+  // Spore : chapeau crème moucheté, pied, filaments qui tournent.
+  function drawSpore(g, x, y, t) {
+    const { px } = FP;
+    for (let i = 0; i < 8; i++) { const a = i / 8 * TAU + t * .75; px.rect(g, x + Math.round(Math.cos(a) * 10), y + 6 + Math.round(Math.sin(a) * 4), 1, 1, '#dcffc4'); }
+    px.rect(g, x - 3, y, 7, 8, INK); px.rect(g, x - 2, y, 5, 7, '#ddd4b8');
+    for (let dy = -6; dy <= 0; dy++) { const h = Math.round(Math.sqrt(Math.max(0, 1 - (dy / 6) ** 2)) * 8); px.rect(g, x - h - 1, y + dy - 1, 2 * h + 3, 1, INK); }
+    for (let dy = -5; dy <= 0; dy++) { const h = Math.round(Math.sqrt(Math.max(0, 1 - (dy / 6) ** 2)) * 7); px.rect(g, x - h, y + dy - 1, 2 * h + 1, 1, '#efe7d3'); }
+    for (const [dx, dy] of [[-4, -4], [0, -6], [4, -4], [-1, -2], [5, -2]]) px.rect(g, x + dx, y + dy, 2, 1, '#95bf4f');
   }
 
-  function drawPollen(ctx, t) {
-    ctx.strokeStyle = '#253612'; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(0, 18); ctx.quadraticCurveTo(-2, 8, 0, -3); ctx.stroke();
-    ctx.fillStyle = '#4d7a33';
-    ctx.beginPath(); ctx.moveTo(-7, 10); ctx.quadraticCurveTo(-15, 8, -12, 0); ctx.quadraticCurveTo(-5, 2, -2, 9); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#203010'; ctx.lineWidth = 1.5; ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(7, 10); ctx.quadraticCurveTo(15, 8, 12, 0); ctx.quadraticCurveTo(5, 2, 2, 9); ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#f0d65a'; ctx.beginPath(); ctx.moveTo(0, -16); ctx.quadraticCurveTo(12, -9, 9, 4); ctx.quadraticCurveTo(2, 15, -9, 4); ctx.quadraticCurveTo(-12, -9, 0, -16); ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = '#261913'; ctx.lineWidth = 2; ctx.stroke();
-    ctx.fillStyle = '#fff0a0'; ctx.beginPath(); ctx.ellipse(0, -1, 4, 5, 0, 0, TAU); ctx.fill();
-    ctx.fillStyle = 'rgba(255,235,120,.92)';
-    for (let i = 0; i < 6; i++) { const a = i / 6 * TAU + t * .8; ctx.beginPath(); ctx.arc(Math.cos(a) * 12, Math.sin(a) * 9 - 5, 1.7, 0, TAU); ctx.fill(); }
+  // Pollen : bouton jaune entre deux feuilles, grains qui tournent autour.
+  function drawPollen(g, x, y, t) {
+    const { px } = FP;
+    px.line(g, x, y + 9, x, y, '#253612', 2);
+    px.rect(g, x - 6, y + 3, 5, 3, '#203010'); px.rect(g, x - 5, y + 3, 4, 2, '#4d7a33');
+    px.rect(g, x + 2, y + 3, 5, 3, '#203010'); px.rect(g, x + 2, y + 3, 4, 2, '#4d7a33');
+    px.disc(g, x, y - 3, 5, '#261913'); px.disc(g, x, y - 3, 4, '#f0d65a'); px.disc(g, x, y - 3, 1, '#fff0a0');
+    for (let i = 0; i < 6; i++) { const a = i / 6 * TAU + t * .8; px.rect(g, x + Math.round(Math.cos(a) * 7), y - 3 + Math.round(Math.sin(a) * 5), 1, 1, '#ffeb78'); }
   }
 
-  function drawGlyph(ctx, b, t, scale, alpha) {
-    ctx.save(); ctx.translate(b.x, b.y); ctx.scale(scale, scale); ctx.globalAlpha *= alpha;
-    ctx.translate(0, b.forming > 0 ? 0 : Math.sin(t * 3 + b.phase) * 2);
-    if (b.type === 'water') drawSource(ctx);
-    else if (b.type === 'spore') drawSpore(ctx, t);
-    else drawPollen(ctx, t);
-    ctx.restore();
+  function drawGlyph(g, b, x, y, t) {
+    const bob = b.forming > 0 ? 0 : Math.round(Math.sin(t * 3 + b.phase));
+    if (b.type === 'water') drawSource(g, x, y + bob);
+    else if (b.type === 'spore') drawSpore(g, x, y + bob, t);
+    else drawPollen(g, x, y + bob, t);
   }
-
-  const TINT = { spore: ['#cfff68', 'rgba(202,255,105,.88)'], pollen: ['#fff0a2', 'rgba(255,239,154,.90)'], water: ['#9de7ff', 'rgba(163,231,255,.88)'] };
 
   // Filament qui semble extraire la récompense de l'obstacle puis la condense devant la pousse.
-  function drawForming(ctx, b, t) {
-    const p = clamp(1 - b.forming / Math.max(.01, b.formMax), 0, 1);
-    const ox = b.originX, oy = b.originY, bx = (ox + b.x) * .5 + (b.x - ox) * .08, by = (oy + b.y) * .5 - 18;
-    ctx.save();
-    ctx.strokeStyle = `rgba(210,255,126,${.14 + .36 * Math.sin(p * Math.PI)})`; ctx.lineWidth = 1.3 + 1.1 * (1 - p);
-    ctx.setLineDash([3, 5]); ctx.beginPath(); ctx.moveTo(ox, oy); ctx.quadraticCurveTo(bx, by, b.x, b.y); ctx.stroke(); ctx.setLineDash([]);
+  function drawForming(g, b, oy, t) {
+    const { px } = FP, p = clamp(1 - b.forming / Math.max(.01, b.formMax), 0, 1);
+    const ox = b.originX, oyw = b.originY, bx = (ox + b.x) * .5 + (b.x - ox) * .08, by = (oyw + b.y) * .5 - 18;
+    const at = (u) => { const m = 1 - u; return [px.toArt(m * m * ox + 2 * m * u * bx + u * u * b.x), px.toArt(m * m * oyw + 2 * m * u * by + u * u * b.y) - oy]; };
+    for (let i = 0; i <= 16; i += 2) { const [x, y] = at(i / 16); px.rect(g, x, y, 1, 1, '#a8d070'); }
     for (let i = 0; i < 5; i++) {
       const u = clamp(p * 1.35 - i * .13, 0, 1);
-      if (u <= 0) continue;
-      const om = 1 - u;
-      ctx.globalAlpha = .26 + .62 * u; ctx.fillStyle = TINT[b.type][0];
-      ctx.beginPath(); ctx.arc(om * om * ox + 2 * om * u * bx + u * u * b.x, om * om * oy + 2 * om * u * by + u * u * b.y, 1.7 + 2.1 * u, 0, TAU); ctx.fill();
+      if (u > 0) { const [x, y] = at(u); px.disc(g, x, y, u > .6 ? 1 : 0, TINT[b.type]); }
     }
-    ctx.globalAlpha = .55 + .35 * p; ctx.strokeStyle = TINT[b.type][1]; ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.arc(b.x, b.y, 24 * (1 - p) + 9, 0, TAU); ctx.stroke();
-    ctx.restore();
-    const appear = clamp((p - .42) / .58, 0, 1);
-    if (appear > 0) drawGlyph(ctx, b, t, .22 + .78 * (1 - Math.pow(1 - appear, 2)), appear);
+    const cx = px.toArt(b.x), cy = px.toArt(b.y) - oy;
+    px.ring(g, cx, cy, Math.round(12 * (1 - p) + 4), TINT[b.type]);
+    if (p > .55) drawGlyph(g, b, cx, cy, t);
   }
 
-  const POCKET = { water: 'rgba(124,220,255,.18)', spore: 'rgba(173,255,137,.18)', pollen: 'rgba(255,237,148,.18)' };
-
-  function drawBonuses(ctx, state) {
+  function drawBonuses(g, state) {
+    const { px } = FP, oy = px.toArt(state.camera.y), t = state.time;
     const pad = FP.config.soil.viewPad + 100, top = state.camera.y - pad, bottom = state.camera.y + state.world.viewH + pad;
     for (const b of state.world.bonuses) {
       if (b.y < top || b.y > bottom) continue;
-      if (b.forming > 0) { drawForming(ctx, b, state.time); continue; }
-      ctx.save(); ctx.globalAlpha = .34;
-      const g = ctx.createRadialGradient(b.x, b.y, 2, b.x, b.y, 38);
-      g.addColorStop(0, POCKET[b.type]); g.addColorStop(.62, 'rgba(255,237,168,.06)'); g.addColorStop(1, 'rgba(255,237,168,0)');
-      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(b.x, b.y, 38, 0, TAU); ctx.fill();
-      ctx.restore();
-      drawGlyph(ctx, b, state.time, 1, 1);
+      if (b.forming > 0) { drawForming(g, b, oy, t); continue; }
+      const cx = px.toArt(b.x), cy = px.toArt(b.y) - oy;
+      // Poche lumineuse tramée autour de la récompense.
+      for (let y = -14; y <= 14; y++) for (let x = -14; x <= 14; x++) {
+        const d = x * x + y * y;
+        if (d < 196 && d > 64 && ((x + y * 3 + Math.floor(t * 4)) & 7) === 0) px.rect(g, cx + x, cy + y, 1, 1, TINT[b.type]);
+      }
+      drawGlyph(g, b, cx, cy, t);
     }
   }
 
-  // Membrane irrégulière, aqueuse et végétale : volontairement pas une bulle sci-fi parfaite.
-  // Membrane organique (repère d'art) : anneau qui ondule, voile tramé, trois nervures, un reflet.
+  // Membrane organique : anneau qui ondule, voile tramé, trois nervures, un reflet.
   function drawShield(g, state) {
     const { px } = FP, tip = state.plant.tip, t = state.time;
     if (state.mode !== 'playing' || !tip || !state.power.shield) return;

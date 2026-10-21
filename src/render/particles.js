@@ -2,12 +2,11 @@
 // Lit     : state.events (eco, bomb, shieldBreak, pickup, death, toxicEnter, bloom, growthTick), state.time, state.mode,
 //           state.plant.{tip,dir}, state.camera.y, state.world.viewH.
 // Écrit   : state.fx.particles uniquement (réservé au rendu) ; aléatoire visuel via Math.random.
-// Expose  : FP.particles.draw(ctx, state) (repère monde).
+// Expose  : FP.particles.draw(actx, state) (repère d'art, caméra appliquée ici).
 // Porté de la v3.43.16 (flashParticles, emitGrowthDebris, particleBudget, mise à jour des particules dans update(), drawParticles).
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
-  const TAU = FP.TAU;
   const { clamp } = FP.math;
   const rand = (a, b) => a + (b - a) * Math.random();
 
@@ -22,7 +21,7 @@
   function burst(state, x, y, type, count) {
     const list = state.fx.particles, n = Math.min(count, Math.max(0, budget(state) - list.length));
     for (let i = 0; i < n; i++) {
-      list.push({ x, y, vx: rand(-85, 85), vy: rand(-125, 45), life: rand(.35, .98), r: rand(1.2, 3.8), type, rot: rand(0, TAU), spin: rand(-5, 5) });
+      list.push({ x, y, vx: rand(-85, 85), vy: rand(-125, 45), life: rand(.35, .98), r: rand(1.2, 3.8), type });
     }
   }
 
@@ -58,7 +57,7 @@
       list.push({
         x: tip.x + nx * side * rand(2, 8) - p.dir.x * rand(0, 5), y: tip.y + ny * side * rand(2, 8) - p.dir.y * rand(0, 5),
         vx: -p.dir.x * back + nx * side * rand(18, 58), vy: -p.dir.y * back + ny * side * rand(18, 48) + rand(12, 46),
-        life: rand(.28, .62), r: rand(1.0, 3.2), type: Math.random() < .24 ? 'chip' : 'soil', rot: rand(0, TAU), spin: rand(-8, 8)
+        life: rand(.28, .62), r: rand(1.0, 3.2), type: Math.random() < .24 ? 'chip' : 'soil'
       });
     }
   }
@@ -72,38 +71,22 @@
     }
   }
 
-  const COLORS = { water: '#93ddff', bud: '#cfff9a', acid: '#d8ff58', bomb: '#a6ff7a', impact: '#ff815f' };
+  const COLORS = { water: '#93ddff', bud: '#cfff9a', acid: '#d8ff58', bomb: '#a6ff7a', impact: '#ff815f', petal: '#fff1a6', eco: '#cfff78', soil: '#7a5436', chip: '#4a3020', shield: '#caffde' };
 
-  function drawOne(ctx, q) {
-    const a = clamp(q.life, 0, 1);
-    ctx.save(); ctx.globalAlpha = a; ctx.translate(q.x, q.y); ctx.rotate(q.rot + q.spin * (1 - a));
-    if (q.type === 'petal') { ctx.fillStyle = '#fff1a6'; ctx.beginPath(); ctx.ellipse(0, 0, q.r * 1.1, q.r * 2.2, 0, 0, TAU); ctx.fill(); }
-    else if (q.type === 'eco') {
-      ctx.fillStyle = '#cfff78'; ctx.fillRect(-q.r, -q.r, q.r * 2, q.r * 2);
-      ctx.strokeStyle = 'rgba(37,65,16,.7)'; ctx.lineWidth = .8; ctx.strokeRect(-q.r, -q.r, q.r * 2, q.r * 2);
-    } else if (q.type === 'soil') {
-      ctx.fillStyle = 'rgba(151,104,62,.82)'; ctx.beginPath(); ctx.ellipse(0, 0, q.r * 1.35, q.r * .78, 0, 0, TAU); ctx.fill();
-      ctx.strokeStyle = 'rgba(65,38,22,.38)'; ctx.lineWidth = .7; ctx.stroke();
-    } else if (q.type === 'chip') {
-      ctx.fillStyle = 'rgba(91,61,40,.88)'; ctx.fillRect(-q.r * 1.1, -q.r * .7, q.r * 2.2, q.r * 1.4);
-      ctx.strokeStyle = 'rgba(35,22,14,.42)'; ctx.lineWidth = .7; ctx.strokeRect(-q.r * 1.1, -q.r * .7, q.r * 2.2, q.r * 1.4);
-    } else if (q.type === 'shield') {
-      ctx.fillStyle = 'rgba(202,255,222,.92)';
-      ctx.beginPath(); ctx.moveTo(-q.r * 1.4, 0); ctx.quadraticCurveTo(0, -q.r, q.r * 1.6, 0); ctx.quadraticCurveTo(0, q.r * .8, -q.r * 1.4, 0); ctx.fill();
-    } else {
-      ctx.fillStyle = COLORS[q.type] || '#d0bc86'; ctx.beginPath(); ctx.arc(0, 0, q.r, 0, TAU); ctx.fill();
-    }
-    ctx.restore();
+  // Carré de 1 à 2 pixels d'art : il rétrécit en fin de vie au lieu de devenir transparent.
+  function drawOne(g, q, oy) {
+    const { px } = FP, size = q.life > .3 && q.r > 2.2 ? 2 : 1;
+    px.rect(g, px.toArt(q.x), px.toArt(q.y) - oy, size, size, COLORS[q.type] || '#d0bc86');
   }
 
-  function draw(ctx, state) {
+  function draw(g, state) {
     // Temps écoulé depuis la frame précédente (borné : retour d'onglet, nouveau run).
     const dt = lastTime === null ? 0 : clamp(state.time - lastTime, 0, .05);
     lastTime = state.time;
     step(state, dt);
     fromEvents(state);
-    const top = state.camera.y - 42, bottom = state.camera.y + state.world.viewH + 42;
-    for (const q of state.fx.particles) if (q.y >= top && q.y <= bottom) drawOne(ctx, q);
+    const top = state.camera.y - 42, bottom = state.camera.y + state.world.viewH + 42, oy = FP.px.toArt(state.camera.y);
+    for (const q of state.fx.particles) if (q.y >= top && q.y <= bottom) drawOne(g, q, oy);
   }
 
   FP.particles = { draw };

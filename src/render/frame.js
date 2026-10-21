@@ -23,34 +23,27 @@
     ctx.translate(fx, fy); ctx.scale(z, z); ctx.translate(-fx, -fy);
   }
 
-  // Module pas encore converti au pixel : il dessine en coordonnées monde, réduites de moitié dans la toile monde
-  // (rendu un peu flou mais juste). Supprimé quand tous les modules seront convertis.
-  function legacy(actx, camY, fn) {
-    actx.save();
-    actx.setTransform(1 / FP.px.SCALE, 0, 0, 1 / FP.px.SCALE, 0, -camY / FP.px.SCALE);
-    try { fn(actx); } finally { actx.restore(); }
-  }
-
-  // Couche 1 : le monde, en pixels d'art. Ordre v3 : sol, nappes, limaces, obstacles, plante, anneau d'exposition, pellicule toxique.
-  function drawWorld(actx, state, perf) {
+  // Couche 1 : le monde, en pixels d'art. Ordre v3 : ciel, sol, nappes, limaces, obstacles, bonus, plante, fleurs,
+  // anneau d'exposition, pellicule toxique, effets, particules.
+  function drawWorld(g, state, perf) {
     const world = state.world, camY = state.camera.y;
     let t = perf && performance.now();
-    FP.sky.draw(actx, state);
-    FP.soil.draw(actx, state);
+    FP.sky.draw(g, state);
+    FP.soil.draw(g, state);
     if (perf) t = perf.mark('soil', t);
-    legacy(actx, camY, (c) => { FP.hazardsRender.drawBase(c, state); FP.hazardsRender.drawLeaks(c, state); });
-    FP.obstacles.draw(actx, world, camY);
+    FP.hazardsRender.drawBase(g, state);
+    FP.hazardsRender.drawLeaks(g, state);
+    FP.obstacles.draw(g, world, camY);
     if (perf) t = perf.mark('hazards', t);
-    legacy(actx, camY, (c) => FP.powerupsRender.drawBonuses(c, state));
+    FP.powerupsRender.drawBonuses(g, state);
     if (perf) t = perf.mark('bonuses', t);
-    FP.plantRender.draw(actx, state);
-    FP.flowersRender.draw(actx, state);
-    legacy(actx, camY, (c) => {
-      FP.hazardsRender.drawExposure(c, state);   // v3 : dans drawPlant, donc sous la pellicule toxique
-      FP.hazardsRender.drawOverlay(c, state);
-    });
+    FP.plantRender.draw(g, state);
+    FP.flowersRender.draw(g, state);
+    FP.hazardsRender.drawExposure(g, state);   // v3 : dans drawPlant, donc sous la pellicule toxique
+    FP.hazardsRender.drawOverlay(g, state);
     if (perf) perf.mark('plant', t);
-    legacy(actx, camY, (c) => { FP.effects.draw(c, state); FP.particles.draw(c, state); });
+    FP.effects.draw(g, state);
+    FP.particles.draw(g, state);
   }
 
   function frame(state) {
@@ -71,6 +64,9 @@
       applyZoom(ctx, state, W, viewH);
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(art.canvas, 0, 0, art.w * FP.px.SCALE, art.h * FP.px.SCALE);
+      // Chiffres « +Ɇ » : nets, mais dans le repère du monde (même zoom, même caméra).
+      ctx.translate(0, -state.camera.y);
+      FP.effects.drawLabels(ctx, state);
     } finally {
       ctx.restore();
     }
