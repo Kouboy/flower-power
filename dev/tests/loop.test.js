@@ -4,7 +4,7 @@ FP.test('loop: ordre des systèmes de la spec', () => {
   try {
     const s = FP.state.createRun(1); s.mode = 'playing';
     FP.loop.step(s, .016);
-    FP.assertEqual(calls.join(','), 'input,plant,hazards,collision,graze,powerups,scoring,flow,camera');
+    FP.assertEqual(calls.join(','), 'input,plant,hazards,collision,graze,scoring,powerups,flow,camera');
   } finally { for (const n of FP.loop.UPDATE_ORDER) FP[n] = saved[n]; }
 });
 FP.test('loop: rien ne tourne au menu', () => {

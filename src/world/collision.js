@@ -3,7 +3,8 @@
 //           FP.hazards.toxicIntensityAt, FP.config.hazards.
 // Écrit   : state.query = { solid, danger, near, toxic, leak, leakHit, grazes } ; leak.hitFlash au contact.
 //           grazes : un élément { obj, kind:'solid'|'leak', intensity, x, y } par frôlement en cours (play/graze.js).
-// Expose  : FP.collision.update(state), FP.collision.queryPoint(world, x, y), FP.collision.grazeBand(solid).
+// Expose  : FP.collision.update(state), FP.collision.queryPoint(world, x, y), FP.collision.grazeBand(solid),
+//           FP.collision.distanceTo(solid, x, y) (distance signée au polygone).
 // Porté de la v3.43.16 (queryTipHazards, pixelMaskDistance, solidGrazeBand) — polygones authorés uniquement.
 (function () {
   'use strict';
@@ -73,5 +74,5 @@
     if (state.query.leakHit) state.query.leakHit.hitFlash = FP.config.hazards.hitFlash;
   }
 
-  FP.collision = { update, queryPoint, grazeBand };
+  FP.collision = { update, queryPoint, grazeBand, distanceTo };
 })();

@@ -125,7 +125,7 @@
     },
 
     // ÉcoCrédits™ : arrondis à 25, combo ×(1 + .22 par cran) si les gains s'enchaînent en moins de 2 s.
-    scoring: { comboWindow: 2, comboMax: 8, comboGain: .22, step: 25, minAmount: 25, shakeBase: .035, shakePerCombo: .006, shakeMax: .06 },
+    scoring: { comboWindow: 2, comboMax: 8, comboGain: .22, step: 25, minAmount: 25, shakeBase: .035, shakePerCombo: .006, shakeMax: .06, flatShakeBase: .07, flatShakeMax: .08, flatShakeDiv: 18000 },
 
     // Flyover (v3.42) : contourner un obstacle en montant, de près et longtemps.
     flyover: {
@@ -135,6 +135,15 @@
       proxAvg: .62, proxPeak: .38, riskDuration: .47, riskProximity: .36, riskProgress: .17,
       minTime: .27, minPeak: .20, minProgress: .42, minRisk: .40, minEffective: .30,
       spore: { time: .82, risk: .66 }, water: { time: .52, risk: .48 }
+    },
+
+    // Récompenses de flyover (v3.42) : naissance devant la pointe, ramassage, spore.
+    powerups: {
+      formMax: .48, radius: { pollen: 13, water: 15, spore: 16 }, pickupPad: 9, missedBehind: 155, maxAge: 9.5,
+      spawn: { dirCone: 48, idealAhead: 80, aheadRisk: 24, minAhead: 38, surfacePad: 48, aheadSlack: 7,
+        nearSurfaceUp: 92, minProjectionNear: 32, minProjection: 58, marginX: 30, top: 42, bottom: 52,
+        leadNearSurface: 16, lead: 30, nearSurfaceSpan: 105, solidPad: 13, toxicMax: .10, leakPad: 22, spacing: 58, probeR: 16 },
+      spore: { radius: 92, solidK: .55, toxicK: .38, ecoPerSolid: 2000, shakeBase: .22, shakePerSolid: .035 }
     },
 
     // Déroulé de partie.
@@ -153,6 +162,10 @@
       deathToxic: 'pointe brûlée dans une zone toxique',
       toxicEnter: 'ZONE TOXIQUE : CROISSANCE DÉVIÉE',
       corrupted: 'croissance déviée',
+      flyover: { pollen: 'FLYOVER : POLLEN LIBÉRÉ', water: 'FLYOVER : GOUTTE LIBÉRÉE', spore: 'FLYOVER RISQUÉ : SPORE LIBÉRÉE' },
+      pickup: { pollen: 'POLLEN RARE : +1 FLEUR', water: 'GOUTTE D’EAU : BOUCLIER ORGANIQUE' },
+      shieldBroken: 'BOUCLIER ORGANIQUE : MEMBRANE ROMPUE',
+      shield: 'bouclier organique',
       death: {
         server: 'rupture : rack serveur', nuclear: 'rupture : fût irradié', tire: 'rupture : pneu écrasé',
         sarcophagus: 'rupture : cercueil', drone: 'rupture : drone cassé', solar: 'rupture : panneau solaire',

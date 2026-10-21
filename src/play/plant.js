@@ -1,6 +1,7 @@
 // play/plant.js — croissance et pilotage de la pousse.
 // Lit     : state.input, state.time, state.rng, state.score.flowers, state.world.{width,height,viewH}, state.plant.corruption, FP.config.plant.
-// Écrit   : state.plant, state.mode (lancement), state.camera.{y,shake}, state.events (stemStart).
+// Écrit   : state.plant, state.mode (lancement), state.camera.{y,shake}, state.events (stemStart) ;
+//           remise à zéro par pousse de state.power.{shield,shieldGrace} et state.score.flowerBonus.
 // Expose  : FP.plant.prepare(state), FP.plant.launch(state), FP.plant.speed(state), FP.plant.update(state, dt).
 // Porté de la v3.43.16 (prepareStem, launchPreparedStem, partie « croissance » de update()).
 (function () {
@@ -16,6 +17,8 @@
     p.trail = [];
     p.stemAge = 0;
     p.corruption = 0; p.toxicTimer = 0; p.recentToxic = 0;
+    // Chaque pousse repart sans bouclier ni pollen (v3 : prepareStem).
+    state.power.shield = false; state.power.shieldGrace = 0; state.score.flowerBonus = 0;
     state.camera.y = Math.max(0, w.height - w.viewH);
   }
 

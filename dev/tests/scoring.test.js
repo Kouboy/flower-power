@@ -43,3 +43,9 @@ FP.test('scoring: un gain secoue un peu l’écran', () => {
   const s = scRun(); s.camera.shake = 0; FP.scoring.award(s, 0, 0, 500, 'solid');
   FP.assertEqual(s.camera.shake, .035 + .006);
 });
+FP.test('scoring: gain fixe (spore) sans combo', () => {
+  const s = scRun(); s.camera.shake = 0; FP.scoring.awardFlat(s, 0, 0, 4010);
+  FP.assertEqual(s.score.eco, 4000); FP.assertEqual(s.score.combo, 0);
+  const e = s.events.find(e => e.type === 'eco'); FP.assert(e.flat && e.combo === 1);
+  FP.assertEqual(s.camera.shake, .07 + Math.min(.08, 4000 / 18000));
+});

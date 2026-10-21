@@ -2,7 +2,7 @@
 // Lit     : state.score, FP.config.{scoring,storageKey}, FP.storage.
 // Écrit   : state.score.{eco,combo,comboTimer}, state.camera.shake, state.events (eco) ;
 //           FP.scoring.records (persistant entre les runs, hors de FP.state) et le stockage local.
-// Expose  : FP.scoring.award(state, x, y, base, kind), FP.scoring.update(state, dt),
+// Expose  : FP.scoring.award(state, x, y, base, kind), FP.scoring.awardFlat(state, x, y, amount), FP.scoring.update(state, dt),
 //           FP.scoring.records, FP.scoring.load(backend?), FP.scoring.save(backend?).
 // Porté de la v3.43.16 (addEcoCredits, best/bestEco).
 (function () {
@@ -32,6 +32,15 @@
     state.camera.shake = Math.max(state.camera.shake, c.shakeBase + Math.min(c.shakeMax, s.combo * c.shakePerCombo));
   }
 
+  // Gain fixe (spore) : arrondi à 25, sans toucher au combo.
+  function awardFlat(state, x, y, amount) {
+    const c = FP.config.scoring;
+    const value = Math.max(c.minAmount, Math.round(amount / c.step) * c.step);
+    state.score.eco += value;
+    state.events.push({ type: 'eco', x, y, amount: value, combo: 1, kind: 'spore', flat: true });
+    state.camera.shake = Math.max(state.camera.shake, c.flatShakeBase + Math.min(c.flatShakeMax, value / c.flatShakeDiv));
+  }
+
   function update(state, dt) {
     const s = state.score, r = FP.scoring.records;
     if (s.comboTimer > 0) {
@@ -45,6 +54,6 @@
     }
   }
 
-  FP.scoring = { award, update, load, save, records: EMPTY() };
+  FP.scoring = { award, awardFlat, update, load, save, records: EMPTY() };
   FP.scoring.records = load();
 })();

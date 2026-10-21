@@ -2,7 +2,7 @@
 // Lit     : state.mode, state.query, state.plant, state.input.pressed, state.events, state.world.surfaceY, FP.config.{flow,text,toxic}.
 // Écrit   : state.mode, state.flow, state.plant.{reserves,oldTrails,corruption,toxicTimer,recentToxic}, state.score.flowers,
 //           state.level, state.camera.shake, state.events (death, bloom, toxicEnter) ; appelle FP.level.generate et FP.plant.prepare/launch.
-// Expose  : FP.flow.update(state, dt), FP.flow.simplifyTrail(points, minStep).
+// Expose  : FP.flow.update(state, dt), FP.flow.simplifyTrail(points, minStep), FP.flow.say(state, text, time).
 // Porté de la v3.43.16 (die, bloom, transitions de update()) ; éclosion visuelle et fondu : étape 6.
 (function () {
   'use strict';
@@ -27,10 +27,11 @@
     return out;
   }
 
+  // Chaque pollen ramassé ajoute une fleur (et fait avancer d'autant de niveaux, comme en v3).
   function bloom(state) {
-    const cfg = FP.config.flow, p = state.plant;
-    state.score.flowers += 1;
-    state.level += 1;
+    const cfg = FP.config.flow, p = state.plant, count = 1 + state.score.flowerBonus;
+    state.score.flowers += count;
+    state.level += count;
     p.oldTrails.push(simplifyTrail(p.trail, cfg.trailSimplifyPx));
     if (p.oldTrails.length > cfg.oldTrailsMax) p.oldTrails.shift();
     state.events.push({ type: 'bloom', x: p.tip.x, y: p.tip.y });
@@ -103,5 +104,5 @@
     }
   }
 
-  FP.flow = { update, simplifyTrail };
+  FP.flow = { update, simplifyTrail, say };
 })();

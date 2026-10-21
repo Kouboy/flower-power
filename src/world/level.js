@@ -1,7 +1,7 @@
 // world/level.js — génération d'un niveau à partir de la graine du run.
 // Lit     : state.rng, state.level, state.world.{width,height,viewH,surfaceY}, state.signature,
 //           FP.config.{level,spawnTables,signature}, FP.catalog, FP.geom.
-// Écrit   : state.world.{skyVariant,lawnVariant,safePath,safeRadius,solids,toxics,leaks}, state.signature.
+// Écrit   : state.world.{skyVariant,lawnVariant,safePath,safeRadius,solids,toxics,leaks,bonuses}, state.signature.
 // Expose  : FP.level.startRun(state), FP.level.generate(state),
 //           FP.level.distToSafePath(world,x,y), FP.level.pathXAt(world,y), FP.level.depthK(world,y), FP.level.depthBand(world,y).
 // Porté de la v3.43.16 (generateSoil, generateSafePath, objectFits…) sans les familles vectorielles ni les portes.
@@ -285,7 +285,7 @@
 
   function generate(state) {
     const world = state.world, rng = state.rng, g = FP.config.level.grid;
-    world.solids = []; world.toxics = []; world.leaks = [];
+    world.solids = []; world.toxics = []; world.leaks = []; world.bonuses = [];
     world.skyVariant = Math.floor(rng.next() * 4);
     world.lawnVariant = Math.floor(rng.next() * 4);
     const grid = makeGrid(world.width, world.surfaceY + g.topPad, world.height - g.bottomPad);

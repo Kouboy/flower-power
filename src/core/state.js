@@ -47,12 +47,12 @@
       world: {
         width: dims.W, height, viewH: dims.H, surfaceY: surfaceYFor(dims.H),
         skyVariant: 0, lawnVariant: 0, safePath: [], safeRadius: 0,
-        solids: [], toxics: [], leaks: []
+        solids: [], toxics: [], leaks: [], bonuses: []     // bonuses : récompenses de flyover (play/powerups.js)
       },
       query: { solid: null, danger: 0, near: null, toxic: 0, leak: 0, leakHit: null },          // requête de pointe de la frame (world/collision.js)
       flow: { timer: 0, message: '', messageTimer: 0 },       // déroulé de partie (play/flow.js)
       graze: { active: new Map() },                           // frôlements en cours (play/graze.js)
-      power: { shield: false, shieldGrace: 0, sporeTimer: 0, bonuses: [] },
+      power: { shield: false, shieldGrace: 0 },              // bouclier organique (play/powerups.js)
       score: { eco: 0, flowers: 0, flowerBonus: 0, combo: 0, comboTimer: 0 },
       fx: { particles: [], effects: [], message: null },   // écrit uniquement par render/*
       events: []                                            // vidé à chaque frame par core/loop.js

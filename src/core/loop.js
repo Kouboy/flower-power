@@ -10,7 +10,8 @@
   // hazards avant collision (les limaces bougent avant la requête de pointe), camera en dernier (suit la pointe).
   // flow (mort, éclosion, transitions) après le score, avant la caméra.
   // Les systèmes tournent dans tous les modes sauf 'menu' : chacun décide selon state.mode.
-  const UPDATE_ORDER = ['input', 'plant', 'hazards', 'collision', 'graze', 'powerups', 'scoring', 'flow', 'camera'];
+  // powerups après scoring : ramassage et bouclier interceptent un choc avant que flow ne décide d'une mort.
+  const UPDATE_ORDER = ['input', 'plant', 'hazards', 'collision', 'graze', 'scoring', 'powerups', 'flow', 'camera'];
 
   function step(state, rawDt) {
     const { maxDt, fallbackDt } = FP.config.loop;
