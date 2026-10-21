@@ -12,12 +12,15 @@
   const view = { canvas, ctx, W: 0, H: 0, DPR: 1, resize };
 
   // Le CSS impose le 9:16 ; on aligne la résolution interne sur la taille affichée.
+  // Sous la taille minimale, les deux côtés grandissent du même facteur : l'image est réduite, jamais écrasée.
   function resize() {
     const cfg = FP.config.view;
     view.DPR = Math.min(cfg.dprMax, window.devicePixelRatio || 1);
     const rect = canvas.getBoundingClientRect();
-    view.W = Math.max(cfg.minW, Math.floor(rect.width || window.innerWidth));
-    view.H = Math.max(cfg.minH, Math.floor(rect.height || window.innerHeight));
+    const w = rect.width || window.innerWidth, h = rect.height || window.innerHeight;
+    const k = Math.max(1, cfg.minW / w, cfg.minH / h);
+    view.W = Math.floor(w * k);
+    view.H = Math.floor(h * k);
     canvas.width = Math.floor(view.W * view.DPR);
     canvas.height = Math.floor(view.H * view.DPR);
     ctx.setTransform(view.DPR, 0, 0, view.DPR, 0, 0);

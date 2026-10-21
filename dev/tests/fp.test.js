@@ -33,12 +33,8 @@ FP.test('params: perf et flydebug', () => {
 });
 FP.test('storage: backend qui lève → fallback, pas d’exception', () => {
   const broken = { getItem(){ throw new Error('blocked'); }, setItem(){ throw new Error('blocked'); } };
-  FP.assertEqual(FP.storage.readNumber('k', 0, broken), 0);
+  FP.assertEqual(FP.storage.readJSON('k', 0, broken), 0);
   FP.assertEqual(FP.storage.write('k', 5, broken), false);
-});
-FP.test('storage: valeur non numérique → fallback', () => {
-  const mem = { getItem(){ return 'xyz'; }, setItem(){} };
-  FP.assertEqual(FP.storage.readNumber('k', 0, mem), 0);
 });
 FP.test('storage: readJSON valide, cassé, backend qui lève', () => {
   FP.assertEqual(FP.storage.readJSON('k', null, { getItem() { return '{"a":1}'; } }).a, 1);
@@ -48,4 +44,8 @@ FP.test('storage: readJSON valide, cassé, backend qui lève', () => {
 });
 FP.test('storage: writeJSON backend qui lève → false', () => {
   FP.assertEqual(FP.storage.writeJSON('k', { a: 1 }, { setItem() { throw new Error('x'); } }), false);
+});
+FP.test('fp: graine hors 32 bits refusée', () => {
+  FP.assertEqual(FP.parseParams('?seed=4294967295').seed, 4294967295);
+  FP.assertEqual(FP.parseParams('?seed=4294967296').seed, null);
 });

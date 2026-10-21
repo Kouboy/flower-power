@@ -1,5 +1,5 @@
 // render/sprites.js — chargement des PNG authorés.
-// Lit     : FP.catalog.assets (runtime.src ou source.file).
+// Lit     : FP.catalog.assets (runtime.src).
 // Écrit   : rien dans l'état.
 // Expose  : FP.sprites.get(assetKey) → HTMLImageElement prêt, ou null (pas encore chargé, en échec ou inconnu).
 // Un PNG manquant ne bloque rien : l'obstacle garde sa collision, il n'est simplement pas dessiné.
@@ -13,7 +13,7 @@
     const entry = { img, ready: false };
     img.onload = () => { entry.ready = true; };
     img.onerror = () => { console.warn('Flower Power : PNG non chargé', img.src); };
-    img.src = (a.runtime && a.runtime.src) || ('assets/obstacles/' + a.source.file);
+    img.src = a.runtime.src;   // chemin exact (source.file n'a pas la même casse que le fichier)
     images[key] = entry;
   }
 

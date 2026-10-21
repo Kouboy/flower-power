@@ -50,7 +50,7 @@
         skyVariant: 0, lawnVariant: 0, safePath: [], safeRadius: 0,
         solids: [], toxics: [], leaks: [], bonuses: []     // bonuses : récompenses de flyover (play/powerups.js)
       },
-      query: { solid: null, danger: 0, near: null, toxic: 0, leak: 0, leakHit: null },          // requête de pointe de la frame (world/collision.js)
+      query: { solid: null, danger: 0, near: null, toxic: 0, leak: 0, leakHit: null, grazes: [] },          // requête de pointe de la frame (world/collision.js)
       flow: { timer: 0, message: '', messageTimer: 0, stage: 'show', fade: 0, overReason: '' },       // déroulé de partie (play/flow.js)
       garden: { flowers: [] },                                // parterre : fleurs écloses pendant tout le run
       graze: { active: new Map() },                           // frôlements en cours (play/graze.js)

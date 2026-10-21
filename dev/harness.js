@@ -18,6 +18,7 @@
     }
   };
   FP.runTests = () => tests.map(({ name, fn }) => {
+    if (FP.input && FP.input._reset) FP.input._reset();   // le tampon du pointeur ne fuit pas d'un test à l'autre
     try { fn(); return { name, ok: true }; }
     catch (e) { return { name, ok: false, error: e && e.message ? e.message : String(e) }; }
   });

@@ -51,3 +51,4 @@ FP.test('state: applyView suit la nouvelle hauteur de vue et borne la caméra', 
   FP.assertEqual(s.world.viewH, 500);
   FP.assertEqual(s.camera.y, 840);                       // toujours dans les bornes, inchangée
 });
+FP.test('state: la requête initiale a sa liste de frôlements', () => FP.assert(Array.isArray(FP.state.createRun(1, { W: 440, H: 783 }).query.grazes)));

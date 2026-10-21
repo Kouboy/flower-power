@@ -21,7 +21,7 @@ Aucune installation. Ouvrir `index.html` par double-clic dans un navigateur réc
 
 ## Paramètres d'URL
 
-- `?seed=N` : génération reproductible (entier ≥ 0).
+- `?seed=N` : génération reproductible (entier de 0 à 4 294 967 295).
 - `?freecam=1` : caméra libre (molette, flèches, glisser, Début/Fin) pour inspecter un niveau.
 - `?perf=1` : profileur (FPS, coût update / render, tranches de dessin).
 - `?flydebug=1` : bandeau qui explique chaque décision de flyover.

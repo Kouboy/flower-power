@@ -27,3 +27,11 @@ FP.test('loop: events consommés puis vidés', () => {
   FP.assertEqual(seen, 2); FP.assertEqual(s.events.length, 0);
   FP.assertEqual(gotState, s); FP.assertEqual(gotDt, .016);
 });
+FP.test('loop: une erreur de système ne fige pas la partie', () => {
+  const s = FP.state.createRun(1, { W: 440, H: 783 }); FP.level.startRun(s); FP.plant.launch(s);
+  const saved = FP.camera.update; let calls = 0;
+  FP.camera.update = () => { calls++; s.events.push({ type: 'x' }); throw new Error('boom'); };
+  const err = console.error; let logged = 0; console.error = () => { logged++; };
+  try { FP.loop.step(s, 1 / 60); FP.loop.step(s, 1 / 60); } finally { FP.camera.update = saved; console.error = err; }
+  FP.assertEqual(calls, 2); FP.assertEqual(s.events.length, 0); FP.assertEqual(logged, 1, 'signalée une seule fois');
+});

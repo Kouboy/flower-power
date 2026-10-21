@@ -32,3 +32,4 @@ FP.test('catalog: famille inconnue → null', () => FP.assertEqual(FP.catalog.ma
 FP.test('catalog: asset sans polygone exclu', () => {
   FP.assert(!FP.catalog.filterAssets({ bad: { collision: { points: [[0,0],[1,1]] } } }).bad);
 });
+FP.test('catalog: chaque asset a son runtime.src', () => { for (const a of Object.values(FP.catalog.assets)) FP.assert(a.runtime && a.runtime.src, a.id); });

@@ -2,6 +2,7 @@
 // Lit     : FP.config.loop, FP.state.current, les modules FP.<système> présents, FP.perf (?perf=1).
 // Écrit   : state.time, vide state.events en fin de frame.
 // Expose  : FP.loop.UPDATE_ORDER, FP.loop.step(state, rawDt), FP.loop.start().
+// Une erreur dans une frame est signalée une fois en console ; la partie continue à la frame suivante.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
@@ -13,7 +14,19 @@
   // powerups après scoring : ramassage et bouclier interceptent un choc avant que flow ne décide d'une mort.
   const UPDATE_ORDER = ['input', 'plant', 'hazards', 'collision', 'graze', 'scoring', 'powerups', 'flow', 'camera'];
 
+  // Messages déjà signalés : une erreur qui se répète à chaque frame ne s'affiche qu'une fois.
+  const reported = new Set();
+
   function step(state, rawDt) {
+    try { frame(state, rawDt); }
+    catch (e) {
+      const msg = (e && e.message) || String(e);
+      if (!reported.has(msg)) { reported.add(msg); console.error('Flower Power : erreur dans la frame', e); }
+    }
+    state.events.length = 0;   // l'événement fautif n'est pas rejoué
+  }
+
+  function frame(state, rawDt) {
     const { maxDt, fallbackDt } = FP.config.loop;
     const dt = Number.isFinite(rawDt) && rawDt > 0 ? Math.min(rawDt, maxDt) : fallbackDt;
     state.time += dt;
@@ -29,16 +42,15 @@
     if (perf) t = perf.mark('update', t);
     if (FP.render) FP.render.frame(state);
     if (perf) perf.mark('render', t);
-    state.events.length = 0;
   }
 
   function start() {
     let last = performance.now();
     const tick = (now) => {
+      requestAnimationFrame(tick);
       const rawDt = (now - last) / 1000;
       last = now;
       if (FP.state.current) step(FP.state.current, rawDt);
-      requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
   }

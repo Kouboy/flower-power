@@ -1,7 +1,7 @@
 // core/fp.js — espace de noms global et utilitaires sans état.
 // Lit     : location.search (une fois, au chargement).
 // Écrit   : rien.
-// Expose  : FP.TAU, FP.math, FP.createRng, FP.parseParams, FP.params, FP.storage (readNumber, write, readJSON, writeJSON, useBackend — banc d'essai).
+// Expose  : FP.TAU, FP.math, FP.createRng, FP.parseParams, FP.params, FP.storage (write, readJSON, writeJSON, useBackend — banc d'essai).
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
@@ -25,7 +25,8 @@
     const q = new URLSearchParams(search || '');
     const seed = q.get('seed');
     return {
-      seed: /^\d+$/.test(seed || '') ? Number(seed) : null,
+      // Graine sur 32 bits, comme le générateur : au-delà, elle serait tronquée en silence.
+      seed: /^\d+$/.test(seed || '') && Number(seed) <= 4294967295 ? Number(seed) : null,
       perf: q.get('perf') === '1',
       flydebug: q.get('flydebug') === '1',
       freecam: q.get('freecam') === '1'
@@ -44,13 +45,6 @@
 
   FP.storage = {
     useBackend(backend) { override = backend; },
-    readNumber(key, fallback, backend = defaultBackend()) {
-      try {
-        const raw = backend ? backend.getItem(key) : null;
-        const n = raw === null ? NaN : Number(raw);
-        return Number.isFinite(n) ? n : fallback;
-      } catch (e) { return fallback; }
-    },
     // Objet JSON : fallback si absent, illisible ou pas un objet.
     readJSON(key, fallback, backend = defaultBackend()) {
       try {

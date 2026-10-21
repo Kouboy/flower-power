@@ -33,3 +33,8 @@ FP.test('input: une touche appuie sans maintenir', () => {
   FP.assert(s.input.pressed && !s.input.down);
   FP.input.update(s); FP.assert(!s.input.pressed);
 });
+FP.test('input: _reset vide le tampon', () => {
+  FP.input._inject({ down: true }); FP.input._reset();
+  const s = FP.state.createRun(1, { W: 440, H: 783 }); FP.input.update(s);
+  FP.assert(!s.input.down && !s.input.pressed && !s.input.active);
+});

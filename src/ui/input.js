@@ -2,7 +2,7 @@
 // Lit     : événements pointeur du canvas, FP.view (taille affichée), FP.camera.totalZoom, state.plant.{tip,seed}, state.world.width.
 // Écrit   : state.input = { x (monde), screenX, y (écran, 0..viewH), down, active, pressed (front montant de cette frame) }.
 // Expose  : FP.input.update(state), FP.input.toWorldX(screenX, zoom, focalX), FP.input.focalX(state), FP.input.press(),
-//           FP.input._inject(partial) — point d'entrée réservé aux tests (simule un événement).
+//           FP.input._inject(partial), FP.input._reset() — réservés aux tests (simuler un événement, repartir d'un tampon vide).
 // Porté de la v3.43.16 (setPointer).
 (function () {
   'use strict';
@@ -18,6 +18,8 @@
     Object.assign(buffer, partial);
     buffer.active = true;
   }
+
+  function reset() { Object.assign(buffer, { x: 0, y: 0, down: false, active: false, pressed: false }); }
 
   // Touche clavier : un appui ponctuel (lance la pousse en « prêt »), sans prendre le contrôle de la direction.
   function press() { buffer.pressed = true; }
@@ -68,5 +70,5 @@
     window.addEventListener('blur', () => { buffer.down = false; });
   }
 
-  FP.input = { update, toWorldX, focalX, press, _inject: inject };
+  FP.input = { update, toWorldX, focalX, press, _inject: inject, _reset: reset };
 })();
