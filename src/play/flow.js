@@ -1,6 +1,7 @@
 // play/flow.js — déroulé de partie : mort, éclosion, transitions, fin de partie, messages.
-// Lit     : state.mode, state.query, state.plant, state.input.pressed, state.events, state.world.surfaceY, FP.config.{flow,text,toxic}.
-// Écrit   : state.mode, state.flow, state.plant.{reserves,oldTrails,corruption,toxicTimer,recentToxic}, state.score.flowers,
+// Lit     : state.mode, state.query, state.plant, state.input.pressed, state.events, state.rng, state.world.{surfaceY,width},
+//           FP.config.{flow,text,toxic,garden,soil}.
+// Écrit   : state.mode, state.flow, state.garden.flowers (création, croissance), state.plant.{reserves,oldTrails,corruption,toxicTimer,recentToxic}, state.score.flowers,
 //           state.level, state.camera.shake, state.events (death, bloom, toxicEnter) ; appelle FP.level.generate et FP.plant.prepare/launch.
 // Expose  : FP.flow.update(state, dt), FP.flow.simplifyTrail(points, minStep), FP.flow.say(state, text, time).
 // Porté de la v3.43.16 (die, bloom, transitions de update()) ; éclosion visuelle et fondu : étape 6.
@@ -27,14 +28,29 @@
     return out;
   }
 
+  // Les fleurs de l'éclosion, en éventail autour de la pointe, bornées à l'écran.
+  function plantFlowers(state, count) {
+    const g = FP.config.garden, rng = state.rng, bonus = state.score.flowerBonus, W = state.world.width;
+    const spread = Math.min(g.spreadMax, g.spreadBase + bonus * g.spreadPerBonus), mid = (count - 1) / 2;
+    for (let i = 0; i < count; i++) {
+      const offset = (i - mid) * (count === 1 ? 0 : spread / Math.max(1, mid + 1)) + rng.range(-g.jitter, g.jitter);
+      state.garden.flowers.push({
+        x: FP.math.clamp(state.plant.tip.x + offset, g.edge, W - g.edge),
+        size: 0, maxSize: i === 0 ? 1 : rng.range(g.extraSize[0], g.extraSize[1]), age: 0,
+        palette: g.palettes[Math.floor(rng.next() * g.palettes.length)], tilt: rng.range(-g.tilt, g.tilt)
+      });
+    }
+  }
+
   // Chaque pollen ramassé ajoute une fleur (et fait avancer d'autant de niveaux, comme en v3).
   function bloom(state) {
     const cfg = FP.config.flow, p = state.plant, count = 1 + state.score.flowerBonus;
+    plantFlowers(state, count);
     state.score.flowers += count;
     state.level += count;
     p.oldTrails.push(simplifyTrail(p.trail, cfg.trailSimplifyPx));
     if (p.oldTrails.length > cfg.oldTrailsMax) p.oldTrails.shift();
-    state.events.push({ type: 'bloom', x: p.tip.x, y: p.tip.y });
+    state.events.push({ type: 'bloom', x: p.tip.x, y: state.world.surfaceY + FP.config.soil.surfaceOffset - 9, count, bonus: state.score.flowerBonus });
     state.mode = 'bloom';
     state.flow.timer = cfg.bloomTime;
     state.flow.messageTimer = 0;
@@ -70,7 +86,8 @@
   }
 
   function update(state, dt) {
-    const cfg = FP.config.flow, f = state.flow, p = state.plant;
+    const cfg = FP.config.flow, f = state.flow, p = state.plant, gr = FP.config.garden.growRate;
+    for (const fl of state.garden.flowers) { fl.age += dt; fl.size = Math.min(fl.maxSize, fl.size + dt * gr * fl.maxSize); }
     p.corruption = Math.max(0, p.corruption - dt);
     p.recentToxic = Math.max(0, p.recentToxic - dt);
     for (const e of state.events) if (e.type === 'stemStart') say(state, FP.config.text.stem + e.n, cfg.stemMessageTime);

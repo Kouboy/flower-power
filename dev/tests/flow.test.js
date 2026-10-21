@@ -73,3 +73,37 @@ FP.test('flow: toute mort secoue autant que la v3 (.28)', () => {
     FP.assertEqual(s.camera.shake, .28, cause);
   }
 });
+FP.test('flow: éclosion → fleurs au parterre', () => {
+  const s = flowRun(); s.score.flowerBonus = 2; s.plant.tip = { x: 220, y: s.world.surfaceY - 1 };
+  FP.collision.update(s); FP.flow.update(s, 0);
+  const f = s.garden.flowers;
+  FP.assertEqual(f.length, 3);
+  FP.assertEqual(new Set(f.map(x => Math.round(x.x))).size, 3);
+  FP.assertEqual(f[0].maxSize, 1);
+  FP.assert(f[1].maxSize >= .78 && f[1].maxSize <= .96);
+  FP.assert(FP.config.garden.palettes.some(p => p === f[0].palette));
+});
+FP.test('flow: fleurs bornées au bord de l’écran', () => {
+  const s = flowRun(); s.score.flowerBonus = 3; s.plant.tip = { x: 2, y: s.world.surfaceY - 1 };
+  FP.collision.update(s); FP.flow.update(s, 0);
+  for (const f of s.garden.flowers) FP.assert(f.x >= 18 && f.x <= s.world.width - 18, String(f.x));
+});
+FP.test('flow: une fleur pousse en ~.4 s puis reste', () => {
+  const s = flowRun(); s.plant.tip = { x: 220, y: s.world.surfaceY - 1 };
+  FP.collision.update(s); FP.flow.update(s, 0);
+  for (let i = 0; i < 30; i++) FP.flow.update(s, 1 / 60);
+  FP.assertEqual(s.garden.flowers[0].size, 1);
+});
+FP.test('flow: le parterre survit au niveau suivant, pas à un nouveau run', () => {
+  const s = flowRun(); s.plant.tip = { x: 220, y: s.world.surfaceY - 1 };
+  FP.collision.update(s); FP.flow.update(s, 0);
+  for (let i = 0; i < 200; i++) FP.flow.update(s, 1 / 60);
+  FP.assertEqual(s.mode, 'ready'); FP.assertEqual(s.garden.flowers.length, 1);
+  FP.assertEqual(FP.state.createRun(1, { W: 440, H: 783 }).garden.flowers.length, 0);
+});
+FP.test('flow: pas de mort pendant l’éclosion', () => {
+  const s = flowRun(); s.plant.tip = { x: 220, y: s.world.surfaceY - 1 };
+  FP.collision.update(s); FP.flow.update(s, 0);
+  s.query = { solid: { kind: 'server' }, leak: 0, toxic: 0, danger: 0, grazes: [] };
+  FP.flow.update(s, 1 / 60); FP.assertEqual(s.mode, 'bloom'); FP.assertEqual(s.plant.reserves, 3);
+});

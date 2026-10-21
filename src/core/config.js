@@ -149,6 +149,19 @@
     // Bouclier organique : un choc absorbé, puis .48 s de grâce ; la pointe recule de 26 px sur sa trajectoire.
     shield: { grace: .48, back: 26, edge: 14, shake: .16, messageTime: .92 },
 
+    // Parterre (v3 : bloom, flowerPalette) : 1 + pollen fleurs par éclosion, qui restent tout le run.
+    garden: {
+      spreadBase: 14, spreadPerBonus: 10, spreadMax: 54, jitter: 4, edge: 18, extraSize: [.78, .96], tilt: .22,
+      growRate: 2.5, bakedAge: 1.05, bakedSize: .94,
+      palettes: [
+        ['#ff6ea8', '#ffd166', '#fff7ad', '#7cffc4'],
+        ['#72d6ff', '#b28dff', '#fff0a6', '#ff9f7a'],
+        ['#ff5f57', '#ffa94d', '#ffe66d', '#b8ff7a'],
+        ['#f8a5ff', '#ffdf7e', '#9bf6ff', '#caffbf'],
+        ['#ffd1dc', '#fefae0', '#a8dadc', '#95d5b2']
+      ]
+    },
+
     // Déroulé de partie.
     flow: {
       dyingTime: .85, bloomTime: 1.55, oldTrailsMax: 6, trailSimplifyPx: 11, deathShake: .28,
