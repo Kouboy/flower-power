@@ -22,3 +22,11 @@ FP.test('palette: aucune couleur de danger dans le décor', () => {
   const near = (a, b) => Math.hypot(...rgb(a).map((v, i) => v - rgb(b)[i])) < 60;
   for (const c of FP.palette.decor()) for (const d of FP.palette.danger) FP.assert(!near(c, d), c + ' trop proche de ' + d);
 });
+const img = (w, h, fill) => ({ width: w, height: h, data: new Uint8ClampedArray(w * h * 4).fill(fill) });
+FP.test('px: réduction d’une image vide → transparente, sans erreur', () => { const r = FP.px.downscale(img(8, 8, 0), 2, 2); FP.assertEqual(r.width, 2); FP.assert(r.data.every((v, i) => i % 4 !== 3 || v === 0)); });
+FP.test('px: réduction d’une image opaque → opaque, couleur moyenne', () => { const r = FP.px.downscale(img(4, 4, 255), 2, 2); FP.assert(r.data.every(v => v === 255)); });
+FP.test('px: contour autour d’un pixel opaque', () => {
+  const s = img(1, 1, 255), o = FP.px.outline(s, '#000000');
+  FP.assertEqual(o.width, 3); FP.assertEqual(o.data[(1 * 3 + 0) * 4 + 3], 255); FP.assertEqual(o.data[0 * 4 + 3], 0);   // voisin gauche contouré, coin vide
+});
+FP.test('px: postérisation sur 8 niveaux', () => { const s = { width: 1, height: 1, data: new Uint8ClampedArray([100, 200, 30, 255]) }; const r = FP.px.posterize(s, 8); FP.assert([...r.data.slice(0, 3)].every(v => [0, 36, 73, 109, 146, 182, 219, 255].includes(v))); });

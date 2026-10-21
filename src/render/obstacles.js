@@ -1,112 +1,73 @@
-// render/obstacles.js — obstacles PNG et leur ancrage sombre dans la terre.
-// Lit     : world.solids (x, y, a, flip, w, h, pivot, collision, grazeRadius, broadR, kind), FP.sprites, FP.config.soil.
-// Écrit   : o._stencil sur chaque solide — cache de rendu uniquement, jamais lu par la simulation.
-// Expose  : FP.obstacles.draw(ctx, world, cameraY, viewH).
-// Porté de la v3.43.16 (ensureObstacleStencilCache, drawObstacleSoilAnchorUnder, drawPixelSolidSprite).
+// render/obstacles.js — obstacles PNG ramenés sur la grille de pixels d'art, avec contour et ancrage sombre.
+// Lit     : world.solids (x, y, a, flip, w, h, pivot, collision, grazeRadius, broadR, assetKey), FP.sprites, FP.px, FP.geom.sdPoly,
+//           FP.view.art.h.
+// Écrit   : o._anchor sur chaque solide — cache de rendu uniquement, jamais lu par la simulation.
+// Expose  : FP.obstacles.draw(actx, world, cameraY) — repère d'art, la caméra est appliquée ici.
+// Chaque sprite est réduit une seule fois par (sprite, miroir) : moyenne, 8 niveaux par canal, contour d'un pixel.
 (function () {
   'use strict';
+  const FP = window.FP = window.FP || {};
   // Masquage : un obstacle est dessiné tant que son rayon (au moins 44 px) plus 90 px touche l'écran (visuel, v3).
   const CULL_MIN_R = 44, CULL_PAD = 90;
-  const FP = window.FP = window.FP || {};
-  const TAU = FP.TAU;
+  const OUTLINE = '#120c08', ANCHOR = '#0a0605';
+  const sprites = new Map();   // clé `${assetKey}|${w}|${h}|${flip}` → canvas en pixels d'art (contour compris)
 
-  // Pochoir stable : dégradé flou le long du polygone de collision, effiloché par des miettes.
-  // Calculé une fois par obstacle pour éviter le scintillement des filtres recalculés à chaque frame.
-  function buildStencil(o) {
-    const pts = o.collision;   // déjà retourné si flip = -1 : on dessine sans miroir du contexte
-    const grazePad = Math.max(12, o.grazeRadius || 14);
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (const [x, y] of pts) { minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); }
-    const pad = Math.max(18, grazePad * 3.2);
-    const c = document.createElement('canvas');
-    c.width = Math.max(8, Math.ceil((maxX - minX) + pad * 2));
-    c.height = Math.max(8, Math.ceil((maxY - minY) + pad * 2));
-    const g = c.getContext('2d');
-
-    g.save();
-    g.translate(-minX + pad, -minY + pad);
-    g.lineJoin = 'round'; g.lineCap = 'round';
-    const trace = () => {
-      g.beginPath(); g.moveTo(pts[0][0], pts[0][1]);
-      for (let i = 1; i < pts.length; i++) g.lineTo(pts[i][0], pts[i][1]);
-      g.closePath();
-    };
-    g.filter = 'blur(8px)'; g.strokeStyle = 'rgba(18,11,8,.16)'; g.lineWidth = Math.max(24, grazePad * 2.9); trace(); g.stroke();
-    g.filter = 'blur(4px)'; g.strokeStyle = 'rgba(26,16,12,.26)'; g.lineWidth = Math.max(14, grazePad * 1.8); trace(); g.stroke();
-    g.filter = 'blur(1px)'; g.strokeStyle = 'rgba(36,22,16,.32)'; g.lineWidth = Math.max(7, grazePad * .9); trace(); g.stroke();
-    g.filter = 'none'; g.fillStyle = 'rgba(22,13,10,.10)'; trace(); g.fill();
-    g.restore();
-
-    // Miettes stables : graine dérivée de la famille et de la position (chaque obstacle a sa frange).
-    const key = `${o.kind}|${Math.round(o.x)}|${Math.round(o.y)}`;
-    let seed = 0;
-    for (let i = 0; i < key.length; i++) seed = (seed * 1664525 + key.charCodeAt(i) + 1013904223) >>> 0;
-    const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
-    const cx = c.width * .5, cy = c.height * .5;
-    const rx = Math.max(8, (maxX - minX) * .5 + grazePad * 1.7), ry = Math.max(8, (maxY - minY) * .5 + grazePad * 1.5);
-
-    g.save();
-    g.globalCompositeOperation = 'destination-out';
-    const specks = Math.max(170, Math.round((c.width * c.height) / 22));
-    for (let i = 0; i < specks; i++) {
-      const x = rnd() * c.width, y = rnd() * c.height;
-      const dx = (x - cx) / rx, dy = (y - cy) / ry, r = Math.sqrt(dx * dx + dy * dy);
-      if (r < .62 || r > 1.38) continue;
-      const outer = Math.min(1, Math.max(0, (r - .62) / .76));
-      if (rnd() > .28 + outer * .84) continue;
-      const s = (rnd() < .26 ? 2 : 1) + (outer > .62 && rnd() < .34 ? 1 : 0);
-      g.globalAlpha = .08 + outer * .30;
-      if (rnd() < .65) g.fillRect(x, y, s, s);
-      else { g.beginPath(); g.arc(x, y, s * .55, 0, TAU); g.fill(); }
-    }
-    g.globalAlpha = .10; g.lineWidth = 1;
-    for (let i = 0; i < 22; i++) {
-      const a = rnd() * TAU, k = .82 + rnd() * .34;
-      const x = cx + Math.cos(a) * rx * k, y = cy + Math.sin(a) * ry * k, len = 2 + rnd() * 5.5;
-      g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len); g.stroke();
-    }
-    g.restore();
-
-    g.save();
-    for (let i = 0; i < Math.max(46, Math.round((c.width + c.height) / 6)); i++) {
-      const x = rnd() * c.width, y = rnd() * c.height;
-      const dx = (x - cx) / rx, dy = (y - cy) / ry, r = Math.sqrt(dx * dx + dy * dy);
-      if (r < .66 || r > 1.28 || rnd() > .36) continue;
-      g.fillStyle = rnd() < .5 ? 'rgba(35,22,16,.10)' : 'rgba(82,55,38,.07)';
-      g.fillRect(x, y, 1 + (rnd() > .72 ? 1 : 0), 1);
-    }
-    g.restore();
-
-    return { canvas: c, offX: minX - pad, offY: minY - pad };
-  }
-
-  function drawAnchor(ctx, o) {
-    if (!o._stencil) o._stencil = buildStencil(o);
-    ctx.save();
-    ctx.translate(o.x, o.y); ctx.rotate(o.a);
-    ctx.globalCompositeOperation = 'multiply';
-    ctx.drawImage(o._stencil.canvas, o._stencil.offX, o._stencil.offY);
-    ctx.restore();
-  }
-
-  function drawSprite(ctx, o) {
+  function spriteFor(o) {
+    const { px } = FP, aw = Math.max(2, px.toArt(o.w)), ah = Math.max(2, px.toArt(o.h));
+    const key = `${o.assetKey}|${aw}|${ah}|${o.flip}`;
+    if (sprites.has(key)) return sprites.get(key);
     const img = FP.sprites.get(o.assetKey);
-    if (!img) return;   // PNG pas encore chargé ou manquant : la collision existe quand même
-    ctx.save();
-    ctx.translate(o.x, o.y); ctx.rotate(o.a);
-    if (o.flip !== 1) ctx.scale(o.flip, 1);
-    ctx.drawImage(img, -o.pivot[0] * o.w, -o.pivot[1] * o.h, o.w, o.h);
-    ctx.restore();
+    if (!img) return null;     // PNG pas encore chargé ou manquant : la collision existe quand même
+    const src = document.createElement('canvas');
+    src.width = img.naturalWidth || img.width; src.height = img.naturalHeight || img.height;
+    const sg = src.getContext('2d');
+    if (o.flip !== 1) { sg.translate(src.width, 0); sg.scale(-1, 1); }
+    sg.drawImage(img, 0, 0);
+    const reduced = px.outline(px.posterize(px.downscale(sg.getImageData(0, 0, src.width, src.height), aw, ah), 8), OUTLINE);
+    const c = document.createElement('canvas'); c.width = reduced.width; c.height = reduced.height;
+    const g = c.getContext('2d'), out = g.createImageData(c.width, c.height);
+    out.data.set(reduced.data); g.putImageData(out, 0, 0);
+    const entry = { canvas: c, ox: -o.pivot[0] * aw - 1, oy: -o.pivot[1] * ah - 1 };
+    sprites.set(key, entry);
+    return entry;
   }
 
-  function draw(ctx, world, cameraY, viewH) {
-    const viewPad = FP.config.soil.viewPad;
-    const top = cameraY - viewPad, bottom = cameraY + viewH + viewPad;
+  // Ancrage : un halo sombre tramé autour du polygone de collision, plus dense près du bord. Calculé une fois par obstacle,
+  // dans le repère local (non tourné) en pixels d'art.
+  function anchorFor(o) {
+    if (o._anchor) return o._anchor;
+    const { px } = FP, s = px.SCALE, pad = Math.max(3, Math.round((o.grazeRadius || 14) * .6 / s));
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const [x, y] of o.collision) { minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); }
+    const x0 = Math.floor(minX / s) - pad, y0 = Math.floor(minY / s) - pad;
+    const w = Math.ceil(maxX / s) + pad - x0, h = Math.ceil(maxY / s) + pad - y0;
+    const c = document.createElement('canvas'); c.width = Math.max(1, w); c.height = Math.max(1, h);
+    const g = c.getContext('2d');
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const d = FP.geom.sdPoly((x + x0 + .5) * s, (y + y0 + .5) * s, o.collision) / s;
+        if (d <= -1 || d >= pad) continue;
+        const level = Math.round(16 * .45 * (1 - Math.max(0, d) / pad));
+        px.dither(g, x, y, 1, 1, 'rgba(0,0,0,0)', ANCHOR, level);
+      }
+    }
+    o._anchor = { canvas: c, ox: x0, oy: y0 };
+    return o._anchor;
+  }
+
+  function draw(actx, world, cameraY) {
+    const { px } = FP, oy = px.toArt(cameraY), top = cameraY, bottom = cameraY + FP.view.art.h * px.SCALE;
     for (const o of world.solids) {
       const pad = Math.max(CULL_MIN_R, o.broadR) + CULL_PAD;
       if (o.y + pad < top || o.y - pad > bottom) continue;
-      drawAnchor(ctx, o);
-      drawSprite(ctx, o);
+      actx.save();
+      actx.translate(px.toArt(o.x), px.toArt(o.y) - oy);
+      actx.rotate(o.a);
+      const a = anchorFor(o);
+      actx.drawImage(a.canvas, a.ox, a.oy);
+      const sp = spriteFor(o);
+      if (sp) actx.drawImage(sp.canvas, Math.round(sp.ox), Math.round(sp.oy));
+      actx.restore();
     }
   }
 

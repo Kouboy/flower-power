@@ -33,12 +33,13 @@
 
   // Couche 1 : le monde, en pixels d'art. Ordre v3 : sol, nappes, limaces, obstacles, plante, anneau d'exposition, pellicule toxique.
   function drawWorld(actx, state, perf) {
-    const world = state.world, camY = state.camera.y, viewH = world.viewH, W = FP.view.W;
+    const world = state.world, camY = state.camera.y;
     let t = perf && performance.now();
     FP.sky.draw(actx, state);
     FP.soil.draw(actx, state);
     if (perf) t = perf.mark('soil', t);
-    legacy(actx, camY, (c) => { FP.hazardsRender.drawBase(c, state); FP.hazardsRender.drawLeaks(c, state); FP.obstacles.draw(c, world, camY, viewH); });
+    legacy(actx, camY, (c) => { FP.hazardsRender.drawBase(c, state); FP.hazardsRender.drawLeaks(c, state); });
+    FP.obstacles.draw(actx, world, camY);
     if (perf) t = perf.mark('hazards', t);
     legacy(actx, camY, (c) => FP.powerupsRender.drawBonuses(c, state));
     if (perf) t = perf.mark('bonuses', t);

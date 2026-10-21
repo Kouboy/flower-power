@@ -1,7 +1,7 @@
 // render/px.js — boîte à outils pixel : tout le dessin « converti » passe par ces primitives, sur la toile monde.
 // Lit     : rien (fonctions pures sur le contexte reçu).
 // Écrit   : uniquement les pixels du contexte passé en argument, par fillRect (jamais de chemin lissé).
-// Expose  : FP.px.{SCALE, toArt, rect, line, disc, ring, dither}.
+// Expose  : FP.px.{SCALE, toArt, rect, line, disc, ring, dither, downscale, posterize, outline}.
 // Coordonnées en pixels d'art entiers (1 pixel d'art = SCALE pixels CSS). Ne touche pas au DOM : testable sous Node.
 (function () {
   'use strict';
@@ -76,5 +76,50 @@
     }
   }
 
-  FP.px = { SCALE, toArt, rect, line, disc, ring, dither };
+  // --- Images (objets { width, height, data } comme ImageData) : ramener un sprite sur la grille. ---
+
+  // Réduction par moyenne des pixels source couverts, pondérée par l'alpha ; alpha final tranché (0 ou 255).
+  function downscale(src, w, h) {
+    const out = { width: w, height: h, data: new Uint8ClampedArray(w * h * 4) };
+    const sx = src.width / w, sy = src.height / h, s = src.data;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        let r = 0, g = 0, b = 0, a = 0, n = 0;
+        const x0 = Math.floor(x * sx), x1 = Math.max(x0 + 1, Math.floor((x + 1) * sx));
+        const y0 = Math.floor(y * sy), y1 = Math.max(y0 + 1, Math.floor((y + 1) * sy));
+        for (let yy = y0; yy < y1; yy++) for (let xx = x0; xx < x1; xx++) {
+          const i = (yy * src.width + xx) * 4, al = s[i + 3];
+          r += s[i] * al; g += s[i + 1] * al; b += s[i + 2] * al; a += al; n++;
+        }
+        const o = (y * w + x) * 4;
+        if (a / n >= 128) { out.data[o] = r / a; out.data[o + 1] = g / a; out.data[o + 2] = b / a; out.data[o + 3] = 255; }
+      }
+    }
+    return out;
+  }
+
+  // Chaque canal arrondi à `levels` niveaux (8 = la palette 9 bits de la Mega Drive).
+  function posterize(src, levels = 8) {
+    const out = { width: src.width, height: src.height, data: new Uint8ClampedArray(src.data) }, k = levels - 1;
+    for (let i = 0; i < out.data.length; i += 4) for (let c = 0; c < 3; c++) out.data[i + c] = Math.round(Math.round(out.data[i + c] / 255 * k) * 255 / k);
+    return out;
+  }
+
+  // Contour d'un pixel : tout pixel transparent voisin (4-connexe) d'un pixel opaque prend `color`.
+  // L'image grandit d'un pixel de chaque côté.
+  function outline(src, color) {
+    const W = src.width + 2, H = src.height + 2, out = { width: W, height: H, data: new Uint8ClampedArray(W * H * 4) };
+    const rgb = [1, 3, 5].map(i => parseInt(color.slice(i, i + 2), 16));
+    const opaque = (x, y) => x >= 0 && y >= 0 && x < src.width && y < src.height && src.data[(y * src.width + x) * 4 + 3] > 0;
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        const o = (y * W + x) * 4, sx = x - 1, sy = y - 1;
+        if (opaque(sx, sy)) { const i = (sy * src.width + sx) * 4; for (let c = 0; c < 4; c++) out.data[o + c] = src.data[i + c]; continue; }
+        if (opaque(sx - 1, sy) || opaque(sx + 1, sy) || opaque(sx, sy - 1) || opaque(sx, sy + 1)) { out.data[o] = rgb[0]; out.data[o + 1] = rgb[1]; out.data[o + 2] = rgb[2]; out.data[o + 3] = 255; }
+      }
+    }
+    return out;
+  }
+
+  FP.px = { SCALE, toArt, rect, line, disc, ring, dither, downscale, posterize, outline };
 })();
