@@ -1,16 +1,15 @@
 // audio/audio.js — son procédural (Web Audio, aucun fichier) : effets, drone du frôlement, grattement de la pousse.
-// Lit     : les événements de la frame, state.mode, state.plant.tip, state.world.surfaceY, state.graze.active, state.query.grazes,
-//           FP.plant.speed.
+// Lit     : les événements de la frame (dont growthTick pour le grattement), state.mode, state.graze.active, state.query.grazes.
 // Écrit   : rien dans l'état.
 // Expose  : FP.audio.consume(events, state, dt), FP.audio.sfx(kind, intensity), FP.audio.unlock(),
 //           FP.audio._backend (moteur de son ; remplaçable par un espion dans les tests, null tant que l'audio est muet).
+//           Installe sur window les écouteurs pointerdown / keydown qui débloquent le son.
 // Porté de la v3.43.16 (initAudio, ensureAudio, sfxAllowed, tone, noise, getNoiseBuffer, start/update/stopGrazeDrone,
 // sfxGrowthScrape, sfx).
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
-  const { clamp, lerp } = FP.math;
-  const rand = (a, b) => a + (b - a) * Math.random();
+  const { clamp } = FP.math;
 
   // --- Moteur Web Audio --------------------------------------------------------
 
@@ -147,6 +146,7 @@
       case 'death': return sfx(e.cause === 'solid' ? 'hit' : 'acid');
       case 'toxicEnter': return sfx('contaminate');
       case 'bonusSpawn': case 'ready': return sfx('ready');
+      case 'growthTick': return scrape(e.k);
     }
   }
 
@@ -167,15 +167,9 @@
       (.024 + Math.min(.175, duration * .058)) * Math.pow(intensity, .66));
   }
 
-  // Grattement de la pousse qui creuse : cadence liée à la vitesse, plus rare près de la surface.
-  let scrapeTimer = 0;
-  function updateScrape(b, state, dt) {
-    const tip = state.plant.tip;
-    if (state.mode !== 'playing' || !tip) return;
-    scrapeTimer -= dt;
-    if (scrapeTimer > 0) return;
-    const speed = FP.plant.speed(state), k = clamp(speed / 190, 0, 1);
-    scrapeTimer = lerp(.095, .052, k) * (tip.y < state.world.surfaceY + 150 ? 1.42 : 1) * rand(.72, 1.28);
+  // Grattement de la pousse qui creuse, au rythme du battement de croissance (play/plant.js).
+  function scrape(k) {
+    const b = FP.audio._backend;
     if (!allowed(b, 'growthScrape', .032)) return;
     b.noise(.074, .086 + k * .050, 980 + Math.random() * 1050, 'bandpass', 0);
     b.noise(.052, .050 + k * .028, 260 + Math.random() * 320, 'lowpass', .004);
@@ -188,7 +182,6 @@
     try {
       for (const e of events) play(e);
       updateDrone(b, state);
-      updateScrape(b, state, dt);
     } catch (e) { /* audio muet plutôt qu'une partie figée */ }
   }
 

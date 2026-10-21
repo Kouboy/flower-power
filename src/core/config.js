@@ -101,6 +101,8 @@
       maxAngleControlled: 89, maxAngleIdle: 42, steerControlled: 13.8, steerIdle: 5.4,
       edge: 12, bounceZone: 14, bounce: -.48, bounceShake: .035,
       trailStep: 8.6, trailMax: 340,
+      // Battement de croissance (grattement + débris) : plus serré quand la tige va vite, plus rare près de la surface.
+      tick: { slow: .095, fast: .052, speedRef: 190, nearDist: 150, nearMul: 1.42, jitterMin: .72, jitterMax: 1.28 },
       // Croissance déviée dans la terre contaminée : la tige se tord dans la main, sans demi-tour.
       corrupted: { swayFreq: 12, swayDepth: .042, swayAmp: .70, swayFreq2: 6.6, swayAmp2: .22, lift: .24, minUp: -.13, maxAngle: 74, steerControlled: 9.2, steerIdle: 4.6, speed: .90 }
     },

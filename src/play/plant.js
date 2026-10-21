@@ -1,6 +1,6 @@
 // play/plant.js — croissance et pilotage de la pousse.
 // Lit     : state.input, state.time, state.rng, state.score.flowers, state.world.{width,height,viewH}, state.plant.corruption, FP.config.plant.
-// Écrit   : state.plant, state.mode (lancement), state.camera.{y,shake}, state.events (stemStart) ;
+// Écrit   : state.plant, state.mode (lancement), state.camera.{y,shake}, state.events (stemStart, growthTick) ;
 //           remise à zéro par pousse de state.power.{shield,shieldGrace} et state.score.flowerBonus.
 // Expose  : FP.plant.prepare(state), FP.plant.launch(state), FP.plant.speed(state), FP.plant.update(state, dt).
 // Porté de la v3.43.16 (prepareStem, launchPreparedStem, partie « croissance » de update()).
@@ -17,6 +17,7 @@
     p.trail = [];
     p.stemAge = 0;
     p.corruption = 0; p.toxicTimer = 0; p.recentToxic = 0;
+    p.scrapeTimer = 0;                    // la nouvelle tige gratte dès sa première frame
     // Chaque pousse repart sans bouclier ni pollen (v3 : prepareStem).
     state.power.shield = false; state.power.shieldGrace = 0; state.score.flowerBonus = 0;
     state.camera.y = Math.max(0, w.height - w.viewH);
@@ -43,11 +44,23 @@
     return state.input.down ? base * s.controlled : base;
   }
 
+  // La pointe qui creuse : un seul battement pour le grattement (audio) et les débris (rendu), comme en v3.
+  // L'irrégularité est purement sensorielle : Math.random, pour ne pas décaler les tirages du niveau.
+  function growthTick(state, dt, v) {
+    const p = state.plant, t = FP.config.plant.tick;
+    p.scrapeTimer -= dt;
+    if (p.scrapeTimer > 0) return;
+    const k = clamp(v / t.speedRef, 0, 1), near = p.tip.y < state.world.surfaceY + t.nearDist;
+    p.scrapeTimer = lerp(t.slow, t.fast, k) * (near ? t.nearMul : 1) * lerp(t.jitterMin, t.jitterMax, Math.random());
+    state.events.push({ type: 'growthTick', k, near });
+  }
+
   function update(state, dt) {
     if (state.mode !== 'playing') return;
     const p = state.plant, cfg = FP.config.plant, input = state.input, W = state.world.width;
     p.stemAge += dt;
     const v0 = speed(state);
+    growthTick(state, dt, v0);
     const controlled = input.down;
 
     let desiredX = Math.sin(state.time * cfg.swayFreq + p.tip.y * cfg.swayDepth) * cfg.swayAmp;

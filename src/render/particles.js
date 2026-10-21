@@ -1,6 +1,6 @@
 // render/particles.js — particules : gerbes nées des événements, terre et éclats derrière la pointe.
-// Lit     : state.events (eco, bomb, shieldBreak, pickup, death, toxicEnter, bloom), state.time, state.mode, state.plant,
-//           state.camera.y, state.world.{surfaceY,viewH}, FP.plant.speed.
+// Lit     : state.events (eco, bomb, shieldBreak, pickup, death, toxicEnter, bloom, growthTick), state.time, state.mode,
+//           state.plant.{tip,dir}, state.camera.y, state.world.viewH.
 // Écrit   : state.fx.particles uniquement (réservé au rendu) ; aléatoire visuel via Math.random.
 // Expose  : FP.particles.draw(ctx, state) (repère monde).
 // Porté de la v3.43.16 (flashParticles, emitGrowthDebris, particleBudget, mise à jour des particules dans update(), drawParticles).
@@ -8,10 +8,10 @@
   'use strict';
   const FP = window.FP = window.FP || {};
   const TAU = FP.TAU;
-  const { clamp, lerp } = FP.math;
+  const { clamp } = FP.math;
   const rand = (a, b) => a + (b - a) * Math.random();
 
-  let lastTime = null, debrisTimer = 0;
+  let lastTime = null;
 
   // En haut de l'écran on voit plus de fleurs et d'effets : on baisse le plafond.
   function budget(state) {
@@ -41,18 +41,15 @@
           burst(state, e.x, e.y, e.cause === 'solid' ? 'impact' : 'acid', 38);
           break;
         case 'bloom': burst(state, e.x, e.y, 'petal', Math.min(92, 58 + 12 * (e.bonus || 0))); break;
+        case 'growthTick': growthDebris(state, e.k, e.near); break;
       }
     }
   }
 
-  // La pointe qui creuse projette de la terre et des éclats vers l'arrière, moins près de la surface.
-  function growthDebris(state, dt) {
+  // À chaque battement de croissance, la pointe projette de la terre et des éclats vers l'arrière, moins près de la surface.
+  function growthDebris(state, k, near) {
     const p = state.plant, tip = p.tip;
-    if (state.mode !== 'playing' || !tip) return;
-    debrisTimer -= dt;
-    if (debrisTimer > 0) return;
-    const k = clamp(FP.plant.speed(state) / 190, 0, 1), near = tip.y < state.world.surfaceY + 150;
-    debrisTimer = lerp(.095, .052, k) * (near ? 1.42 : 1) * rand(.72, 1.28);
+    if (!tip) return;
     const list = state.fx.particles, room = Math.max(0, budget(state) - list.length);
     const count = Math.min(room, near ? Math.max(1, Math.floor(1 + k * 1.2)) : 2 + Math.floor(k * 3));
     const nx = -p.dir.y, ny = p.dir.x;
@@ -103,9 +100,8 @@
     // Temps écoulé depuis la frame précédente (borné : retour d'onglet, nouveau run).
     const dt = lastTime === null ? 0 : clamp(state.time - lastTime, 0, .05);
     lastTime = state.time;
-    fromEvents(state);
-    growthDebris(state, dt);
     step(state, dt);
+    fromEvents(state);
     const top = state.camera.y - 42, bottom = state.camera.y + state.world.viewH + 42;
     for (const q of state.fx.particles) if (q.y >= top && q.y <= bottom) drawOne(ctx, q);
   }

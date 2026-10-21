@@ -1,5 +1,5 @@
 // ui/menu.js — écran titre et démarrage d'une partie.
-// Lit     : l'élément #menu, le clavier (Espace / Entrée), FP.view (via createRun), FP.level.startRun, FP.plant.launch.
+// Lit     : l'élément #menu, le clavier (Espace / Entrée → FP.input.press en partie), FP.view (via createRun), FP.level.startRun, FP.plant.launch.
 // Écrit   : FP.state.current (nouveau run), state.mode, state.events (runStart) ; à chaque redimensionnement, la taille de vue du run.
 // Expose  : rien.
 (function () {

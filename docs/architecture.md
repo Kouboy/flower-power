@@ -70,7 +70,7 @@ L'état de la partie en cours est `FP.state.current`, créé par `FP.state.creat
   time, seed, level, rng, signature,
   input:  { x, screenX, y, down, active, pressed },
   camera: { y, manual, near, zoom, shake },
-  plant:  { seed, tip, dir, guide, trail, oldTrails, stemAge, stemCount, reserves, corruption, toxicTimer, recentToxic },
+  plant:  { seed, tip, dir, guide, trail, oldTrails, stemAge, stemCount, reserves, corruption, toxicTimer, recentToxic, scrapeTimer },
   world:  { width, height, viewH, surfaceY, skyVariant, lawnVariant, safePath, safeRadius, solids, toxics, leaks, bonuses },
   query:  { solid, danger, near, toxic, leak, leakHit, grazes },
   flow:   { timer, message, messageTimer, stage, fade, overReason },
@@ -136,7 +136,7 @@ Avec `?perf=1`, la boucle et `frame.js` mesurent update, render et les tranches 
 
 ## Son, particules et outils
 
-- `audio/audio.js` traduit les événements de la frame en sons (recettes de la v3, anti-rafale par type) et tient deux sons continus : le drone du frôlement (proximité = timbre, durée = puissance) et le grattement de la pousse. Le son ne démarre qu'après un premier geste (règle des navigateurs) ; sans Web Audio, le jeu reste muet. `FP.audio._backend` est remplaçable par un espion dans les tests.
+- `audio/audio.js` traduit les événements de la frame en sons (recettes de la v3, anti-rafale par type) et tient le drone du frôlement (proximité = timbre, durée = puissance). La pousse qui creuse émet un battement `growthTick { k, near }` (`play/plant.js`, cadence de la v3) : l'audio en fait le grattement, les particules la terre et les éclats, ensemble comme en v3. Le son ne démarre qu'après un premier geste (règle des navigateurs) ; sans Web Audio, le jeu reste muet. `FP.audio._backend` est remplaçable par un espion dans les tests.
 - `render/particles.js` crée ses gerbes à partir des événements (comme les effets) et vit dans `state.fx.particles`. Plafond : 84 pendant l'éclosion ou quand la pointe est près du haut de l'écran, 128 sinon.
 - `?flydebug=1` affiche la décision de chaque flyover : `powerups` émet `{ type: 'flyover', outcome: 'spawn' | 'blocked' | 'noSpot' | 'notQualified', kind, risk, time, effective, progress }`, et `bonusMissed` porte `gate`.
 

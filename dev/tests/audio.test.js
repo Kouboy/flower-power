@@ -2,7 +2,7 @@
 const spy = () => { const calls = []; let t = 0; return { calls, advance(d) { t += d; }, now: () => t, tone: (...a) => calls.push(['tone', ...a]), noise: (...a) => calls.push(['noise', ...a]), drone: (...a) => calls.push(['drone', ...a]) }; };
 const withBackend = (fn) => { const saved = FP.audio._backend; const b = spy(); FP.audio._backend = b; try { fn(b); } finally { FP.audio._backend = saved; } };
 const auRun = () => { const s = FP.state.createRun(1, { W: 440, H: 783 }); s.mode = 'menu'; return s; };
-FP.test('audio: chaque événement joue son son', () => withBackend(b => {
+FP.test('audio: l’éclosion joue ses cinq tons', () => withBackend(b => {
   FP.audio.consume([{ type: 'bloom' }], auRun(), 1 / 60);
   FP.assertEqual(b.calls.filter(c => c[0] === 'tone').length, 5);
 }));
@@ -35,9 +35,10 @@ FP.test('audio: sans Web Audio, aucun plantage', () => {
   try { FP.audio.consume([{ type: 'bloom' }, { type: 'eco', amount: 1 }], auRun(), 1 / 60); FP.audio.unlock(); }
   finally { FP.audio._backend = saved; }
 });
-FP.test('flow: entrée en ready → événement ready', () => {
-  const s = flowRun(); s.plant.tip = { x: 220, y: s.world.surfaceY - 1 }; FP.collision.update(s); FP.flow.update(s, 0);
-  const seen = [];
-  for (let i = 0; i < 200 && s.mode !== 'ready'; i++) { s.events.length = 0; FP.flow.update(s, 1 / 60); seen.push(...s.events); }
-  FP.assertEqual(s.mode, 'ready'); FP.assert(seen.some(e => e.type === 'ready'));
-});
+FP.test('audio: le grattement suit le battement de croissance', () => withBackend(b => {
+  const s = auRun(); s.mode = 'playing';
+  FP.audio.consume([], s, 1);
+  FP.assertEqual(b.calls.filter(c => c[0] === 'noise').length, 0);
+  FP.audio.consume([{ type: 'growthTick', k: .5, near: false }], s, 1 / 60);
+  FP.assertEqual(b.calls.filter(c => c[0] === 'noise').length, 2);
+}));

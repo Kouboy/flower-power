@@ -56,3 +56,13 @@ FP.test('plant: prepare remet l’exposition à zéro', () => {
   FP.plant.prepare(s);
   FP.assertEqual(s.plant.corruption + s.plant.toxicTimer + s.plant.recentToxic, 0);
 });
+FP.test('plant: chaque tige gratte dès sa première frame', () => {
+  const s = plantRun(); s.events.length = 0;
+  s.plant.scrapeTimer = 5; FP.plant.prepare(s); FP.plant.launch(s); s.events.length = 0;
+  FP.plant.update(s, 1 / 60);
+  const ticks = s.events.filter(e => e.type === 'growthTick');
+  FP.assertEqual(ticks.length, 1);
+  FP.assert(ticks[0].k >= 0 && ticks[0].k <= 1 && typeof ticks[0].near === 'boolean');
+  s.events.length = 0; FP.plant.update(s, 1 / 60);
+  FP.assert(!s.events.some(e => e.type === 'growthTick'), 'cadence ≥ 37 ms');
+});

@@ -2,7 +2,7 @@
 // Lit     : state.world, state.camera.y, state.plant.{tip,seed}, FP.view, FP.camera.totalZoom, FP.input.focalX,
 //           state.flow.fade, FP.soil, FP.hazardsRender, FP.obstacles, FP.powerupsRender, FP.plantRender, FP.flowersRender,
 //           FP.effects, FP.particles, FP.hud ; state.camera.shake (secousse) ; FP.perf, FP.flydebug (outils de réglage).
-// Écrit   : rien (le canvas uniquement).
+// Écrit   : rien lui-même (le canvas) ; effects et particles, qu'il appelle, tiennent state.fx.
 // Expose  : FP.render.frame(state).
 (function () {
   'use strict';
@@ -41,6 +41,7 @@
     FP.obstacles.draw(ctx, world, camY, viewH);
     if (perf) t = perf.mark('hazards', t);
     FP.powerupsRender.drawBonuses(ctx, state);
+    if (perf) t = perf.mark('bonuses', t);
     FP.plantRender.draw(ctx, state);
     FP.flowersRender.draw(ctx, state);
     FP.hazardsRender.drawOverlay(ctx, state);

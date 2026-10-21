@@ -90,7 +90,7 @@ FP.state = {
   time, seed, level, rng, signature,
   input:  { x, screenX, y, down, active, pressed },
   camera: { y, manual, near, zoom, shake },
-  plant:  { seed, tip, dir, guide, trail, oldTrails, stemAge, stemCount, reserves, corruption, toxicTimer, recentToxic },
+  plant:  { seed, tip, dir, guide, trail, oldTrails, stemAge, stemCount, reserves, corruption, toxicTimer, recentToxic, scrapeTimer },
   world:  { width, height, viewH, surfaceY, skyVariant, lawnVariant, safePath, safeRadius, solids, toxics, leaks, bonuses },
   query:  { solid, danger, near, toxic, leak, leakHit, grazes },
   flow:   { timer, message, messageTimer, stage, fade, overReason },

@@ -10,7 +10,7 @@
   const { lerp } = FP.math;
 
   // Moyennes glissantes : lissées pour rester lisibles à l'œil (FPS un peu plus lent).
-  const stats = { fps: 60, update: 0, render: 0, soil: 0, hazards: 0, plant: 0 };
+  const stats = { fps: 60, update: 0, render: 0, soil: 0, hazards: 0, bonuses: 0, plant: 0 };   // bonuses : mesuré, non affiché (v3)
 
   function begin(dt) {
     stats.fps = lerp(stats.fps, 1 / Math.max(.001, dt), .08);

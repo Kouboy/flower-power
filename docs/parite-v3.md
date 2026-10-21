@@ -1,6 +1,6 @@
 # Parité v4.0.0 ↔ v3.43.16
 
-Liste de contrôle : chaque fonctionnalité de la v3.43.16 (`archive/v3.43.16/index.html`), le fichier v4 qui la porte et la fonction v3 d'origine. Les réglages chiffrés vivent tous dans `src/core/config.js`.
+Liste de contrôle : chaque fonctionnalité de la v3.43.16 (`archive/v3.43.16/index.html`), le fichier v4 qui la porte et la fonction v3 d'origine. Les réglages de gameplay vivent tous dans `src/core/config.js` ; les recettes de son et de particules restent dans `audio/audio.js` et `render/particles.js`.
 
 ## Porté
 

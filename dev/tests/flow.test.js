@@ -133,3 +133,9 @@ FP.test('flow: la raison de la dernière mort est gardée pour l’écran de fin
   FP.collision.update(s); FP.flow.update(s, 0);
   FP.assertEqual(s.mode, 'over'); FP.assertEqual(s.flow.overReason, 'rupture : rack serveur');
 });
+FP.test('flow: entrée en ready → événement ready', () => {
+  const s = flowRun(); s.plant.tip = { x: 220, y: s.world.surfaceY - 1 }; FP.collision.update(s); FP.flow.update(s, 0);
+  const seen = [];
+  for (let i = 0; i < 200 && s.mode !== 'ready'; i++) { s.events.length = 0; FP.flow.update(s, 1 / 60); seen.push(...s.events); }
+  FP.assertEqual(s.mode, 'ready'); FP.assert(seen.some(e => e.type === 'ready'));
+});
