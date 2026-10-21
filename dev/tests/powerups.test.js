@@ -87,3 +87,43 @@ FP.test('powerups: un nouveau niveau efface les récompenses', () => {
   const s = puRun(); bonusAtTip(s, 'water'); FP.level.generate(s);
   FP.assertEqual(s.world.bonuses.length, 0);
 });
+FP.test('powerups: le bouclier absorbe un choc sans changer la direction', () => {
+  const s = puRun(); s.power.shield = true; const dy = -Math.sqrt(1 - .09); s.plant.dir = { x: .3, y: dy }; s.plant.tip = { x: 220, y: 1200 };   // loin du fond : le recul n’est pas borné
+  const t0 = { ...s.plant.tip }; s.world.solids = [server(t0.x, t0.y)];
+  FP.collision.update(s); FP.powerups.update(s, 1 / 60); FP.flow.update(s, 1 / 60);
+  FP.assertEqual(s.mode, 'playing'); FP.assertEqual(s.power.shield, false);
+  FP.assertEqual(s.plant.dir.x, .3); FP.assertEqual(s.plant.dir.y, dy);
+  FP.assert(Math.abs(Math.hypot(s.plant.tip.x - t0.x, s.plant.tip.y - t0.y) - 26) < 1e-6);
+  FP.assert(s.events.some(e => e.type === 'shieldBreak'));
+});
+FP.test('powerups: pendant la grâce, un second choc ne tue pas', () => {
+  const s = puRun(); s.power.shield = true; s.world.solids = [server(s.plant.tip.x, s.plant.tip.y)];
+  FP.collision.update(s); FP.powerups.update(s, 1 / 60); FP.flow.update(s, 1 / 60);
+  s.world.solids = [server(s.plant.tip.x, s.plant.tip.y)];
+  FP.collision.update(s); FP.powerups.update(s, 1 / 60); FP.flow.update(s, 1 / 60);
+  FP.assertEqual(s.mode, 'playing');
+});
+FP.test('powerups: après la grâce, un choc tue', () => {
+  const s = puRun(); s.power.shieldGrace = .01; s.world.solids = [server(s.plant.tip.x, s.plant.tip.y)];
+  FP.powerups.update(s, .02); FP.collision.update(s); FP.powerups.update(s, 1 / 60); FP.flow.update(s, 1 / 60);
+  FP.assertEqual(s.mode, 'dying');
+});
+FP.test('powerups: le bouclier protège aussi du lixiviat', () => {
+  const s = puRun(); s.power.shield = true; const t = s.plant.tip;
+  s.world.leaks = [{ x: t.x, y: t.y, len: 0, angle: 0, r: 12, cx: t.x, cy: t.y, cr: 12, hitFlash: 0 }];
+  FP.collision.update(s); FP.powerups.update(s, 1 / 60); FP.flow.update(s, 1 / 60);
+  FP.assertEqual(s.mode, 'playing');
+  FP.assert(s.events.some(e => e.type === 'shieldBreak' && e.kind === 'acid'));
+});
+FP.test('powerups: le bouclier ne protège pas d’une zone toxique', () => {
+  const s = puRun(); s.power.shield = true; const t = s.plant.tip;
+  s.world.toxics = [{ x: t.x, y: t.y, rx: 60, ry: 60, a: 0 }]; s.plant.toxicTimer = .82;
+  FP.collision.update(s); FP.powerups.update(s, 1 / 60); FP.flow.update(s, 1 / 60);
+  FP.assertEqual(s.mode, 'dying'); FP.assertEqual(s.power.shield, true);
+});
+FP.test('powerups: le bris recale le guide sur l’intention du joueur', () => {
+  const s = puRun(); s.power.shield = true; s.input = { x: 100, y: 400, down: true, active: true, pressed: false, screenX: 100 };
+  s.world.solids = [server(s.plant.tip.x, s.plant.tip.y)];
+  FP.collision.update(s); FP.powerups.update(s, 1 / 60);
+  FP.assertEqual(s.plant.guide.x, 100);
+});

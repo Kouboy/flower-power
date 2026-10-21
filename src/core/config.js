@@ -146,6 +146,9 @@
       spore: { radius: 92, solidK: .55, toxicK: .38, ecoPerSolid: 2000, shakeBase: .22, shakePerSolid: .035 }
     },
 
+    // Bouclier organique : un choc absorbé, puis .48 s de grâce ; la pointe recule de 26 px sur sa trajectoire.
+    shield: { grace: .48, back: 26, edge: 14, shake: .16, messageTime: .92 },
+
     // Déroulé de partie.
     flow: {
       dyingTime: .85, bloomTime: 1.55, oldTrailsMax: 6, trailSimplifyPx: 11, deathShake: .28,

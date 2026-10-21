@@ -1,9 +1,11 @@
 // play/powerups.js — flyover → récompense (pollen, goutte, spore), ramassage, spore.
-// Lit     : state.mode, state.plant.{tip,dir}, state.world, state.power.shield, FP.config.{flyover,powerups,text},
+// Lit     : state.mode, state.plant.{tip,dir}, state.input, state.query, state.world, state.power, FP.config.{flyover,powerups,shield,plant,text},
 //           FP.collision.distanceTo, FP.hazards.toxicIntensityAt.
 // Écrit   : state.world.{bonuses,solids,toxics,leaks} (apparition, ramassage, nettoyage par la spore), solid.rewarded,
 //           state.power.{shield,shieldGrace}, state.score.flowerBonus, state.graze.active (objets effacés),
-//           state.events (bonusSpawn, bonusMissed, pickup, bomb) ; messages via FP.flow.say ; gains via FP.scoring.awardFlat.
+//           state.query (choc absorbé), state.plant.{tip,guide} (bris), state.events (bonusSpawn, bonusMissed, pickup,
+//           bomb, shieldBreak) ; messages via FP.flow.say ; gains via FP.scoring.awardFlat.
+// Bouclier : intercepte les chocs dans update (shatterOrganicShield v3).
 // Expose  : FP.powerups.assess(state, obj, record), FP.powerups.rewardType(a), FP.powerups.onFlyover(state, obj, record),
 //           FP.powerups.update(state, dt).
 // Porté de la v3.43.16 (assessFlyover, flyoverRewardType, spawnFlyoverBonus, findFlyoverBonusSpawn, bonusSpawnClear,
@@ -152,6 +154,40 @@
     if (b.type !== 'spore') state.events.push({ type: 'pickup', kind: b.type, x: b.x, y: b.y });
   }
 
+  // --- Bouclier --------------------------------------------------------------
+
+  // Le bouclier absorbe le choc sans confisquer la direction donnée par le joueur : la pointe recule
+  // sur sa trajectoire pour sortir du collider, le vecteur de croissance est conservé, et si le doigt
+  // est toujours posé, le guide est recalé sur son intention.
+  function shatter(state, kind) {
+    const c = FP.config.shield, p = state.plant, w = state.world, i = state.input;
+    state.power.shield = false;
+    state.power.shieldGrace = c.grace;
+    state.graze.active.clear();
+    p.tip.x = clamp(p.tip.x - p.dir.x * c.back, c.edge, w.width - c.edge);
+    p.tip.y = clamp(p.tip.y - p.dir.y * c.back, w.surfaceY + 2, w.height - FP.config.plant.floorOffset);
+    if (i.down) {
+      const ctl = FP.config.plant.control;
+      p.guide.x = i.x;
+      p.guide.y = p.tip.y - FP.math.lerp(ctl.lookAheadTop, ctl.lookAheadBottom, clamp(i.y / w.viewH, 0, 1));
+    }
+    state.events.push({ type: 'shieldBreak', kind, x: p.tip.x, y: p.tip.y });
+    state.camera.shake = Math.max(state.camera.shake, c.shake);
+    FP.flow.say(state, FP.config.text.shieldBroken, c.messageTime);
+  }
+
+  // Intercepte un choc (solide ou lixiviat) avant que flow ne décide d'une mort. Les nappes toxiques
+  // ne sont pas concernées : c'est une exposition continue, pas un choc.
+  function shield(state) {
+    const q = state.query;
+    if (!q.solid && !(q.leak > 0)) return;
+    if (state.power.shieldGrace <= 0) {
+      if (!state.power.shield) return;
+      shatter(state, q.solid ? 'impact' : 'acid');
+    }
+    q.solid = null; q.leak = 0; q.leakHit = null;
+  }
+
   // --- Système ----------------------------------------------------------------
 
   function update(state, dt) {
@@ -168,6 +204,7 @@
       keep.push(b);
     }
     state.world.bonuses = keep;
+    if (playing) shield(state);
   }
 
   FP.powerups = { assess, rewardType, onFlyover, update };
