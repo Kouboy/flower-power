@@ -37,3 +37,9 @@ FP.test('catalog: chaque asset a son runtime.src', () => { for (const a of Objec
 FP.test('catalog: tous les assets ont un pivot centré', () => {
   for (const a of Object.values(FP.catalog.assets)) FP.assert(a.render.pivot[0] === .5 && a.render.pivot[1] === .5, a.id);
 });
+FP.test('catalog: l’échelle agrandit le sprite et sa collision ensemble', () => {
+  const a = FP.catalog.makeSolid({ kind: 'tire', x: 0, y: 0, a: 0, flip: 1 }), b = FP.catalog.makeSolid({ kind: 'tire', x: 0, y: 0, a: 0, flip: 1, scale: 1.1 });
+  FP.assert(Math.abs(b.w - a.w * 1.1) < 1e-9 && Math.abs(b.h - a.h * 1.1) < 1e-9);
+  b.collision.forEach(([x, y], i) => FP.assert(Math.abs(x - a.collision[i][0] * 1.1) < 1e-9 && Math.abs(y - a.collision[i][1] * 1.1) < 1e-9));
+  FP.assert(b.broadR > a.broadR);
+});

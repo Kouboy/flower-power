@@ -124,7 +124,8 @@
     for (const e of table) { if (r < e.w) { entry = e; break; } r -= e.w; }
     const a = rng.range(-entry.a, entry.a);
     const flip = entry.noFlip ? 1 : (rng.next() < FP.config.level.mirrorChance ? -1 : 1);
-    return FP.catalog.makeSolid({ kind: entry.kind, x: pos.x, y: pos.y, a, flip });
+    const scale = rng.range(...FP.config.level.solids.sizeJitter);
+    return FP.catalog.makeSolid({ kind: entry.kind, x: pos.x, y: pos.y, a, flip, scale });
   }
 
   // Le grand PNG signature réserve sa place AVANT le mobilier courant.

@@ -123,3 +123,8 @@ FP.test('level: des trajets de limaces peuvent dépasser du cadre', () => {
 const meanSolids = (level) => { let n = 0; for (let seed = 1; seed <= 12; seed++) { const s = FP.state.createRun(seed, { W: 440, H: 783 }); s.level = level; FP.level.startRun(s); n += s.world.solids.length; } return n / 12; };
 FP.test('level: premier niveau plus dense', () => { const m = meanSolids(0); FP.assert(m >= 14, 'moyenne ' + m); });
 FP.test('level: la densité monte nettement avec les niveaux', () => { const a = meanSolids(0), b = meanSolids(4); FP.assert(b >= a + 2.5, a + ' → ' + b); });   // le terrain plafonne vers 20 obstacles
+FP.test('level: les obstacles d’un niveau n’ont pas tous la même taille', () => {
+  const s = FP.state.createRun(21, { W: 440, H: 783 }); FP.level.startRun(s);
+  const widths = new Set(s.world.solids.filter(o => !o.signature).map(o => Math.round(o.w)));
+  FP.assert(widths.size >= 4, String([...widths]));
+});
