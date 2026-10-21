@@ -11,7 +11,7 @@ Lire `docs/architecture.md` avant toute modification.
 3. Réglage → `config.js` uniquement. Visuel → `render/*` uniquement, jamais `play/*`.
 4. Un fichier > 400 lignes est découpé d'abord, dans une étape séparée.
 5. Pas de code mort « au cas où » : ce qui est remplacé est supprimé.
-6. Une demande = un commit = une entrée de CHANGELOG ; `dev/check.html` vert et une partie jouée avant de valider.
+6. Une demande = un ou plusieurs commits ciblés ; une entrée de CHANGELOG par version ; `dev/check.html` vert et une partie jouée avant de valider.
 
 ## Vérifier
 

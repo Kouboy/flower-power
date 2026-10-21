@@ -4,7 +4,8 @@
 // Écrit   : state.world.{bonuses,solids,toxics,leaks} (apparition, ramassage, nettoyage par la spore), solid.rewarded,
 //           state.power.{shield,shieldGrace}, state.score.flowerBonus, state.graze.active (objets effacés),
 //           state.query (choc absorbé), state.plant.{tip,guide} (bris), state.events (bonusSpawn, bonusMissed, pickup,
-//           bomb, shieldBreak, flyover — décision du flyover, lue par ?flydebug=1) ; messages via FP.flow.say ; gains via FP.scoring.awardFlat.
+//           bomb, shieldBreak, flyover — décision du flyover, lue par ?flydebug=1), state.camera.shake (spore, bris),
+//           un tirage state.rng par récompense (phase) ; messages via FP.flow.say ; gains via FP.scoring.awardFlat.
 // Bouclier : intercepte les chocs dans update (shatterOrganicShield v3).
 // Expose  : FP.powerups.assess(state, obj, record), FP.powerups.rewardType(a), FP.powerups.onFlyover(state, obj, record),
 //           FP.powerups.update(state, dt).

@@ -4,7 +4,7 @@
 
 ## Statut
 
-**v4.0.0 — parité v3.** La refonte reprend tout le jeu de la v3.43.16 en fichiers courts : obstacles, nappes toxiques, limaces, ÉcoCrédits™, flyover et power-ups, éclosion et parterre, son procédural, particules, outils de réglage. La liste de contrôle est dans `docs/parite-v3.md`.
+**v4.0.1 — parité v3.** La refonte reprend tout le jeu de la v3.43.16 en fichiers courts : obstacles, nappes toxiques, limaces, ÉcoCrédits™, flyover et power-ups, éclosion et parterre, son procédural, particules, outils de réglage. La liste de contrôle est dans `docs/parite-v3.md`.
 
 La v3.43.16 reste jouable pour comparer : `archive/v3.43.16/index.html`.
 
@@ -29,7 +29,7 @@ Aucune installation. Ouvrir `index.html` par double-clic dans un navigateur réc
 ## Développer
 
 - Lire `AGENTS.md` (contrat d'itération) puis `docs/architecture.md`.
-- Tests : ouvrir `dev/check.html` (tout doit être vert), ou `node dev/run-checks.js`.
+- Tests : ouvrir `dev/check.html` (tout doit être vert), ou `node dev/run-checks.js`. Temps de génération : `node dev/bench-level.js`.
 - Gamefeel : comparer le ressenti avec `archive/v3.43.16/index.html` à taille de fenêtre identique (une même graine ne donne pas le même niveau dans les deux versions).
 
 ## Organisation

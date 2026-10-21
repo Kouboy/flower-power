@@ -143,7 +143,7 @@ Les glyphes de bonus (source, spore, pollen) restent dessinés en Canvas dans `r
 3. Réglage → `config.js` uniquement. Visuel → `render/*` uniquement, jamais `play/*`.
 4. Un fichier > 400 lignes est découpé d'abord, dans une étape séparée.
 5. Pas de code mort « au cas où » : ce qui est remplacé est supprimé.
-6. Une demande = un commit = une entrée de CHANGELOG ; `dev/check.html` vert et une partie jouée avant de valider.
+6. Une demande = un ou plusieurs commits ciblés ; une entrée de CHANGELOG par version ; `dev/check.html` vert et une partie jouée avant de valider. (Amendé après la v4.0.0 : une entrée par version.)
 
 Recommandation : itérer avec Claude Code directement sur le dépôt git (modifications ciblées, diff visible) plutôt que par régénération et téléversement.
 
