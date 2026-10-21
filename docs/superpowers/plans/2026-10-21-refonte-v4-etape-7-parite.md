@@ -193,3 +193,13 @@ FP.test('powerups: le flyover annonce sa décision', () => {
 - [ ] **Step 1: Mettre à jour.**
 - [ ] **Step 2: Vérification finale** : tests verts ; tous les fichiers < 400 lignes ; partie complète jouée de la graine à l'écran de fin ; comparaison côte à côte avec l'archive.
 - [ ] **Step 3: Commit** `docs: v4.0.0 — parité avec la v3.43.16`
+
+## Relecture finale — reporté après la parité
+
+Corrigé dans `6adb5d1` : bandeau `?flydebug=1` qui pouvait revenir dans la partie suivante ; grattement et débris désynchronisés (battement unique `growthTick`, remis à zéro à chaque tige) ; ordre vieillissement / création des particules ; tranche « plant » de `?perf=1` ; en-têtes et docs.
+
+Mineurs reportés :
+- le drone du frôlement s'éteint toujours lentement (.055 / .22 s) ; la v3 coupait vite (.018 / .08 s) sur un choc, une éclosion ou un nouveau run ;
+- `?flydebug=1` n'affiche pas « pas flyover » pour un obstacle déjà récompensé ou non éligible (la v3 le faisait) ;
+- le bandeau nomme les récompenses `POLLEN` / `SPORE` (la v3 : `BUD` / `BOMB`) ;
+- pas de test positif pour les décisions `notQualified` et `noSpot`, ni pour le plafond et les quantités de particules.
