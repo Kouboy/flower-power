@@ -19,6 +19,8 @@
 
 ## Décisions de ce plan
 
+- **Dangers rognés par les bords** (demande du 2026-10-21) : une nappe toxique ou un trajet de limace peut sortir par le bord gauche ou droit, tant qu'on en voit assez pour l'anticiper. Règle : centre de la nappe à l'écran (au moins la moitié visible) ; centre du trajet de limace dans le cadre et au moins la moitié du trajet visible. Réglages `config.level.toxics.minVisible` et `config.level.leaks.minVisible` (.5). Limites haute/basse et chemin sûr inchangés.
+
 - **Ordre de la boucle** : `… collision → graze → scoring → powerups → flow → camera`. `powerups` ramasse les bonus puis intercepte un choc (solide ou lixiviat) avec le bouclier ou la grâce avant que `flow` ne décide d'une mort — comme en v3, où le ramassage précédait la requête et le bouclier précédait `die()`.
 - **Pas de minuterie de spore** : depuis la v3.42.4, la spore libère le slot dès l'explosion (`sporeEffectTimer` restait à 0). Seul le bouclier ferme le robinet ; `state.power.sporeTimer` est supprimé.
 - **Les bonus vivent dans le monde** : `state.world.bonuses` (vidé par `level.generate`, comme `game.bonuses` en v3) au lieu de `state.power.bonuses`. Spec §6 amendée.
@@ -51,6 +53,50 @@
 | `src/render/powerups.js` | bonus (poche, glyphes source / spore / pollen, balancement), filament de naissance, membrane du bouclier |
 | `src/render/effects.js` | + `pickup`, `shieldBreak`, `bomb`, `hit` |
 | `src/render/hud.js` | ligne d'effet complète |
+
+---
+
+### Task 0: Nappes et limaces rognées par les bords
+
+**Files:** Modify `src/world/level.js`, `src/core/config.js`, `dev/tests/level.test.js`
+
+**Interfaces:**
+- Toxiques : accepté seulement si la fraction visible de l'ellipse en x, approchée par `(min(W, x + rx) − max(0, x − rx)) / (2·rx)`, est ≥ `toxics.minVisible` (.5).
+- Limaces : la condition « tous les points du trajet dans `[24, W−24]` » devient : centre `x` dans `[marginX, W − marginX]` et part des 9 points du trajet dans `[0, W]` ≥ `leaks.minVisible` (.5) ; la contrainte verticale (`[surfaceY + 48, height − 116]` pour tous les points) est inchangée.
+
+- [ ] **Step 1: Tests (rouges)** — dans `level.test.js`, remplacer `limaces dans le cadre` par :
+
+```js
+FP.test('level: nappes et limaces assez visibles pour être anticipées', () => {
+  for (const seed of [1, 2, 3, 1234, 99999]) {
+    const w = gen(seed).world;
+    for (const o of w.toxics) FP.assert((Math.min(w.width, o.x + o.rx) - Math.max(0, o.x - o.rx)) / (2 * o.rx) >= .5, 'toxique ' + seed);
+    for (const l of w.leaks) {
+      let inside = 0;
+      for (let i = 0; i <= 8; i++) {
+        const k = -.5 + i / 8, x = l.x + Math.cos(l.angle) * l.len * k, y = l.y + Math.sin(l.angle) * l.len * k;
+        if (x >= 0 && x <= w.width) inside++;
+        FP.assert(y > w.surfaceY + 48 && y < w.height - 116, 'limace y ' + seed);
+      }
+      FP.assert(inside / 9 >= .5 && l.x >= 24 && l.x <= w.width - 24, 'limace ' + seed);
+    }
+  }
+});
+FP.test('level: des trajets de limaces peuvent dépasser du cadre', () => {
+  let out = 0;
+  for (let seed = 1; seed <= 60; seed++) {
+    const w = gen(seed, 440, 783, 8).world;
+    for (const l of w.leaks) for (let i = 0; i <= 8; i++) {
+      const k = -.5 + i / 8, x = l.x + Math.cos(l.angle) * l.len * k;
+      if (x < 24 || x > w.width - 24) out++;
+    }
+  }
+  FP.assert(out > 0, 'aucun trajet ne dépasse');
+});
+```
+
+- [ ] **Step 2: rouge** · **Step 3: implémenter** · **Step 4: vert** ; mesurer le nombre moyen de limaces et de nappes (avant / après) et le noter au ledger.
+- [ ] **Step 5: Commit** `feat(world): nappes et limaces rognées par les bords tant qu'on peut les anticiper`
 
 ---
 
