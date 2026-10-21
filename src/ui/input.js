@@ -1,5 +1,5 @@
 // ui/input.js — pointeur (souris / doigt) → instantané d'entrée par frame.
-// Lit     : événements pointeur du canvas, FP.view (taille affichée), FP.camera.totalZoom, state.plant.{tip,seed}, state.world.width.
+// Lit     : événements pointeur du canvas, FP.view (taille affichée), FP.camera.totalZoom, FP.config.camera.{zoomEpsilon,focalX}, state.plant.{tip,seed}, state.world.width.
 // Écrit   : state.input = { x (monde), screenX, y (écran, 0..viewH), down, active, pressed (front montant de cette frame) }.
 // Expose  : FP.input.update(state), FP.input.toWorldX(screenX, zoom, focalX), FP.input.focalX(state), FP.input.press(),
 //           FP.input._inject(partial), FP.input._reset() — réservés aux tests (simuler un événement, repartir d'un tampon vide).
@@ -26,13 +26,13 @@
 
   // Le zoom est centré sur un point focal : on ramène l'abscisse écran dans le monde.
   function toWorldX(screenX, zoom, focalX) {
-    return zoom > 1.002 ? focalX + (screenX - focalX) / zoom : screenX;
+    return zoom > FP.config.camera.zoomEpsilon ? focalX + (screenX - focalX) / zoom : screenX;
   }
 
   // Point focal du zoom : la pointe, ou la graine tant que la pousse n'est pas lancée.
   function focalX(state) {
-    const W = state.world.width, p = state.plant.tip || state.plant.seed;
-    return clamp(p.x, W * .22, W * .78);
+    const W = state.world.width, p = state.plant.tip || state.plant.seed, f = FP.config.camera.focalX;
+    return clamp(p.x, W * f.min, W * f.max);
   }
 
   function update(state) {

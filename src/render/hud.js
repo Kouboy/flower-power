@@ -28,7 +28,7 @@
     ctx.fillStyle = sc.flowerBonus > 0 ? '#fff0a6' : '#c9b68b'; ctx.fillText('pollen +' + sc.flowerBonus, 24, boxY + 47);
     box(ctx, W - boxW - 12, boxY, boxW, boxH, 15);
     ctx.fillStyle = '#d9c798'; ctx.fillText('graines ' + state.plant.reserves, W - boxW, boxY + 8);
-    ctx.fillStyle = '#bda982'; ctx.fillText('élan ' + Math.round(100 + Math.max(0, state.plant.stemCount - 1) * 3) + '%', W - boxW, boxY + 28);
+    ctx.fillStyle = '#bda982'; ctx.fillText('élan ' + Math.round(100 + Math.max(0, state.plant.stemCount - 1) * FP.config.text.elanStep) + '%', W - boxW, boxY + 28);
     ctx.fillStyle = sc.combo > 1 ? '#cfff78' : '#bda982'; ctx.fillText(sc.combo > 1 ? 'combo x' + sc.combo : 'frôlement : ' + SIGIL, W - boxW, boxY + 47);
   }
 

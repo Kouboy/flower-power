@@ -1,6 +1,6 @@
 // world/collision.js — requête unique de la pointe contre les dangers, une fois par frame.
 // Lit     : state.mode, state.plant.tip, state.world.{solids,toxics,leaks} (leak.cx/cy/cr calculés par world/hazards.js),
-//           FP.hazards.toxicIntensityAt, FP.config.hazards.
+//           FP.hazards.toxicIntensityAt, FP.config.{hazards,graze}.
 // Écrit   : state.query = { solid, danger, near, toxic, leak, leakHit, grazes } ; leak.hitFlash de chaque limace touchée.
 //           grazes : un élément { obj, kind:'solid'|'leak', intensity, x, y } par frôlement en cours (play/graze.js).
 // Expose  : FP.collision.update(state), FP.collision.queryPoint(world, x, y), FP.collision.grazeBand(solid),
@@ -24,14 +24,14 @@
 
   function querySolids(q, solids, x, y) {
     for (const o of solids) {
-      const band = grazeBand(o), br = o.broadR + band + 10;
+      const band = grazeBand(o), br = o.broadR + band + FP.config.graze.broadPad;
       const dx = x - o.x, dy = y - o.y;
       if (dx * dx + dy * dy > br * br) continue;             // broad phase
       const d = distanceTo(o, x, y);
       if (d <= 0) { if (!q.solid) q.solid = o; continue; }
       if (d < band) {
         const intensity = Math.max(0, Math.min(1, 1 - d / band));
-        if (intensity > .02) {
+        if (intensity > FP.config.graze.minIntensity) {
           q.grazes.push({ obj: o, kind: 'solid', intensity, x, y });
           if (intensity > q.danger) { q.danger = intensity; q.near = o; }
         }
@@ -54,7 +54,7 @@
       const inner = l.r + h.leakGrazeInner, outer = l.r + h.leakGrazeOuter;
       if (d > inner && d < outer) {
         const intensity = Math.max(0, Math.min(1, 1 - (d - inner) / (outer - inner)));
-        if (intensity > .02) {
+        if (intensity > FP.config.graze.minIntensity) {
           q.grazes.push({ obj: l, kind: 'leak', intensity, x: l.cx, y: l.cy });
           q.danger = Math.max(q.danger, Math.min(h.leakDangerMax, intensity));
         }

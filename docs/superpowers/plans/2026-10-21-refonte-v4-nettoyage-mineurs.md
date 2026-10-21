@@ -28,7 +28,7 @@
 
 ---
 
-### Tâche 1 : Robustesse du noyau
+### Task 1: Robustesse du noyau
 
 **Fichiers :** `src/core/loop.js`, `src/core/fp.js`, `src/core/state.js`, `src/render/view.js`, `src/ui/input.js`, `src/render/sprites.js`, `dev/tests/{loop,fp,state,input,catalog}.test.js`, `README.md`.
 
@@ -68,7 +68,7 @@ FP.test('catalog: chaque asset a son runtime.src', () => { for (const a of Objec
   - Une erreur forcée en console (`FP.flow.update = () => { throw 1 }`) laisse le rendu tourner.
 - [ ] **Étape 4 : commit** `fix(core): boucle résistante aux erreurs, graine bornée, 9:16 sous la taille minimale`.
 
-### Tâche 2 : Règles de jeu alignées sur la v3
+### Task 2: Règles de jeu alignées sur la v3
 
 **Fichiers :** `src/play/powerups.js`, `src/play/graze.js`, `src/world/collision.js`, `dev/tests/{powerups,graze,collision}.test.js`.
 
@@ -98,7 +98,7 @@ FP.test('collision: toutes les limaces touchées clignotent', () => { /* deux li
 - [ ] **Étape 3 : simulation.** Lancer 100 parties simulées comme à l'étape 5. Les proportions de flyover (pollen / goutte / spore) restent du même ordre (23 / 27 / 7 sur 62), à ± 30 % près.
 - [ ] **Étape 4 : commit** `fix(play): flyover, spore et éclosion comme en v3`.
 
-### Tâche 3 : Rendu et son alignés sur la v3
+### Task 3: Rendu et son alignés sur la v3
 
 **Fichiers :** `src/render/frame.js`, `src/render/effects.js`, `src/audio/audio.js`, `src/render/flowers.js`, `docs/parite-v3.md`.
 
@@ -116,7 +116,7 @@ FP.test('collision: toutes les limaces touchées clignotent', () => { /* deux li
   - le drone se tait net à l'impact (à l'oreille, par l'utilisateur).
 - [ ] **Étape 3 : commit** `fix(render): ordre de l'exposition, bonus manqué, coupure du drone comme en v3`.
 
-### Tâche 4 : Réglages de gameplay dans `config.js`
+### Task 4: Réglages de gameplay dans `config.js`
 
 **Fichiers :** `src/core/config.js`, `src/world/level.js`, `src/world/collision.js`, `src/ui/input.js`, `src/render/frame.js`, `src/play/camera.js`, `src/render/hud.js`, `src/play/powerups.js`.
 
@@ -139,7 +139,7 @@ Restent dans leur fichier, nommées en tête : le masquage des obstacles (44 / +
 - [ ] **Étape 2 : déterminisme.** `?seed=7` doit donner le même niveau avant et après. Comparer `JSON.stringify` des solides, nappes et limaces dans un test temporaire, retiré avant le commit.
 - [ ] **Étape 3 : commit** `refactor(config): réglages de gameplay restants dans config.js`.
 
-### Tâche 5 : Tests manquants
+### Task 5: Tests manquants
 
 **Fichiers :** `dev/tests/{graze,powerups,flow,scoring}.test.js`, `dev/tests/e2e.test.js` (nouveau, chargé en dernier dans `check.html`).
 
@@ -152,7 +152,7 @@ Restent dans leur fichier, nommées en tête : le masquage des obstacles (44 / +
 - [ ] **Étape 2 :** `node dev/run-checks.js` : tout vert. Ces tests décrivent un comportement existant, donc ils doivent passer sans modifier `src/`. S'ils échouent, c'est un bug : on le corrige dans cette tâche avec son propre commit.
 - [ ] **Étape 3 : commit** `test: parcours complets frôlement → score et flyover`.
 
-### Tâche 6 : Mesures et documentation
+### Task 6: Mesures et documentation
 
 **Fichiers :** `dev/bench-level.js` (nouveau, Node), `docs/architecture.md`, `docs/parite-v3.md`, `src/world/level.js` (si besoin), `src/play/powerups.js` (en-tête), `AGENTS.md`, `CHANGELOG.md`, `README.md`.
 

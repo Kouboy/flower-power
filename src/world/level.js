@@ -123,7 +123,7 @@
     let entry = table[table.length - 1];
     for (const e of table) { if (r < e.w) { entry = e; break; } r -= e.w; }
     const a = rng.range(-entry.a, entry.a);
-    const flip = entry.noFlip ? 1 : (rng.next() < .5 ? -1 : 1);
+    const flip = entry.noFlip ? 1 : (rng.next() < FP.config.level.mirrorChance ? -1 : 1);
     return FP.catalog.makeSolid({ kind: entry.kind, x: pos.x, y: pos.y, a, flip });
   }
 
@@ -196,8 +196,8 @@
           rx: rng.range(c.rx[0], c.rx[1]) * (big ? c.bigRx : 1), ry: rng.range(c.ry[0], c.ry[1]) * (big ? c.bigRy : 1),
           a: rng.range(0, Math.PI), pulse: rng.range(0, 10), lobes: [], specks: []
         };
-        for (let q = 0; q < c.lobes; q++) o.lobes.push({ a: rng.range(0, FP.TAU), r: rng.range(.32, .88), sx: rng.range(.28, .58), sy: rng.range(.22, .52) });
-        for (let q = 0; q < c.specks; q++) o.specks.push({ x: rng.range(-.64, .64), y: rng.range(-.58, .58), r: rng.range(1.2, 3.1), light: rng.next() < c.lightChance });
+        for (let q = 0; q < c.lobes; q++) o.lobes.push({ a: rng.range(0, FP.TAU), r: rng.range(...c.shape.lobeR), sx: rng.range(...c.shape.lobeSx), sy: rng.range(...c.shape.lobeSy) });
+        for (let q = 0; q < c.specks; q++) o.specks.push({ x: rng.range(-c.shape.speckX, c.shape.speckX), y: rng.range(-c.shape.speckY, c.shape.speckY), r: rng.range(...c.shape.speckR), light: rng.next() < c.lightChance });
         // Une nappe peut déborder du cadre, mais on doit en voir assez pour l'anticiper.
         const visible = (Math.min(world.width, o.x + o.rx) - Math.max(0, o.x - o.rx)) / (2 * o.rx);
         if (visible >= c.minVisible && distToSafePath(world, o.x, o.y) > world.safeRadius + Math.max(o.rx, o.ry) * c.safeK + c.safeExtra) { world.toxics.push(o); placed = true; }
@@ -234,9 +234,6 @@
     });
   }
 
-  const ANGLED = [Math.PI / 8, Math.PI / 5, Math.PI / 3, Math.PI * 2 / 5, Math.PI * 3 / 5, Math.PI * 2 / 3, Math.PI * 4 / 5, Math.PI * 7 / 8];
-  const MORPHS = ['clear', 'fat', 'debris'];
-
   function placeLeaks(state, grid) {
     const world = state.world, rng = state.rng, c = FP.config.level.leaks, W = world.width;
     const count = countFor(c, state);
@@ -255,12 +252,12 @@
         const k = depthK(world, pos.y);
         // Angles très variés : les axes purs deviennent rares.
         const angle = rng.next() < c.angledChance
-          ? ANGLED[Math.floor(rng.next() * ANGLED.length)] + rng.range(-c.angleJitter, c.angleJitter)
+          ? Math.PI * c.shape.angles[Math.floor(rng.next() * c.shape.angles.length)] + rng.range(-c.angleJitter, c.angleJitter)
           : (rng.next() < .5 ? 0 : Math.PI * .5);
         const len = rng.range(c.len[0], c.len[1]) + Math.min(c.lenLevelMax, state.level * c.lenPerLevel) * rng.next() + k * c.lenDepth;
         const leak = {
           x: pos.x, y: pos.y, len, angle, phase: rng.range(0, 6.28), rate: rng.range(c.rate[0], c.rate[1]), r: rng.range(c.r[0], c.r[1]),
-          hitFlash: 0, morph: MORPHS[Math.floor(rng.next() * MORPHS.length)], debrisSeed: Math.floor(rng.next() * 99),
+          hitFlash: 0, morph: c.shape.morphs[Math.floor(rng.next() * c.shape.morphs.length)], debrisSeed: Math.floor(rng.next() * 99),
           s: 0, cx: 0, cy: 0, cr: 0
         };
         // Position de départ = celle de la première frame (pas de saut visible).
@@ -286,8 +283,8 @@
   function generate(state) {
     const world = state.world, rng = state.rng, g = FP.config.level.grid;
     world.solids = []; world.toxics = []; world.leaks = []; world.bonuses = [];
-    world.skyVariant = Math.floor(rng.next() * 4);
-    world.lawnVariant = Math.floor(rng.next() * 4);
+    world.skyVariant = Math.floor(rng.next() * FP.config.level.skyVariants);
+    world.lawnVariant = Math.floor(rng.next() * FP.config.level.lawnVariants);
     const grid = makeGrid(world.width, world.surfaceY + g.topPad, world.height - g.bottomPad);
     generateSafePath(world, rng, state.level);
     placeSignature(state, grid);

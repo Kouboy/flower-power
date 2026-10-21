@@ -5,6 +5,8 @@
 // Porté de la v3.43.16 (ensureObstacleStencilCache, drawObstacleSoilAnchorUnder, drawPixelSolidSprite).
 (function () {
   'use strict';
+  // Masquage : un obstacle est dessiné tant que son rayon (au moins 44 px) plus 90 px touche l'écran (visuel, v3).
+  const CULL_MIN_R = 44, CULL_PAD = 90;
   const FP = window.FP = window.FP || {};
   const TAU = FP.TAU;
 
@@ -101,7 +103,7 @@
     const viewPad = FP.config.soil.viewPad;
     const top = cameraY - viewPad, bottom = cameraY + viewH + viewPad;
     for (const o of world.solids) {
-      const pad = Math.max(44, o.broadR) + 90;
+      const pad = Math.max(CULL_MIN_R, o.broadR) + CULL_PAD;
       if (o.y + pad < top || o.y - pad > bottom) continue;
       drawAnchor(ctx, o);
       drawSprite(ctx, o);

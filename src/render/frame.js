@@ -1,5 +1,5 @@
 // render/frame.js — dessin d'une frame. Lecture seule de l'état.
-// Lit     : state.world, state.camera.y, state.plant.{tip,seed}, FP.view, FP.camera.totalZoom, FP.input.focalX,
+// Lit     : FP.config.camera.{zoomEpsilon,focalY}, state.world, state.camera.y, state.plant.{tip,seed}, FP.view, FP.camera.totalZoom, FP.input.focalX,
 //           state.flow.fade, FP.soil, FP.hazardsRender, FP.obstacles, FP.powerupsRender, FP.plantRender, FP.flowersRender,
 //           FP.effects, FP.particles, FP.hud ; state.camera.shake (secousse) ; FP.perf, FP.flydebug (outils de réglage).
 // Écrit   : rien lui-même (le canvas) ; effects et particles, qu'il appelle, tiennent state.fx.
@@ -12,10 +12,11 @@
   // Zoom centré sur la pointe (bornée dans la partie centrale de l'écran), comme en v3.
   function applyZoom(ctx, state, W, viewH) {
     const z = FP.camera.totalZoom(state);
-    if (z <= 1.002) return;
+    if (z <= FP.config.camera.zoomEpsilon) return;
     const focus = state.plant.tip || state.plant.seed;
     const fx = FP.input.focalX(state);
-    const fy = clamp(focus.y - state.camera.y, viewH * .20, viewH * .78);
+    const f = FP.config.camera.focalY;
+    const fy = clamp(focus.y - state.camera.y, viewH * f.min, viewH * f.max);
     ctx.translate(fx, fy); ctx.scale(z, z); ctx.translate(-fx, -fy);
   }
 

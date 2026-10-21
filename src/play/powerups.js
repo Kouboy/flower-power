@@ -112,7 +112,7 @@
       forming: p.formMax, formMax: p.formMax, age: 0, originX: obj.x, originY: obj.y
     });
     state.events.push({ type: 'bonusSpawn', kind: type, x: pos.x, y: pos.y });
-    FP.flow.say(state, FP.config.text.flyover[type], .95);
+    FP.flow.say(state, FP.config.text.flyover[type], p.messageTime.flyover);
   }
 
   // --- Ramassage --------------------------------------------------------------
@@ -142,7 +142,9 @@
     if (solidCleaned > 0) FP.scoring.awardFlat(state, x, y, solidCleaned * c.ecoPerSolid);
     const s = cleaned > 1 ? 'S' : '';
     const eco = solidCleaned > 0 ? ' · +' + (solidCleaned * c.ecoPerSolid).toLocaleString('fr-FR') + ' Ɇ' : '';
-    FP.flow.say(state, cleaned > 0 ? `SPORE : ${cleaned} DÉPÔT${s} NETTOYÉ${s}${eco}` : 'SPORE : ZONE NETTOYÉE', cleaned > 0 ? 1.35 : 1.18);
+    const text = FP.config.text.spore, times = FP.config.powerups.messageTime;
+    if (cleaned > 0) FP.flow.say(state, text.cleaned.replace('{n}', cleaned).split('{s}').join(s) + eco, times.sporeCleaned);
+    else FP.flow.say(state, text.empty, times.sporeEmpty);
     state.camera.shake = Math.max(state.camera.shake, c.shakeBase + c.shakePerSolid * solidCleaned);
   }
 
@@ -151,10 +153,10 @@
     if (b.type === 'water') {
       // La goutte crée une protection physique, visible, à usage unique et sans durée.
       state.power.shield = true;
-      FP.flow.say(state, text.water, 1.15);
+      FP.flow.say(state, text.water, FP.config.powerups.messageTime.water);
     } else if (b.type === 'pollen') {
       state.score.flowerBonus += 1;
-      FP.flow.say(state, text.pollen, 1.05);
+      FP.flow.say(state, text.pollen, FP.config.powerups.messageTime.pollen);
     } else {
       detonate(state, b.x, b.y);
     }
