@@ -45,6 +45,25 @@ Les familles sans PNG reviendront une à une avec leurs PNG, via l'Asset Editor.
 
 Atteindre la surface fait éclore une fleur. Trois graines (réserves) par partie. Le record est sauvegardé localement.
 
+## Direction artistique (v4.1.0)
+
+- **Style.**
+  - Pixel art de jeu Mega Drive façon *Earthworm Jim* : gros grain (1 pixel d'art = 2 px), contours sombres, aplats, tramages.
+  - Tout ce qui bouge est dessiné en code ; le décor est généré par le code d'après une planche de référence (`docs/art/reference-crepuscule.png`).
+- **Ambiance.**
+  - Un crépuscule pollué mais presque joli, onirique : ciel violet, rose et orange, soleil voilé, usines en silhouette, smog qui dérive.
+  - Sous la pelouse, trois strates sombres (humus, argile, pierre brun-gris), volontairement calmes pour que les dangers se lisent.
+- **Le héros.**
+  - La pointe est un bourgeon à visage. Son expression raconte le danger :
+    - concentré quand on le guide ;
+    - les yeux plissés et les dents serrées quand il frôle ;
+    - verdâtre et nauséeux dans une nappe ;
+    - les gros yeux juste avant un choc ;
+    - les yeux en croix ou le visage qui fond quand il meurt.
+  - À la surface, il devient la fleur, radieux. Puis il rejoint le parterre, apaisé.
+  - Chaque fleur a sa forme, sa teinte et sa petite expression : le parterre est la mémoire de la partie.
+- **Le ciel.** Il est un peu plus haut qu'en v3 (19 % de la hauteur de vue), pour qu'on voie le crépuscule sous le cadrage.
+
 ## Hors périmètre v4.0
 
 Portes béton/tuyau, bonus `amber`, autocollants satiriques procéduraux, bascule d'échelle A/B (le cadrage B est retenu).

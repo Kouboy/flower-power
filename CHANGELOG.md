@@ -2,6 +2,17 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.1.0 — Rendu pixel
+
+- tout le monde est dessiné sur une grille de pixels d'art (grain 2), agrandie sans lissage ; HUD, chiffres « +Ɇ » et textes restent nets ;
+- ciel de crépuscule pollué animé (smog, fumées), pelouse, trois strates de terre tramées à contraste bas, d'après une planche de référence générée avec SpriteCook (`docs/art/`) ;
+- obstacles ramenés sur la grille (8 niveaux par canal, contour, ancrage tramé) ;
+- le héros : une tête-bourgeon à visage avec six humeurs (calme, concentré, frôlement, alerte, toxique, mort), tige pixel à feuilles, graine endormie ;
+- à l'éclosion, le héros devient la fleur ; parterre de visages variés (forme, nombre de pétales, teinte, expression) ;
+- nappes, limaces, bonus, bouclier, effets et particules en pixels ;
+- ciel plus haut qu'en v3 (19 % de la hauteur de vue) pour qu'on voie le crépuscule ;
+- rendu au plus 1,7 ms par frame ; banc : 202 tests.
+
 ## v4.0.1 — Nettoyage
 
 - une erreur dans la mise à jour, le son ou le rendu ne fige plus le jeu : elle est signalée une fois en console et le reste continue ;
