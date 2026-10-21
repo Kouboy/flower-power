@@ -1,14 +1,15 @@
 // world/collision.js — requête unique de la pointe contre les dangers, une fois par frame.
 // Lit     : state.mode, state.plant.tip, state.world.{solids,toxics,leaks} (leak.cx/cy/cr calculés par world/hazards.js),
 //           FP.hazards.toxicIntensityAt, FP.config.hazards.
-// Écrit   : state.query = { solid, danger, near, toxic, leak, leakHit } ; leak.hitFlash au contact.
+// Écrit   : state.query = { solid, danger, near, toxic, leak, leakHit, grazes } ; leak.hitFlash au contact.
+//           grazes : un élément { obj, kind:'solid'|'leak', intensity, x, y } par frôlement en cours (play/graze.js).
 // Expose  : FP.collision.update(state), FP.collision.queryPoint(world, x, y), FP.collision.grazeBand(solid).
 // Porté de la v3.43.16 (queryTipHazards, pixelMaskDistance, solidGrazeBand) — polygones authorés uniquement.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
 
-  const EMPTY = () => ({ solid: null, danger: 0, near: null, toxic: 0, leak: 0, leakHit: null });
+  const EMPTY = () => ({ solid: null, danger: 0, near: null, toxic: 0, leak: 0, leakHit: null, grazes: [] });
 
   // Bande de frôlement autour du polygone : seulement si l'obstacle accepte le flyover.
   const grazeBand = (o) => (o.flyoverEligible ? o.grazeRadius : 0);
@@ -29,7 +30,10 @@
       if (d <= 0) { if (!q.solid) q.solid = o; continue; }
       if (d < band) {
         const intensity = Math.max(0, Math.min(1, 1 - d / band));
-        if (intensity > .02 && intensity > q.danger) { q.danger = intensity; q.near = o; }
+        if (intensity > .02) {
+          q.grazes.push({ obj: o, kind: 'solid', intensity, x, y });
+          if (intensity > q.danger) { q.danger = intensity; q.near = o; }
+        }
       }
     }
   }
@@ -47,7 +51,10 @@
       const inner = l.r + h.leakGrazeInner, outer = l.r + h.leakGrazeOuter;
       if (d > inner && d < outer) {
         const intensity = Math.max(0, Math.min(1, 1 - (d - inner) / (outer - inner)));
-        if (intensity > .02) q.danger = Math.max(q.danger, Math.min(h.leakDangerMax, intensity));
+        if (intensity > .02) {
+          q.grazes.push({ obj: l, kind: 'leak', intensity, x: l.cx, y: l.cy });
+          q.danger = Math.max(q.danger, Math.min(h.leakDangerMax, intensity));
+        }
       }
     }
   }

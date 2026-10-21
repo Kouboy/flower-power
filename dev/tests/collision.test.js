@@ -41,3 +41,9 @@ FP.test('collision: intensité toxique cumulée', () => {
   const o = { x: 200, y: 300, rx: 40, ry: 30, a: 0 };
   FP.assertEqual(FP.collision.queryPoint({ solids: [], toxics: [o, o], leaks: [] }, 200, 300).toxic, 2);
 });
+FP.test('collision: liste des frôlements', () => {
+  const o = solidAt(200, 300);
+  const l = { x: 400, y: 300, len: 0, angle: 0, r: 12, cx: 400, cy: 300, cr: 12 };
+  const q = FP.collision.queryPoint({ solids: [o], toxics: [], leaks: [l] }, 238, 300);
+  FP.assertEqual(q.grazes.length, 1); FP.assertEqual(q.grazes[0].obj, o); FP.assertEqual(q.grazes[0].kind, 'solid');
+});

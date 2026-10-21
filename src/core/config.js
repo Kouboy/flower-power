@@ -114,6 +114,14 @@
       toxicFalloff: .48, toxicMin: .18
     },
 
+    // Frôlement (v3.43.16) : rien avant .22 s, puis le score monte avec la proximité ; payé à la sortie.
+    graze: {
+      minTime: .22, minScore: 55, minAward: 75, smooth: .35,
+      base: 130, hotExp: 2.15, hotGain: 1980, closeExp: 2.4, closeGain: 95,
+      holdPerSec: 120, holdMax: 900, peakExp: 2.2, peakGain: 360, step: 25,
+      premium: { trex_signature: 1.18, nuclear: 1.18 }, leakMul: 1.12, leakFlashBase: .08, leakFlashGain: .18
+    },
+
     // Déroulé de partie.
     flow: {
       dyingTime: .85, bloomTime: 1.55, oldTrailsMax: 6, trailSimplifyPx: 11, deathShake: .28,
