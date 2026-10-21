@@ -44,13 +44,14 @@
     eye: '#f4ecd8', pupil: '#140c08', mouth: '#5a1e1e', teeth: '#f4ecd8', tongue: '#e0606a', blush: '#e07a7a', sweat: '#7ac8f0', brow: '#1e2a12'
   };
 
-  // Fleurs : une palette par palette de jeu (config.garden.palettes, même ordre) — pétales clair / moyen / ombre, cœur.
+  // Fleurs : une palette par palette de jeu (config.garden.palettes, même ordre) — pétales clair / moyen / ombre,
+  // cœur clair (il porte le visage du héros).
   const flowers = [
-    { petal: ['#f8d070', '#f0a848', '#b86a28'], heart: '#7a3a18' },
-    { petal: ['#f6a0b8', '#e06a90', '#a83a62'], heart: '#f0c050' },
-    { petal: ['#f0ece0', '#d0c8b4', '#988c78'], heart: '#e0a030' },
+    { petal: ['#f8d070', '#f0a848', '#b86a28'], heart: '#e8b860' },
+    { petal: ['#f6a0b8', '#e06a90', '#a83a62'], heart: '#f0c860' },
+    { petal: ['#f0ece0', '#d0c8b4', '#988c78'], heart: '#e8b048' },
     { petal: ['#b8a0f0', '#8a6ad8', '#5a40a0'], heart: '#f0d070' },
-    { petal: ['#f08a5a', '#d05a3a', '#902e22'], heart: '#3a2416' }
+    { petal: ['#f08a5a', '#d05a3a', '#902e22'], heart: '#f4d890' }
   ];
 
   const danger = ['#b4ff3a', '#d8ff58', '#7a3cff', '#c13cff'];
