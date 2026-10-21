@@ -1,6 +1,6 @@
 // render/frame.js — dessin d'une frame. Lecture seule de l'état.
 // Lit     : state.world, state.camera.y, state.plant.{tip,seed}, FP.view, FP.camera.totalZoom, FP.input.focalX,
-//           FP.soil, FP.hazardsRender, FP.obstacles, FP.plantRender, FP.effects, FP.hud.
+//           FP.soil, FP.hazardsRender, FP.obstacles, FP.powerupsRender, FP.plantRender, FP.effects, FP.hud.
 // Écrit   : rien (le canvas uniquement).
 // Expose  : FP.render.frame(state).
 (function () {
@@ -31,6 +31,7 @@
     FP.hazardsRender.drawBase(ctx, state);
     FP.hazardsRender.drawLeaks(ctx, state);
     FP.obstacles.draw(ctx, world, camY, viewH);
+    FP.powerupsRender.drawBonuses(ctx, state);
     FP.plantRender.draw(ctx, state);
     FP.hazardsRender.drawOverlay(ctx, state);
     FP.hazardsRender.drawExposure(ctx, state);

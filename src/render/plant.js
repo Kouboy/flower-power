@@ -138,6 +138,7 @@
     const seedVisible = p.seed.y + 38 >= camY - 70 && p.seed.y - 38 <= camY + state.world.viewH + 70;
     if (seedVisible) drawSeed(ctx, p.seed);
     if (state.mode === 'playing' && p.tip) {
+      FP.powerupsRender.drawShield(ctx, state);   // membrane sous le bourgeon, comme en v3
       drawBud(ctx, p.tip, p.dir, p.corruption > 0);
       if (state.input.down) drawGuide(ctx, state);
     }

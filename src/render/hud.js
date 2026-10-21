@@ -1,6 +1,6 @@
 // render/hud.js — informations à l'écran (repère écran, hors zoom).
 // Lit     : state.mode, state.flow.{message,messageTimer}, state.plant.{reserves,stemCount,trail,corruption},
-//           state.score.{flowers,eco,flowerBonus,combo}, state.input.down, FP.scoring.records, FP.view, FP.config.text.
+//           state.score.{flowers,eco,flowerBonus,combo}, state.power.shield, state.input.down, FP.scoring.records, FP.view, FP.config.text.
 // Écrit   : rien (le canvas uniquement).
 // Expose  : FP.hud.draw(ctx, state).
 // Porté de la v3.43.16 (drawHUD, panneau de fin de die()) ; le pollen reçu arrive à l'étape 5.
@@ -32,12 +32,16 @@
     ctx.fillStyle = sc.combo > 1 ? '#cfff78' : '#bda982'; ctx.fillText(sc.combo > 1 ? 'combo x' + sc.combo : 'frôlement : ' + SIGIL, W - boxW, boxY + 47);
   }
 
-  // Ligne d'effet au-dessus des panneaux (v3 : « croissance déviée », plus tard bouclier, spore…).
+  // Ligne d'effet au-dessus des panneaux : tout ce qui agit sur la pousse en cours (v3 : effect).
   function drawEffect(ctx, state, W, H) {
-    if (state.mode !== 'playing' || state.plant.corruption <= 0) return;
+    const t = FP.config.text, parts = [];
+    if (state.plant.corruption > 0) parts.push(t.corrupted);
+    if (state.power.shield) parts.push(t.shield);
+    if (state.score.flowerBonus > 0) parts.push('pollen +' + state.score.flowerBonus);
+    if (!parts.length) return;
     ctx.font = `650 13px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     ctx.beginPath(); ctx.roundRect(38, H - 92, W - 76, 22, 11); ctx.fillStyle = 'rgba(12,9,7,.48)'; ctx.fill();
-    ctx.fillStyle = '#fff1b7'; ctx.fillText(FP.config.text.corrupted, W / 2, H - 88);
+    ctx.fillStyle = '#fff1b7'; ctx.fillText(parts.join(' · '), W / 2, H - 88);
   }
 
   function drawMessage(ctx, state, W) {
@@ -84,7 +88,7 @@
     const { W, H } = FP.view;
     ctx.save();
     drawPanels(ctx, state, W, H);
-    drawEffect(ctx, state, W, H);
+    if (state.mode !== 'over') drawEffect(ctx, state, W, H);
     if (state.mode === 'ready') drawReady(ctx, W, H);
     drawMessage(ctx, state, W);
     if (state.mode === 'playing' && state.score.flowers === 0 && state.plant.trail.length < 90) {
