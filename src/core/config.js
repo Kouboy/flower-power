@@ -120,12 +120,22 @@
     graze: {
       minTime: .22, minScore: 55, minAward: 75, smooth: .35,
       base: 130, hotExp: 2.15, hotGain: 1980, closeExp: 2.4, closeGain: 95,
-      holdPerSec: 120, holdMax: 900, peakExp: 2.2, peakGain: 360, step: 25,
+      holdPerSec: 120, holdMax: 900, peakExp: 2.2, peakGain: 360, step: 25, effBase: .45, effGain: .55,
       premium: { trex_signature: 1.18, nuclear: 1.18 }, leakMul: 1.12, leakFlashBase: .08, leakFlashGain: .18
     },
 
     // ÉcoCrédits™ : arrondis à 25, combo ×(1 + .22 par cran) si les gains s'enchaînent en moins de 2 s.
     scoring: { comboWindow: 2, comboMax: 8, comboGain: .22, step: 25, minAmount: 25, shakeBase: .035, shakePerCombo: .006, shakeMax: .06 },
+
+    // Flyover (v3.42) : contourner un obstacle en montant, de près et longtemps.
+    flyover: {
+      minH: 36, advanceK: .27, advanceMin: 17, advanceMax: 42,
+      belowK: .10, belowMin: 6, belowMax: 16, aboveK: .08, aboveMin: 6, aboveMax: 14,
+      progressK: .62, progressMin: 28, effOffset: .20, effSpan: .95,
+      proxAvg: .62, proxPeak: .38, riskDuration: .47, riskProximity: .36, riskProgress: .17,
+      minTime: .27, minPeak: .20, minProgress: .42, minRisk: .40, minEffective: .30,
+      spore: { time: .82, risk: .66 }, water: { time: .52, risk: .48 }
+    },
 
     // Déroulé de partie.
     flow: {

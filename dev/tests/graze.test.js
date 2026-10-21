@@ -43,3 +43,11 @@ FP.test('graze: obstacle premium ×1,18', () => withAwards(got => {
   fakeGraze(s, o, .5); FP.graze.update(s, 1 / 60);
   FP.assertEqual(s.graze.active.get(o).mul, 1.18);
 }));
+FP.test('graze: mesures du flyover', () => withAwards(() => {
+  const s = grazeRun(), o = { kind: 'server', y: s.plant.tip.y - 20 };
+  for (let i = 0; i < 30; i++) { fakeGraze(s, o, .5); FP.graze.update(s, 1 / 60); }
+  const r = s.graze.active.get(o);
+  FP.assertEqual(r.startRelY, 20);
+  FP.assert(Math.abs(r.intensityTime - .25) < 1e-9);
+  FP.assert(Math.abs(r.effectiveTime - .5 * (.45 + .55 * .5)) < 1e-9);
+}));
