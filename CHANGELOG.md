@@ -4,7 +4,7 @@ Une entrée par version (voir `AGENTS.md`).
 
 ## v4.0.1 — Nettoyage
 
-- une erreur dans une frame ne fige plus le jeu (signalée une fois en console) ;
+- une erreur dans la mise à jour, le son ou le rendu ne fige plus le jeu : elle est signalée une fois en console et le reste continue ;
 - une fenêtre plus petite que 300 × 520 garde le 9:16 ; `?seed=` limité à 32 bits ;
 - règles alignées sur la v3 : une spore ramassée sauve du choc de la même frame, rien n'est payé sur la frame de l'éclosion, un flyover sans place libre ne consomme plus l'obstacle, toutes les limaces touchées clignotent ;
 - rendu et son alignés sur la v3 : anneau d'exposition sous la pellicule toxique, bref anneau pour un bonus manqué, drone coupé net sur un choc ;

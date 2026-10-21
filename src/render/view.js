@@ -17,7 +17,8 @@
     const cfg = FP.config.view;
     view.DPR = Math.min(cfg.dprMax, window.devicePixelRatio || 1);
     const rect = canvas.getBoundingClientRect();
-    const w = rect.width || window.innerWidth, h = rect.height || window.innerHeight;
+    let w = rect.width || window.innerWidth, h = rect.height || window.innerHeight;
+    if (!(w > 0 && h > 0)) { w = cfg.minW; h = cfg.minH; }   // vue cachée au chargement : taille minimale
     const k = Math.max(1, cfg.minW / w, cfg.minH / h);
     view.W = Math.floor(w * k);
     view.H = Math.floor(h * k);

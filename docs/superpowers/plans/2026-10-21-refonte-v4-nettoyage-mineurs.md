@@ -172,3 +172,12 @@ Restent dans leur fichier, nommées en tête : le masquage des obstacles (44 / +
 ## Écartés
 
 - Le plafond de particules et les quantités des gerbes ne sont pas testés unitairement : c'est du rendu, vérifié dans le navigateur à l'étape 7.
+
+## Relecture finale — résultat
+
+Corrigé : mise à jour, son et rendu gardés séparément (une erreur répétée de mise à jour ne fige plus l'image ; une erreur de rendu ne laisse plus le contexte décalé : `try / finally` dans `frame.js`) ; vue de taille nulle au chargement ramenée à la taille minimale (sinon dimensions infinies et génération sans fin) ; journal des erreurs plafonné à 50 messages.
+
+Mineurs reportés :
+- spore ramassée sur la frame d'un choc : la pousse survit, mais les autres frôlements en cours sont perdus sans paiement (en v3, ils continuaient) ;
+- `?flydebug=1` n'annonce pas « pas flyover » pour un obstacle non éligible au flyover (la v3 le faisait) ;
+- pendant la grâce du bouclier, un contact laisse le drone s'éteindre lentement (la v3 le coupait net).

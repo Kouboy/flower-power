@@ -2,7 +2,8 @@
 // Lit     : FP.config.loop, FP.state.current, les modules FP.<système> présents, FP.perf (?perf=1).
 // Écrit   : state.time, vide state.events en fin de frame.
 // Expose  : FP.loop.UPDATE_ORDER, FP.loop.step(state, rawDt), FP.loop.start().
-// Une erreur dans une frame est signalée une fois en console ; la partie continue à la frame suivante.
+// Mise à jour, son et rendu sont gardés séparément : une erreur dans l'un est signalée une fois en console
+// et n'empêche pas les autres (l'image continue d'être dessinée, la partie de tourner).
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
@@ -14,19 +15,17 @@
   // powerups après scoring : ramassage et bouclier interceptent un choc avant que flow ne décide d'une mort.
   const UPDATE_ORDER = ['input', 'plant', 'hazards', 'collision', 'graze', 'scoring', 'powerups', 'flow', 'camera'];
 
-  // Messages déjà signalés : une erreur qui se répète à chaque frame ne s'affiche qu'une fois.
+  // Messages déjà signalés : une erreur qui se répète à chaque frame ne s'affiche qu'une fois (50 au plus).
   const reported = new Set();
-
-  function step(state, rawDt) {
-    try { frame(state, rawDt); }
+  function guard(label, fn) {
+    try { fn(); }
     catch (e) {
-      const msg = (e && e.message) || String(e);
-      if (!reported.has(msg)) { reported.add(msg); console.error('Flower Power : erreur dans la frame', e); }
+      const msg = label + ' : ' + ((e && e.message) || String(e));
+      if (!reported.has(msg) && reported.size < 50) { reported.add(msg); console.error('Flower Power : erreur (' + msg + ')', e); }
     }
-    state.events.length = 0;   // l'événement fautif n'est pas rejoué
   }
 
-  function frame(state, rawDt) {
+  function step(state, rawDt) {
     const { maxDt, fallbackDt } = FP.config.loop;
     const dt = Number.isFinite(rawDt) && rawDt > 0 ? Math.min(rawDt, maxDt) : fallbackDt;
     state.time += dt;
@@ -34,14 +33,17 @@
     let t = perf && perf.begin(dt);
 
     if (state.mode !== 'menu') {
-      for (const name of UPDATE_ORDER) {
-        if (FP[name] && FP[name].update) FP[name].update(state, dt);
-      }
+      guard('mise à jour', () => {
+        for (const name of UPDATE_ORDER) {
+          if (FP[name] && FP[name].update) FP[name].update(state, dt);
+        }
+      });
     }
-    if (FP.audio) FP.audio.consume(state.events, state, dt);
+    if (FP.audio) guard('son', () => FP.audio.consume(state.events, state, dt));
     if (perf) t = perf.mark('update', t);
-    if (FP.render) FP.render.frame(state);
+    if (FP.render) guard('rendu', () => FP.render.frame(state));
     if (perf) perf.mark('render', t);
+    state.events.length = 0;   // y compris l'événement d'une frame en erreur : il n'est pas rejoué
   }
 
   function start() {

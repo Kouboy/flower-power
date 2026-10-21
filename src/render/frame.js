@@ -24,33 +24,37 @@
     const { ctx, W } = FP.view;
     const world = state.world, camY = state.camera.y, viewH = world.viewH;
 
-    ctx.save();
-    // Secousse (v3 : draw) : décalage aléatoire proportionnel à camera.shake, avant le zoom.
-    const shake = state.camera.shake;
-    if (shake > 0) ctx.translate((Math.random() * 6 - 3) * shake * 7, (Math.random() * 6 - 3) * shake * 7);
-    applyZoom(ctx, state, W, viewH);
-    ctx.translate(0, -camY);
-    ctx.beginPath(); ctx.rect(-24, camY - 48, W + 48, viewH + 96); ctx.clip();
     // ?perf=1 : tranches sol / dangers / plante (comme la v3).
     const perf = FP.perf;
-    let t = perf && performance.now();
-    // Ordre v3 : sol, nappes, limaces, obstacles, plante, anneau d'exposition, pellicule toxique.
-    FP.soil.draw(ctx, world, camY, W, viewH);
-    if (perf) t = perf.mark('soil', t);
-    FP.hazardsRender.drawBase(ctx, state);
-    FP.hazardsRender.drawLeaks(ctx, state);
-    FP.obstacles.draw(ctx, world, camY, viewH);
-    if (perf) t = perf.mark('hazards', t);
-    FP.powerupsRender.drawBonuses(ctx, state);
-    if (perf) t = perf.mark('bonuses', t);
-    FP.plantRender.draw(ctx, state);
-    FP.flowersRender.draw(ctx, state);
-    FP.hazardsRender.drawExposure(ctx, state);   // v3 : dans drawPlant, donc sous la pellicule toxique
-    FP.hazardsRender.drawOverlay(ctx, state);
-    if (perf) perf.mark('plant', t);
-    FP.effects.draw(ctx, state);
-    FP.particles.draw(ctx, state);
-    ctx.restore();
+    ctx.save();
+    // try / finally : une erreur au milieu du dessin ne laisse pas caméra, zoom et clip sur la pile du contexte.
+    try {
+      // Secousse (v3 : draw) : décalage aléatoire proportionnel à camera.shake, avant le zoom.
+      const shake = state.camera.shake;
+      if (shake > 0) ctx.translate((Math.random() * 6 - 3) * shake * 7, (Math.random() * 6 - 3) * shake * 7);
+      applyZoom(ctx, state, W, viewH);
+      ctx.translate(0, -camY);
+      ctx.beginPath(); ctx.rect(-24, camY - 48, W + 48, viewH + 96); ctx.clip();
+      let t = perf && performance.now();
+      // Ordre v3 : sol, nappes, limaces, obstacles, plante, anneau d'exposition, pellicule toxique.
+      FP.soil.draw(ctx, world, camY, W, viewH);
+      if (perf) t = perf.mark('soil', t);
+      FP.hazardsRender.drawBase(ctx, state);
+      FP.hazardsRender.drawLeaks(ctx, state);
+      FP.obstacles.draw(ctx, world, camY, viewH);
+      if (perf) t = perf.mark('hazards', t);
+      FP.powerupsRender.drawBonuses(ctx, state);
+      if (perf) t = perf.mark('bonuses', t);
+      FP.plantRender.draw(ctx, state);
+      FP.flowersRender.draw(ctx, state);
+      FP.hazardsRender.drawExposure(ctx, state);   // v3 : dans drawPlant, donc sous la pellicule toxique
+      FP.hazardsRender.drawOverlay(ctx, state);
+      if (perf) perf.mark('plant', t);
+      FP.effects.draw(ctx, state);
+      FP.particles.draw(ctx, state);
+    } finally {
+      ctx.restore();
+    }
 
     FP.plantRender.drawFinger(ctx, state);
     FP.hud.draw(ctx, state);
