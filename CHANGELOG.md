@@ -2,6 +2,14 @@
 
 Une entrée par commit (voir `AGENTS.md`).
 
+## v4.0.0-etape4 — ÉcoCrédits™
+
+- frôler un obstacle ou une limace sans la toucher accumule un frôlement (rien avant .22 s), payé à la sortie : durée, proximité, pic de proximité ; ×1,18 pour le fût irradié et le T-Rex signature, ×1,12 pour une limace ;
+- combo : +22 % par gain enchaîné en moins de 2 s, ×8 au plus ; un contact ou la fin de la partie annule les frôlements en cours sans payer ;
+- records de fleurs et d'ÉcoCrédits™ dans `flower_power_v4_best`, conservés d'une session à l'autre, stockage corrompu toléré ;
+- rendu : chiffres « +1 250Ɇ » qui claquent, anneaux de frôlement, limace frôlée qui clignote, HUD complet de la v3, écran de fin avec records ;
+- banc : 115 tests.
+
 ## v4.0.0-etape3 — Zones toxiques et lixiviat
 
 - génération des nappes toxiques et des limaces portée de la v3, après les solides ; limaces tenues à l'écart du chemin sûr et placées sans dépendre de la caméra ;

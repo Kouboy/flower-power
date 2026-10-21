@@ -23,15 +23,15 @@ src/
 ├── world/
 │   ├── catalog.js    ✅ JSON authorés → solides (taille, collision, miroir, footprint)
 │   ├── level.js      ✅ génération : chemin sûr, solides (SAT), T-Rex signature, nappes toxiques, limaces
-│   ├── collision.js  ✅ requête de pointe : solide, intensité toxique, contact lixiviat, danger de frôlement
+│   ├── collision.js  ✅ requête de pointe : solide, intensité toxique, contact lixiviat, frôlements en cours, danger
 │   └── hazards.js    ✅ limaces en mouvement (cx, cy, cr, hitFlash), intensité des nappes
 ├── play/
 │   ├── plant.js      ✅ croissance, pilotage, trace (prepare / launch / update)
 │   ├── flow.js       ✅ morts (solide, lixiviat, brûlure toxique), exposition, éclosion minimale, transitions, messages
 │   ├── camera.js     ✅ défilement, cadrage ×1,18, zoom de frôlement
-│   ├── graze.js      ⏳ (4) frôlement + évaluation du flyover
+│   ├── graze.js      ✅ frôlement : suivi par objet, paiement à la sortie, annulation au contact (flyover : étape 5)
 │   ├── powerups.js   ⏳ (5) pollen, bouclier, spore, exclusivité
-│   └── scoring.js    ⏳ (4) ÉcoCrédits™, combos, records
+│   └── scoring.js    ✅ ÉcoCrédits™, combo, records persistants
 ├── render/
 │   ├── view.js       ✅ canvas, DPR, 9:16
 │   ├── sprites.js    ✅ chargement des PNG, FP.sprites.get(clé)
@@ -41,7 +41,8 @@ src/
 │   ├── plant.js      ✅ tige, anciennes traces, graine, bourgeon, guide, cercle du doigt
 │   ├── hud.js        ✅ panneaux, messages, écrans ready / over
 │   ├── frame.js      ✅ FP.render.frame(state) : zoom, caméra, sol, obstacles, plante, HUD
-│   └── …             ⏳ flowers, effects
+│   ├── effects.js    ✅ chiffres +Ɇ flottants, anneaux de frôlement
+│   └── …             ⏳ flowers, particules
 ├── audio/audio.js    ⏳ (7)
 ├── ui/
 │   ├── menu.js       ✅ écran titre / fin de partie → nouveau run ; redimensionnement
@@ -95,7 +96,7 @@ Un niveau est généré par `FP.level.startRun(state)` (tirage du T-Rex signatur
 
 ## Ordre de chargement
 
-`index.html` charge : `assets/obstacles/manifest.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `hazards.js`, `src/play/plant.js`, `src/world/collision.js`, `src/play/flow.js`, `src/play/camera.js`, `src/render/view.js`, `sprites.js`, `soil.js`, `obstacles.js`, `hazards.js`, `plant.js`, `hud.js`, `frame.js`, `src/core/loop.js`, `src/ui/input.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` (pour le catalogue).
+`index.html` charge : `assets/obstacles/manifest.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `hazards.js`, `src/play/plant.js`, `src/world/collision.js`, `src/play/flow.js`, `graze.js`, `scoring.js`, `src/play/camera.js`, `src/render/view.js`, `sprites.js`, `soil.js`, `obstacles.js`, `hazards.js`, `plant.js`, `hud.js`, `effects.js`, `frame.js`, `src/core/loop.js`, `src/ui/input.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` (pour le catalogue).
 
 `dev/check.html` charge aussi `src/ui/input.js` (ses écouteurs ne s'installent que si `FP.view` existe).
 
@@ -104,6 +105,13 @@ Un niveau est généré par `FP.level.startRun(state)` (tirage du T-Rex signatur
 - Nappes toxiques (`world.toxics`) : pas de choc. La requête de pointe renvoie leur intensité cumulée ; `flow` augmente `plant.toxicTimer` (×.72/s), pose `plant.corruption` (croissance déviée lue par `plant`), et brûle la pointe au-delà de .82 ; hors nappe, le compteur redescend ×3,6/s.
 - Limaces (`world.leaks`) : `hazards.update` calcule leur position courante (`cx, cy, cr`) ; un contact tue (cause `leak`) et pose `hitFlash` ; la couronne de frôlement alimente `query.danger` (zoom).
 - Ordre de dessin (v3) : sol, nappes, limaces, obstacles, plante, pellicule toxique, anneau d'exposition, puis HUD.
+
+## Frôlement et score
+
+- `collision` liste les frôlements de la frame (`query.grazes`) ; `graze` tient un frôlement par objet dans `state.graze.active` (Map). Rien n'est payé avant .22 s ; à la sortie, `FP.scoring.award` paie (arrondi à 25) ; un contact ou la fin de la partie annule tout sans payer.
+- `scoring` gère le combo (`state.score.combo/comboTimer`, fenêtre 2 s, ×8 max) et les records.
+- Exception documentée : `FP.scoring.records` (meilleurs fleurs et ÉcoCrédits™) vit hors de `FP.state`, car il persiste entre les runs ; chargé au démarrage, sauvegardé dès qu'il est battu, dans la clé `flower_power_v4_best`.
+- `render/effects.js` transforme les événements `eco` en chiffres flottants rangés dans `state.fx.effects` (réservé au rendu).
 
 ## Modes
 
