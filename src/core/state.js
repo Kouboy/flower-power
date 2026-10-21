@@ -51,9 +51,9 @@
       },
       query: { solid: null, danger: 0, near: null, toxic: 0, leak: 0, leakHit: null },          // requête de pointe de la frame (world/collision.js)
       flow: { timer: 0, message: '', messageTimer: 0 },       // déroulé de partie (play/flow.js)
-      graze: { active: new Map(), combo: 0, comboTimer: 0 },
+      graze: { active: new Map() },                           // frôlements en cours (play/graze.js)
       power: { shield: false, shieldGrace: 0, sporeTimer: 0, bonuses: [] },
-      score: { eco: 0, flowers: 0, flowerBonus: 0 },
+      score: { eco: 0, flowers: 0, flowerBonus: 0, combo: 0, comboTimer: 0 },
       fx: { particles: [], effects: [], message: null },   // écrit uniquement par render/*
       events: []                                            // vidé à chaque frame par core/loop.js
     };

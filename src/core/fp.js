@@ -1,7 +1,7 @@
 // core/fp.js — espace de noms global et utilitaires sans état.
 // Lit     : location.search (une fois, au chargement).
 // Écrit   : rien.
-// Expose  : FP.TAU, FP.math, FP.createRng, FP.parseParams, FP.params, FP.storage.
+// Expose  : FP.TAU, FP.math, FP.createRng, FP.parseParams, FP.params, FP.storage (readNumber, write, readJSON, writeJSON).
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
@@ -46,6 +46,18 @@
         const n = raw === null ? NaN : Number(raw);
         return Number.isFinite(n) ? n : fallback;
       } catch (e) { return fallback; }
+    },
+    // Objet JSON : fallback si absent, illisible ou pas un objet.
+    readJSON(key, fallback, backend = defaultBackend()) {
+      try {
+        const raw = backend ? backend.getItem(key) : null;
+        const v = raw === null ? null : JSON.parse(raw);
+        return v && typeof v === 'object' ? v : fallback;
+      } catch (e) { return fallback; }
+    },
+    writeJSON(key, value, backend = defaultBackend()) {
+      try { if (!backend) return false; backend.setItem(key, JSON.stringify(value)); return true; }
+      catch (e) { return false; }
     },
     write(key, value, backend = defaultBackend()) {
       try { if (!backend) return false; backend.setItem(key, String(value)); return true; }

@@ -40,3 +40,12 @@ FP.test('storage: valeur non numérique → fallback', () => {
   const mem = { getItem(){ return 'xyz'; }, setItem(){} };
   FP.assertEqual(FP.storage.readNumber('k', 0, mem), 0);
 });
+FP.test('storage: readJSON valide, cassé, backend qui lève', () => {
+  FP.assertEqual(FP.storage.readJSON('k', null, { getItem() { return '{"a":1}'; } }).a, 1);
+  FP.assertEqual(FP.storage.readJSON('k', 7, { getItem() { return '{oops'; } }), 7);
+  FP.assertEqual(FP.storage.readJSON('k', 7, { getItem() { return '3'; } }), 7);
+  FP.assertEqual(FP.storage.readJSON('k', 7, { getItem() { throw new Error('x'); } }), 7);
+});
+FP.test('storage: writeJSON backend qui lève → false', () => {
+  FP.assertEqual(FP.storage.writeJSON('k', { a: 1 }, { setItem() { throw new Error('x'); } }), false);
+});
