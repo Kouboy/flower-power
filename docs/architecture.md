@@ -41,7 +41,7 @@ src/
 │   ├── hazards.js    ✅ nappes tramées (base + pellicule), limaces et sillons, anneau d'exposition
 │   ├── powerups.js   ✅ récompenses (naissance, glyphes pixel), membrane du bouclier
 │   ├── hero.js       ✅ le héros : tête-bourgeon à visage, humeurs (FP.hero.mood), visages réutilisés par les fleurs
-│   ├── plant.js      ✅ tige pixel et feuilles, anciennes tiges, graine endormie, héros, guide, cercle du doigt
+│   ├── plant.js      ✅ tige pixel qui fouit (tunnel, mottes, racines, mycélium ; FP.plantRender.buried), graine, héros, guide, doigt
 │   ├── hud.js        ✅ panneaux, messages, écrans ready / over
 │   ├── frame.js      ✅ FP.render.frame(state) : toile monde, agrandissement (secousse, zoom), couche nette, fondu
 │   ├── effects.js    ✅ anneaux en pixels (frôlement, ramassage, rupture, spore, impact, éclosion) ; chiffres +Ɇ nets
@@ -117,7 +117,7 @@ Spec : `docs/superpowers/specs/2026-10-21-rendu-pixel-design.md` ; référence d
   - Pas de transparence : un effet qui s'estompe perd des pixels selon un motif de Bayer.
 - **Palettes.**
   - `FP.palette` nomme toutes les couleurs.
-  - Le vert acide et le violet (`FP.palette.danger`) sont réservés aux dangers ; un test vérifie qu'aucune couleur de décor ne s'en approche.
+  - Le violet chimique des dangers (`FP.palette.toxic`, `FP.palette.slug`, liste `FP.palette.danger`) leur est réservé : des tests vérifient qu'aucune couleur de décor ni aucun vert de la pousse ne s'en approche.
 - **Lisibilité.** Terre sombre à contraste bas, sans contour ; contours sombres réservés aux obstacles, à la tige, au héros, aux bonus et aux limaces.
 - **Héros.**
   - Son humeur se déduit de l'état existant, sans rien ajouter à la simulation (`FP.hero.mood`). Par priorité : mort, toxique, frôlement, alerte, concentration, calme ; une humeur tient au moins 0,25 s.

@@ -62,6 +62,8 @@ Atteindre la surface fait éclore une fleur. Trois graines (réserves) par parti
     - les yeux en croix ou le visage qui fond quand il meurt.
   - À la surface, il devient la fleur, radieux. Puis il rejoint le parterre, apaisé.
   - Chaque fleur a sa forme, sa teinte et sa petite expression : le parterre est la mémoire de la partie.
+- **Les dangers sont violets** (produit chimique, pétrole) : la pousse est verte, ce qui est toxique est violet.
+- **La tige fouit** : de la terre remuée borde le tunnel derrière la pointe, des mottes la recouvrent par endroits, des racines et du mycélium l'entourent ; les anciennes tiges sont davantage enfouies, comme des souvenirs.
 - **Le ciel.** Il est un peu plus haut qu'en v3 (19 % de la hauteur de vue), pour qu'on voie le crépuscule sous le cadrage.
 
 ## Hors périmètre v4.0

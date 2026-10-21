@@ -1,7 +1,7 @@
 // render/palette.js — palettes nommées du rendu pixel (d'après docs/art/reference-crepuscule.png).
 // Lit     : rien.
 // Écrit   : rien.
-// Expose  : FP.palette.{sky, strata, strataBounds, lawn, stem, seed, hero, flowers, toxic, slug, danger, decor()}.
+// Expose  : FP.palette.{sky, strata, strataBounds, strataTone(d, k), lawn, stem, seed, hero, flowers, toxic, slug, danger, decor()}.
 // Les teintes de `danger` (violet chimique) signalent les dangers : interdites au décor, distinctes de la pousse.
 (function () {
   'use strict';
@@ -60,7 +60,13 @@
   // Teintes vives qui signalent un danger : interdites au décor, loin des verts de la pousse (tests dans dev/tests/px.test.js).
   const danger = [toxic.mid, toxic.light, toxic.glow, slug.body, slug.clear, slug.spot, slug.flash];
 
+  // Teinte de terre à une profondeur relative d (0 = surface, 1 = fond) ; k de 0 (claire) à 3 (sombre).
+  function strataTone(d, k) {
+    const t = d < strataBounds.humus ? strata.humus : (d < strataBounds.clay ? strata.clay : strata.stone);
+    return t[3 - Math.max(0, Math.min(3, k))];
+  }
+
   const decor = () => [...sky.flat(), ...strata.humus, ...strata.clay, ...strata.stone, ...lawn.flat()];
 
-  FP.palette = { sky, strata, strataBounds, lawn, stem, seed, hero, flowers, toxic, slug, danger, decor };
+  FP.palette = { sky, strata, strataBounds, strataTone, lawn, stem, seed, hero, flowers, toxic, slug, danger, decor };
 })();

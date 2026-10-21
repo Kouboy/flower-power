@@ -11,7 +11,10 @@ Une entrée par version (voir `AGENTS.md`).
 - à l'éclosion, le héros devient la fleur ; parterre de visages variés (forme, nombre de pétales, teinte, expression) ;
 - nappes, limaces, bonus, bouclier, effets et particules en pixels ;
 - ciel plus haut qu'en v3 (19 % de la hauteur de vue) pour qu'on voie le crépuscule ;
-- rendu au plus 1,7 ms par frame ; banc : 202 tests.
+- plus d'obstacles dès le premier passage (≈ 16 au lieu de 11 à 440 px) et une rampe plus franche, plafonnée à la capacité du terrain ;
+- dangers en violet chimique (nappes, limaces aux yeux jaune soufre, sillons), distincts de la pousse verte ;
+- la tige fouit : tunnel de terre remuée derrière la pointe, mottes qui la recouvrent par endroits (davantage sur les anciennes tiges), racines et mycélium ;
+- rendu au plus 1,7 ms par frame ; banc : 211 tests.
 
 ## v4.0.1 — Nettoyage
 
