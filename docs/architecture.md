@@ -29,8 +29,8 @@ src/
 │   ├── plant.js      ✅ croissance, pilotage, trace (prepare / launch / update)
 │   ├── flow.js       ✅ morts (solide, lixiviat, brûlure toxique), exposition, éclosion minimale, transitions, messages
 │   ├── camera.js     ✅ défilement, cadrage ×1,18, zoom de frôlement
-│   ├── graze.js      ✅ frôlement : suivi par objet, paiement à la sortie, annulation au contact (flyover : étape 5)
-│   ├── powerups.js   ⏳ (5) pollen, bouclier, spore, exclusivité
+│   ├── graze.js      ✅ frôlement : suivi par objet, paiement à la sortie, annulation au contact, mesures du flyover
+│   ├── powerups.js   ✅ flyover → pollen / goutte / spore, exclusivité, ramassage, bouclier organique
 │   └── scoring.js    ✅ ÉcoCrédits™, combo, records persistants
 ├── render/
 │   ├── view.js       ✅ canvas, DPR, 9:16
@@ -38,10 +38,11 @@ src/
 │   ├── soil.js       ✅ ciel + pelouse + terre en cache offscreen
 │   ├── obstacles.js  ✅ ancrage sombre en cache + sprite
 │   ├── hazards.js    ✅ nappes (base + pellicule), limaces et sillons, anneau d'exposition
+│   ├── powerups.js   ✅ récompenses (naissance, glyphes), membrane du bouclier
 │   ├── plant.js      ✅ tige, anciennes traces, graine, bourgeon, guide, cercle du doigt
 │   ├── hud.js        ✅ panneaux, messages, écrans ready / over
 │   ├── frame.js      ✅ FP.render.frame(state) : zoom, caméra, sol, obstacles, plante, HUD
-│   ├── effects.js    ✅ chiffres +Ɇ flottants, anneaux de frôlement
+│   ├── effects.js    ✅ chiffres +Ɇ, anneaux de frôlement, ramassage, rupture, onde de spore, impact
 │   └── …             ⏳ flowers, particules
 ├── audio/audio.js    ⏳ (7)
 ├── ui/
@@ -65,15 +66,18 @@ L'état de la partie en cours est `FP.state.current`, créé par `FP.state.creat
 
 ```js
 {
-  mode: 'menu' | 'playing' | 'dying' | 'bloom',
-  time, seed, level, rng,
-  camera: { y, zoom, shake },
-  plant:  { tip, dir, trail, stemAge, reserves },
-  world:  { solids, toxics, leaks, surfaceY, height },
-  graze:  { active /* Map */, combo, comboTimer },
-  power:  { shield, shieldGrace, sporeTimer, bonuses },
-  score:  { eco, flowers, flowerBonus },
-  fx:     { particles, effects, message },
+  mode: 'menu' | 'ready' | 'playing' | 'dying' | 'bloom' | 'over',
+  time, seed, level, rng, signature,
+  input:  { x, screenX, y, down, active, pressed },
+  camera: { y, manual, near, zoom, shake },
+  plant:  { seed, tip, dir, guide, trail, oldTrails, stemAge, stemCount, reserves, corruption, toxicTimer, recentToxic },
+  world:  { width, height, viewH, surfaceY, skyVariant, lawnVariant, safePath, safeRadius, solids, toxics, leaks, bonuses },
+  query:  { solid, danger, near, toxic, leak, leakHit, grazes },
+  flow:   { timer, message, messageTimer },
+  graze:  { active /* Map objet → frôlement */ },
+  power:  { shield, shieldGrace },
+  score:  { eco, flowers, flowerBonus, combo, comboTimer },
+  fx:     { particles, effects },
   events: []
 }
 ```
@@ -89,14 +93,14 @@ Un niveau est généré par `FP.level.startRun(state)` (tirage du T-Rex signatur
 `FP.loop.step(state, dt)` :
 
 1. `dt` plafonné à `config.loop.maxDt` (dt invalide → `fallbackDt`) ; `state.time += dt` ;
-2. dans tous les modes sauf `menu`, `FP[nom].update(state, dt)` pour `input → plant → hazards → collision → graze → powerups → scoring → flow → camera` (un système pas encore porté est sauté ; chacun décide selon `state.mode`). **Tout système expose `update(state, dt)`** : par exemple la requête de pointe vit dans `FP.collision.update` ;
+2. dans tous les modes sauf `menu`, `FP[nom].update(state, dt)` pour `input → plant → hazards → collision → graze → scoring → powerups → flow → camera` (un système pas encore porté est sauté ; chacun décide selon `state.mode`). **Tout système expose `update(state, dt)`** : par exemple la requête de pointe vit dans `FP.collision.update` ;
 3. `FP.audio.consume(state.events)` ;
 4. `FP.render.frame(state)` ;
 5. `state.events` est vidé.
 
 ## Ordre de chargement
 
-`index.html` charge : `assets/obstacles/manifest.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `hazards.js`, `src/play/plant.js`, `src/world/collision.js`, `src/play/flow.js`, `graze.js`, `scoring.js`, `src/play/camera.js`, `src/render/view.js`, `sprites.js`, `soil.js`, `obstacles.js`, `hazards.js`, `plant.js`, `hud.js`, `effects.js`, `frame.js`, `src/core/loop.js`, `src/ui/input.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` (pour le catalogue).
+`index.html` charge : `assets/obstacles/manifest.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `hazards.js`, `src/play/plant.js`, `src/world/collision.js`, `src/play/flow.js`, `graze.js`, `scoring.js`, `powerups.js`, `src/play/camera.js`, `src/render/view.js`, `sprites.js`, `soil.js`, `obstacles.js`, `hazards.js`, `powerups.js`, `plant.js`, `hud.js`, `effects.js`, `frame.js`, `src/core/loop.js`, `src/ui/input.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` (pour le catalogue).
 
 `dev/check.html` charge aussi `src/ui/input.js` (ses écouteurs ne s'installent que si `FP.view` existe).
 
@@ -112,6 +116,13 @@ Un niveau est généré par `FP.level.startRun(state)` (tirage du T-Rex signatur
 - `scoring` gère le combo (`state.score.combo/comboTimer`, fenêtre 2 s, ×8 max) et les records.
 - Exception documentée : `FP.scoring.records` (meilleurs fleurs et ÉcoCrédits™) vit hors de `FP.state`, car il persiste entre les runs ; chargé au démarrage, sauvegardé dès qu'il est battu, dans la clé `flower_power_v4_best`.
 - `render/effects.js` transforme les événements `eco` en chiffres flottants rangés dans `state.fx.effects` (réservé au rendu).
+
+## Flyover et power-ups
+
+- À la fin d'un frôlement d'obstacle payant, `graze` appelle `FP.powerups.onFlyover` : évaluation (montée réelle autour puis au-dessus, risque), choix (pollen / goutte / spore selon durée et risque), apparition devant la pointe. Un obstacle ne récompense qu'une fois (`solid.rewarded`).
+- Un seul power-up gameplay : tant que `power.shield` tient, ni goutte ni spore n'apparaît (pas de file) ; le pollen reste possible. La spore est instantanée et n'occupe jamais le slot.
+- `powerups.update` (après `scoring`, avant `flow`) fait vieillir et ramasser les récompenses (`world.bonuses`, vidées à chaque niveau), puis intercepte un choc solide ou lixiviat : grâce en cours → ignoré ; bouclier → bris (recul de 26 px, direction conservée, .48 s de grâce). Les nappes toxiques ne sont pas concernées.
+- Chaque pousse repart sans bouclier ni pollen (`plant.prepare`). L'éclosion compte `1 + flowerBonus` fleurs.
 
 ## Modes
 
