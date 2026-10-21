@@ -1,7 +1,7 @@
 // render/frame.js — dessin d'une frame. Lecture seule de l'état.
 // Lit     : state.world, state.camera.y, state.plant.{tip,seed}, FP.view, FP.camera.totalZoom, FP.input.focalX,
 //           state.flow.fade, FP.soil, FP.hazardsRender, FP.obstacles, FP.powerupsRender, FP.plantRender, FP.flowersRender,
-//           FP.effects, FP.hud.
+//           FP.effects, FP.particles, FP.hud ; state.camera.shake (secousse).
 // Écrit   : rien (le canvas uniquement).
 // Expose  : FP.render.frame(state).
 (function () {
@@ -24,6 +24,9 @@
     const world = state.world, camY = state.camera.y, viewH = world.viewH;
 
     ctx.save();
+    // Secousse (v3 : draw) : décalage aléatoire proportionnel à camera.shake, avant le zoom.
+    const shake = state.camera.shake;
+    if (shake > 0) ctx.translate((Math.random() * 6 - 3) * shake * 7, (Math.random() * 6 - 3) * shake * 7);
     applyZoom(ctx, state, W, viewH);
     ctx.translate(0, -camY);
     ctx.beginPath(); ctx.rect(-24, camY - 48, W + 48, viewH + 96); ctx.clip();
@@ -38,6 +41,7 @@
     FP.hazardsRender.drawOverlay(ctx, state);
     FP.hazardsRender.drawExposure(ctx, state);
     FP.effects.draw(ctx, state);
+    FP.particles.draw(ctx, state);
     ctx.restore();
 
     FP.plantRender.drawFinger(ctx, state);
