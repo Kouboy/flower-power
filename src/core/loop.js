@@ -23,7 +23,7 @@
         if (FP[name] && FP[name].update) FP[name].update(state, dt);
       }
     }
-    if (FP.audio) FP.audio.consume(state.events);
+    if (FP.audio) FP.audio.consume(state.events, state, dt);
     if (FP.render) FP.render.frame(state);
     state.events.length = 0;
   }

@@ -2,7 +2,7 @@
 // Lit     : state.mode, state.query, state.plant, state.input.pressed, state.events, state.rng, state.world.{surfaceY,width},
 //           FP.config.{flow,text,toxic,garden,soil}.
 // Écrit   : state.mode, state.flow, state.garden.flowers (création, croissance), state.plant.{reserves,oldTrails,corruption,toxicTimer,recentToxic}, state.score.flowers,
-//           state.level, state.camera.shake, state.events (death, bloom, toxicEnter) ; appelle FP.level.generate et FP.plant.prepare/launch.
+//           state.level, state.camera.shake, state.events (death, bloom, toxicEnter, ready) ; appelle FP.level.generate et FP.plant.prepare/launch.
 // Expose  : FP.flow.update(state, dt), FP.flow.simplifyTrail(points, minStep), FP.flow.say(state, text, time).
 // Porté de la v3.43.16 (die, bloom, transitions de update()) ; éclosion visuelle et fondu : étape 6.
 (function () {
@@ -87,6 +87,7 @@
       if (f.timer <= 0) {
         f.fade = 0; f.stage = 'show';
         state.mode = 'ready';
+        state.events.push({ type: 'ready' });
         say(state, FP.config.text.ready, cfg.readyMessageTime);
       }
     }

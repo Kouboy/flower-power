@@ -20,8 +20,10 @@ FP.test('loop: dt plafonné et dt invalide remplacé', () => {
 });
 FP.test('loop: events consommés puis vidés', () => {
   const s = FP.state.createRun(1); let seen = 0; const saved = FP.audio;
-  FP.audio = { consume(ev){ seen = ev.length; } };
+  let gotState = null, gotDt = 0;
+  FP.audio = { consume(ev, st, dt){ seen = ev.length; gotState = st; gotDt = dt; } };
   try { s.events.push({type:'a'},{type:'b'}); FP.loop.step(s, .016); }
   finally { FP.audio = saved; }
   FP.assertEqual(seen, 2); FP.assertEqual(s.events.length, 0);
+  FP.assertEqual(gotState, s); FP.assertEqual(gotDt, .016);
 });

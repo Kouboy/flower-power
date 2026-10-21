@@ -1,6 +1,6 @@
 // ui/menu.js — écran titre et démarrage d'une partie.
 // Lit     : l'élément #menu, FP.view (via createRun), FP.level.startRun, FP.plant.launch.
-// Écrit   : FP.state.current (nouveau run), state.mode ; à chaque redimensionnement, la taille de vue du run.
+// Écrit   : FP.state.current (nouveau run), state.mode, state.events (runStart) ; à chaque redimensionnement, la taille de vue du run.
 // Expose  : rien.
 (function () {
   'use strict';
@@ -10,6 +10,7 @@
   function startRun() {
     const state = FP.state.createRun();
     FP.level.startRun(state);
+    state.events.push({ type: 'runStart' });
     FP.plant.launch(state);
     FP.state.current = state;
     menu.style.display = 'none';
