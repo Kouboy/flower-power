@@ -51,7 +51,8 @@
       toxics: {
         base: 3, perLevel: .14, maxExtra: 4, scale: .70, tries: 80, relaxAfter: 30, jitter: .29,
         deepDepth: .48, shallowDepth: .30, rx: [30, 58], ry: [23, 48], bigDepth: .58, bigRx: 1.08, bigRy: 1.10,
-        lobes: 6, specks: 7, lightChance: .42, safeK: .62, safeExtra: 4
+        lobes: 6, specks: 7, lightChance: .42, safeK: .62, safeExtra: 4,
+        minVisible: .5            // part minimale de la nappe dans l'écran (en largeur) : on doit pouvoir l'anticiper
       },
       // Limaces de lixiviat : trajets inclinés, une partie près de la route pour mettre la pression.
       leaks: {
@@ -59,7 +60,8 @@
         nearRouteChance: .46, routeTop: 86, routeBottom: 142, routeOffset: [22, 62], routeMarginX: 42,
         angledChance: .90, angleJitter: .24, len: [42, 176], lenPerLevel: 3.2, lenLevelMax: 54, lenDepth: 22,
         rate: [.24, .92], r: [11, 16.2], marginX: 24, top: 48, bottom: 116,
-        solidPad: 20, toxicPad: 8, spacingCenter: 46, spacingPath: 28, safeK: .58
+        solidPad: 20, toxicPad: 8, spacingCenter: 46, spacingPath: 28, safeK: .58,
+        minVisible: .5            // part minimale du trajet dans l'écran ; le centre du trajet reste dans [marginX, W − marginX]
       }
     },
 

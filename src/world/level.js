@@ -198,7 +198,9 @@
         };
         for (let q = 0; q < c.lobes; q++) o.lobes.push({ a: rng.range(0, FP.TAU), r: rng.range(.32, .88), sx: rng.range(.28, .58), sy: rng.range(.22, .52) });
         for (let q = 0; q < c.specks; q++) o.specks.push({ x: rng.range(-.64, .64), y: rng.range(-.58, .58), r: rng.range(1.2, 3.1), light: rng.next() < c.lightChance });
-        if (distToSafePath(world, o.x, o.y) > world.safeRadius + Math.max(o.rx, o.ry) * c.safeK + c.safeExtra) { world.toxics.push(o); placed = true; }
+        // Une nappe peut déborder du cadre, mais on doit en voir assez pour l'anticiper.
+        const visible = (Math.min(world.width, o.x + o.rx) - Math.max(0, o.x - o.rx)) / (2 * o.rx);
+        if (visible >= c.minVisible && distToSafePath(world, o.x, o.y) > world.safeRadius + Math.max(o.rx, o.ry) * c.safeK + c.safeExtra) { world.toxics.push(o); placed = true; }
         else cell.used = false;
       }
     }
@@ -265,7 +267,10 @@
         const k0 = (Math.sin(leak.phase) + 1) * .5 - .5;
         leak.cx = pos.x + Math.cos(angle) * len * k0; leak.cy = pos.y + Math.sin(angle) * len * k0; leak.cr = leak.r;
         const pts = leakPoints(leak);
-        const inBounds = pts.every(p => p.x > c.marginX && p.x < W - c.marginX && p.y > world.surfaceY + c.top && p.y < world.height - c.bottom);
+        // Le trajet peut sortir par un bord, tant que son centre est dans le cadre et qu'on en voit au moins la moitié.
+        const visible = pts.filter(p => p.x >= 0 && p.x <= W).length / pts.length;
+        const inBounds = pos.x >= c.marginX && pos.x <= W - c.marginX && visible >= c.minVisible &&
+          pts.every(p => p.y > world.surfaceY + c.top && p.y < world.height - c.bottom);
         const notBuried = !nearSolid(world, pos.x, pos.y, c.solidPad) && !nearToxic(world, pos.x, pos.y, c.toxicPad);
         const breathing = !nearLeak(world, pos.x, pos.y, c.spacingCenter) && pts.every(p => !nearLeak(world, p.x, p.y, c.spacingPath));
         // Une limace peut mettre la pression près du chemin, jamais le condamner.

@@ -93,10 +93,29 @@ FP.test('level: limaces n’obstruent pas le chemin', () => {
     }
   }
 });
-FP.test('level: limaces dans le cadre', () => {
-  const w = gen(1234).world;
-  for (const l of w.leaks) for (let i = 0; i <= 8; i++) {
-    const k = -.5 + i / 8, x = l.x + Math.cos(l.angle) * l.len * k, y = l.y + Math.sin(l.angle) * l.len * k;
-    FP.assert(x > 24 && x < w.width - 24 && y > w.surfaceY + 48 && y < w.height - 116);
+FP.test('level: nappes et limaces assez visibles pour être anticipées', () => {
+  for (const seed of [1, 2, 3, 1234, 99999]) {
+    const w = gen(seed).world;
+    for (const o of w.toxics) FP.assert((Math.min(w.width, o.x + o.rx) - Math.max(0, o.x - o.rx)) / (2 * o.rx) >= .5, 'toxique ' + seed);
+    for (const l of w.leaks) {
+      let inside = 0;
+      for (let i = 0; i <= 8; i++) {
+        const k = -.5 + i / 8, x = l.x + Math.cos(l.angle) * l.len * k, y = l.y + Math.sin(l.angle) * l.len * k;
+        if (x >= 0 && x <= w.width) inside++;
+        FP.assert(y > w.surfaceY + 48 && y < w.height - 116, 'limace y ' + seed);
+      }
+      FP.assert(inside / 9 >= .5 && l.x >= 24 && l.x <= w.width - 24, 'limace ' + seed);
+    }
   }
+});
+FP.test('level: des trajets de limaces peuvent dépasser du cadre', () => {
+  let out = 0;
+  for (let seed = 1; seed <= 60; seed++) {
+    const w = gen(seed, 440, 783, 8).world;
+    for (const l of w.leaks) for (let i = 0; i <= 8; i++) {
+      const k = -.5 + i / 8, x = l.x + Math.cos(l.angle) * l.len * k;
+      if (x < 24 || x > w.width - 24) out++;
+    }
+  }
+  FP.assert(out > 0, 'aucun trajet ne dépasse');
 });
