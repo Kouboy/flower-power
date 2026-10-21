@@ -57,3 +57,9 @@ FP.test('graze: rien n’est payé sur la frame de l’éclosion', () => withAwa
   s.plant.tip.y = s.world.surfaceY - 1; noGraze(s); FP.graze.update(s, 1 / 60);
   FP.assertEqual(got.length, 0);
 }));
+FP.test('graze: score ≥ 55 mais paiement arrondi < 75 → rien', () => withAwards(got => {
+  const s = grazeRun(), l = { x: 100, y: 100 };
+  s.graze.active.set(l, { time: .23, score: 56, peak: .1, lastX: 0, lastY: 0, kind: 'leak', mul: 1, startRelY: 0, intensityTime: 0, effectiveTime: 0 });
+  noGraze(s); FP.graze.update(s, 1 / 60);
+  FP.assertEqual(got.length, 0); FP.assertEqual(s.graze.active.size, 0);
+}));

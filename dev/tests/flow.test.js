@@ -139,3 +139,12 @@ FP.test('flow: entrée en ready → événement ready', () => {
   for (let i = 0; i < 200 && s.mode !== 'ready'; i++) { s.events.length = 0; FP.flow.update(s, 1 / 60); seen.push(...s.events); }
   FP.assertEqual(s.mode, 'ready'); FP.assert(seen.some(e => e.type === 'ready'));
 });
+FP.test('flow: redimensionner pendant le fondu ne bloque pas la transition', () => {
+  const s = flowRun(); s.plant.tip = { x: 220, y: s.world.surfaceY - 1 }; FP.collision.update(s); FP.flow.update(s, 0);
+  let resized = false;
+  for (let i = 0; i < 300 && s.mode !== 'ready'; i++) {
+    if (!resized && s.flow.stage === 'fadeOut') { FP.state.applyView(s, { W: 440, H: 600 }); resized = true; }
+    FP.flow.update(s, 1 / 60);
+  }
+  FP.assert(resized, 'le fondu a eu lieu'); FP.assertEqual(s.mode, 'ready'); FP.assertEqual(s.world.viewH, 600);
+});
