@@ -14,3 +14,8 @@ FP.test('hero: la mort s’affiche tout de suite, même sur la dernière graine'
   m = FP.hero.mood(s, m); FP.assertEqual(m.name, 'dead'); FP.assertEqual(m.cause, 'solid');
 });
 FP.test('hero: mort acide → visage qui fond', () => { const s = heroRun(); s.events.push({ type: 'death', cause: 'leak' }); s.mode = 'dying'; FP.assertEqual(FP.hero.mood(s, null).cause, 'melt'); });
+FP.test('hero: sûr de lui sous le bouclier, mais le frôlement reste prioritaire', () => {
+  const s = heroRun(); s.power.shield = true; s.input.down = true;
+  FP.assertEqual(FP.hero.mood(s, null).name, 'shield');
+  s.graze.active.set({}, { time: .3 }); FP.assertEqual(FP.hero.mood(s, null).name, 'graze');
+});

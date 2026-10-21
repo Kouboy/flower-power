@@ -2,7 +2,7 @@
 // Lit     : state.garden.flowers (x, size, maxSize, age, palette, tilt), state.world.{surfaceY,viewH}, state.camera.y,
 //           state.flow.stage, FP.view.W, FP.config.{garden,soil}, FP.px, FP.palette.{flowers,stem}, FP.hero.face.
 // Écrit   : rien dans l'état (cache des fleurs finies, créé à la première utilisation).
-// Expose  : FP.flowersRender.draw(actx, state) (repère d'art, caméra appliquée ici), FP.flowersRender.variant(flower) (pur).
+// Expose  : FP.flowersRender.draw(actx, state) (repère d'art, caméra appliquée ici), FP.flowersRender.variant(flower), extent(flower) (purs), CACHE_TOP.
 // Ne touche pas au DOM au chargement : testable sous Node.
 (function () {
   'use strict';
@@ -10,7 +10,7 @@
   const TAU = FP.TAU;
   const SHAPES = ['round', 'pointy', 'cup', 'double'];
   const FACES = ['sleepy', 'asleep', 'smirk', 'blush', 'wink'];
-  const CACHE_TOP = 44, CACHE_H = 52;   // le cache couvre 44 pixels d'art au-dessus de la base et 8 en dessous
+  const CACHE_TOP = 50, CACHE_H = 58;   // le cache couvre 50 pixels d'art au-dessus de la base et 8 en dessous (voir extent)
 
   // Empreinte 32 bits des données de la fleur (aucun tirage : une même fleur donne toujours la même variante).
   function hash(f) {
@@ -45,12 +45,23 @@
     return '#' + [r, g, b].map(v => Math.round((v + m) * 255).toString(16).padStart(2, '0')).join('');
   }
 
+  // Dimensions en pixels d'art pour une croissance k (0 à 1) : longueur de tige, distance et rayon des pétales.
+  function geometry(f, v, k) {
+    const s = f.maxSize, open = Math.min(1, Math.max(0, (k - .35) / .5));
+    return { len: Math.round((20 + s * 9) * v.stemK * Math.min(1, k * 1.6)), dist: Math.round((4 + 3 * s) * open + 2), pr: Math.max(1, Math.round((2 + s) * open)) };
+  }
+
+  // Hauteur atteinte au-dessus de la base par une fleur épanouie (pétale ou rayon le plus haut, contour compris).
+  function extent(f) {
+    const v = variant(f), g = geometry(f, v, 1);
+    return g.len + Math.max(g.dist + g.pr + (v.shape === 'pointy' ? 3 : 1), 7);
+  }
+
   // Une fleur en pixels d'art, base de tige en (bx, by). k = croissance de 0 à 1 ; face = nom du visage.
   function drawFlower(g, f, bx, by, k, face) {
     const { px, palette } = FP, v = variant(f), st = palette.stem;
     const pal = palette.flowers[Math.max(0, FP.config.garden.palettes.indexOf(f.palette)) % palette.flowers.length];
-    const petal = pal.petal.map(c => shiftHue(c, v.hue)), s = f.maxSize;
-    const len = Math.round((20 + s * 9) * v.stemK * Math.min(1, k * 1.6));
+    const petal = pal.petal.map(c => shiftHue(c, v.hue)), s = f.maxSize, { len, dist, pr } = geometry(f, v, k);
     const tx = bx + Math.round(Math.sin(f.tilt) * len), ty = by - len;
     px.line(g, bx, by, tx, ty, st.outline, 3); px.line(g, bx, by, tx, ty, st.body, 1);
     if (k > .4) {
@@ -58,7 +69,6 @@
       for (const side of [-1, 1]) { px.rect(g, lx + (side < 0 ? -4 : 1), ly - 1, 4, 3, st.outline); px.rect(g, lx + (side < 0 ? -3 : 1), ly - 1, 3, 2, st.leaf); }
     }
     if (k < .35) return;                                    // bourgeon encore fermé : la tige pousse d'abord
-    const open = Math.min(1, (k - .35) / .5), dist = Math.round((4 + 3 * s) * open + 2), pr = Math.max(1, Math.round((2 + s) * open));
     const angles = [];
     for (let i = 0; i < v.petals; i++) angles.push(v.shape === 'cup' ? Math.PI + (i + .5) * Math.PI / v.petals : i * TAU / v.petals + f.tilt);
     const ring = (d, r, col) => { for (const a of angles) px.disc(g, tx + Math.round(Math.cos(a) * d), ty + Math.round(Math.sin(a) * d), r, col); };
@@ -110,5 +120,5 @@
     for (const f of flowers) if (!isFinished(f)) drawFlower(actx, f, px.toArt(f.x), by, f.size / f.maxSize, glory ? 'joy' : variant(f).face);
   }
 
-  FP.flowersRender = { draw, variant };
+  FP.flowersRender = { draw, variant, extent, CACHE_TOP };
 })();

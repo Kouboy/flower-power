@@ -52,7 +52,10 @@
     // ?perf=1 : tranches sol / dangers / bonus / plante (comme la v3).
     const perf = FP.perf;
 
-    drawWorld(art.ctx, state, perf);
+    // Une erreur dans le monde ne doit pas figer l'image : on agrandit et on dessine le HUD quand même, puis on la relance
+    // (la boucle la signale une fois).
+    let worldError = null;
+    try { drawWorld(art.ctx, state, perf); } catch (e) { worldError = e; }
 
     // Couche 2 : agrandissement sans lissage. Fond sombre dessous : une secousse ne montre jamais de bord vide.
     ctx.fillStyle = '#020201'; ctx.fillRect(0, 0, W, FP.view.H);
@@ -82,6 +85,7 @@
       ctx.save(); ctx.globalAlpha = Math.min(1, state.flow.fade); ctx.fillStyle = '#020201';
       ctx.fillRect(0, 0, W, FP.view.H); ctx.restore();
     }
+    if (worldError) throw worldError;
   }
 
   FP.render = { frame };

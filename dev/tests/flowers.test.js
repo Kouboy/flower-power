@@ -7,3 +7,10 @@ FP.test('flowers: valeurs dans leurs bornes ; langue rare', () => {
   FP.assert(vs.every(v => v.petals >= 5 && v.petals <= 8 && Math.abs(v.hue) <= 12 && ['round', 'pointy', 'cup', 'double'].includes(v.shape)));
   FP.assert(vs.filter(v => v.face === 'tongue').length <= 200 / 20);
 });
+FP.test('flowers: le cache du parterre contient les fleurs les plus hautes', () => {
+  const r = FP.createRng(4), pals = FP.config.garden.palettes, g = FP.config.garden;
+  for (let i = 0; i < 400; i++) {
+    const f = { x: r.range(10, 430), size: 1, maxSize: i % 4 ? r.range(g.extraSize[0], g.extraSize[1]) : 1, age: 5, palette: pals[i % pals.length], tilt: r.range(-g.tilt, g.tilt) };
+    FP.assert(FP.flowersRender.extent(f) <= FP.flowersRender.CACHE_TOP, 'fleur coupée : ' + FP.flowersRender.extent(f));
+  }
+});

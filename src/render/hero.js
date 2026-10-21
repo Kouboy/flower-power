@@ -11,7 +11,7 @@
 
   const HOLD = .25;   // tenue minimale d'une humeur (s), contre le clignotement entre deux humeurs
 
-  // Humeur selon l'état, par priorité : mort, toxique, frôlement, alerte, concentration, calme.
+  // Humeur selon l'état, par priorité : mort, toxique, frôlement, alerte, bouclier, concentration, calme.
   function mood(state, memory) {
     const t = state.time, p = state.plant;
     let cause = memory && state.mode !== 'playing' ? memory.cause : null;
@@ -24,6 +24,7 @@
     else if (p.toxicTimer > 0) name = 'toxic';
     else if (state.graze.active.size > 0) name = 'graze';
     else if (state.query && state.query.danger > .45) name = 'alarm';
+    else if (state.power && state.power.shield) name = 'shield';   // sous la membrane : sûr de lui
     else if (state.input.down) name = 'focus';
     if (memory && name !== memory.name && name !== 'dead' && t - memory.since < HOLD) name = memory.name;
     return { name, since: memory && memory.name === name ? memory.since : t, cause, sweat, dizzy };
@@ -66,6 +67,9 @@
       case 'blush': eye(L, EY); eye(R, EY); pupil(L, EY + 1); pupil(R + 1, EY + 1); mouth(-1, 2, 2); px.rect(g, ax - 5, ay, 2, 1, c.blush); px.rect(g, ax + 3, ay, 2, 1, c.blush); return;
       case 'wink': eye(L, EY); pupil(L + 1, EY + 1); shut(R, EY + 1); mouth(-2, 2, 3); mouth(1, 1, 1); return;
       case 'tongue': shut(L, EY + 1); shut(R, EY + 1); mouth(-1, 2, 3); mouth(0, 3, 1, 2, c.tongue); return;
+      case 'shield':                                              // paupières mi-closes, sourire en coin : sûr de lui
+        if (opts.blink) { shut(L, EY + 1); shut(R, EY + 1); } else { eye(L, EY); eye(R, EY); shut(L, EY); shut(R, EY); pupil(L + 1, EY + 1); pupil(R + 1, EY + 1); }
+        mouth(-2, 2, 3); mouth(1, 1, 1); return;
     }
     // Humeurs du héros en jeu.
     if (opts.blink && name !== 'alarm') { shut(L, EY + 1); shut(R, EY + 1); }
