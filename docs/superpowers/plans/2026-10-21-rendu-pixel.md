@@ -326,3 +326,22 @@ FP.test('flowers: valeurs dans leurs bornes ; langue rare', () => {
   - Version affichée : `v4.1.0`.
 - [ ] **Étape 3 :** `node dev/run-checks.js` → vert ; tous les fichiers sous 400 lignes.
 - [ ] **Étape 4 : commit** `docs: v4.1.0 — rendu pixel Mega Drive`.
+
+## Relecture finale — résultat
+
+Corrigé dans `925d72a` :
+- **Jeu ouvert par double-clic.** En `file://`, les navigateurs interdisent la relecture des pixels d'une image locale. Le jeu se figeait dès le premier obstacle à l'écran. Les obstacles ont maintenant un repli sans relecture, et une erreur dans le monde n'empêche plus l'affichage.
+- **Humeur « bouclier »** ajoutée, comme prévu par la spec.
+- **Haut des plus hautes fleurs** : il n'est plus coupé dans le cache du parterre.
+
+Mineurs reportés :
+- bande sombre de 6 px pendant la secousse sur l'écran de fin (zoom 1) ;
+- miroir des sprites faux pour un pivot non centré (tous centrés aujourd'hui, un test du catalogue le garantit) ;
+- détails du sol identiques entre deux niveaux de même variante de pelouse (la graine du niveau n'est pas utilisée) ;
+- dernière rangée de pixels parfois périmée en bas d'écran (zoom 1 seulement) ;
+- visage « joie » des fleurs lié au seul `flow.stage` ;
+- boucles par pixel à chaque frame (limaces, poche des bonus, bouclier, tiges non masquées) : le rendu reste ≤ 1,7 ms ;
+- documentation : « FP.palette nomme toutes les couleurs » est inexact ; la spec cite `FP.view.art.scale` ; l'en-tête de `plant.js` ne mentionne pas `FP.geom` ;
+- données mortes : les couleurs de `config.garden.palettes` ne sont plus rendues, et `palette.stem.shade` est inutilisée ;
+- peau du héros proche du vert des nappes, corps des limaces proche du reflet de la tige ;
+- clignements entre 0,2 et 6,6 s (la spec dit 2 à 5 s) ; le test des variantes utilise des tailles hors jeu.
