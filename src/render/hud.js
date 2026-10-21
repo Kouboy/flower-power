@@ -1,14 +1,16 @@
 // render/hud.js — informations à l'écran (repère écran, hors zoom).
-// Lit     : state.mode, state.flow.{message,messageTimer}, state.plant.{reserves,stemCount,trail,corruption}, state.score.flowers,
-//           state.input.down, FP.view, FP.config.text.
+// Lit     : state.mode, state.flow.{message,messageTimer}, state.plant.{reserves,stemCount,trail,corruption},
+//           state.score.{flowers,eco,flowerBonus,combo}, state.input.down, FP.scoring.records, FP.view, FP.config.text.
 // Écrit   : rien (le canvas uniquement).
 // Expose  : FP.hud.draw(ctx, state).
-// Porté de la v3.43.16 (drawHUD) ; ÉcoCrédits™, combo et pollen arrivent aux étapes 4 et 5.
+// Porté de la v3.43.16 (drawHUD, panneau de fin de die()) ; le pollen reçu arrive à l'étape 5.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
   const { clamp } = FP.math;
   const FONT = 'system-ui,-apple-system,Segoe UI,sans-serif';
+  const SIGIL = 'Ɇ';
+  const fmt = (n) => n.toLocaleString('fr-FR');
 
   function box(ctx, x, y, w, h, r) {
     ctx.beginPath(); ctx.roundRect(x, y, w, h, r);
@@ -20,10 +22,14 @@
     const boxY = H - 78, boxW = 146, boxH = 64;
     ctx.font = `700 14px ${FONT}`; ctx.textBaseline = 'top'; ctx.textAlign = 'left';
     box(ctx, 12, boxY, boxW, boxH, 15);
-    ctx.fillStyle = '#ffeeb5'; ctx.fillText('fleurs ' + state.score.flowers, 24, boxY + 8);
+    const sc = state.score;
+    ctx.fillStyle = '#ffeeb5'; ctx.fillText('fleurs ' + sc.flowers, 24, boxY + 8);
+    ctx.fillStyle = '#cfff78'; ctx.fillText(SIGIL + ' ' + fmt(sc.eco), 24, boxY + 28);
+    ctx.fillStyle = sc.flowerBonus > 0 ? '#fff0a6' : '#c9b68b'; ctx.fillText('pollen +' + sc.flowerBonus, 24, boxY + 47);
     box(ctx, W - boxW - 12, boxY, boxW, boxH, 15);
     ctx.fillStyle = '#d9c798'; ctx.fillText('graines ' + state.plant.reserves, W - boxW, boxY + 8);
     ctx.fillStyle = '#bda982'; ctx.fillText('élan ' + Math.round(100 + Math.max(0, state.plant.stemCount - 1) * 3) + '%', W - boxW, boxY + 28);
+    ctx.fillStyle = sc.combo > 1 ? '#cfff78' : '#bda982'; ctx.fillText(sc.combo > 1 ? 'combo x' + sc.combo : 'frôlement : ' + SIGIL, W - boxW, boxY + 47);
   }
 
   // Ligne d'effet au-dessus des panneaux (v3 : « croissance déviée », plus tard bouclier, spore…).
@@ -54,17 +60,23 @@
     ctx.globalAlpha = 1;
   }
 
-  // Fin de partie minimale ; l'écran de records arrive à l'étape 6.
+  // Fin de partie : score, ÉcoCrédits™ et records (panneau de die() en v3).
   function drawOver(ctx, state, W, H) {
+    const sc = state.score, r = FP.scoring.records, y0 = H * .32;
     ctx.fillStyle = 'rgba(9,7,5,.62)'; ctx.fillRect(0, 0, W, H);
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillStyle = '#ffefb4'; ctx.font = `850 30px ${FONT}`;
-    const n = state.score.flowers;
-    ctx.fillText(n + ' fleur' + (n > 1 ? 's' : ''), W / 2, H * .40);
-    ctx.fillStyle = '#ead9b2'; ctx.font = `600 16px ${FONT}`;
-    ctx.fillText('Plus de graines · tiges tentées : ' + state.plant.stemCount, W / 2, H * .40 + 40);
+    ctx.fillText(sc.flowers + ' fleur' + (sc.flowers > 1 ? 's' : ''), W / 2, y0);
+    ctx.font = `600 16px ${FONT}`;
+    const lines = [
+      ['#ead9b2', 'Tiges tentées : ' + state.plant.stemCount],
+      ['#cfff78', 'ÉcoCrédits™ : ' + SIGIL + ' ' + fmt(sc.eco)],
+      ['#ead9b2', 'Meilleur score fleurs : ' + r.flowers],
+      ['#ead9b2', 'Meilleurs ÉcoCrédits™ : ' + SIGIL + ' ' + fmt(r.eco)]
+    ];
+    lines.forEach(([c, t], i) => { ctx.fillStyle = c; ctx.fillText(t, W / 2, y0 + 44 + i * 26); });
     ctx.fillStyle = '#fff1b7'; ctx.font = `800 18px ${FONT}`;
-    ctx.fillText('TOUCHE POUR RECOMMENCER', W / 2, H * .40 + 86);
+    ctx.fillText('TOUCHE POUR RECOMMENCER', W / 2, y0 + 44 + lines.length * 26 + 28);
   }
 
   function draw(ctx, state) {
