@@ -10,8 +10,6 @@ Chaque fichier `src/**` commence par un en-tête : rôle, ce qu'il **lit**, ce q
 
 ## Carte des fichiers
 
-✅ existe · ⏳ à venir (étape)
-
 ```text
 src/
 ├── core/
@@ -41,17 +39,18 @@ src/
 │   ├── powerups.js   ✅ récompenses (naissance, glyphes), membrane du bouclier
 │   ├── plant.js      ✅ tige, anciennes traces, graine, bourgeon, guide, cercle du doigt
 │   ├── hud.js        ✅ panneaux, messages, écrans ready / over
-│   ├── frame.js      ✅ FP.render.frame(state) : zoom, caméra, sol, obstacles, plante, HUD
+│   ├── frame.js      ✅ FP.render.frame(state) : secousse, zoom, caméra, ordre de dessin, HUD, fondu
 │   ├── effects.js    ✅ chiffres +Ɇ, anneaux de frôlement, ramassage, rupture, onde de spore, impact
 │   ├── flowers.js    ✅ fleurs illustrées du parterre, cache des fleurs finies
-│   └── …             ⏳ (7) particules
-├── audio/audio.js    ⏳ (7)
+│   └── particles.js  ✅ gerbes nées des événements, terre et éclats de la pointe, plafond 84 / 128
+├── audio/audio.js    ✅ son procédural (Web Audio) : effets, drone de frôlement, grattement de la pousse
 ├── ui/
-│   ├── menu.js       ✅ écran titre / fin de partie → nouveau run ; redimensionnement
-│   └── input.js      ✅ pointeur → state.input (x monde, screenX, y, down, pressed)
+│   ├── menu.js       ✅ écran titre / fin de partie → nouveau run ; Espace / Entrée ; redimensionnement
+│   └── input.js      ✅ pointeur et touche → state.input (x monde, screenX, y, down, pressed)
 └── debug/
     ├── freecam.js    ✅ ?freecam=1 : molette / flèches / glisser
-    └── …             ⏳ (7) perf.js (?perf=1), flydebug.js (?flydebug=1)
+    ├── perf.js       ✅ ?perf=1 : FPS, update, render, tranches de dessin
+    └── flydebug.js   ✅ ?flydebug=1 : bandeau des décisions de flyover
 ```
 
 ## Les 4 règles
@@ -96,15 +95,17 @@ Un niveau est généré par `FP.level.startRun(state)` (tirage du T-Rex signatur
 
 1. `dt` plafonné à `config.loop.maxDt` (dt invalide → `fallbackDt`) ; `state.time += dt` ;
 2. dans tous les modes sauf `menu`, `FP[nom].update(state, dt)` pour `input → plant → hazards → collision → graze → scoring → powerups → flow → camera` (un système pas encore porté est sauté ; chacun décide selon `state.mode`). **Tout système expose `update(state, dt)`** : par exemple la requête de pointe vit dans `FP.collision.update` ;
-3. `FP.audio.consume(state.events)` ;
+3. `FP.audio.consume(state.events, state, dt)` ;
 4. `FP.render.frame(state)` ;
 5. `state.events` est vidé.
 
+Avec `?perf=1`, la boucle et `frame.js` mesurent update, render et les tranches sol / dangers / plante (`FP.perf`, `null` sinon).
+
 ## Ordre de chargement
 
-`index.html` charge : `assets/obstacles/manifest.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `hazards.js`, `src/play/plant.js`, `src/world/collision.js`, `src/play/flow.js`, `graze.js`, `scoring.js`, `powerups.js`, `src/play/camera.js`, `src/render/view.js`, `sprites.js`, `soil.js`, `obstacles.js`, `hazards.js`, `powerups.js`, `plant.js`, `hud.js`, `effects.js`, `frame.js`, `src/core/loop.js`, `src/ui/input.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` (pour le catalogue).
+`index.html` charge : `assets/obstacles/manifest.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `hazards.js`, `src/play/plant.js`, `src/world/collision.js`, `src/play/flow.js`, `graze.js`, `scoring.js`, `powerups.js`, `src/play/camera.js`, `src/render/view.js`, `sprites.js`, `soil.js`, `obstacles.js`, `hazards.js`, `powerups.js`, `plant.js`, `hud.js`, `effects.js`, `flowers.js`, `particles.js`, `frame.js`, `src/audio/audio.js`, `src/debug/perf.js`, `flydebug.js`, `src/core/loop.js`, `src/ui/input.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` (pour le catalogue).
 
-`dev/check.html` charge aussi `src/ui/input.js` (ses écouteurs ne s'installent que si `FP.view` existe).
+`dev/check.html` charge aussi `src/audio/audio.js`, `src/debug/perf.js`, `flydebug.js` et `src/ui/input.js` (sans canvas ni paramètre d'URL : `FP.perf` et `FP.flydebug` valent `null`, le son reste muet, le pointeur n'est pas écouté).
 
 ## Dangers diffus
 
@@ -133,11 +134,19 @@ Un niveau est généré par `FP.level.startRun(state)` (tirage du T-Rex signatur
 - Transition (mode `bloom`) : `flow.stage` passe de `show` (1,55 s) à `fadeOut` (.46 s, `flow.fade` 0 → 1), le niveau est régénéré sous le noir, puis `fadeIn` (.48 s, 1 → 0) et `ready`. `frame.js` peint le voile par-dessus tout.
 - À la fin de partie, `flow.overReason` garde la cause de la dernière mort pour l'écran de fin.
 
+## Son, particules et outils
+
+- `audio/audio.js` traduit les événements de la frame en sons (recettes de la v3, anti-rafale par type) et tient deux sons continus : le drone du frôlement (proximité = timbre, durée = puissance) et le grattement de la pousse. Le son ne démarre qu'après un premier geste (règle des navigateurs) ; sans Web Audio, le jeu reste muet. `FP.audio._backend` est remplaçable par un espion dans les tests.
+- `render/particles.js` crée ses gerbes à partir des événements (comme les effets) et vit dans `state.fx.particles`. Plafond : 84 pendant l'éclosion ou quand la pointe est près du haut de l'écran, 128 sinon.
+- `?flydebug=1` affiche la décision de chaque flyover : `powerups` émet `{ type: 'flyover', outcome: 'spawn' | 'blocked' | 'noSpot' | 'notQualified', kind, risk, time, effective, progress }`, et `bonusMissed` porte `gate`.
+
 ## Modes
 
-`menu` (écran titre) → `playing` (pousse en vol) → `dying` (0,85 s, puis nouveau niveau et nouvelle pousse) ou `bloom` (1,55 s, puis niveau suivant) → `ready` (graine posée, attend un **nouvel** appui) → `playing`… ; `over` quand il n'y a plus de graines (un appui relance un run neuf).
+`menu` (écran titre) → `playing` (pousse en vol) → `dying` (0,85 s, puis nouveau niveau et nouvelle pousse) ou `bloom` → `ready` (graine posée, attend un **nouvel** appui ou Espace / Entrée) → `playing`… ; `over` quand il n'y a plus de graines (un appui relance un run neuf).
 
-Pour ajouter un fichier : une ligne `<script>` après ses dépendances (celles listées dans son en-tête « Lit »), avant `ui/menu.js`. Un fichier de simulation (`core/`, `world/`, `play/`) s'ajoute aussi à `dev/check.html`, avant `harness.js`, avec son fichier de tests dans `dev/tests/`. Les fichiers `render/` et `ui/` ne sont pas chargés par `check.html` (ils ont besoin du DOM).
+`bloom` enchaîne trois temps (`flow.stage`) : `show` (1,55 s, les fleurs éclosent), `fadeOut` (.46 s, voile noir), nouveau niveau sous le noir, `fadeIn` (.48 s), puis `ready` (événement `ready`).
+
+Pour ajouter un fichier : une ligne `<script>` après ses dépendances (celles listées dans son en-tête « Lit »), avant `ui/menu.js`. Un fichier de simulation (`core/`, `world/`, `play/`) s'ajoute aussi à `dev/check.html`, avant `harness.js`, avec son fichier de tests dans `dev/tests/`. Les fichiers `render/` et `ui/menu.js` ne sont pas chargés par `check.html` (ils ont besoin du DOM).
 
 ## Vérification
 

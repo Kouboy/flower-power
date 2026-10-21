@@ -2,6 +2,15 @@
 
 Une entrée par commit (voir `AGENTS.md`).
 
+## v4.0.0 — Refonte
+
+- parité avec la v3.43.16 (liste de contrôle : `docs/parite-v3.md`) ;
+- son procédural de la v3 : effets par événement, anti-rafale, drone du frôlement, grattement de la pousse ;
+- particules : gerbes (ÉcoCrédits™, spore, bouclier, ramassages, morts, contamination, éclosion), terre et éclats derrière la pointe, plafond 84 / 128 ; secousse de l'écran ;
+- Espace / Entrée : démarrer, lancer la pousse suivante ;
+- `?perf=1` (profileur) et `?flydebug=1` (décisions de flyover) ;
+- banc : 161 tests.
+
 ## v4.0.0-etape6 — Éclosion
 
 - à la surface, 1 + pollen fleurs éclosent en éventail (5 palettes v3), poussent en ~.4 s et restent dans un parterre qui garde la mémoire de la partie ;

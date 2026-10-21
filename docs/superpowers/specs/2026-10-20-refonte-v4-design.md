@@ -93,7 +93,8 @@ FP.state = {
   plant:  { seed, tip, dir, guide, trail, oldTrails, stemAge, stemCount, reserves, corruption, toxicTimer, recentToxic },
   world:  { width, height, viewH, surfaceY, skyVariant, lawnVariant, safePath, safeRadius, solids, toxics, leaks, bonuses },
   query:  { solid, danger, near, toxic, leak, leakHit, grazes },
-  flow:   { timer, message, messageTimer },
+  flow:   { timer, message, messageTimer, stage, fade, overReason },
+  garden: { flowers },
   graze:  { active /* Map objet → frôlement */ },
   power:  { shield, shieldGrace },
   score:  { eco, flowers, flowerBonus, combo, comboTimer },
@@ -173,4 +174,4 @@ Travail sur la branche `refonte` ; `main` garde la v3.43.16 jusqu'à la parité.
 | 4 | Frôlement, ÉcoCrédits™, combos, HUD | Score fonctionnel |
 | 5 | Flyover → pollen / bouclier / spore + exclusivité | Power-ups fonctionnels |
 | 6 | Surface, éclosion, fleurs, réserves, niveaux, records | Partie complète |
-| 7 | Audio, effets, `?perf=1`, `?flydebug=1` | Parité v3.43.16 → fusion dans `main` |
+| 7 | Audio, effets, `?perf=1`, `?flydebug=1` | Parité v3.43.16 → fusion dans `main` (fait : v4.0.0, voir `docs/parite-v3.md`) |

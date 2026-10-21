@@ -4,9 +4,9 @@
 
 ## Statut
 
-**v4.0.0 en reconstruction — étape 6/7 (éclosion) : jouable de bout en bout.** Obstacles, nappes toxiques, limaces, ÉcoCrédits™, flyover et power-ups, fleurs qui éclosent à la surface et parterre de la partie, fondus entre les niveaux, écran de fin avec records. Son, particules et outils de réglage à l'étape 7. Le gameplay revient étape par étape (voir `docs/superpowers/specs/2026-10-20-refonte-v4-design.md`, §11).
+**v4.0.0 — parité v3.** La refonte reprend tout le jeu de la v3.43.16 en fichiers courts : obstacles, nappes toxiques, limaces, ÉcoCrédits™, flyover et power-ups, éclosion et parterre, son procédural, particules, outils de réglage. La liste de contrôle est dans `docs/parite-v3.md`.
 
-La dernière version jouable complète est la v3.43.16 : `archive/v3.43.16/index.html`.
+La v3.43.16 reste jouable pour comparer : `archive/v3.43.16/index.html`.
 
 ## Lancer
 
@@ -15,6 +15,7 @@ Aucune installation. Ouvrir `index.html` par double-clic dans un navigateur réc
 ## Contrôles
 
 - Maintenir le clic / le doigt : orienter la pousse.
+- Espace ou Entrée : démarrer une partie, lancer la pousse suivante.
 - Frôler les obstacles sans les toucher : générer des ÉcoCrédits™.
 - Atteindre la surface : faire éclore une fleur.
 
@@ -22,8 +23,8 @@ Aucune installation. Ouvrir `index.html` par double-clic dans un navigateur réc
 
 - `?seed=N` : génération reproductible (entier ≥ 0).
 - `?freecam=1` : caméra libre (molette, flèches, glisser, Début/Fin) pour inspecter un niveau.
-- `?perf=1` : profiler (FPS, coût update/render). *(revient à l'étape 7)*
-- `?flydebug=1` : réglage des seuils de flyover. *(revient à l'étape 7)*
+- `?perf=1` : profileur (FPS, coût update / render, tranches de dessin).
+- `?flydebug=1` : bandeau qui explique chaque décision de flyover.
 
 ## Développer
 
