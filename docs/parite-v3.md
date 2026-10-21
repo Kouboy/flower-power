@@ -38,6 +38,7 @@ Voir la spec, §7 « Retiré ou archivé » : dessin vectoriel des obstacles, le
 ## Différences connues
 
 - Une même graine ne donne pas le même niveau dans les deux versions : la v3 tirait aussi les éléments retirés.
+- Plus d'obstacles qu'en v3 (v4.1.0) : environ 16 dès le premier niveau à 440 px de large (v3 : 11), jusqu'à environ 19 dès le niveau 4, plafonné à la capacité du terrain.
 - Le ciel est plus haut qu'en v3 (surface à 19 % de la hauteur de vue au lieu de 13,6 %), pour qu'on voie le crépuscule du rendu pixel (v4.1.0).
 - Le bandeau `?flydebug=1` nomme les récompenses avec les noms v4 (`POLLEN`, `SPORE`) là où la v3 écrivait `BUD`, `BOMB`.
 - Les défauts mineurs relevés pendant les relectures de la refonte sont listés dans les plans d'étapes (`docs/superpowers/plans/`) ; ils seront traités après la parité.

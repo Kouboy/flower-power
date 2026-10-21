@@ -48,7 +48,8 @@
       fit: { centerMarginX: 26, centerTop: 48, centerBottom: 118, maxOutside: { authored: 8, signature: 70 }, edgeTop: 34, edgeBottom: 100, safeExtra: 8, safeApproxK: .38 },
       // Densité cible (jamais un quota forcé). .92 = densité du cadrage B.
       skyVariants: 4, lawnVariants: 4, mirrorChance: .5,   // palettes de ciel / pelouse, obstacles retournés
-      solids: { base: 6, perLevel: .18, maxExtra: 6, scale: .84, framing: .92, worldScaleMax: 2.45, tries: 110, relaxAfter: 34, jitter: .27 },
+      // v4.1.0 : plus dense dès le premier passage (v3 : base 6, perLevel .18, maxExtra 6) ; plafond à la capacité du terrain (≈ 19 obstacles à 440 px).
+      solids: { base: 8.5, perLevel: .6, maxExtra: 2, scale: .84, framing: .92, worldScaleMax: 2.45, tries: 110, relaxAfter: 34, jitter: .27, giveUpAfter: 4 },   // 4 obstacles impossibles de suite : le niveau est plein
       // Zones toxiques diffuses : plutôt en profondeur, jamais sur le chemin sûr.
       toxics: {
         base: 3, perLevel: .14, maxExtra: 4, scale: .70, tries: 80, relaxAfter: 30, jitter: .29,
