@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Flower Power — check</title>
+<style>
+  body{font:14px/1.5 system-ui,sans-serif;background:#15110e;color:#f7e9c7;margin:24px;}
+  .ok{color:#9be37a}.ko{color:#ff8a7a}
+  #total{font-size:20px;font-weight:800;margin-bottom:12px;}
+  li{margin:2px 0}
+</style>
+</head>
+<body>
+<div id="total">…</div>
+<ul id="list"></ul>
+<!-- Ordre de chargement : sources testées, puis le banc, puis les tests. -->
+<script src="../assets/obstacles/manifest.js"></script>
+<script src="../src/core/fp.js"></script>
+<script src="../src/core/geom.js"></script>
+<script src="../src/core/config.js"></script>
+<script src="../src/core/state.js"></script>
+<script src="../src/world/catalog.js"></script>
+<script src="../src/world/level.js"></script>
+<script src="../src/world/hazards.js"></script>
+<script src="../src/play/plant.js"></script>
+<script src="../src/world/collision.js"></script>
+<script src="../src/play/flow.js"></script>
+<script src="../src/play/graze.js"></script>
+<script src="../src/play/scoring.js"></script>
+<script src="../src/play/powerups.js"></script>
+<script src="../src/audio/audio.js"></script>
+<script src="../src/ui/input.js"></script>
+<script src="../src/play/camera.js"></script>
+<script src="../src/debug/perf.js"></script>
+<script src="../src/debug/flydebug.js"></script>
+<script src="../src/core/loop.js"></script>
+<script src="harness.js"></script>
+<script src="tests/fp.test.js"></script>
+<script src="tests/geom.test.js"></script>
+<script src="tests/state.test.js"></script>
+<script src="tests/catalog.test.js"></script>
+<script src="tests/level.test.js"></script>
+<script src="tests/hazards.test.js"></script>
+<script src="tests/plant.test.js"></script>
+<script src="tests/input.test.js"></script>
+<script src="tests/collision.test.js"></script>
+<script src="tests/flow.test.js"></script>
+<script src="tests/graze.test.js"></script>
+<script src="tests/scoring.test.js"></script>
+<script src="tests/powerups.test.js"></script>
+<script src="tests/audio.test.js"></script>
+<script src="tests/camera.test.js"></script>
+<script src="tests/loop.test.js"></script>
+<script src="tests/debug.test.js"></script>
+<script src="tests/e2e.test.js"></script>
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const results = FP.runTests();
+    const okCount = results.filter(r => r.ok).length;
+    const total = document.getElementById('total');
+    total.textContent = okCount + '/' + results.length + ' OK';
+    total.className = okCount === results.length ? 'ok' : 'ko';
+    const list = document.getElementById('list');
+    for (const r of results) {
+      const li = document.createElement('li');
+      li.className = r.ok ? 'ok' : 'ko';
+      li.textContent = (r.ok ? '✔ ' : '✘ ') + r.name + (r.ok ? '' : ' — ' + r.error);
+      list.appendChild(li);
+    }
+  });
+</script>
+</body>
+</html>

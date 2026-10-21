@@ -1,3 +1,105 @@
+# Changelog
+
+Une entrée par version (voir `AGENTS.md`).
+
+## v4.0.1 — Nettoyage
+
+- une erreur dans la mise à jour, le son ou le rendu ne fige plus le jeu : elle est signalée une fois en console et le reste continue ;
+- une fenêtre plus petite que 300 × 520 garde le 9:16 ; `?seed=` limité à 32 bits ;
+- règles alignées sur la v3 : une spore ramassée sauve du choc de la même frame, rien n'est payé sur la frame de l'éclosion, un flyover sans place libre ne consomme plus l'obstacle, toutes les limaces touchées clignotent ;
+- rendu et son alignés sur la v3 : anneau d'exposition sous la pellicule toxique, bref anneau pour un bonus manqué, drone coupé net sur un choc ;
+- derniers réglages de gameplay dans `config.js` (niveaux identiques pour une même graine) ;
+- parcours complets testés (frôlement → score, flyover → récompense) ; `dev/bench-level.js` ;
+- banc : 180 tests.
+
+## v4.0.0 — Refonte
+
+- parité avec la v3.43.16 (liste de contrôle : `docs/parite-v3.md`) ;
+- son procédural de la v3 : effets par événement, anti-rafale, drone du frôlement, grattement de la pousse ;
+- particules : gerbes (ÉcoCrédits™, spore, bouclier, ramassages, morts, contamination, éclosion), terre et éclats derrière la pointe, plafond 84 / 128 ; secousse de l'écran ;
+- Espace / Entrée : démarrer, lancer la pousse suivante ;
+- `?perf=1` (profileur) et `?flydebug=1` (décisions de flyover) ;
+- banc : 161 tests.
+
+## v4.0.0-etape6 — Éclosion
+
+- à la surface, 1 + pollen fleurs éclosent en éventail (5 palettes v3), poussent en ~.4 s et restent dans un parterre qui garde la mémoire de la partie ;
+- fleurs illustrées (tige contourée, feuilles, 5 pétales irréguliers, cœur ponctué), fleurs finies en cache ;
+- anneau d'éclosion doré ; transition par fondu au noir (1,55 s d'éclosion, .46 s, nouveau niveau, .48 s) au lieu du saut de caméra ;
+- écran de fin avec la cause de la mort ;
+- relecture : le cache du parterre est reconstruit à chaque nouvelle partie (il pouvait montrer la fleur de la partie précédente) ;
+- banc : 149 tests.
+
+## v4.0.0-etape5 — Flyover et power-ups
+
+- nappes toxiques et trajets de limaces peuvent sortir par les bords, tant qu'on en voit au moins la moitié ;
+- flyover : un frôlement qui contourne un obstacle en montant, de près et longtemps, fait naître devant la pointe un pollen (+1 fleur à l'éclosion), une goutte (bouclier organique) ou une spore (nettoyage, 2 000 Ɇ par obstacle) — règles et seuils de la v3 ;
+- un seul power-up gameplay à la fois (le bouclier), pollen hors slot, une récompense par obstacle, récompense ratée qui disparaît ;
+- bouclier : absorbe un choc d'obstacle ou de limace, la pointe recule sans changer de direction, .48 s de grâce ; ne protège pas des nappes toxiques ;
+- rendu : filament de naissance, glyphes source / spore / pollen, membrane, anneaux de ramassage, rupture, onde de spore, impact à la mort ; ligne d'effet du HUD complète ;
+- banc : 141 tests.
+
+## v4.0.0-etape4 — ÉcoCrédits™
+
+- frôler un obstacle ou une limace sans la toucher accumule un frôlement (rien avant .22 s), payé à la sortie : durée, proximité, pic de proximité ; ×1,18 pour le fût irradié et le T-Rex signature, ×1,12 pour une limace ;
+- combo : +22 % par gain enchaîné en moins de 2 s, ×8 au plus ; un contact ou la fin de la partie annule les frôlements en cours sans payer ;
+- records de fleurs et d'ÉcoCrédits™ dans `flower_power_v4_best`, conservés d'une session à l'autre, stockage corrompu toléré ;
+- rendu : chiffres « +1 250Ɇ » qui claquent, anneaux de frôlement, limace frôlée qui clignote, HUD complet de la v3, écran de fin avec records ;
+- relecture : le banc d'essai utilise un stockage en mémoire (lancer `dev/check.html` n'écrase plus les records du jeu) ;
+- banc : 116 tests.
+
+## v4.0.0-etape3 — Zones toxiques et lixiviat
+
+- génération des nappes toxiques et des limaces portée de la v3, après les solides ; limaces tenues à l'écart du chemin sûr et placées sans dépendre de la caméra ;
+- `world/hazards.js` : limaces en va-et-vient, de plus en plus vives au fil de la partie (plafonné) ;
+- requête de pointe : intensité toxique, contact lixiviat, frôlement de limace qui fait zoomer ;
+- exposition toxique : message, croissance déviée (tremblement, vitesse −10 %, cône 74°), brûlure après ~1,14 s, récupération 5× plus rapide ;
+- morts par lixiviat et par brûlure, événements `death` avec `cause` ;
+- rendu : nappes qui respirent (sous et devant les sprites), limaces et sillons (clear, fat, debris), anneau d'exposition, bourgeon jaunâtre, ligne « croissance déviée » ;
+- message central réduit pour tenir dans la largeur ;
+- relecture : toute mort secoue à .28 comme en v3 ; vitesse des limaces réellement plafonnée (phase intégrée — la v3 accélérait sans fin et faisait sauter les limaces) ; plus de saut d'une image à la génération ;
+- banc : 98 tests.
+
+## v4.0.0-etape2 — La pousse
+
+- le jeu redevient jouable : croissance et pilotage portés de la v3 (vitesse, rampe par pousse et par fleur, virage, rebond aux bords, trace) ;
+- `ui/input.js` : pointeur → instantané par frame, conversion sous zoom, front montant pour relancer, relâchement hors fenêtre ;
+- `world/collision.js` : requête de pointe sur les polygones authorés, danger de frôlement ;
+- `play/flow.js` : mort et nouvelle pousse sur un nouveau niveau, éclosion minimale (fleur comptée, niveau suivant, « TOUCHE POUR POUSSER »), fin de partie ;
+- caméra : cadrage ×1,18 et zoom de frôlement centrés sur la pointe (ou la graine) ;
+- rendu de la tige (grain, feuilles primitives), de la graine, du bourgeon, du guide et de la trajectoire prévue ; HUD minimal ;
+- obstacles rognés par les bords tant qu'ils restent identifiables (8 px, T-Rex 70 px) ;
+- relecture : le cadrage ×1,18 reste pendant la mort (pas de saut de zoom), clic droit ignoré, pointeur capturé hors de la bande de jeu, chaque appui compte ;
+- banc : 77 tests.
+
+## v4.0.0-etape1 — Le monde
+
+- `core/geom.js` : distance point-segment, transformation locale → monde, SAT entre polygones convexes ;
+- `createRun(seed, {W,H})` fixe largeur, hauteur du monde, hauteur de vue et surface pour tout le run ;
+- `world/catalog.js` : les 12 PNG authorés deviennent des solides (taille, polygone mis à l'échelle, miroir interdit si `mirrorSafe:false`, empreinte visuelle avec marge) ;
+- `world/level.js` : génération portée de la v3 (grille, chemin sûr, placement sans chevauchement, densité cible, T-Rex signature 1 fois par run) avec des tables d'apparition réduites aux 11 familles PNG ;
+- rendu : sol illustré en cache (ciel, nuages, pelouse, strates, grain, racines), obstacles PNG avec leur ancrage sombre, PNG manquant toléré ;
+- caméra défilante et caméra libre `?freecam=1` ;
+- fenêtre redimensionnée en cours de partie : le niveau garde ses coordonnées, la hauteur visible et les bornes de caméra suivent, le sol couvre toute la largeur ; au menu, un run neuf est recréé ;
+- banc : 47 tests ;
+- `?seed=N` est reproductible dans la v4 mais ne donne pas le même niveau que l'archive.
+
+## v4.0.0-etape0 — Squelette
+
+- archive la v3.43.16 jouable dans `archive/v3.43.16/` (référence de gamefeel), avec `?seed=N` pour une génération reproductible ;
+- déplace les docs v3 dans `archive/docs/` et extrait la banque de gags satiriques (`banque-de-gags.js`) ;
+- nouveau squelette en scripts classiques sur `window.FP` : `core/fp.js`, `config.js`, `state.js`, `loop.js`, `render/view.js`, `render/frame.js`, `ui/menu.js` ;
+- état unique `FP.state.createRun(seed)`, boucle à ordre fixe, `dt` plafonné ;
+- banc d'assertions `dev/check.html` (+ `node dev/run-checks.js`) : 18 tests ;
+- contrat d'itération `AGENTS.md`, docs vivantes `docs/design.md` et `docs/architecture.md` ;
+- aucun gameplay encore : le menu lance un écran de fond provisoire.
+
+---
+
+## Historique v3
+
+L'historique ci-dessous est celui du prototype monolithique (ordre d'origine conservé).
+
 ## v3.43.2 — Visual Cohesion Pass
 
 - rapproche la pousse, la terre, la surface et les fleurs du langage illustré des sprites PNG ;
