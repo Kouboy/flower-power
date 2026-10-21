@@ -19,7 +19,7 @@
   const strata = {
     humus: ['#130d0e', '#181110', '#1d1512', '#221914'],
     clay: ['#2a1a10', '#311f12', '#382414', '#3f2a17'],
-    stone: ['#17161c', '#1b1a21', '#1f1e26', '#24232b']
+    stone: ['#18140f', '#1d1813', '#221c17', '#28211b']
   };
   // Profondeur relative (0 = surface, 1 = fond) où commence la strate suivante.
   const strataBounds = { humus: .22, clay: .62 };

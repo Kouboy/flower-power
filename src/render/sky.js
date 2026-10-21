@@ -74,7 +74,7 @@
     for (const c of chimneys(w, h)) {
       for (let k = 0; k < 3; k++) {
         const ph = ((t / 3 + k / 3 + c.n * .17) % 1);
-        px.disc(actx, c.x + Math.round(ph * 6), c.y - oy - Math.round(ph * 22), Math.round(1 + ph * 3), ph < .6 ? pal[2] : pal[1]);
+        px.disc(actx, c.x + Math.round(ph * 6), c.y - oy - Math.round(ph * 22), Math.round(1 + ph * 2), ph < .5 ? pal[4] : pal[3]);
       }
     }
   }

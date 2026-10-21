@@ -68,7 +68,7 @@
     const rnd = rng(seed);
     for (let cy = topArt + 6; cy < hArt - 4; cy += 24) {
       for (let cx = 0; cx < w; cx += 24) {
-        if (rnd() < .35) continue;
+        if (rnd() < .15) continue;
         const x = cx + Math.floor(rnd() * 20), y = cy + Math.floor(rnd() * 20);
         const d = (y - topArt) / (hArt - topArt), b = palette.strataBounds;
         const gi = d < b.humus ? 0 : (d < b.clay ? 1 : 2), t = groups[gi];

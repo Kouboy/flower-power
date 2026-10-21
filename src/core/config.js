@@ -15,10 +15,11 @@
       dprMax: 1.15,
       minW: 300,
       minH: 520,
-      // Hauteur du ciel : H * surfaceRatio, bornée.
-      surfaceRatio: .136,
-      surfaceMin: 82,
-      surfaceMax: 116
+      // Hauteur du ciel : H * surfaceRatio, bornée. v4.1.0 : plus haut que la v3 (.136, 82–116)
+      // pour que le ciel du crépuscule reste visible sous le cadrage ×1,18.
+      surfaceRatio: .19,
+      surfaceMin: 100,
+      surfaceMax: 160
     },
 
     // Hauteur du monde : la graine part bien plus bas que l'écran visible.
