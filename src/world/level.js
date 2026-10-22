@@ -189,11 +189,12 @@
     const world = state.world, rng = state.rng, c = FP.config.level.toxics;
     const count = countFor(c, state);
     for (let i = 0; i < count; i++) {
-      const preferDeep = i % 3 !== 0;
+      // v4.2.3 : à tour de rôle dans les trois tiers de la hauteur (v3 : réservées aux profondeurs, la surface restait propre).
+      const third = i % 3;
       let placed = false;
       for (let tries = 0; tries < c.tries && !placed; tries++) {
         const cell = pickCell(grid, rng, cl => cl.r > 0 && cl.r < grid.rows - 1 &&
-          (tries > c.relaxAfter || depthK(world, cl.y) > (preferDeep ? c.deepDepth : c.shallowDepth)));
+          (tries > c.relaxAfter || Math.min(2, Math.floor(depthK(world, cl.y) * 3)) === third));
         const pos = cellPos(grid, rng, cell, c.jitter), big = depthK(world, pos.y) > c.bigDepth;
         const o = {
           x: pos.x, y: pos.y,
