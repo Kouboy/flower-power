@@ -12,8 +12,8 @@
 
   const rect = (g, x, y, w, h, c) => FP.px.rect(g, x, y, w, h, c);
   const dot = (g, pts, c) => { for (const [x, y] of pts) rect(g, x, y, 1, 1, c); };
-  // Demi-largeur de la rangée dy d'un disque de rayon 2 (même règle que FP.px.disc).
-  const span2 = (dy) => { let h = 0; while ((h + 1) * (h + 1) + dy * dy <= 6) h++; return h; };
+  // Demi-largeur de la rangée dy d'un disque de rayon r (même règle que FP.px.disc).
+  const span = (r, dy) => { let h = 0; while ((h + 1) * (h + 1) + dy * dy <= r * r + r) h++; return h; };
 
   // Œil globuleux en (x, y) : contour r + 1, blanc r.
   function ball(g, x, y, r = 2) { const c = FP.palette.hero; FP.px.disc(g, x, y, r + 1, c.outline); FP.px.disc(g, x, y, r, c.eye); }
@@ -22,10 +22,10 @@
   function cross(g, x, y) {
     for (let i = -2; i <= 2; i++) dot(g, [[x + i, y + i], [x + i, y - i]], FP.palette.hero.pupil);
   }
-  // Paupière de peau sur les n rangées du haut d'un œil (rayon 2) centré en (x, y), trait de paupière dessous.
-  function lid(g, x, y, n, skin) {
-    for (let i = 0; i < n; i++) { const dy = -2 + i, h = span2(dy); rect(g, x - h, y + dy, 2 * h + 1, 1, skin); }
-    const dy = Math.min(2, -2 + n), h = span2(dy);
+  // Paupière de peau sur les n rangées du haut d'un œil de rayon r centré en (x, y), trait de paupière dessous.
+  function lid(g, x, y, n, skin, r = 2) {
+    for (let i = 0; i < n; i++) { const dy = -r + i, h = span(r, dy); rect(g, x - h, y + dy, 2 * h + 1, 1, skin); }
+    const dy = Math.min(r, -r + n), h = span(r, dy);
     rect(g, x - h - 1, y + dy, 2 * h + 3, 1, FP.palette.hero.outline);
   }
 

@@ -1,7 +1,7 @@
 // render/cast.js — le casting des pousses (v4.4.0) : registre et personnages 1 à 8 (suite dans render/cast2.js).
 // Lit     : FP.px, FP.faces, FP.palette.{hero, cast}.
 // Écrit   : uniquement les pixels du contexte reçu.
-// Expose  : FP.cast.define(def), FP.cast.get(id), FP.cast.pen(g, ax, ay) (outils de dessin relatifs, pour cast2.js).
+// Expose  : FP.cast.define(def), FP.cast.get(id) ; pour cast2.js : FP.cast.pen(g, ax, ay) (dessin relatif), FP.cast.crossEyed(g, ax, ay).
 // def = { id, tip? (pointe du bourgeon, vrai par défaut), back?, eyes?, mouth?, front?, flower } ; les couches reçoivent
 // (g, ax, ay, mood, o) — voir FP.hero.paint — et flower(g, ax, ay, heart) dessine le visage sur le cœur de la fleur.
 // Dessins d'après docs/art/maquette-visages-1-7.html ; tout tient dans ±12 pixels autour du centre.
@@ -53,14 +53,6 @@
     mouth: bunnyTeeth,
     flower(g, ax, ay) { const { R } = pen(g, ax, ay); crossEyed(g, ax, ay); bunnyTeeth(g, ax, ay); R(3, 3, 1, 4, C().drool); R(3, 7, 1, 1, C().drool); } });
 
-  // Paupière de peau sur les n rangées du haut d'un œil de rayon r.
-  function bigLid(g, ax, ay, x, y, r, n, skin) {
-    const span = (dy) => { let h = 0; while ((h + 1) * (h + 1) + dy * dy <= r * r + r) h++; return h; };
-    for (let i = 0; i < n; i++) { const dy = -r + i, h = span(dy); FP.px.rect(g, ax + x - h, ay + y + dy, 2 * h + 1, 1, skin); }
-    const dy = Math.min(r, -r + n), h = span(dy);
-    FP.px.rect(g, ax + x - h - 1, ay + y + dy, 2 * h + 3, 1, H().outline);
-  }
-
   define({ id: 'cyclope',                                         // un seul œil énorme
     eyes(g, ax, ay, mood, o) {
       const { R, P } = pen(g, ax, ay), y = F.EY - 1;
@@ -68,12 +60,12 @@
       F.ball(g, ax, ay + y, mood === 'alarm' ? 4 : 3);
       if (mood === 'dead') { F.cross(g, ax, ay + y); return; }
       if (mood === 'alarm') { F.pupil(g, ax, ay + y, 1, 1); return; }
-      if (o.blink) { bigLid(g, ax, ay, 0, y, 3, 6, o.skin); return; }
+      if (o.blink) { F.lid(g, ax, ay + y, 6, o.skin, 3); return; }
       if (mood === 'toxic') { const k = Math.floor((o.t || 0) * 8) % 4, p = [[1, -3], [1, 0], [-2, 0], [-2, -3]][o.dizzy ? k : 0]; F.pupil(g, ax + p[0], ay + y + p[1]); return; }
       const gx = (o.gaze && o.gaze.x) || 0, side = gx > .3 ? 1 : (gx < -.3 ? -1 : 0);
       F.pupil(g, ax - 1 + side, ay + y - 1 + ((o.gaze && o.gaze.y > .35) ? 1 : 0), 3, 3);
-      if (mood === 'focus') { bigLid(g, ax, ay, 0, y, 3, 1, o.skin); R(-3, y - 5, 7, 1, H().brow); }
-      else if (mood === 'shield') bigLid(g, ax, ay, 0, y, 3, 3, o.skin);
+      if (mood === 'focus') { F.lid(g, ax, ay + y, 1, o.skin, 3); R(-3, y - 5, 7, 1, H().brow); }
+      else if (mood === 'shield') F.lid(g, ax, ay + y, 3, o.skin, 3);
     },
     flower(g, ax, ay) {
       const { R, P } = pen(g, ax, ay), h = H();
@@ -146,5 +138,5 @@
       R(-3, 1, 6, 1, h.outline); R(-2, 2, 4, 1, h.mouth);
     } });
 
-  FP.cast = { define, get, pen };
+  FP.cast = { define, get, pen, crossEyed };
 })();

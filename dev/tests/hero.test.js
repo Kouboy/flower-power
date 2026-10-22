@@ -47,3 +47,6 @@ FP.test('hero: la bouche spéciale ne sort qu’au calme et en concentration', (
 FP.test('hero: les huit premiers personnages sont définis', () => {
   for (const id of FP.config.cast.ids.slice(0, 8)) { const d = FP.cast.get(id); FP.assert(d && typeof d.flower === 'function', id); }
 });
+FP.test('hero: le casting est complet', () => {
+  for (const id of FP.config.cast.ids) { const d = FP.cast.get(id); FP.assert(d && d.id === id && typeof d.flower === 'function', id); }
+});
