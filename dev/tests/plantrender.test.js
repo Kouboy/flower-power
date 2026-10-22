@@ -30,3 +30,10 @@ FP.test('plantRender: la foreuse tourne avec le temps et s’éteint hors de la 
   FP.assert(FP.plantRender.drill(s).angle !== a);
   for (const mode of ['bloom', 'dying', 'over', 'ready']) { s.mode = mode; FP.assert(!FP.plantRender.drill(s).active, mode); }
 });
+FP.test('plantRender: la foreuse part au-dessus de la tête et de ses accessoires', () => {
+  for (const id of FP.config.cast.ids) {
+    const c = fakeCtx(); FP.hero.paint(c, 0, 0, id, 'calm', {});
+    const top = Math.min(...[...c.px.keys()].map(k => k.split(',').map(Number)).filter(([x]) => Math.abs(x) <= 1).map(([, y]) => y));
+    FP.assert(FP.plantRender.drillStart(id) >= -top, id + ' : ' + FP.plantRender.drillStart && FP.plantRender.drillStart(id) + ' < ' + -top);
+  }
+});

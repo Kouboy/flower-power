@@ -71,3 +71,32 @@ FP.test('plant: chaque éclosion rend la pousse suivante nettement plus rapide (
   s.plant.stemCount += 1; s.score.flowers += 1; s.plant.stemAge = 0;
   FP.assert(FP.plant.speed(s) >= v1 * 1.1, FP.plant.speed(s) + ' vs ' + v1);
 });
+// Pioche des personnages : un par pousse, sans doublon tant que les 16 ne sont pas passés (v4.4.0).
+const castRun = (seed) => { const s = FP.state.createRun(seed, { W: 440, H: 783 }); FP.level.startRun(s); return s; };
+const castOrder = (s, n) => Array.from({ length: n }, () => { FP.plant.prepare(s); FP.plant.launch(s); return s.plant.character; });
+FP.test('plant: 16 pousses, 16 personnages distincts', () => {
+  const chars = castOrder(castRun(3), 16), ids = FP.config.cast.ids;
+  FP.assertEqual(new Set(chars).size, 16);
+  FP.assert(chars.every(c => ids.includes(c)), chars.join());
+});
+FP.test('plant: la 17e pousse remélange la pioche', () => {
+  const s = castRun(3); castOrder(s, 16);
+  FP.assertEqual(s.plant.cast.length, 0);
+  castOrder(s, 1);
+  FP.assert(FP.config.cast.ids.includes(s.plant.character)); FP.assertEqual(s.plant.cast.length, 15);
+});
+FP.test('plant: même graine, même ordre ; autre graine, autre ordre', () => {
+  const a = castOrder(castRun(3), 16).join(), b = castOrder(castRun(3), 16).join(), c = castOrder(castRun(4), 16).join();
+  FP.assertEqual(a, b); FP.assert(a !== c);
+});
+FP.test('plant: la pioche ne consomme pas state.rng', () => {
+  const a = castRun(3), b = castRun(3);
+  b.plant.cast = FP.config.cast.ids.slice();   // pioche déjà pleine : pas de mélange
+  FP.plant.launch(a); FP.plant.launch(b);
+  FP.assertEqual(a.rng.next(), b.rng.next());
+});
+FP.test('plant: le personnage ne change qu’au lancement', () => {
+  const s = castRun(3); castOrder(s, 1); const c = s.plant.character;
+  FP.plant.prepare(s); s.mode = 'over';
+  FP.assertEqual(s.plant.character, c);
+});

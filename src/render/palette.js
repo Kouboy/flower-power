@@ -1,7 +1,7 @@
 // render/palette.js — palettes nommées du rendu pixel (d'après docs/art/reference-crepuscule.png).
 // Lit     : rien.
 // Écrit   : rien.
-// Expose  : FP.palette.{sky, strata, strataBounds, strataTone(d, k), lawn, stem, seed, hero, flowers, toxic, slug, danger, decor()}.
+// Expose  : FP.palette.{sky, strata, strataBounds, strataTone(d, k), lawn, stem, seed, hero, cast, flowers, toxic, slug, danger, decor()}.
 // Les teintes de `danger` (violet chimique) signalent les dangers : interdites au décor, distinctes de la pousse.
 (function () {
   'use strict';
@@ -41,7 +41,15 @@
   // Héros (tête-bourgeon) et ses visages.
   const hero = {
     outline: '#141c0c', skin: '#7fb04a', skinShade: '#5a8a34', skinLight: '#a8d066', toxic: '#9bb84a', toxicShade: '#6e8a2e',
-    eye: '#f4ecd8', pupil: '#140c08', mouth: '#5a1e1e', teeth: '#f4ecd8', tongue: '#e0606a', blush: '#e07a7a', sweat: '#7ac8f0', brow: '#1e2a12'
+    eye: '#f4ecd8', pupil: '#140c08', mouth: '#5a1e1e', teeth: '#f4ecd8', tongue: '#e0606a', sweat: '#7ac8f0', brow: '#1e2a12'
+  };
+
+  // Personnages des pousses (v4.4.0, render/cast*.js) : accessoires et mutations. Aucun violet de danger.
+  const cast = {
+    band: '#e07a3a', bandDot: '#f8d070', red: '#d86a5a', glow: '#d8f050', crest: '#e0508a', crestLight: '#f6a0b8',
+    metal: '#9aa4b0', drool: '#bfe8f8', frame: '#3a2a1a', glass: '#cfe8f0', shine: '#ffffff', nose: '#d84a3a', noseLight: '#f08a70',
+    stache: '#5a3a1e', tint: '#c87a2a', shroom: '#c83a2a', shroomDot: '#f4ecd8', stalk: '#e8dcc0',
+    shell: '#b8915c', shellLight: '#dcc08a', shellDark: '#8e6b44', fly: '#2a2a2a', pink: '#f0a0a0', tongueDark: '#b84050'
   };
 
   // Fleurs : une palette par palette de jeu (config.garden.palettes, même ordre) — pétales clair / moyen / ombre,
@@ -68,5 +76,5 @@
 
   const decor = () => [...sky.flat(), ...strata.humus, ...strata.clay, ...strata.stone, ...lawn.flat()];
 
-  FP.palette = { sky, strata, strataBounds, strataTone, lawn, stem, seed, hero, flowers, toxic, slug, danger, decor };
+  FP.palette = { sky, strata, strataBounds, strataTone, lawn, stem, seed, hero, cast, flowers, toxic, slug, danger, decor };
 })();

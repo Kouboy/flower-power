@@ -157,3 +157,9 @@ FP.test('flow: une nappe brûle après la même distance parcourue (≈ 75 px), 
   const slow = burnDistance(1), fast = burnDistance(20);
   FP.assert(Math.abs(slow - 75) < 6 && Math.abs(fast - 75) < 6, slow.toFixed(1) + ' px / ' + fast.toFixed(1) + ' px');
 });
+FP.test('flow: toutes les fleurs d’une éclosion portent le personnage de la pousse', () => {
+  const s = flowRun(); s.score.flowerBonus = 2; s.plant.tip = { x: 220, y: s.world.surfaceY - 1 };
+  FP.collision.update(s); FP.flow.update(s, 0);
+  FP.assertEqual(s.garden.flowers.length, 3);
+  FP.assert(s.plant.character && s.garden.flowers.every(f => f.character === s.plant.character));
+});

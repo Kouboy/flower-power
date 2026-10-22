@@ -40,11 +40,14 @@ src/
 │   ├── obstacles.js  ✅ sprites ramenés sur la grille (8 niveaux par canal, contour), ancrage tramé
 │   ├── hazards.js    ✅ nappes tramées (base + pellicule), limaces et sillons, anneau d'exposition
 │   ├── powerups.js   ✅ récompenses (naissance, glyphes pixel), membrane du bouclier
-│   ├── hero.js       ✅ le héros : tête-bourgeon à visage, humeurs (FP.hero.mood), visages réutilisés par les fleurs
+│   ├── faces.js      ✅ briques de visage communes : gros yeux, grandes bouches, une forme par humeur (FP.faces)
+│   ├── cast.js       ✅ casting des pousses : registre (FP.cast) et personnages 1 à 8
+│   ├── cast2.js      ✅ personnages 9 à 16
+│   ├── hero.js       ✅ le héros : tête-bourgeon du personnage de la pousse, humeurs (FP.hero.mood), tête composée (FP.hero.paint)
 │   ├── plant.js      ✅ tige pixel qui fouit (tunnel, mottes, racines, mycélium ; FP.plantRender.buried), graine, héros, guide, doigt (dessiné dans la toile d'interface)
 │   ├── frame.js      ✅ FP.render.frame(state) : toile monde, agrandissement (secousse, zoom), toile d'interface, outils, fondu
 │   ├── effects.js    ✅ anneaux en pixels (frôlement, ramassage, rupture, spore, impact, éclosion) ; chiffres +Ɇ en police pixel
-│   ├── flowers.js    ✅ le héros devenu fleur, variantes par fleur (FP.flowersRender.variant), cache des fleurs finies
+│   ├── flowers.js    ✅ la pousse devenue fleur, avec le visage fleur de son personnage ; variantes par fleur (FP.flowersRender.variant), cache des fleurs finies
 │   └── particles.js  ✅ gerbes nées des événements, terre et éclats de la pointe, carrés de 1 à 2 pixels, plafond 84 / 128
 ├── audio/
 │   ├── synth.js      ✅ moteur FM façon Mega Drive (voix 2 opérateurs, batterie, écho, bus musique / effets / général) — seul à créer des nœuds Web Audio
@@ -86,7 +89,7 @@ L'état de la partie en cours est `FP.state.current`, créé par `FP.state.creat
   time, seed, level, rng, signature,
   input:  { x, screenX, y, down, active, pressed },
   camera: { y, manual, near, zoom, shake },
-  plant:  { seed, tip, dir, guide, trail, oldTrails, stemAge, stemCount, reserves, corruption, toxicTimer, recentToxic, scrapeTimer },
+  plant:  { seed, tip, dir, guide, trail, oldTrails, stemAge, stemCount, reserves, corruption, toxicTimer, recentToxic, scrapeTimer, cast, castRng, character },
   world:  { width, height, viewH, surfaceY, skyVariant, lawnVariant, safePath, safeRadius, solids, toxics, leaks, bonuses },
   query:  { solid, danger, near, toxic, leak, leakHit, grazes },
   flow:   { timer, stage, fade, overReason, blossom },
@@ -133,7 +136,8 @@ Spec : `docs/superpowers/specs/2026-10-21-rendu-pixel-design.md` ; référence d
 - **Lisibilité.** Terre sombre à contraste bas, sans contour ; contours sombres réservés aux obstacles, à la tige, au héros, aux bonus et aux limaces.
 - **Héros.**
   - Son humeur se déduit de l'état existant, sans rien ajouter à la simulation (`FP.hero.mood`). Par priorité : mort, toxique, frôlement, alerte, concentration, calme ; une humeur tient au moins 0,25 s.
-  - Les fleurs reprennent son visage, avec une variante tirée d'une empreinte de leurs données.
+  - **Casting (v4.4.0).** Chaque pousse reçoit un des 16 personnages de `FP.config.cast.ids`, tirés sans remise (`state.plant.cast`, mélangée par `state.plant.castRng`, tiré de la graine de la partie : `state.rng` n'est jamais touché). Un personnage déclare ses couches (`back`, `eyes`, `mouth`, `front`, `flower`) dans `render/cast*.js` ; le reste vient de `render/faces.js`. Sa bouche spéciale ne sort qu'au calme et en concentration : le danger reprend toujours la main. Tout tient dans ±12 pixels autour du centre de la tête.
+  - Les fleurs d'une éclosion copient le personnage de la pousse (`flower.character`) et portent son visage fleur ; forme, pétales et teinte restent tirés d'une empreinte de leurs données.
 - **Mesures (v4.1.0, fenêtre de 440 × 783)** : rendu de 0,6 à 0,9 ms en partie, au plus 1,7 ms pendant les effets (spore, bouclier, éclosion). Avec 30 fleurs, la tranche « plante » prend 0,7 ms.
 
 ## Interface pixel (v4.2.0)
@@ -146,7 +150,7 @@ Spec : `docs/superpowers/specs/2026-10-22-interface-pixel-design.md` ; maquettes
 
 ## Ordre de chargement
 
-`index.html` charge : `assets/obstacles/manifest.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `hazards.js`, `src/play/plant.js`, `src/world/collision.js`, `src/play/flow.js`, `graze.js`, `scoring.js`, `powerups.js`, `src/play/camera.js`, `src/render/palette.js`, `px.js`, `view.js`, `sprites.js`, `soil.js`, `sky.js`, `obstacles.js`, `hazards.js`, `powerups.js`, `hero.js`, `plant.js`, `effects.js`, `flowers.js`, `particles.js`, `drillfx.js`, `mound.js`, `src/ui/font.js`, `hud.js`, `shout.js`, `logo.js`, `title.js`, `certificate.js`, `ui.js`, `src/render/frame.js`, `src/audio/synth.js`, `songs.js`, `sequencer.js`, `music.js`, `sfx.js`, `audio.js`, `src/debug/perf.js`, `flydebug.js`, `src/core/loop.js`, `src/ui/input.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` (pour le catalogue).
+`index.html` charge : `assets/obstacles/manifest.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `hazards.js`, `src/play/plant.js`, `src/world/collision.js`, `src/play/flow.js`, `graze.js`, `scoring.js`, `powerups.js`, `src/play/camera.js`, `src/render/palette.js`, `px.js`, `view.js`, `sprites.js`, `soil.js`, `sky.js`, `obstacles.js`, `hazards.js`, `powerups.js`, `faces.js`, `cast.js`, `cast2.js`, `hero.js`, `plant.js`, `effects.js`, `flowers.js`, `particles.js`, `drillfx.js`, `mound.js`, `src/ui/font.js`, `hud.js`, `shout.js`, `logo.js`, `title.js`, `certificate.js`, `ui.js`, `src/render/frame.js`, `src/audio/synth.js`, `songs.js`, `sequencer.js`, `music.js`, `sfx.js`, `audio.js`, `src/debug/perf.js`, `flydebug.js`, `src/core/loop.js`, `src/ui/input.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` (pour le catalogue).
 
 `dev/check.html` charge aussi les fichiers `src/audio/*`, `src/debug/perf.js`, `flydebug.js` et `src/ui/input.js` (sans canvas ni paramètre d'URL : `FP.perf` et `FP.flydebug` valent `null`, le son reste muet, le pointeur n'est pas écouté).
 
@@ -190,7 +194,7 @@ Spec : `docs/superpowers/specs/2026-10-22-interface-pixel-design.md` ; maquettes
 
 `bloom` enchaîne trois temps (`flow.stage`) : `show` (1,55 s, les fleurs éclosent), `fadeOut` (.46 s, voile noir), nouveau niveau sous le noir, `fadeIn` (.48 s), puis `ready` (événement `ready`).
 
-Pour ajouter un fichier : une ligne `<script>` après ses dépendances (celles listées dans son en-tête « Lit »), avant `ui/menu.js`. Un fichier de simulation (`core/`, `world/`, `play/`) s'ajoute aussi à `dev/check.html`, avant `harness.js`, avec son fichier de tests dans `dev/tests/`. Les fichiers `render/` et `ui/menu.js` ne sont pas chargés par `check.html` (ils ont besoin du DOM), sauf `palette.js`, `px.js`, `hero.js`, `flowers.js`, `soil.js`, `plant.js`, `drillfx.js`, `mound.js`, `obstacles.js` et les `ui/*` purs (`font`, `hud`, `shout`, `logo`, `title`, `certificate`), qui ne touchent pas au DOM au chargement et sont testés.
+Pour ajouter un fichier : une ligne `<script>` après ses dépendances (celles listées dans son en-tête « Lit »), avant `ui/menu.js`. Un fichier de simulation (`core/`, `world/`, `play/`) s'ajoute aussi à `dev/check.html`, avant `harness.js`, avec son fichier de tests dans `dev/tests/`. Les fichiers `render/` et `ui/menu.js` ne sont pas chargés par `check.html` (ils ont besoin du DOM), sauf `palette.js`, `px.js`, `faces.js`, `cast.js`, `cast2.js`, `hero.js`, `flowers.js`, `soil.js`, `plant.js`, `drillfx.js`, `mound.js`, `obstacles.js` et les `ui/*` purs (`font`, `hud`, `shout`, `logo`, `title`, `certificate`), qui ne touchent pas au DOM au chargement et sont testés.
 
 ## Vérification
 

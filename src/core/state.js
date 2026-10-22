@@ -43,7 +43,8 @@
         seed: { x: 0, y: 0 }, tip: null, dir: { x: 0, y: -1 }, guide: { x: 0, y: 0 },
         trail: [], oldTrails: [], stemAge: 0, stemCount: 0, reserves: FP.config.plant.seeds,
         corruption: 0, toxicTimer: 0, recentToxic: 0,         // exposition toxique (écrite par play/flow.js)
-        scrapeTimer: 0                                        // battement de croissance (play/plant.js)
+        scrapeTimer: 0,                                       // battement de croissance (play/plant.js)
+        cast: [], castRng: FP.createRng((s ^ FP.config.cast.salt) >>> 0), character: null   // pioche des personnages (play/plant.js)
       },
       world: {
         width: dims.W, height, viewH: dims.H, surfaceY: surfaceYFor(dims.H),
