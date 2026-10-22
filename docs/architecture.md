@@ -46,7 +46,13 @@ src/
 │   ├── effects.js    ✅ anneaux en pixels (frôlement, ramassage, rupture, spore, impact, éclosion) ; chiffres +Ɇ en police pixel
 │   ├── flowers.js    ✅ le héros devenu fleur, variantes par fleur (FP.flowersRender.variant), cache des fleurs finies
 │   └── particles.js  ✅ gerbes nées des événements, terre et éclats de la pointe, carrés de 1 à 2 pixels, plafond 84 / 128
-├── audio/audio.js    ✅ son procédural (Web Audio) : effets, drone de frôlement, grattement de la pousse
+├── audio/
+│   ├── synth.js      ✅ moteur FM façon Mega Drive (voix 2 opérateurs, batterie, écho, bus musique / effets / général) — seul à créer des nœuds Web Audio
+│   ├── songs.js      ✅ partitions : thème du titre (A), 4 variantes de la musique de jeu (B, une par pousse), jingles
+│   ├── sequencer.js  ✅ séquenceur (FP.sequencer.notesBetween, pur) planifié sur l'horloge audio ; tempo changé en début de mesure
+│   ├── music.js      ✅ direction musicale (morceau par mode, couches, tempo, veille, baisses ; purs et testés)
+│   ├── sfx.js        ✅ effets FM, sons d'interface, jingles, bourdonnement du frôlement, ronron de la pousse
+│   └── audio.js      ✅ chef d'orchestre : déblocage, événements → effets et musique, réglage tout / effets seuls / muet, pause onglet caché
 ├── ui/
 │   ├── font.js       ✅ police bitmap 5×7 (FP.font : has, measure, wrap, draw), glyphes rendus en cache
 │   ├── hud.js        ✅ HUD des coins du bas (FP.hud.items, pur) : graines, ÉcoCrédits™, pollen et combo actifs, « TOUCHER POUR POUSSER »
@@ -140,9 +146,9 @@ Spec : `docs/superpowers/specs/2026-10-22-interface-pixel-design.md` ; maquettes
 
 ## Ordre de chargement
 
-`index.html` charge : `assets/obstacles/manifest.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `hazards.js`, `src/play/plant.js`, `src/world/collision.js`, `src/play/flow.js`, `graze.js`, `scoring.js`, `powerups.js`, `src/play/camera.js`, `src/render/palette.js`, `px.js`, `view.js`, `sprites.js`, `soil.js`, `sky.js`, `obstacles.js`, `hazards.js`, `powerups.js`, `hero.js`, `plant.js`, `effects.js`, `flowers.js`, `particles.js`, `drillfx.js`, `mound.js`, `src/ui/font.js`, `hud.js`, `shout.js`, `logo.js`, `title.js`, `certificate.js`, `ui.js`, `src/render/frame.js`, `src/audio/audio.js`, `src/debug/perf.js`, `flydebug.js`, `src/core/loop.js`, `src/ui/input.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` (pour le catalogue).
+`index.html` charge : `assets/obstacles/manifest.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `hazards.js`, `src/play/plant.js`, `src/world/collision.js`, `src/play/flow.js`, `graze.js`, `scoring.js`, `powerups.js`, `src/play/camera.js`, `src/render/palette.js`, `px.js`, `view.js`, `sprites.js`, `soil.js`, `sky.js`, `obstacles.js`, `hazards.js`, `powerups.js`, `hero.js`, `plant.js`, `effects.js`, `flowers.js`, `particles.js`, `drillfx.js`, `mound.js`, `src/ui/font.js`, `hud.js`, `shout.js`, `logo.js`, `title.js`, `certificate.js`, `ui.js`, `src/render/frame.js`, `src/audio/synth.js`, `songs.js`, `sequencer.js`, `music.js`, `sfx.js`, `audio.js`, `src/debug/perf.js`, `flydebug.js`, `src/core/loop.js`, `src/ui/input.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` (pour le catalogue).
 
-`dev/check.html` charge aussi `src/audio/audio.js`, `src/debug/perf.js`, `flydebug.js` et `src/ui/input.js` (sans canvas ni paramètre d'URL : `FP.perf` et `FP.flydebug` valent `null`, le son reste muet, le pointeur n'est pas écouté).
+`dev/check.html` charge aussi les fichiers `src/audio/*`, `src/debug/perf.js`, `flydebug.js` et `src/ui/input.js` (sans canvas ni paramètre d'URL : `FP.perf` et `FP.flydebug` valent `null`, le son reste muet, le pointeur n'est pas écouté).
 
 ## Dangers diffus
 
@@ -173,7 +179,7 @@ Spec : `docs/superpowers/specs/2026-10-22-interface-pixel-design.md` ; maquettes
 
 ## Son, particules et outils
 
-- `audio/audio.js` traduit les événements de la frame en sons (recettes de la v3, anti-rafale par type) et tient le drone du frôlement (proximité = timbre, durée = puissance). La pousse qui creuse émet un battement `growthTick { k, near }` (`play/plant.js`, cadence de la v3) : l'audio en fait le grattement, les particules la terre et les éclats, ensemble comme en v3. Le son ne démarre qu'après un premier geste (règle des navigateurs) ; sans Web Audio, le jeu reste muet. `FP.audio._backend` est remplaçable par un espion dans les tests.
+- Son (v4.3.0, spec `docs/superpowers/specs/2026-10-22-sound-design-design.md`) : tout est synthétisé en FM, sans fichier. `audio/audio.js` traduit les événements de la frame en effets (`audio/sfx.js`, anti-rafale par type) et confie la musique à `audio/music.js`, qui pilote le séquenceur (minuteur de 25 ms) : thème A au titre, une variante de B par pousse en jeu, couches selon le danger (percussions au frôlement, orgue dans une nappe, sitar près de la surface), tempo selon les éclosions, veille entre deux niveaux, A doux après le tampon du certificat. Les sons d'interface (réveil, lettres du cri, certificat, icône) sont appelés directement par `ui/*` via `FP.audio.sfx(nom)`. La pousse qui creuse émet un battement `growthTick { k, near }` (`play/plant.js`) : l'audio en fait le ronron, les particules la terre et les éclats. Réglage du son sur l'écran titre (icône), mémorisé sous `flower_power_v4_sound`. Le son ne démarre qu'après un premier geste (règle des navigateurs) ; sans Web Audio, le jeu reste muet. `FP.audio._backend` est remplaçable par un espion dans les tests.
 - `render/particles.js` crée ses gerbes à partir des événements (comme les effets) et vit dans `state.fx.particles`. Plafond : 84 pendant l'éclosion ou quand la pointe est près du haut de l'écran, 128 sinon.
 - `render/mound.js` dessine l'émergence : la pelouse gonfle au-dessus de la pointe (`FP.mound.swell`, pur et testé), se fend à l'événement `bloom`, puis laisse un petit tas au pied de la fleur (`state.fx.mound.heaps`, pour tout le run). `play/flow.js` émet `blossom` `flow.hatchDelay` (.24 s) après `bloom` : l'anneau doré et les pétales partent alors, et la fleur ne pousse qu'à partir de là.
 - `?flydebug=1` affiche la décision de chaque flyover : `powerups` émet `{ type: 'flyover', outcome: 'spawn' | 'blocked' | 'noSpot' | 'notQualified', kind, risk, time, effective, progress }`, et `bonusMissed` porte `gate`.
