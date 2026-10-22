@@ -7,14 +7,14 @@ FP.test('plant: lancement depuis la graine', () => {
   FP.assertEqual(s.plant.stemCount, 1);
   FP.assert(s.events.some(e => e.type === 'stemStart'));
 });
-FP.test('plant: vitesse de départ v3 (cadrage B)', () => {
+FP.test('plant: vitesse de départ v4.2.1 (cadrage B)', () => {
   const s = plantRun();
-  FP.assertEqual(FP.plant.speed(s), 76 * .88);
+  FP.assertEqual(FP.plant.speed(s), 90 * .88);
 });
 FP.test('plant: monte sans contrôle', () => {
   const s = plantRun(), y0 = s.plant.tip.y;
   for (let i = 0; i < 60; i++) FP.plant.update(s, 1 / 60);
-  FP.assert(y0 - s.plant.tip.y > 55 && y0 - s.plant.tip.y < 75, String(y0 - s.plant.tip.y));
+  FP.assert(y0 - s.plant.tip.y > 65 && y0 - s.plant.tip.y < 89, String(y0 - s.plant.tip.y));
   FP.assert(s.plant.trail.length > 5);
 });
 FP.test('plant: tourne vers le pointeur sans jamais redescendre', () => {
@@ -31,7 +31,7 @@ FP.test('plant: bords', () => {
 FP.test('plant: pas maximal par frame', () => {
   const s = plantRun(); s.plant.stemCount = 99; s.plant.stemAge = 99;
   const y0 = s.plant.tip.y; FP.plant.update(s, .033);
-  FP.assert(y0 - s.plant.tip.y <= 196 * .88 * .033 + 1e-9);
+  FP.assert(y0 - s.plant.tip.y <= FP.config.plant.speed.max * .88 * .033 + 1e-9);
 });
 FP.test('plant: trace bornée à 340 points', () => {
   const s = plantRun(); s.world.height = 1e6; s.plant.tip.y = 9e5;
