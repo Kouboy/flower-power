@@ -6,7 +6,7 @@ FP.test('collision: point dans le polygone → solide', () => {
 });
 FP.test('collision: dans la bande de frôlement → danger', () => {
   const o = solidAt(200, 300);
-  const q = FP.collision.queryPoint(worldWith(o), 200 + 38, 300);   // bord du polygone à y=0 ≈ +28,9 px, bande 16
+  const k = o.w / 80, q = FP.collision.queryPoint(worldWith(o), 200 + 38 * k, 300);   // bord du polygone à y=0 ≈ +28,9 px × k, bande 16
   FP.assertEqual(q.solid, null);
   FP.assert(q.danger > 0 && q.danger < 1, String(q.danger));
   FP.assertEqual(q.near, o);
@@ -44,7 +44,7 @@ FP.test('collision: intensité toxique cumulée', () => {
 FP.test('collision: liste des frôlements', () => {
   const o = solidAt(200, 300);
   const l = { x: 400, y: 300, len: 0, angle: 0, r: 12, cx: 400, cy: 300, cr: 12 };
-  const q = FP.collision.queryPoint({ solids: [o], toxics: [], leaks: [l] }, 238, 300);
+  const q = FP.collision.queryPoint({ solids: [o], toxics: [], leaks: [l] }, 200 + 38 * o.w / 80, 300);   // dans la bande de frôlement du rack
   FP.assertEqual(q.grazes.length, 1); FP.assertEqual(q.grazes[0].obj, o); FP.assertEqual(q.grazes[0].kind, 'solid');
 });
 FP.test('collision: toutes les limaces touchées clignotent', () => {
