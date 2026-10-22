@@ -1,7 +1,8 @@
 // world/hazards.js — dangers diffus : limaces de lixiviat en mouvement, intensité des zones toxiques.
 // Lit     : state.time, state.world.leaks, state.plant.{stemCount,stemAge}, state.score.flowers, FP.config.hazards.
 // Écrit   : leak.{s,cx,cy,cr} (phase intégrée, position et rayon du corps cette frame), leak.hitFlash (décroissance).
-// Expose  : FP.hazards.update(state, dt), FP.hazards.leakSpeedScale(state), FP.hazards.toxicIntensityAt(o, x, y).
+// Expose  : FP.hazards.update(state, dt), FP.hazards.leakSpeedScale(state), FP.hazards.toxicIntensityAt(o, x, y),
+//           FP.hazards.leakHeading(leak) (sens de marche : 1 ou −1).
 // Porté de la v3.43.16 (limaceSpeedScale, toxicIntensityAt, trajet des limaces de queryTipHazards / drawHazards).
 (function () {
   'use strict';
@@ -25,6 +26,8 @@
 
   // Position sur le trajet, de −.5 à .5.
   const leakOffset = (l) => (Math.sin(l.s + l.phase) + 1) * .5 - .5;
+  // Sens de marche : 1 vers +angle, −1 en retour (signe de la dérivée de leakOffset, la phase s ne fait que croître).
+  const leakHeading = (l) => (Math.cos(l.s + l.phase) < 0 ? -1 : 1);
 
   // Va-et-vient sinusoïdal le long du trajet ; le corps « respire » légèrement.
   // La phase est intégrée (s += vitesse·dt) : la vitesse réelle reste plafonnée par leakSpeedScale.
@@ -41,5 +44,5 @@
     }
   }
 
-  FP.hazards = { update, leakSpeedScale, toxicIntensityAt };
+  FP.hazards = { update, leakSpeedScale, toxicIntensityAt, leakHeading };
 })();

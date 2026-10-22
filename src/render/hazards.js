@@ -1,6 +1,6 @@
 // render/hazards.js — nappes toxiques, limaces de lixiviat et anneau d'exposition, en pixels d'art.
 // Lit     : state.time, state.mode, state.world.{toxics,leaks,viewH}, state.camera.y, state.plant.{tip,toxicTimer},
-//           FP.config.{soil,toxic}, FP.px, FP.palette.{toxic,slug}.
+//           FP.config.{soil,toxic}, FP.px, FP.palette.{toxic,slug}, FP.hazards.leakHeading.
 // Écrit   : o._px sur chaque nappe — cache de rendu uniquement, jamais lu par la simulation.
 // Expose  : FP.hazardsRender.{drawBase, drawLeaks, drawOverlay, drawExposure}(actx, state) — repère d'art, caméra appliquée ici.
 // Porté de la v3.43.16 (drawToxicZoneBase, limaces de drawHazards, drawToxicZoneOverlay, anneau toxique de drawShieldGauge).
@@ -103,7 +103,8 @@
       if (inside(x, y, 0)) px.rect(g, cx + x, cy + y, 1, 1, (-x * sa + y * ca) > ry * .35 ? FP.palette.slug.shade : body);
       else if (inside(x, y, 1)) px.rect(g, cx + x, cy + y, 1, 1, FP.palette.slug.outline);
     }
-    const at = (u, v) => [cx + Math.round(u * ca - v * sa), cy + Math.round(u * sa + v * ca)];
+    // La tête (antennes, taches) passe du côté où la limace avance : miroir le long du trajet, l'ombre du corps reste en bas.
+    const dir = FP.hazards.leakHeading(l), at = (u, v) => [cx + Math.round(dir * u * ca - v * sa), cy + Math.round(dir * u * sa + v * ca)];
     for (const [u, v] of [[-rx * .3, -ry * .4], [rx * .2, -ry * .3]]) { const [x, y] = at(u, v); px.rect(g, x, y, 1, 1, FP.palette.slug.spot); }
     if (l.morph === 'debris') { const [x, y] = at(-rx * .1, 0); px.rect(g, x, y, 2, 1, '#d2b84c'); px.rect(g, x + 2, y + 1, 1, 1, '#6b91a1'); }
     // Deux antennes très bêtes, donc menaçantes à leur manière.

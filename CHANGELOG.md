@@ -5,7 +5,8 @@ Une entrée par version (voir `AGENTS.md`).
 ## v4.2.3 — Nappes sur toute la hauteur
 
 - les nappes toxiques se répartissent à tour de rôle sur les trois tiers de la hauteur (≈ 33 / 31 / 36 %, surface / milieu / fond), au lieu d'être réservées aux profondeurs (2 / 48 / 50 % avant) : le dernier tiers avant la surface n'est plus un répit ;
-- banc : 258 tests.
+- les limaces de lixiviat ne font plus de marche arrière : elles se retournent à chaque demi-tour de leur va-et-vient ;
+- banc : 259 tests.
 
 ## v4.2.2 — Nappes toxiques
 
