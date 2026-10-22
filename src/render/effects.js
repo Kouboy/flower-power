@@ -1,9 +1,10 @@
 // render/effects.js — effets visuels : chiffres ÉcoCrédits™, anneaux de frôlement, ramassage, rupture du bouclier,
 // onde de spore, impact à la mort, anneau d'éclosion.
 // Lit     : state.events (eco, pickup, bonusMissed, shieldBreak, bomb, death, blossom), state.time, state.mode, state.graze.active, state.plant.tip.
-// Écrit   : state.fx.effects uniquement (réservé au rendu) ; l'aléatoire purement visuel utilise Math.random.
+// Écrit   : state.fx.effects et state.fx.ecoSide uniquement (réservés au rendu) ; l'aléatoire purement visuel utilise Math.random.
 // Expose  : FP.effects.draw(actx, state) (repère d'art, caméra appliquée ici : anneaux, frôlements),
-//           FP.effects.drawLabels(ctx, state) (couche nette, repère monde : chiffres « +Ɇ » en police pixel, FP.font).
+//           FP.effects.drawLabels(ctx, state) (couche nette, repère monde : chiffres « +Ɇ » en police pixel, FP.font, au-dessus de la tête) ;
+//           FP.effects.labelPos(effet, pointe, k) (pur, testé).
 // Porté de la v3.43.16 (drawEffects : eco, pickup, shieldBreak, bomb, hit, bloom ; drawGrazeFeedback).
 (function () {
   'use strict';
@@ -18,11 +19,9 @@
     const t0 = state.time, fx = state.fx.effects;
     for (const e of state.events) {
       if (e.type === 'eco') {
-        const flat = !!e.flat;   // gain de spore : un peu plus lent et plus ample
-        fx.push({
-          type: 'eco', x: e.x, y: e.y, amount: e.amount, combo: e.combo, t0, life: flat ? 1.28 : 1.22,
-          vx: flat ? rand(-24, 24) : rand(-22, 22), vy: flat ? rand(-31, -16) : rand(-27, -13)
-        });
+        // Un côté sur deux : les gains s'affichent en haut à gauche puis en haut à droite de la tête (gain de spore : un peu plus long).
+        state.fx.ecoSide = state.fx.ecoSide === 1 ? -1 : 1;
+        fx.push({ type: 'eco', x: e.x, y: e.y, side: state.fx.ecoSide, amount: e.amount, combo: e.combo, t0, life: e.flat ? 1.28 : 1.22 });
       } else if (e.type === 'pickup') fx.push({ type: 'pickup', kind: e.kind, x: e.x, y: e.y, t0, life: .55, r: 16 });
       else if (e.type === 'bonusMissed') fx.push({ type: 'pickup', kind: e.kind, x: e.x, y: e.y, t0, life: .26, r: 11 });   // v3 : fondu bref
       else if (e.type === 'shieldBreak') fx.push({ type: 'shieldBreak', x: e.x, y: e.y, t0, life: .62, r: 31, phase: rand(0, TAU) });
@@ -45,16 +44,24 @@
     }
   }
 
+  // Position d'un gain (repère monde) : au-dessus de la tête, sur son côté, en suivant la pointe (il ne reste pas en arrière
+  // quand la tige monte) ; il s'écarte et monte un peu au fil de sa vie (k de 0 à 1). Sans pointe : là où il est né.
+  function labelPos(e, tip, k) {
+    if (!tip) return { x: e.x, y: e.y, align: 'center' };
+    const rise = 1 - Math.pow(1 - k, 2.2);
+    // Ancré par le bord côté tête : à gauche aligné à droite, à droite aligné à gauche (deux gains ne se chevauchent pas).
+    return { x: tip.x + e.side * (14 + 6 * rise), y: tip.y - 40 - 22 * rise, align: e.side < 0 ? 'right' : 'left' };
+  }
+
   // Score arcade (couche nette, repère monde) : un chiffre en police pixel qui claque (×2 puis ×1), monte et clignote en s'effaçant.
-  function drawEco(ctx, e, t) {
+  function drawEco(ctx, e, t, tip) {
     const k = clamp((t - e.t0) / e.life, 0, 1);
     if (k > .6 && Math.floor(t * 30) % 2) return;
-    const rise = 1 - Math.pow(1 - k, 2.2), S = FP.px.SCALE;
-    const x = e.x + e.vx * rise, y = e.y + e.vy * rise - 10 * rise, scale = k < .16 ? 2 : 1;
+    const S = FP.px.SCALE, { x, y, align } = labelPos(e, tip, k), scale = k < .16 ? 2 : 1;
     ctx.save();
     ctx.scale(S, S);
-    FP.font.draw(ctx, '+' + e.amount.toLocaleString('fr-FR') + SIGIL, x / S, y / S - FP.font.HEIGHT * scale / 2, { scale, color: FP.font.COLORS.eco, align: 'center' });
-    if (e.combo > 1) FP.font.draw(ctx, '×' + e.combo, x / S, y / S + FP.font.HEIGHT * scale / 2 + 2, { color: FP.font.COLORS.gold, align: 'center' });
+    FP.font.draw(ctx, '+' + e.amount.toLocaleString('fr-FR') + SIGIL, x / S, y / S - FP.font.HEIGHT * scale / 2, { scale, color: FP.font.COLORS.eco, align });
+    if (e.combo > 1) FP.font.draw(ctx, '×' + e.combo, x / S, y / S + FP.font.HEIGHT * scale / 2 + 2, { color: FP.font.COLORS.gold, align });
     ctx.restore();
   }
 
@@ -114,8 +121,8 @@
 
   // Couche nette (repère monde, après zoom et caméra) : les chiffres « +Ɇ », lisibles.
   function drawLabels(ctx, state) {
-    for (const e of state.fx.effects) if (e.type === 'eco') drawEco(ctx, e, state.time);
+    for (const e of state.fx.effects) if (e.type === 'eco') drawEco(ctx, e, state.time, state.plant.tip);
   }
 
-  FP.effects = { draw, drawLabels };
+  FP.effects = { draw, drawLabels, labelPos };
 })();
