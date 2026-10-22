@@ -156,3 +156,7 @@ FP.test('level: les nappes toxiques se répartissent sur toute la hauteur, surfa
   FP.assert(area[0] / total >= .25, 'tiers de surface : ' + Math.round(area[0] / total * 100) + ' %');
   FP.assert(area[2] / total <= .42, 'tiers du fond : ' + Math.round(area[2] / total * 100) + ' %');
 });
+FP.test('level: le chemin sûr se resserre avec les niveaux, jusqu’à presque la largeur de la tête', () => {
+  const r = (level) => { const s = FP.state.createRun(3, { W: 440, H: 783 }); s.level = level; FP.level.generate(s); return s.world.safeRadius; };
+  FP.assertEqual(r(0), 25); FP.assert(r(4) < 20 && r(4) > 17, String(r(4))); FP.assertEqual(r(8), 12); FP.assertEqual(r(20), 12);
+});

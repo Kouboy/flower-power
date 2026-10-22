@@ -73,7 +73,7 @@
     }
     nodes.push({ x: clamp(x + rng.range(-p.endJitter, p.endJitter), lo, hi), y: endY });
     world.safePath = nodes;
-    world.safeRadius = p.radiusBase + Math.min(p.radiusMax, level * p.radiusPerLevel);
+    world.safeRadius = Math.max(p.radiusMin, p.radiusBase + level * p.radiusPerLevel);
   }
 
   function distToSafePath(world, x, y) {
