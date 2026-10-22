@@ -190,7 +190,7 @@
     text: {
       ready: 'TOUCHER POUR POUSSER',
       // Interface pixel (v4.2.0) : cris de mort hors obstacles, aide de première pousse, relance, pied du titre, certificat.
-      shout: { leak: 'LIXIVIAT !', toxic: 'BRÛLÉE !' },
+      shout: { leak: 'LIXIVIAT\u00a0!', toxic: 'BRÛLÉE\u00a0!' },   // espace insécable avant « ! »
       help: { hold: 'MAINTIENS POUR POUSSER', guide: 'GUIDE LA POINTE' },
       again: 'TOUCHER POUR REPOUSSER',
       footer: ['© 2026 ÉCOSOFT™', 'UNE FILIALE DE PÉTROFLORE'],

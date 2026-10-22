@@ -16,7 +16,7 @@
     if (event.cause === 'leak') return t.shout.leak;
     if (event.cause === 'toxic') return t.shout.toxic;
     const full = t.death[event.kind] || t.deathDefault, at = full.indexOf(' : ');
-    return (at >= 0 ? full.slice(at + 3) : full).toLocaleUpperCase('fr-FR') + ' !';
+    return (at >= 0 ? full.slice(at + 3) : full).toLocaleUpperCase('fr-FR') + '\u00a0!';   // insécable : le « ! » ne part pas seul à la ligne
   }
 
   function helpFor(state) {

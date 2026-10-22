@@ -10,7 +10,7 @@ Une entrée par version (voir `AGENTS.md`).
 - cri de mort court en lettres qui tombent et rebondissent (« RACK SERVEUR ! ») ; aide uniquement à la toute première pousse ; plus aucun message texte dans la simulation ;
 - fin de partie en « certificat d'éco-responsabilité » : fleurs plantées, ÉcoCrédits™, tiges sacrifiées, record (battu ou à battre), cause du décès, tampon « VALIDÉ* » ; la relance n'est possible qu'après le tampon ;
 - gains « +Ɇ » et doigt en pixels ;
-- interface ≈ 0,35 ms par frame en jeu ; banc : 251 tests.
+- interface ≈ 0,35 ms par frame en jeu ; banc : 252 tests.
 
 ## v4.1.0 — Rendu pixel
 

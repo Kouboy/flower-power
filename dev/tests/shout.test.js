@@ -1,10 +1,10 @@
 // Cri de mort et aide de première pousse (logique pure) ; plus de messages texte dans la simulation.
 FP.test('shout: cri court tiré de la cause, en capitales, avec « ! »', () => {
-  FP.assertEqual(FP.shout.textFor({ type: 'death', cause: 'solid', kind: 'server' }), 'RACK SERVEUR !');
-  FP.assertEqual(FP.shout.textFor({ type: 'death', cause: 'solid', kind: 'scooter' }), 'TROTTINETTE FOSSILE !');
-  FP.assertEqual(FP.shout.textFor({ type: 'death', cause: 'solid', kind: 'inconnu' }), 'DÉCHET !');
-  FP.assertEqual(FP.shout.textFor({ type: 'death', cause: 'leak' }), 'LIXIVIAT !');
-  FP.assertEqual(FP.shout.textFor({ type: 'death', cause: 'toxic' }), 'BRÛLÉE !');
+  FP.assertEqual(FP.shout.textFor({ type: 'death', cause: 'solid', kind: 'server' }), 'RACK SERVEUR\u00a0!');
+  FP.assertEqual(FP.shout.textFor({ type: 'death', cause: 'solid', kind: 'scooter' }), 'TROTTINETTE FOSSILE\u00a0!');
+  FP.assertEqual(FP.shout.textFor({ type: 'death', cause: 'solid', kind: 'inconnu' }), 'DÉCHET\u00a0!');
+  FP.assertEqual(FP.shout.textFor({ type: 'death', cause: 'leak' }), 'LIXIVIAT\u00a0!');
+  FP.assertEqual(FP.shout.textFor({ type: 'death', cause: 'toxic' }), 'BRÛLÉE\u00a0!');
 });
 FP.test('shout: chaque cri tient en 2 lignes ×2 sur l’écran le plus étroit', () => {
   const maxW = FP.config.view.minW / FP.px.SCALE - 8;
@@ -26,4 +26,10 @@ FP.test('flow: plus de messages texte dans la simulation', () => {
   FP.assertEqual(FP.flow.say, undefined);
   const s = FP.state.createRun(4, { W: 440, H: 783 });
   FP.assert(!('message' in s.flow) && !('messageTimer' in s.flow));
+});
+FP.test('shout: le « ! » ne part jamais seul sur la deuxième ligne, quelle que soit la largeur', () => {
+  const events = [...Object.keys(FP.config.text.death).map(kind => ({ type: 'death', cause: 'solid', kind })), { type: 'death', cause: 'leak' }, { type: 'death', cause: 'toxic' }];
+  for (let artW = FP.config.view.minW / FP.px.SCALE; artW <= 260; artW++) {
+    for (const e of events) for (const l of FP.font.wrap(FP.shout.textFor(e), artW - 8, { scale: 2 })) FP.assert(l.trim() !== '!', FP.shout.textFor(e) + ' à ' + artW);
+  }
 });
