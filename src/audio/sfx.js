@@ -65,13 +65,13 @@
     }
   }
 
-  // Ronron de la foreuse, au rythme du battement de croissance : une note FM grave et douce (mi, puis la quinte), à peine
+  // Ronron de la foreuse, au rythme du battement de croissance : une note FM douce (mi, puis la quinte), à peine
   // soulignée d'un souffle de terre sourd. (Le grattement en bruit aigu de la v3 devenait irritant à force d'être répété.)
   let drillStep = 0;
   function scrape(b, k) {
     if (!allowed(b, 'scrape')) return;
     const t = b.now();
-    b.note('drill', drillStep++ % 2 ? 47 : 40, t, .06, .7 + k * .4, SFX);
+    b.note('drill', drillStep++ % 2 ? 59 : 52, t, .06, .8 + k * .4, SFX);   // mi3 / si3 : audible même sur des haut-parleurs d'ordinateur portable
     b.burst(t, .05, .025 + k * .015, 240, 'lowpass', SFX);
   }
 

@@ -22,7 +22,7 @@
     brass: { ratio: 1, index: 2.5, indexEnd: 4, attack: .03, gain: .05, sustain: .8, wet: .3 },
     theremin: { ratio: 1, index: .05, attack: .5, gain: .03, sustain: .9, vibrato: [6, .015], wet: .9, release: .6 },
     bell: { ratio: 3.5, index: 4, indexEnd: .2, indexTime: .4, gain: .06, sustain: .2, decay: .25, release: .4, wet: .3 },
-    drill: { ratio: 1.41, index: 1.5, indexEnd: .3, indexTime: .04, gain: .045, sustain: .1, decay: .03, release: .03 },   // ronron de la foreuse, doux
+    drill: { ratio: 1.41, index: 1.5, indexEnd: .3, indexTime: .04, gain: .08, sustain: .1, decay: .03, release: .03 },   // ronron de la foreuse, doux
     pluck: { ratio: 2, index: 3, indexEnd: .2, indexTime: .08, gain: .07, sustain: .1, decay: .08, release: .1 }
   };
   const DRUMS = ['kick', 'snare', 'hat', 'openhat', 'tamb'];
