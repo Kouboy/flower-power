@@ -36,12 +36,12 @@ FP.test('flow: une partie complète tourne sans exception', () => {
   FP.assert(['playing', 'dying', 'bloom', 'ready', 'over'].includes(s.mode));
 });
 const toxicAtTip = (s) => { const o = { x: s.plant.tip.x, y: s.plant.tip.y, rx: 60, ry: 60, a: 0 }; s.world.toxics = [o]; s.world.leaks = []; return o; };
-FP.test('flow: rester dans un toxique brûle la pointe en ~1,14 s', () => {
+FP.test('flow: rester dans un toxique brûle la pointe après ≈ 75 px de trajet', () => {
   const s = flowRun(); s.world.solids = []; toxicAtTip(s);
   let t = 0;
   while (s.mode === 'playing' && t < 3) { FP.collision.update(s); FP.flow.update(s, 1 / 60); t += 1 / 60; }
   FP.assertEqual(s.mode, 'dying');
-  FP.assert(Math.abs(t - .82 / .72) < .05, String(t));
+  const c = FP.config.toxic; FP.assert(Math.abs(t - c.burnAt / c.exposureRate * c.refSpeed / FP.plant.speed(s)) < .05, String(t));
   FP.assert(s.events.some(e => e.type === 'death' && e.cause === 'toxic'));
 });
 FP.test('flow: passage bref dans un toxique', () => {
@@ -147,4 +147,13 @@ FP.test('flow: redimensionner pendant le fondu ne bloque pas la transition', () 
     FP.flow.update(s, 1 / 60);
   }
   FP.assert(resized, 'le fondu a eu lieu'); FP.assertEqual(s.mode, 'ready'); FP.assertEqual(s.world.viewH, 600);
+});
+FP.test('flow: une nappe brûle après la même distance parcourue (≈ 75 px), quelle que soit la vitesse', () => {
+  const burnDistance = (stems) => {
+    const s = flowRun(); s.plant.stemCount = stems; let t = 0;
+    for (; t < 5 && s.mode === 'playing'; t += 1 / 120) { s.query = { solid: null, leak: 0, toxic: 1, danger: 0, grazes: [] }; FP.flow.update(s, 1 / 120); }
+    return t * FP.plant.speed(s);
+  };
+  const slow = burnDistance(1), fast = burnDistance(20);
+  FP.assert(Math.abs(slow - 75) < 6 && Math.abs(fast - 75) < 6, slow.toFixed(1) + ' px / ' + fast.toFixed(1) + ' px');
 });
