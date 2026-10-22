@@ -4,7 +4,7 @@
 // Écrit   : rien dans l'état.
 // Expose  : FP.audio.consume(events, state, dt), FP.audio.sfx(kind, intensity), FP.audio.unlock(),
 //           FP.audio._backend (moteur de son ; remplaçable par un espion dans les tests, null tant que l'audio est muet).
-//           Installe sur window les écouteurs pointerdown / keydown qui débloquent le son.
+//           Installe sur window les écouteurs pointerdown / keydown qui débloquent le son ; met le son en pause quand l'onglet est caché.
 // Porté de la v3.43.16 (initAudio, ensureAudio, sfxAllowed, tone, noise, getNoiseBuffer, start/update/stopGrazeDrone,
 // sfxGrowthScrape, sfx).
 (function () {
@@ -21,6 +21,8 @@
         const b = FP.audio._backend = FP.synth.create(new AC());
         // La musique est planifiée sur sa propre horloge (25 ms), indépendante des images du jeu.
         setInterval(() => { try { FP.music.update(FP.state.current, [], b); } catch (e) { /* musique muette plutôt qu'une erreur */ } }, 25);
+        // Onglet caché ou téléphone verrouillé : tout le son se met en pause (l'horloge audio s'arrête avec lui).
+        document.addEventListener('visibilitychange', () => { if (document.hidden) b.suspend(); else b.resume(); });
       }
       const ac = FP.audio._backend.context;
       if (ac && ac.state === 'suspended') ac.resume().catch(() => {});

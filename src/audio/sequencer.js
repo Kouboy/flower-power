@@ -35,11 +35,11 @@
     }
     function stop(fade) { if (song) backend.setGain('song', 0, fade || 0); name = null; song = null; }
     function setTempo(value) { if (!song) { bpm = value; return; } if (Math.abs(value - bpm) > 1e-6) pending = value; else pending = null; }
-    // Couches : rampes plus rapides à la montée (0,2 s) qu'à la descente (0,4 s) ; seulement ce qui change.
+    // Couches : rampes plus rapides à la montée (0,2 s) qu'à la descente (0,4 s), sauf le tout premier réglage ; seulement ce qui change.
     function setLayers(map) {
       for (const [k, v] of Object.entries(map)) {
         if (layers[k] !== undefined && Math.abs(layers[k] - v) < .01) continue;
-        backend.setGain('layer:' + k, v, layers[k] === undefined || v > layers[k] ? .2 : .4);
+        backend.setGain('layer:' + k, v, layers[k] === undefined ? 0 : (v > layers[k] ? .2 : .4));   // premier réglage : immédiat
         layers[k] = v;
       }
     }
