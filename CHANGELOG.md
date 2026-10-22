@@ -2,6 +2,12 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.3.1 — Nappes toxiques à la distance
+
+- l'exposition à une nappe suit la distance parcourue dedans, plus le temps : on brûle après environ 75 px de trajet, quelle que soit la vitesse de la tige (plus rapide, on la traversait sans risque) ;
+- jeu en ligne : https://kouboy.github.io/flower-power/ (manifeste et icônes pour l'écran d'accueil) ;
+- banc : 294 tests.
+
 ## v4.3.0 — Sound design FM et tension
 
 - tout le son est refait en synthèse FM façon Mega Drive (puce YM2612), sans aucun fichier son : un même moteur pour la musique et les effets ;

@@ -95,7 +95,7 @@
   function expose(state, dt) {
     const t = FP.config.toxic, p = state.plant;
     if (state.query.toxic > 0) {
-      p.toxicTimer += dt * t.exposureRate;
+      p.toxicTimer += dt * t.exposureRate * FP.plant.speed(state) / t.refSpeed;   // à la distance parcourue, pas au temps
       p.corruption = Math.max(p.corruption, t.corruption);
       if (p.recentToxic <= 0) {
         p.recentToxic = t.messageCooldown;

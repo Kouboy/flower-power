@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '4.3.0',
+    version: '4.3.1',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -126,7 +126,9 @@
     },
 
     // Exposition toxique : ~1,14 s dans une nappe brûle la pointe ; on récupère 5× plus vite.
-    toxic: { exposureRate: .72, recoveryRate: 3.6, burnAt: .82, corruption: .28, messageCooldown: .72 },   // messageCooldown : espace l'événement toxicEnter
+    // v4.3.1 : l'exposition suit la distance parcourue dans la nappe (vitesse / refSpeed) : on brûle après ≈ burnAt / exposureRate × refSpeed
+    // = 75 px, quelle que soit la vitesse de la tige (sinon, plus rapide, on traversait sans risque). messageCooldown : espace toxicEnter.
+    toxic: { exposureRate: .72, recoveryRate: 3.6, burnAt: .82, corruption: .28, messageCooldown: .72, refSpeed: 65.85 },
 
     // Dangers diffus (v3.43.16).
     hazards: {
