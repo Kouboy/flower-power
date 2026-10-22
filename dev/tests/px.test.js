@@ -36,3 +36,25 @@ FP.test('palette: les dangers ne ressemblent pas à la pousse', () => {
   const plant = [FP.palette.stem.body, FP.palette.stem.light, FP.palette.stem.leaf, FP.palette.hero.skin, FP.palette.hero.skinLight];
   for (const d of FP.palette.danger) for (const p of plant) FP.assert(dist(d, p) > 110, d + ' trop proche de ' + p);
 });
+// Contexte factice : enregistre les pixels peints (couleur par pixel) et compte les appels.
+const countingCtx = () => { const px = new Map(); let calls = 0; return { px, get calls() { return calls; }, fillStyle: '',
+  fillRect(x, y, w, h) { calls++; for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) px.set((x + i) + ',' + (y + j), this.fillStyle); } }; };
+// Référence : le tracé d'origine (un carré par pas de Bresenham).
+function refLine(ctx, x0, y0, x1, y1, color, thick) {
+  const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1, o = (thick - 1) >> 1;
+  let err = dx + dy; ctx.fillStyle = color;
+  for (;;) { ctx.fillRect(x0 - o, y0 - o, thick, thick); if (x0 === x1 && y0 === y1) return; const e2 = 2 * err; if (e2 >= dy) { err += dy; x0 += sx; } if (e2 <= dx) { err += dx; y0 += sy; } }
+}
+FP.test('px: line peint exactement les mêmes pixels qu’avant, en bien moins d’appels', () => {
+  let seed = 7; const rnd = (n) => (seed = (seed * 9301 + 49297) % 233280) % n;
+  let before = 0, after = 0;
+  for (let i = 0; i < 2000; i++) {
+    const x0 = rnd(60), y0 = rnd(60), x1 = rnd(60), y1 = rnd(60), thick = 1 + rnd(4);
+    const a = countingCtx(), b = countingCtx();
+    refLine(a, x0, y0, x1, y1, '#abc', thick); FP.px.line(b, x0, y0, x1, y1, '#abc', thick);
+    FP.assertEqual(b.px.size, a.px.size, 'ligne ' + [x0, y0, x1, y1, thick]);
+    for (const k of a.px.keys()) FP.assert(b.px.has(k), 'pixel manquant ' + k);
+    before += a.calls; after += b.calls;
+  }
+  FP.assert(after < before * .6, before + ' → ' + after + ' appels');
+});

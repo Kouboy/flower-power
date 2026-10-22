@@ -2,6 +2,11 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.2.4 — Plus fluide sous Firefox
+
+- les lignes en pixels (tige, sillons des limaces, effets) et le corps des limaces peignent d'un seul trait les pixels voisins de même couleur : exactement les mêmes pixels, environ deux fois moins d'appels de dessin ; mesuré dans Firefox (fenêtre 412 × 732, niveau 6) : 4,4 → 3,7 ms par image, limaces 1,26 → 0,73 ms ;
+- banc : 260 tests.
+
 ## v4.2.3 — Nappes sur toute la hauteur
 
 - les nappes toxiques se répartissent à tour de rôle sur les trois tiers de la hauteur (≈ 33 / 31 / 36 %, surface / milieu / fond), au lieu d'être réservées aux profondeurs (2 / 48 / 50 % avant) : le dernier tiers avant la surface n'est plus un répit ;
