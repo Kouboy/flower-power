@@ -18,7 +18,7 @@ Une entrée par version (voir `AGENTS.md`).
 - deux nouveaux déchets générés avec SpriteCook : trottinette et borne d'arcade ; outil `dev/tools/import-sprite.js` (détourage, contour de collision calculé et vérifié, fiche JSON, manifeste) ;
 - grain noir par petites touches dans la terre, le même tramage que le halo des obstacles ; chaque niveau a sa propre terre ;
 - halo tramé autour de la tige et de la graine ; la tête de la tige devient une foreuse (mèche de terre rayée qui tourne plus vite quand la pousse accélère, éclats en tourbillon, points de vitesse) ;
-- effets de foreuse : fissures qui s'ouvrent devant la mèche, onde de forage à chaque battement, anneau de terre qui tourne autour de la tête, étincelles quand la mèche racle un obstacle ;
+- effets de foreuse : fissures qui s'ouvrent devant la mèche, ondes de forage à chaque battement et étincelles quand la mèche racle un obstacle, projetées devant la tête ;
 - plus d'à-coups quand un déchet entre à l'écran (sprites préparés à l'avance, ancrage calculé sans relecture du GPU) ;
 - rendu au plus 3,6 ms par frame ; banc : 226 tests.
 

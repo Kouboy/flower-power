@@ -1,10 +1,10 @@
 // render/drillfx.js — effets de la foreuse (ROW ROW FIGHT THE POWER) : fissures devant la mèche, onde de forage à chaque
-// battement de croissance, anneau de terre qui tourne autour de la tête, étincelles quand la mèche racle un obstacle.
+// battement de croissance, étincelles quand la mèche racle un obstacle.
 // Lit     : state.mode, state.time, state.events (growthTick), state.plant.{tip,dir}, state.camera.y, state.graze.active,
 //           state.query.grazes, FP.plantRender.drill, FP.px.
 // Écrit   : state.fx.drill uniquement (réservé au rendu) ; aléatoire purement visuel (Math.random).
-// Expose  : FP.drillFx.draw(actx, state) (repère d'art, caméra appliquée ici), FP.drillFx.sparkSources(state) (pur, testé).
-// Dessiné sous la plante (render/frame.js) : le visage du héros reste net.
+// Expose  : FP.drillFx.drawUnder(actx, state) (fissures, sous la plante), FP.drillFx.drawOver(actx, state) (ondes et étincelles,
+//           devant la tête) — repère d'art, caméra appliquée ici ; FP.drillFx.sparkSources(state) (pur, testé).
 // Ne touche pas au DOM : testable sous Node. L'intensité suit la vitesse de la pousse (FP.plantRender.drill).
 (function () {
   'use strict';
@@ -60,12 +60,13 @@
   // Pixel qui s'estompe : il disparaît selon le motif de Bayer quand a baisse (pas de transparence).
   const keep = (x, y, a) => BAYER[y & 3][x & 3] < a * 16;
 
-  function draw(g, state) {
+  // Passe 1, sous la plante : fissures dans la terre devant la mèche (elles ne doivent pas brouiller le visage).
+  function drawUnder(g, state) {
     if (!state.fx) return;
     const fx = store(state), { px } = FP, t = state.time, oy = px.toArt(state.camera.y);
-    const dt = fx.last === null ? 0 : Math.max(0, Math.min(.05, t - fx.last));
+    fx.dt = fx.last === null ? 0 : Math.max(0, Math.min(.05, t - fx.last));
     fx.last = t;
-    const d = spawn(state, fx, dt);
+    spawn(state, fx, fx.dt);
     // Fissures : elles se propagent en .12 s, puis s'effacent en .5 s.
     fx.cracks = fx.cracks.filter(c => t - c.t0 < .6);
     for (const c of fx.cracks) {
@@ -81,19 +82,17 @@
         }
       }
     }
+  }
+
+  // Passe 2, devant la tête : ondes de forage et étincelles passent par-dessus, comme des débris projetés.
+  function drawOver(g, state) {
+    if (!state.fx || !state.fx.drill) return;
+    const fx = state.fx.drill, { px } = FP, t = state.time, oy = px.toArt(state.camera.y), dt = fx.dt || 0;
     // Onde de forage : un anneau tramé qui s'élargit devant la mèche.
     fx.rings = fx.rings.filter(r => t - r.t0 < .3);
     for (const r of fx.rings) {
       const k = (t - r.t0) / .3, rad = Math.round(3 + 9 * k), cx = px.toArt(r.x), cy = px.toArt(r.y) - oy;
       for (let i = 0; i < 28; i++) { const an = i / 28 * TAU, x = cx + Math.round(Math.cos(an) * rad), y = cy + Math.round(Math.sin(an) * rad); if (keep(x, y + oy, (1 - k) * .8)) px.rect(g, x, y, 1, 1, i % 2 ? DIRT : DIRT_DARK); }
-    }
-    // Anneau de terre qui tourne autour de la tête, dans le sens de la mèche.
-    if (d.active && d.k > .2) {
-      const p = state.plant, cx = px.toArt(p.tip.x), cy = px.toArt(p.tip.y) - oy - HEAD, dots = 4 + Math.round(4 * d.k);
-      for (let i = 0; i < dots; i++) {
-        const an = d.angle * .5 + i / dots * TAU;
-        px.rect(g, cx + Math.round(Math.cos(an) * 11), cy + Math.round(Math.sin(an) * 11), 1, 1, i % 2 ? DIRT : DIRT_DARK);
-      }
     }
     // Étincelles : petites, vives, freinées.
     fx.sparks = fx.sparks.filter(sp => (sp.life -= dt) > 0);
@@ -103,5 +102,5 @@
     }
   }
 
-  FP.drillFx = { draw, sparkSources };
+  FP.drillFx = { drawUnder, drawOver, sparkSources };
 })();

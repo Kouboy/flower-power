@@ -37,7 +37,7 @@
     if (perf) t = perf.mark('hazards', t);
     FP.powerupsRender.drawBonuses(g, state);
     if (perf) t = perf.mark('bonuses', t);
-    FP.drillFx.draw(g, state);   // fissures, onde, anneau, étincelles de la foreuse : sous la plante, le héros reste net
+    FP.drillFx.drawUnder(g, state);   // fissures de la foreuse : sous la plante, le visage reste net
     FP.plantRender.draw(g, state);
     FP.flowersRender.draw(g, state);
     FP.hazardsRender.drawExposure(g, state);   // v3 : dans drawPlant, donc sous la pellicule toxique
@@ -45,6 +45,7 @@
     if (perf) perf.mark('plant', t);
     FP.effects.draw(g, state);
     FP.particles.draw(g, state);
+    FP.drillFx.drawOver(g, state);    // ondes et étincelles : devant la tête, comme des débris projetés
   }
 
   function frame(state) {
