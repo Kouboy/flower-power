@@ -41,15 +41,21 @@ src/
 │   ├── hazards.js    ✅ nappes tramées (base + pellicule), limaces et sillons, anneau d'exposition
 │   ├── powerups.js   ✅ récompenses (naissance, glyphes pixel), membrane du bouclier
 │   ├── hero.js       ✅ le héros : tête-bourgeon à visage, humeurs (FP.hero.mood), visages réutilisés par les fleurs
-│   ├── plant.js      ✅ tige pixel qui fouit (tunnel, mottes, racines, mycélium ; FP.plantRender.buried), graine, héros, guide, doigt
-│   ├── hud.js        ✅ panneaux, messages, écrans ready / over
-│   ├── frame.js      ✅ FP.render.frame(state) : toile monde, agrandissement (secousse, zoom), couche nette, fondu
-│   ├── effects.js    ✅ anneaux en pixels (frôlement, ramassage, rupture, spore, impact, éclosion) ; chiffres +Ɇ nets
+│   ├── plant.js      ✅ tige pixel qui fouit (tunnel, mottes, racines, mycélium ; FP.plantRender.buried), graine, héros, guide, doigt (dessiné dans la toile d'interface)
+│   ├── frame.js      ✅ FP.render.frame(state) : toile monde, agrandissement (secousse, zoom), toile d'interface, outils, fondu
+│   ├── effects.js    ✅ anneaux en pixels (frôlement, ramassage, rupture, spore, impact, éclosion) ; chiffres +Ɇ en police pixel
 │   ├── flowers.js    ✅ le héros devenu fleur, variantes par fleur (FP.flowersRender.variant), cache des fleurs finies
 │   └── particles.js  ✅ gerbes nées des événements, terre et éclats de la pointe, carrés de 1 à 2 pixels, plafond 84 / 128
 ├── audio/audio.js    ✅ son procédural (Web Audio) : effets, drone de frôlement, grattement de la pousse
 ├── ui/
-│   ├── menu.js       ✅ écran titre / fin de partie → nouveau run ; Espace / Entrée ; redimensionnement
+│   ├── font.js       ✅ police bitmap 5×7 (FP.font : has, measure, wrap, draw), glyphes rendus en cache
+│   ├── hud.js        ✅ HUD des coins du bas (FP.hud.items, pur) : graines, ÉcoCrédits™, pollen et combo actifs, « TOUCHER POUR POUSSER »
+│   ├── shout.js      ✅ cri de mort (FP.shout.textFor), aide de première pousse (FP.shout.helpFor)
+│   ├── logo.js       ✅ logo groovy radioactif (FP.logo.layout, pur) : lettres tramées, anneaux, coulures, trèfle
+│   ├── title.js      ✅ écran titre
+│   ├── certificate.js ✅ certificat de fin (FP.certificate.lines, canRestart, purs)
+│   ├── ui.js         ✅ FP.ui.draw : efface la toile d'interface et dessine l'écran du mode
+│   ├── menu.js       ✅ démarrage depuis le titre ou la fin (après le tampon) ; Espace / Entrée ; redimensionnement
 │   └── input.js      ✅ pointeur et touche → state.input (x monde, screenX, y, down, pressed)
 └── debug/
     ├── freecam.js    ✅ ?freecam=1 : molette / flèches / glisser
@@ -60,7 +66,7 @@ src/
 ## Les 4 règles
 
 1. **400 lignes maximum par fichier.**
-2. **La simulation écrit, le rendu lit.** `world/*` et `play/*` modifient l'état ; `render/*`, `audio/*` et le HUD ne font que le lire (exception : `state.fx`, réservé au rendu).
+2. **La simulation écrit, le rendu lit.** `world/*` et `play/*` modifient l'état ; `render/*`, `ui/*` et `audio/*` ne font que le lire (exception : `state.fx`, réservé au rendu et à l'interface — `state.fx.ui` pour `ui/*`). `ui/menu.js` écrit aussi `state.camera.y` (titre, tout en haut) et `state.score.recordBefore` (records d'avant la partie, pour le certificat).
 3. **Le gameplay émet des événements** (`state.events.push({type, …})`) ; rendu et audio y réagissent. Le gameplay n'appelle jamais une fonction de rendu ou d'audio.
 4. **Tous les chiffres réglables vivent dans `config.js`.**
 
@@ -124,9 +130,17 @@ Spec : `docs/superpowers/specs/2026-10-21-rendu-pixel-design.md` ; référence d
   - Les fleurs reprennent son visage, avec une variante tirée d'une empreinte de leurs données.
 - **Mesures (v4.1.0, fenêtre de 440 × 783)** : rendu de 0,6 à 0,9 ms en partie, au plus 1,7 ms pendant les effets (spore, bouclier, éclosion). Avec 30 fleurs, la tranche « plante » prend 0,7 ms.
 
+## Interface pixel (v4.2.0)
+
+Spec : `docs/superpowers/specs/2026-10-22-interface-pixel-design.md` ; maquettes : `docs/art/maquette-*.png`.
+
+- **Toile d'interface.** `FP.view.ui` a la taille de la toile monde (1 pixel d'art = 2 px CSS) mais est transparente. `FP.ui.draw` l'efface et y dessine l'écran du mode (`menu` : titre ; `playing`/`dying`/`bloom`/`ready` : doigt, HUD, cri, aide ; `over` : certificat). `render/frame.js` l'agrandit ensuite sans lissage, **sans** secousse ni zoom (tranche « ui » de `?perf=1`).
+- **Police.** `FP.font` : glyphes 5×7 en capitales, contour encre et ombre ; chaque glyphe est rendu une fois par couleur et échelle, puis recopié (`drawImage`). Aucun `getImageData` dans `ui/*` : le jeu marche en file://.
+- **Simulation.** Elle n'affiche plus de texte : l'interface se déduit de l'état et des événements (`death` pour le cri, `state.flow.overReason` pour le certificat).
+
 ## Ordre de chargement
 
-`index.html` charge : `assets/obstacles/manifest.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `hazards.js`, `src/play/plant.js`, `src/world/collision.js`, `src/play/flow.js`, `graze.js`, `scoring.js`, `powerups.js`, `src/play/camera.js`, `src/render/palette.js`, `px.js`, `view.js`, `sprites.js`, `soil.js`, `sky.js`, `obstacles.js`, `hazards.js`, `powerups.js`, `hero.js`, `plant.js`, `hud.js`, `effects.js`, `flowers.js`, `particles.js`, `drillfx.js`, `mound.js`, `frame.js`, `src/audio/audio.js`, `src/debug/perf.js`, `flydebug.js`, `src/core/loop.js`, `src/ui/input.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` (pour le catalogue).
+`index.html` charge : `assets/obstacles/manifest.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `hazards.js`, `src/play/plant.js`, `src/world/collision.js`, `src/play/flow.js`, `graze.js`, `scoring.js`, `powerups.js`, `src/play/camera.js`, `src/render/palette.js`, `px.js`, `view.js`, `sprites.js`, `soil.js`, `sky.js`, `obstacles.js`, `hazards.js`, `powerups.js`, `hero.js`, `plant.js`, `effects.js`, `flowers.js`, `particles.js`, `drillfx.js`, `mound.js`, `src/ui/font.js`, `hud.js`, `shout.js`, `logo.js`, `title.js`, `certificate.js`, `ui.js`, `src/render/frame.js`, `src/audio/audio.js`, `src/debug/perf.js`, `flydebug.js`, `src/core/loop.js`, `src/ui/input.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` (pour le catalogue).
 
 `dev/check.html` charge aussi `src/audio/audio.js`, `src/debug/perf.js`, `flydebug.js` et `src/ui/input.js` (sans canvas ni paramètre d'URL : `FP.perf` et `FP.flydebug` valent `null`, le son reste muet, le pointeur n'est pas écouté).
 
@@ -166,11 +180,11 @@ Spec : `docs/superpowers/specs/2026-10-21-rendu-pixel-design.md` ; référence d
 
 ## Modes
 
-`menu` (écran titre) → `playing` (pousse en vol) → `dying` (0,85 s, puis nouveau niveau et nouvelle pousse) ou `bloom` → `ready` (graine posée, attend un **nouvel** appui ou Espace / Entrée) → `playing`… ; `over` quand il n'y a plus de graines (un appui relance un run neuf).
+`menu` (écran titre) → `playing` (pousse en vol) → `dying` (0,85 s, puis nouveau niveau et nouvelle pousse) ou `bloom` → `ready` (graine posée, attend un **nouvel** appui ou Espace / Entrée) → `playing`… ; `over` quand il n'y a plus de graines (le certificat ; un appui relance un run neuf une fois le tampon tombé).
 
 `bloom` enchaîne trois temps (`flow.stage`) : `show` (1,55 s, les fleurs éclosent), `fadeOut` (.46 s, voile noir), nouveau niveau sous le noir, `fadeIn` (.48 s), puis `ready` (événement `ready`).
 
-Pour ajouter un fichier : une ligne `<script>` après ses dépendances (celles listées dans son en-tête « Lit »), avant `ui/menu.js`. Un fichier de simulation (`core/`, `world/`, `play/`) s'ajoute aussi à `dev/check.html`, avant `harness.js`, avec son fichier de tests dans `dev/tests/`. Les fichiers `render/` et `ui/menu.js` ne sont pas chargés par `check.html` (ils ont besoin du DOM), sauf `palette.js`, `px.js`, `hero.js` et `flowers.js`, qui ne touchent pas au DOM au chargement et sont testés.
+Pour ajouter un fichier : une ligne `<script>` après ses dépendances (celles listées dans son en-tête « Lit »), avant `ui/menu.js`. Un fichier de simulation (`core/`, `world/`, `play/`) s'ajoute aussi à `dev/check.html`, avant `harness.js`, avec son fichier de tests dans `dev/tests/`. Les fichiers `render/` et `ui/menu.js` ne sont pas chargés par `check.html` (ils ont besoin du DOM), sauf `palette.js`, `px.js`, `hero.js`, `flowers.js`, `soil.js`, `plant.js`, `drillfx.js`, `mound.js`, `obstacles.js` et les `ui/*` purs (`font`, `hud`, `shout`, `logo`, `title`, `certificate`), qui ne touchent pas au DOM au chargement et sont testés.
 
 ## Vérification
 

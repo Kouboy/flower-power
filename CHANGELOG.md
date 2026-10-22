@@ -2,6 +2,16 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.2.0 — Interface pixel « hippie contaminé »
+
+- toute l'interface passe en pixels d'art, sur une toile à la même échelle que le monde : police bitmap 5×7 dessinée à la main (majuscules accentuées, Ɇ, ™), contour encre et ombre, sans police système ni emoji ;
+- écran titre arcade : logo « Flower Power » groovy 70s qui dégouline de boue violette, « O » en trèfle radioactif qui tourne, « TOUCHER POUR POUSSER » et « © 2026 ÉCOSOFT™ · une filiale de PÉTROFLORE » ; le panneau HTML de règles disparaît ;
+- HUD minimal dans les coins du bas : graines en icônes (qui se fendent quand on en perd une), ÉcoCrédits™ en compteur d'arcade ; pollen et combo seulement quand ils sont actifs ; plus de nombre de fleurs ni d'élan ;
+- cri de mort court en lettres qui tombent et rebondissent (« RACK SERVEUR ! ») ; aide uniquement à la toute première pousse ; plus aucun message texte dans la simulation ;
+- fin de partie en « certificat d'éco-responsabilité » : fleurs plantées, ÉcoCrédits™, tiges sacrifiées, record (battu ou à battre), cause du décès, tampon « VALIDÉ* » ; la relance n'est possible qu'après le tampon ;
+- gains « +Ɇ » et doigt en pixels ;
+- interface ≈ 0,35 ms par frame en jeu ; banc : 251 tests.
+
 ## v4.1.0 — Rendu pixel
 
 - tout le monde est dessiné sur une grille de pixels d'art (grain 2), agrandie sans lissage ; HUD, chiffres « +Ɇ » et textes restent nets ;
