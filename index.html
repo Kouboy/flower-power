@@ -3,30 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-<title>Flower Power v4.1.0</title>
+<title>Flower Power v4.2.0</title>
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 <div id="wrap"><canvas id="game"></canvas></div>
-<div class="overlay" id="menu">
-  <div class="panel">
-    <h1>Flower Power</h1>
-    <p>Guide une pousse depuis la graine jusqu’au jour.</p>
-    <p>Évite les déchets enfouis et les limaces de lixiviat. Les zones toxiques diffuses dévient la croissance.</p>
-    <p><b>Maintiens / touche l’écran</b> : ton doigt indique la direction de croissance. Frôle les obstacles sans les toucher pour générer des <b>ÉcoCrédits™</b> (<b>Ɇ</b>).</p>
-    <div class="legend">
-      <div class="pill">☣ Zones toxiques : déviation</div>
-      <div class="pill">🐌 Limaces : rupture</div>
-      <div class="pill">⚙ Déchets : rupture</div>
-      <div class="pill">🌱 Power-ups : engendrés par les flyovers</div>
-      <div class="pill">↗ Flyover risqué : meilleure récompense</div>
-      <div class="pill">☀ Jour : éclosion</div>
-      <div class="pill">♻ Frôlement maintenu : ÉcoCrédits™</div>
-    </div>
-    <div class="hint">TOUCHE POUR COMMENCER</div>
-    <p class="small">v4.1.0 · refonte · ÉcoCrédits™</p>
-  </div>
-</div>
 <!-- Ordre de chargement : voir docs/architecture.md. Ajouter un fichier = ajouter une ligne ici. -->
 <script src="assets/obstacles/manifest.js"></script>
 <script src="src/core/fp.js"></script>
@@ -54,12 +35,18 @@
 <script src="src/render/powerups.js"></script>
 <script src="src/render/hero.js"></script>
 <script src="src/render/plant.js"></script>
-<script src="src/render/hud.js"></script>
 <script src="src/render/effects.js"></script>
 <script src="src/render/flowers.js"></script>
 <script src="src/render/particles.js"></script>
 <script src="src/render/drillfx.js"></script>
 <script src="src/render/mound.js"></script>
+<script src="src/ui/font.js"></script>
+<script src="src/ui/hud.js"></script>
+<script src="src/ui/shout.js"></script>
+<script src="src/ui/logo.js"></script>
+<script src="src/ui/title.js"></script>
+<script src="src/ui/certificate.js"></script>
+<script src="src/ui/ui.js"></script>
 <script src="src/render/frame.js"></script>
 <script src="src/audio/audio.js"></script>
 <script src="src/debug/perf.js"></script>

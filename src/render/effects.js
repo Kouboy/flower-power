@@ -3,7 +3,7 @@
 // Lit     : state.events (eco, pickup, bonusMissed, shieldBreak, bomb, death, blossom), state.time, state.mode, state.graze.active, state.plant.tip.
 // Écrit   : state.fx.effects uniquement (réservé au rendu) ; l'aléatoire purement visuel utilise Math.random.
 // Expose  : FP.effects.draw(actx, state) (repère d'art, caméra appliquée ici : anneaux, frôlements),
-//           FP.effects.drawLabels(ctx, state) (couche nette, repère monde : chiffres « +Ɇ »).
+//           FP.effects.drawLabels(ctx, state) (couche nette, repère monde : chiffres « +Ɇ » en police pixel, FP.font).
 // Porté de la v3.43.16 (drawEffects : eco, pickup, shieldBreak, bomb, hit, bloom ; drawGrazeFeedback).
 (function () {
   'use strict';
@@ -11,7 +11,6 @@
   const TAU = FP.TAU;
   const { clamp, lerp } = FP.math;
   const SIGIL = 'Ɇ';
-  const FONT = 'system-ui,-apple-system,Segoe UI,sans-serif';
   const rand = (a, b) => a + (b - a) * Math.random();
 
   // Chaque événement visuel de la frame devient un effet horodaté.
@@ -22,8 +21,7 @@
         const flat = !!e.flat;   // gain de spore : un peu plus lent et plus ample
         fx.push({
           type: 'eco', x: e.x, y: e.y, amount: e.amount, combo: e.combo, t0, life: flat ? 1.28 : 1.22,
-          vx: flat ? rand(-24, 24) : rand(-22, 22), vy: flat ? rand(-31, -16) : rand(-27, -13),
-          angle: flat ? rand(-.32, .32) : rand(-.34, .34), spin: flat ? rand(-.30, .30) : rand(-.32, .32)
+          vx: flat ? rand(-24, 24) : rand(-22, 22), vy: flat ? rand(-31, -16) : rand(-27, -13)
         });
       } else if (e.type === 'pickup') fx.push({ type: 'pickup', kind: e.kind, x: e.x, y: e.y, t0, life: .55, r: 16 });
       else if (e.type === 'bonusMissed') fx.push({ type: 'pickup', kind: e.kind, x: e.x, y: e.y, t0, life: .26, r: 11 });   // v3 : fondu bref
@@ -47,28 +45,16 @@
     }
   }
 
-  // Score arcade (couche nette) : pas d'étiquette, juste un chiffre qui claque puis s'évapore.
+  // Score arcade (couche nette, repère monde) : un chiffre en police pixel qui claque (×2 puis ×1), monte et clignote en s'effaçant.
   function drawEco(ctx, e, t) {
     const k = clamp((t - e.t0) / e.life, 0, 1);
-    const rise = 1 - Math.pow(1 - k, 2.2);
-    const x = e.x + e.vx * rise, y = e.y + e.vy * rise - 10 * rise;
-    const pop = k < .16 ? lerp(.52, 1.48, k / .16) : (k < .36 ? lerp(1.48, .92, (k - .16) / .20) : lerp(.92, .72, (k - .36) / .64));
-    const fade = k < .38 ? 1 : Math.pow(1 - (k - .38) / .62, 1.15);
-    const wob = Math.sin(k * TAU * 1.8 + e.angle * 9) * .035;
-    const txt = '+' + e.amount.toLocaleString('fr-FR') + SIGIL;
+    if (k > .6 && Math.floor(t * 30) % 2) return;
+    const rise = 1 - Math.pow(1 - k, 2.2), S = FP.px.SCALE;
+    const x = e.x + e.vx * rise, y = e.y + e.vy * rise - 10 * rise, scale = k < .16 ? 2 : 1;
     ctx.save();
-    ctx.translate(x, y); ctx.rotate(e.angle + e.spin * k + wob); ctx.scale(pop, pop);
-    ctx.globalAlpha = .95 * fade; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.font = `950 20px ${FONT}`; ctx.lineWidth = 4.2;
-    ctx.strokeStyle = `rgba(18,31,7,${.86 * fade})`; ctx.strokeText(txt, 0, 0);
-    ctx.fillStyle = '#d8ff58'; ctx.fillText(txt, 0, 0);
-    ctx.globalAlpha = .42 * fade; ctx.strokeStyle = '#f2ffb0'; ctx.lineWidth = 1.1; ctx.strokeText(txt, 0, 0);
-    if (e.combo > 1) {
-      ctx.globalAlpha = .72 * fade; ctx.font = `900 9px ${FONT}`; ctx.lineWidth = 2.4;
-      const c = 'x' + e.combo;
-      ctx.strokeStyle = `rgba(18,31,7,${.75 * fade})`; ctx.strokeText(c, 0, 16);
-      ctx.fillStyle = '#fff3a4'; ctx.fillText(c, 0, 16);
-    }
+    ctx.scale(S, S);
+    FP.font.draw(ctx, '+' + e.amount.toLocaleString('fr-FR') + SIGIL, x / S, y / S - FP.font.HEIGHT * scale / 2, { scale, color: FP.font.COLORS.eco, align: 'center' });
+    if (e.combo > 1) FP.font.draw(ctx, '×' + e.combo, x / S, y / S + FP.font.HEIGHT * scale / 2 + 2, { color: FP.font.COLORS.gold, align: 'center' });
     ctx.restore();
   }
 

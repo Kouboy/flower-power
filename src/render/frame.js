@@ -4,7 +4,7 @@
 // 3. La couche nette (doigt, HUD, debug, fondu) est dessinée par-dessus à pleine résolution.
 // Lit     : FP.config.camera.{zoomEpsilon,focalY}, state.world, state.camera.y, state.plant.{tip,seed}, FP.view, FP.camera.totalZoom, FP.input.focalX,
 //           FP.view.art, FP.px.SCALE, state.flow.fade, FP.sky, FP.soil, FP.hazardsRender, FP.obstacles, FP.powerupsRender, FP.plantRender, FP.flowersRender,
-//           FP.effects, FP.particles, FP.drillFx, FP.hud ; state.camera.shake (secousse) ; FP.perf, FP.flydebug (outils de réglage).
+//           FP.effects, FP.particles, FP.drillFx, FP.ui ; state.camera.shake (secousse) ; FP.perf, FP.flydebug (outils de réglage).
 // Écrit   : rien lui-même (le canvas) ; effects et particles, qu'il appelle, tiennent state.fx.
 // Expose  : FP.render.frame(state).
 (function () {
@@ -82,8 +82,13 @@
 
     // Couche 3 : nette, à pleine résolution.
 
-    FP.plantRender.drawFinger(ctx, state);
-    FP.hud.draw(ctx, state);
+    // Couche 4 : l'interface en pixels d'art, agrandie sans lissage, sans secousse ni zoom.
+    let tu = perf && performance.now();
+    const ui = FP.view.ui;
+    FP.ui.draw(ui.ctx, state);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(ui.canvas, 0, 0, ui.w * FP.px.SCALE, ui.h * FP.px.SCALE);
+    if (perf) perf.mark('ui', tu);
     if (FP.flydebug) FP.flydebug.draw(ctx, state);
     if (perf) perf.draw(ctx, state);
     // Fondu entre deux niveaux, par-dessus tout (v3 : drawFade).

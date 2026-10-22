@@ -5,7 +5,7 @@
 //           state.power.{shield,shieldGrace}, state.score.flowerBonus, state.graze.active (objets effacés),
 //           state.query (choc absorbé), state.plant.{tip,guide} (bris), state.events (bonusSpawn, bonusMissed, pickup,
 //           bomb, shieldBreak, flyover — décision du flyover, lue par ?flydebug=1), state.camera.shake (spore, bris),
-//           un tirage state.rng par récompense (phase) ; messages via FP.flow.say ; gains via FP.scoring.awardFlat.
+//           un tirage state.rng par récompense (phase) ; gains via FP.scoring.awardFlat.
 // Bouclier : intercepte les chocs dans update (shatterOrganicShield v3).
 // Expose  : FP.powerups.assess(state, obj, record), FP.powerups.rewardType(a), FP.powerups.onFlyover(state, obj, record),
 //           FP.powerups.update(state, dt).
@@ -113,7 +113,6 @@
       forming: p.formMax, formMax: p.formMax, age: 0, originX: obj.x, originY: obj.y
     });
     state.events.push({ type: 'bonusSpawn', kind: type, x: pos.x, y: pos.y });
-    FP.flow.say(state, FP.config.text.flyover[type], p.messageTime.flyover);
   }
 
   // --- Ramassage --------------------------------------------------------------
@@ -134,30 +133,21 @@
       return true;
     };
     const removed = [...w.solids.filter(gone(keepSolid)), ...w.leaks.filter(gone(keepLeak))];
-    const solids = w.solids.length, all = w.solids.length + w.toxics.length + w.leaks.length;
+    const solids = w.solids.length;
     w.solids = w.solids.filter(keepSolid); w.toxics = w.toxics.filter(keepToxic); w.leaks = w.leaks.filter(keepLeak);
     forgetGrazes(state, removed);
     const solidCleaned = solids - w.solids.length;
-    const cleaned = all - (w.solids.length + w.toxics.length + w.leaks.length);
     state.events.push({ type: 'bomb', x, y, r: R });
     if (solidCleaned > 0) FP.scoring.awardFlat(state, x, y, solidCleaned * c.ecoPerSolid);
-    const s = cleaned > 1 ? 'S' : '';
-    const eco = solidCleaned > 0 ? ' · +' + (solidCleaned * c.ecoPerSolid).toLocaleString('fr-FR') + ' Ɇ' : '';
-    const text = FP.config.text.spore, times = FP.config.powerups.messageTime;
-    if (cleaned > 0) FP.flow.say(state, text.cleaned.replace('{n}', cleaned).split('{s}').join(s) + eco, times.sporeCleaned);
-    else FP.flow.say(state, text.empty, times.sporeEmpty);
     state.camera.shake = Math.max(state.camera.shake, c.shakeBase + c.shakePerSolid * solidCleaned);
   }
 
   function collect(state, b) {
-    const text = FP.config.text.pickup;
     if (b.type === 'water') {
       // La goutte crée une protection physique, visible, à usage unique et sans durée.
       state.power.shield = true;
-      FP.flow.say(state, text.water, FP.config.powerups.messageTime.water);
     } else if (b.type === 'pollen') {
       state.score.flowerBonus += 1;
-      FP.flow.say(state, text.pollen, FP.config.powerups.messageTime.pollen);
     } else {
       detonate(state, b.x, b.y);
     }
@@ -183,7 +173,6 @@
     }
     state.events.push({ type: 'shieldBreak', kind, x: p.tip.x, y: p.tip.y });
     state.camera.shake = Math.max(state.camera.shake, c.shake);
-    FP.flow.say(state, FP.config.text.shieldBroken, c.messageTime);
   }
 
   // Intercepte un choc (solide ou lixiviat) avant que flow ne décide d'une mort. Les nappes toxiques

@@ -41,7 +41,7 @@
       input: { x: 0, screenX: 0, y: 0, down: false, active: false, pressed: false },   // instantané du pointeur (x monde, y écran)
       plant: {
         seed: { x: 0, y: 0 }, tip: null, dir: { x: 0, y: -1 }, guide: { x: 0, y: 0 },
-        trail: [], oldTrails: [], stemAge: 0, stemCount: 0, reserves: 3,
+        trail: [], oldTrails: [], stemAge: 0, stemCount: 0, reserves: FP.config.plant.seeds,
         corruption: 0, toxicTimer: 0, recentToxic: 0,         // exposition toxique (écrite par play/flow.js)
         scrapeTimer: 0                                        // battement de croissance (play/plant.js)
       },
@@ -51,12 +51,12 @@
         solids: [], toxics: [], leaks: [], bonuses: []     // bonuses : récompenses de flyover (play/powerups.js)
       },
       query: { solid: null, danger: 0, near: null, toxic: 0, leak: 0, leakHit: null, grazes: [] },          // requête de pointe de la frame (world/collision.js)
-      flow: { timer: 0, message: '', messageTimer: 0, stage: 'show', fade: 0, overReason: '', blossom: null },       // déroulé de partie (play/flow.js)
+      flow: { timer: 0, stage: 'show', fade: 0, overReason: '', blossom: null },       // déroulé de partie (play/flow.js)
       garden: { flowers: [] },                                // parterre : fleurs écloses pendant tout le run
       graze: { active: new Map() },                           // frôlements en cours (play/graze.js)
       power: { shield: false, shieldGrace: 0 },              // bouclier organique (play/powerups.js)
       score: { eco: 0, flowers: 0, flowerBonus: 0, combo: 0, comboTimer: 0 },
-      fx: { particles: [], effects: [], message: null },   // écrit uniquement par render/*
+      fx: { particles: [], effects: [] },   // écrit uniquement par render/* et ui/*
       events: []                                            // vidé à chaque frame par core/loop.js
     };
   }
