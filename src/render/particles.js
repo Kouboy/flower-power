@@ -53,10 +53,11 @@
     const count = Math.min(room, near ? Math.max(1, Math.floor(1 + k * 1.2)) : 2 + Math.floor(k * 3));
     const nx = -p.dir.y, ny = p.dir.x;
     for (let i = 0; i < count; i++) {
-      const side = rand(-1, 1), back = rand(35, 96);
+      // Tourbillon : les éclats partent tous du côté où tourne la mèche de la tête (render/plant.js, drill).
+      const side = rand(-1, 1), swirl = rand(.4, 1), back = rand(35, 96);
       list.push({
         x: tip.x + nx * side * rand(2, 8) - p.dir.x * rand(0, 5), y: tip.y + ny * side * rand(2, 8) - p.dir.y * rand(0, 5),
-        vx: -p.dir.x * back + nx * side * rand(18, 58), vy: -p.dir.y * back + ny * side * rand(18, 48) + rand(12, 46),
+        vx: -p.dir.x * back + nx * swirl * rand(30, 70), vy: -p.dir.y * back + ny * swirl * rand(30, 60) + rand(12, 46),
         life: rand(.28, .62), r: rand(1.0, 3.2), type: Math.random() < .24 ? 'chip' : 'soil'
       });
     }

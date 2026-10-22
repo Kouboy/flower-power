@@ -17,7 +17,8 @@ Une entrée par version (voir `AGENTS.md`).
 - chaque déchet a sa taille (collision comprise), sa teinte, son usure, et parfois le bas enfoui ;
 - deux nouveaux déchets générés avec SpriteCook : trottinette et borne d'arcade ; outil `dev/tools/import-sprite.js` (détourage, contour de collision calculé et vérifié, fiche JSON, manifeste) ;
 - grain noir par petites touches dans la terre, le même tramage que le halo des obstacles ; chaque niveau a sa propre terre ;
-- rendu au plus 1,7 ms par frame ; banc : 220 tests.
+- halo tramé autour de la tige et de la graine ; la tête de la tige devient une foreuse (mèche de terre rayée qui tourne plus vite quand la pousse accélère, éclats en tourbillon, points de vitesse) ;
+- rendu au plus 2,5 ms par frame ; banc : 223 tests.
 
 ## v4.0.1 — Nettoyage
 

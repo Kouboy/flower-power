@@ -18,3 +18,15 @@ FP.test('plantRender: le halo de la tige s’éclaircit avec la distance et s’
   FP.assert(lv(0, false) > 0); FP.assertEqual(lv(3, false), 0); FP.assertEqual(lv(10, false), 0);
   FP.assert(lv(0, true) < lv(0, false), 'les anciennes tiges plus clairsemées');
 });
+const drillRun = (stems) => { const s = FP.state.createRun(3, { W: 440, H: 783 }); FP.level.startRun(s); FP.plant.launch(s); s.plant.stemCount = stems; return s; };
+FP.test('plantRender: la foreuse tourne plus vite et s’allonge quand la pousse accélère', () => {
+  const slow = FP.plantRender.drill(drillRun(1)), fast = FP.plantRender.drill(drillRun(30));
+  FP.assert(slow.active && fast.active);
+  FP.assert(fast.spin > slow.spin, slow.spin + ' → ' + fast.spin);
+  FP.assert(fast.length >= slow.length);
+});
+FP.test('plantRender: la foreuse tourne avec le temps et s’éteint hors de la pousse', () => {
+  const s = drillRun(1), a = FP.plantRender.drill(s).angle; s.time += .1;
+  FP.assert(FP.plantRender.drill(s).angle !== a);
+  for (const mode of ['bloom', 'dying', 'over', 'ready']) { s.mode = mode; FP.assert(!FP.plantRender.drill(s).active, mode); }
+});
