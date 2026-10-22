@@ -29,6 +29,13 @@
     } catch (e) { /* plein écran refusé : le jeu continue dans la page */ }
   }
 
+  // Le toucher en pixels d'art de la toile d'interface, comparé à la zone de l'icône du son.
+  function onIcon(e) {
+    const canvas = FP.view.canvas, r = canvas.getBoundingClientRect(), S = FP.px.SCALE;
+    const ax = (e.clientX - r.left) * FP.view.W / r.width / S, ay = (e.clientY - r.top) * FP.view.H / r.height / S;
+    return FP.title.hitIcon(ax, ay, FP.view.ui.w, FP.view.ui.h);
+  }
+
   // Premier appui : le son est débloqué par audio.js (même geste) ; le titre se réveille, la partie ne démarre pas encore.
   function wake(s, pointerType) {
     if (FP.title.wantsFullscreen(pointerType)) goFullscreen();
@@ -52,6 +59,8 @@
   window.addEventListener('pointerdown', (e) => {
     const s = FP.state.current;
     if (s && s.mode === 'splash') { e.preventDefault(); wake(s, e.pointerType); return; }
+    // Titre : un toucher sur l'icône du son change le réglage, sans lancer la partie.
+    if (s && s.mode === 'menu' && onIcon(e)) { e.preventDefault(); FP.audio.cycleSetting(); return; }
     if (!atStart(s)) return;
     e.preventDefault();
     if (mayStart(s)) startRun();

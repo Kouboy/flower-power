@@ -55,3 +55,19 @@ FP.test('audio: une lettre du cri = un « toc », chaque ligne du certificat = u
 FP.test('audio: plus d’anciennes recettes v3', () => {
   FP.assert(!/\btone\b|\bnoise\b/.test(FP.synth.create.toString().match(/return \{[^}]*\}/)[0]), 'le moteur n’expose plus tone/noise');
 });
+FP.test('audio: réglage tout → effets seuls → muet → tout, mémorisé', () => {
+  while (FP.audio.setting() !== 'all') FP.audio.cycleSetting();
+  const seq = [FP.audio.cycleSetting(), FP.audio.cycleSetting(), FP.audio.cycleSetting()];
+  FP.assertEqual(seq.join(','), 'sfx,mute,all');
+  FP.assertEqual(JSON.parse(FP._testStore.getItem('flower_power_v4_sound')).setting, 'all');
+});
+FP.test('audio: « effets seuls » coupe la musique, pas les effets', () => withBackend(b => {
+  while (FP.audio.setting() !== 'sfx') FP.audio.cycleSetting();
+  const g = b.calls.filter(c => c[0] === 'gain');
+  FP.assert(g.some(c => c[1] === 'musicMute' && c[2] === 0) && !g.some(c => c[1] === 'sfx' && c[2] === 0), JSON.stringify(g));
+  while (FP.audio.setting() !== 'all') FP.audio.cycleSetting();
+}));
+FP.test('audio: réglage illisible en stockage → tout', () => {
+  FP._testStore.setItem('flower_power_v4_sound', '{"setting":"fort"}');
+  FP.assertEqual(FP.audio.loadSetting(), 'all');
+});

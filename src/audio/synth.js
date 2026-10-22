@@ -31,7 +31,8 @@
     const out = ac.createDynamicsCompressor(); out.connect(ac.destination);
     const master = ac.createGain(); master.connect(out);
     const sfx = ac.createGain(); sfx.connect(master);
-    const song = ac.createGain(); song.gain.value = 0; song.connect(master);
+    const musicMute = ac.createGain(); musicMute.connect(master);   // interrupteur du réglage « effets seuls », que rien d'autre ne touche
+    const song = ac.createGain(); song.gain.value = 0; song.connect(musicMute);
     const filter = ac.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 20000; filter.connect(song);
     const music = ac.createGain(); music.gain.value = .5; music.connect(filter);
     // Écho : retard + rétroaction filtrée, partagé (le côté « spooky »).
@@ -99,7 +100,7 @@
       else if (kind === 'tamb') { burst(t, .09, .06 * vel, 9000, 'bandpass', route, 2); burst(t + .015, .06, .036 * vel, 6000, 'highpass', route); }
     }
 
-    const PARAMS = { master: master.gain, music: music.gain, sfx: sfx.gain, song: song.gain };
+    const PARAMS = { master: master.gain, music: music.gain, sfx: sfx.gain, song: song.gain, musicMute: musicMute.gain };
     function setGain(target, value, ramp) {
       const p = target.startsWith('layer:') ? layer(target.slice(6)).gain : PARAMS[target];
       if (!p) return;

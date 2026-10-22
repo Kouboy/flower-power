@@ -3,6 +3,7 @@
 // Lit     : les événements de la frame, state (via FP.sfx.drone et FP.music.update), FP.synth, FP.state.current.
 // Écrit   : rien dans l'état.
 // Expose  : FP.audio.consume(events, state, dt), FP.audio.sfx(name, intensity?), FP.audio.unlock(),
+//           FP.audio.setting() / cycleSetting() / loadSetting() (réglage 'all' | 'sfx' | 'mute', mémorisé sous flower_power_v4_sound),
 //           FP.audio._backend (moteur ; remplaçable par un espion dans les tests, null tant que l'audio est muet).
 //           Installe sur window les écouteurs pointerdown / keydown qui débloquent le son.
 (function () {
@@ -17,6 +18,7 @@
         const AC = typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext);
         if (!AC) return;
         const b = FP.audio._backend = FP.synth.create(new AC());
+        apply(b);
         // La musique est planifiée sur sa propre horloge (25 ms), indépendante des images du jeu.
         setInterval(() => { try { FP.music.update(FP.state.current, [], b); } catch (e) { /* musique muette plutôt qu'une erreur */ } }, 25);
         // Onglet caché ou téléphone verrouillé : tout le son se met en pause (l'horloge audio s'arrête avec lui).
@@ -25,6 +27,26 @@
       const ac = FP.audio._backend.context;
       if (ac && ac.state === 'suspended') ac.resume().catch(() => {});
     } catch (e) { /* audio indisponible : le jeu reste muet */ }
+  }
+
+  // Réglage du son : tout, effets seuls (musique coupée), muet. Valeur inconnue en stockage → tout.
+  const KEY = 'flower_power_v4_sound', ORDER = ['all', 'sfx', 'mute'];
+  let current = 'all';
+  function loadSetting() {
+    const v = FP.storage.readJSON(KEY, null);
+    current = v && ORDER.includes(v.setting) ? v.setting : 'all';
+    return current;
+  }
+  function apply(b) {
+    if (!b) return;
+    try { b.setGain('musicMute', current === 'all' ? 1 : 0, .05); b.setGain('master', current === 'mute' ? 0 : 1, .05); } catch (e) { /* muet plutôt qu'une erreur */ }
+  }
+  function cycleSetting() {
+    current = ORDER[(ORDER.indexOf(current) + 1) % ORDER.length];
+    FP.storage.writeJSON(KEY, { setting: current });
+    apply(FP.audio._backend);
+    sfx('toggle');   // inaudible en « muet », c'est voulu
+    return current;
   }
 
   // Un son d'interface ou de jeu, par son nom (les écrans ui/* appellent ceci directement).
@@ -63,7 +85,8 @@
     } catch (e) { /* audio muet plutôt qu'une partie figée */ }
   }
 
-  FP.audio = { consume, sfx, unlock, _backend: null };
+  FP.audio = { consume, sfx, unlock, setting: () => current, cycleSetting, loadSetting, _backend: null };
+  loadSetting();
 
   if (typeof window !== 'undefined' && window.addEventListener) {
     window.addEventListener('pointerdown', unlock);
