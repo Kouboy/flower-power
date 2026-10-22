@@ -2,6 +2,11 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.2.2 — Nappes toxiques
+
+- les nappes toxiques sont plus nombreuses et plus grandes, et se multiplient vite avec les niveaux : 9 dès le premier niveau (5 avant), 14 au niveau 6, 19 au niveau 10 ; de 3,6 % à environ 10 % du terrain au départ, 15 % au niveau 6 ; leur effet ne change pas et elles restent hors du chemin sûr ;
+- banc : 257 tests.
+
 ## v4.2.1 — Échelle et difficulté
 
 - les déchets à l'échelle du réel (compressée) : la batterie et le drone gardent leur taille, le cône et le sac sont moyens, le rack, la trottinette, le panneau et le cercueil sont grands, la borne d'arcade est la plus grande ; les collisions suivent ;

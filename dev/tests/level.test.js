@@ -128,3 +128,20 @@ FP.test('level: les obstacles d’un niveau n’ont pas tous la même taille', (
   const widths = new Set(s.world.solids.filter(o => !o.signature).map(o => Math.round(o.w)));
   FP.assert(widths.size >= 4, String([...widths]));
 });
+// Nappes toxiques v4.2.2 : plus nombreuses, plus grandes, et qui se multiplient avec les niveaux (moyenne sur 12 graines).
+const toxicCover = (level) => {
+  let n = 0, cov = 0;
+  for (let seed = 1; seed <= 12; seed++) {
+    const s = FP.state.createRun(seed, { W: 440, H: 783 }); s.level = level; FP.level.startRun(s);
+    n += s.world.toxics.length; cov += s.world.toxics.reduce((a, o) => a + Math.PI * o.rx * o.ry, 0) / (s.world.width * (s.world.height - s.world.surfaceY));
+  }
+  return { n: n / 12, cov: cov / 12 };
+};
+FP.test('level: des nappes toxiques nombreuses dès le premier niveau', () => {
+  const t = toxicCover(0);
+  FP.assert(t.n >= 8 && t.cov >= .08, t.n + ' nappes, ' + (t.cov * 100).toFixed(1) + ' %');
+});
+FP.test('level: les nappes toxiques se multiplient vite avec les niveaux', () => {
+  const a = toxicCover(0), b = toxicCover(6);
+  FP.assert(b.n >= a.n + 4 && b.cov >= a.cov + .04, a.n + ' → ' + b.n);
+});
