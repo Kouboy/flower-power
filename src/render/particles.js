@@ -1,5 +1,5 @@
 // render/particles.js — particules : gerbes nées des événements, terre et éclats derrière la pointe.
-// Lit     : state.events (eco, bomb, shieldBreak, pickup, death, toxicEnter, bloom, growthTick), state.time, state.mode,
+// Lit     : state.events (eco, bomb, shieldBreak, pickup, death, toxicEnter, bloom, blossom, growthTick), state.time, state.mode,
 //           state.plant.{tip,dir}, state.camera.y, state.world.viewH.
 // Écrit   : state.fx.particles uniquement (réservé au rendu) ; aléatoire visuel via Math.random.
 // Expose  : FP.particles.draw(actx, state) (repère d'art, caméra appliquée ici).
@@ -39,9 +39,20 @@
           if (e.cause === 'toxic') burst(state, e.x, e.y, 'acid', 30);
           burst(state, e.x, e.y, e.cause === 'solid' ? 'impact' : 'acid', 38);
           break;
-        case 'bloom': burst(state, e.x, e.y, 'petal', Math.min(92, 58 + 12 * (e.bonus || 0))); break;
+        case 'bloom': clods(state, e.x); break;
+        case 'blossom': burst(state, e.x, e.y, 'petal', Math.min(92, 58 + 12 * (e.bonus || 0))); break;
         case 'growthTick': growthDebris(state, e.k, e.near); break;
       }
+    }
+  }
+
+  // La motte se fend : des mottes de terre et d'herbe partent en éventail et retombent sur la pelouse.
+  function clods(state, x) {
+    const list = state.fx.particles, floor = FP.soil.surfaceTop(state.world) - 4, n = Math.min(22, Math.max(0, budget(state) - list.length));
+    for (let i = 0; i < n; i++) {
+      const r = Math.random();
+      list.push({ x: x + rand(-6, 6), y: floor - rand(4, 14), vx: rand(-115, 115), vy: rand(-230, -90), g: 520, floor,
+        life: rand(.55, 1.0), r: rand(1.6, 3.6), type: r < .5 ? 'soil' : r < .8 ? 'clod' : 'turf' });
     }
   }
 
@@ -67,12 +78,13 @@
     const list = state.fx.particles;
     for (let i = list.length - 1; i >= 0; i--) {
       const q = list[i];
-      q.life -= dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 70 * dt;
+      q.life -= dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vy += (q.g || 70) * dt;
+      if (q.floor !== undefined && q.y > q.floor) { q.y = q.floor; q.vx *= .4; q.vy = 0; }   // posée sur la pelouse
       if (q.life <= 0) list.splice(i, 1);
     }
   }
 
-  const COLORS = { water: '#93ddff', bud: '#cfff9a', acid: '#b45cff', bomb: '#a6ff7a', impact: '#ff815f', petal: '#fff1a6', eco: '#cfff78', soil: '#7a5436', chip: '#4a3020', shield: '#caffde' };
+  const COLORS = { water: '#93ddff', bud: '#cfff9a', acid: '#b45cff', bomb: '#a6ff7a', impact: '#ff815f', petal: '#fff1a6', eco: '#cfff78', soil: '#7a5436', chip: '#4a3020', clod: '#b8916a', turf: '#4a7a2a', shield: '#caffde' };
 
   // Carré de 1 à 2 pixels d'art : il rétrécit en fin de vie au lieu de devenir transparent.
   function drawOne(g, q, oy) {

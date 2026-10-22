@@ -1,6 +1,6 @@
 // render/effects.js — effets visuels : chiffres ÉcoCrédits™, anneaux de frôlement, ramassage, rupture du bouclier,
 // onde de spore, impact à la mort, anneau d'éclosion.
-// Lit     : state.events (eco, pickup, bonusMissed, shieldBreak, bomb, death, bloom), state.time, state.mode, state.graze.active, state.plant.tip.
+// Lit     : state.events (eco, pickup, bonusMissed, shieldBreak, bomb, death, blossom), state.time, state.mode, state.graze.active, state.plant.tip.
 // Écrit   : state.fx.effects uniquement (réservé au rendu) ; l'aléatoire purement visuel utilise Math.random.
 // Expose  : FP.effects.draw(actx, state) (repère d'art, caméra appliquée ici : anneaux, frôlements),
 //           FP.effects.drawLabels(ctx, state) (couche nette, repère monde : chiffres « +Ɇ »).
@@ -30,7 +30,7 @@
       else if (e.type === 'shieldBreak') fx.push({ type: 'shieldBreak', x: e.x, y: e.y, t0, life: .62, r: 31, phase: rand(0, TAU) });
       else if (e.type === 'bomb') fx.push({ type: 'bomb', x: e.x, y: e.y, t0, life: .98, r: e.r });
       else if (e.type === 'death') fx.push({ type: 'hit', acid: e.cause !== 'solid', x: e.x, y: e.y, t0, life: .42, r: 28 });
-      else if (e.type === 'bloom') fx.push({ type: 'bloom', x: e.x, y: e.y, t0, life: 1.18, r: 68 + 13 * (e.bonus || 0) });
+      else if (e.type === 'blossom') fx.push({ type: 'bloom', x: e.x, y: e.y, t0, life: 1.18, r: 68 + 13 * (e.bonus || 0) });
     }
     state.fx.effects = state.fx.effects.filter(f => state.time - f.t0 < f.life);
   }

@@ -179,9 +179,9 @@
       ]
     },
 
-    // Déroulé de partie.
+    // Déroulé de partie. hatchDelay : la motte se fend, puis la fleur sort (render/mound.js).
     flow: {
-      dyingTime: .85, bloomTime: 1.55, fadeOutTime: .46, fadeInTime: .48, oldTrailsMax: 6, trailSimplifyPx: 11, deathShake: .28,
+      dyingTime: .85, bloomTime: 1.55, hatchDelay: .24, hatchShake: .1, fadeOutTime: .46, fadeInTime: .48, oldTrailsMax: 6, trailSimplifyPx: 11, deathShake: .28,
       stemMessageTime: 1.35, deathMessageTime: 1.25, readyMessageTime: 2.2
     },
 

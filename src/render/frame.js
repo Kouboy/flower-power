@@ -40,6 +40,7 @@
     FP.drillFx.drawUnder(g, state);   // fissures de la foreuse : sous la plante, le visage reste net
     FP.plantRender.draw(g, state);
     FP.flowersRender.draw(g, state);
+    FP.mound.draw(g, state);          // motte d'émergence : par-dessus la pointe qui arrive et le pied des fleurs
     FP.hazardsRender.drawExposure(g, state);   // v3 : dans drawPlant, donc sous la pellicule toxique
     FP.hazardsRender.drawOverlay(g, state);
     if (perf) perf.mark('plant', t);
