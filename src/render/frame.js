@@ -4,7 +4,7 @@
 // 3. La couche nette (doigt, HUD, debug, fondu) est dessinée par-dessus à pleine résolution.
 // Lit     : FP.config.camera.{zoomEpsilon,focalY}, state.world, state.camera.y, state.plant.{tip,seed}, FP.view, FP.camera.totalZoom, FP.input.focalX,
 //           FP.view.art, FP.px.SCALE, state.flow.fade, FP.sky, FP.soil, FP.hazardsRender, FP.obstacles, FP.powerupsRender, FP.plantRender, FP.flowersRender,
-//           FP.effects, FP.particles, FP.hud ; state.camera.shake (secousse) ; FP.perf, FP.flydebug (outils de réglage).
+//           FP.effects, FP.particles, FP.drillFx, FP.hud ; state.camera.shake (secousse) ; FP.perf, FP.flydebug (outils de réglage).
 // Écrit   : rien lui-même (le canvas) ; effects et particles, qu'il appelle, tiennent state.fx.
 // Expose  : FP.render.frame(state).
 (function () {
@@ -44,6 +44,7 @@
     if (perf) perf.mark('plant', t);
     FP.effects.draw(g, state);
     FP.particles.draw(g, state);
+    FP.drillFx.draw(g, state);   // fissures, onde, anneau, étincelles de la foreuse
   }
 
   function frame(state) {
@@ -52,6 +53,8 @@
     // ?perf=1 : tranches sol / dangers / bonus / plante (comme la v3).
     const perf = FP.perf;
 
+    // Hors des moments de jeu (titre, prêt, fin, fondus), on prépare les sprites des obstacles, une famille par frame.
+    if (state.mode !== 'playing' && state.mode !== 'dying' || state.flow.fade > 0) FP.obstacles.prewarm();
     // Une erreur dans le monde ne doit pas figer l'image : on agrandit et on dessine le HUD quand même, puis on la relance
     // (la boucle la signale une fois).
     let worldError = null;

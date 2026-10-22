@@ -1,8 +1,9 @@
 // render/obstacles.js — obstacles PNG ramenés sur la grille de pixels d'art, avec contour et ancrage sombre.
-// Lit     : world.solids (x, y, a, flip, w, h, pivot, collision, grazeRadius, broadR, assetKey), FP.sprites, FP.px, FP.geom.sdPoly,
+// Lit     : world.solids (x, y, a, flip, w, h, pivot, collision, grazeRadius, broadR, assetKey), FP.sprites, FP.px, FP.catalog.assets,
 //           FP.view.art.h, FP.palette.strataTone, FP.soil.surfaceTop.
 // Écrit   : o._anchor, o._look sur chaque solide — caches de rendu uniquement, jamais lus par la simulation.
-// Expose  : FP.obstacles.draw(actx, world, cameraY) — repère d'art, la caméra est appliquée ici ; FP.obstacles.look(o) (pur).
+// Expose  : FP.obstacles.draw(actx, world, cameraY) — repère d'art, la caméra est appliquée ici ; FP.obstacles.look(o) (pur) ;
+//           FP.obstacles.prewarm() — prépare une famille par appel, hors des moments de jeu.
 // Chaque obstacle a son apparence : teinte, luminosité, usure, et pour un tiers d'entre eux le bas enfoui dans la terre.
 // Chaque sprite est réduit une seule fois par (sprite, miroir) : moyenne, 8 niveaux par canal, contour d'un pixel.
 (function () {
@@ -10,7 +11,8 @@
   const FP = window.FP = window.FP || {};
   // Masquage : un obstacle est dessiné tant que son rayon (au moins 44 px) plus 90 px touche l'écran (visuel, v3).
   const CULL_MIN_R = 44, CULL_PAD = 90;
-  const OUTLINE = '#120c08', ANCHOR = '#0a0605';
+  const OUTLINE = '#120c08', ANCHOR = '#0a0605', ANCHOR_RGB = [10, 6, 5];
+  const BAYER = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]];
   const sprites = new Map();   // clé `${assetKey}|${w}|${h}|${flip}` → canvas en pixels d'art (contour compris)
 
   const canvasOf = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
@@ -40,8 +42,12 @@
     return c;
   }
 
+  // Réduction pixel faite une fois par famille et par sens, à la taille nominale (worldWidth de la fiche) : la relecture
+  // des pixels coûte 10 à 20 ms, elle ne doit pas se refaire pour chaque obstacle. La taille propre à chaque obstacle
+  // est appliquée ensuite, par une simple copie mise à l'échelle (lookFor).
   function spriteFor(o) {
-    const { px } = FP, aw = Math.max(2, px.toArt(o.w)), ah = Math.max(2, px.toArt(o.h));
+    const { px } = FP, asset = FP.catalog.assets[o.assetKey], nomW = (asset && asset.render && asset.render.worldWidth) || o.w;
+    const aw = Math.max(2, px.toArt(nomW)), ah = Math.max(2, px.toArt(nomW * o.h / o.w));
     const key = `${o.assetKey}|${aw}|${ah}|${o.flip}`;
     if (sprites.has(key)) return sprites.get(key);
     const img = FP.sprites.get(o.assetKey);
@@ -49,7 +55,7 @@
     let c;
     try { c = reducedByPixels(img, aw, ah, o.flip); }
     catch (e) { c = reducedByDrawing(img, aw, ah, o.flip); }   // file:// : relecture des pixels interdite (canvas « tainted »)
-    const entry = { canvas: c, ox: -o.pivot[0] * aw - 1, oy: -o.pivot[1] * ah - 1 };
+    const entry = { canvas: c, nomW };
     sprites.set(key, entry);
     return entry;
   }
@@ -58,21 +64,46 @@
   // dans le repère local (non tourné) en pixels d'art.
   function anchorFor(o) {
     if (o._anchor) return o._anchor;
-    const { px } = FP, s = px.SCALE, pad = Math.max(3, Math.round((o.grazeRadius || 14) * .6 / s));
+    const s = FP.px.SCALE, pad = Math.max(3, Math.round((o.grazeRadius || 14) * .6 / s));
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const [x, y] of o.collision) { minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); }
     const x0 = Math.floor(minX / s) - pad, y0 = Math.floor(minY / s) - pad;
     const w = Math.ceil(maxX / s) + pad - x0, h = Math.ceil(maxY / s) + pad - y0;
     const c = document.createElement('canvas'); c.width = Math.max(1, w); c.height = Math.max(1, h);
-    const g = c.getContext('2d');
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const d = FP.geom.sdPoly((x + x0 + .5) * s, (y + y0 + .5) * s, o.collision) / s;
-        if (d <= -1 || d >= pad) continue;
-        const level = Math.round(16 * .45 * (1 - Math.max(0, d) / pad));
-        px.dither(g, x, y, 1, 1, 'rgba(0,0,0,0)', ANCHOR, level);
+    // Silhouette remplie puis distance de chaque pixel à la silhouette en deux passes (transformée de distance) :
+    // coût proportionnel au nombre de pixels, quel que soit le nombre de points du contour.
+    // Remplissage par balayage en JavaScript (pas de getImageData : rapatrier une image du GPU coûte plusieurs ms).
+    const g = c.getContext('2d'), W = c.width, H = c.height, dist = new Float32Array(W * H).fill(1e9);
+    const poly = o.collision.map(([px, py]) => [px / s - x0, py / s - y0]);
+    for (let y = 0; y < H; y++) {
+      const yc = y + .5, xs = [];
+      for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+        const [xi, yi] = poly[i], [xj, yj] = poly[j];
+        if ((yi > yc) !== (yj > yc)) xs.push(xi + (yc - yi) / (yj - yi) * (xj - xi));
       }
+      xs.sort((p, q) => p - q);
+      for (let k = 0; k + 1 < xs.length; k += 2) for (let x = Math.max(0, Math.ceil(xs[k] - .5)); x <= Math.min(W - 1, Math.floor(xs[k + 1] - .5)); x++) dist[y * W + x] = 0;
     }
+    const relax = (k, n, w) => { if (dist[n] + w < dist[k]) dist[k] = dist[n] + w; };
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const k = y * W + x;
+      if (x > 0) relax(k, k - 1, 1);
+      if (y > 0) { relax(k, k - W, 1); if (x > 0) relax(k, k - W - 1, 1.414); if (x < W - 1) relax(k, k - W + 1, 1.414); }
+    }
+    for (let y = H - 1; y >= 0; y--) for (let x = W - 1; x >= 0; x--) {
+      const k = y * W + x;
+      if (x < W - 1) relax(k, k + 1, 1);
+      if (y < H - 1) { relax(k, k + W, 1); if (x < W - 1) relax(k, k + W + 1, 1.414); if (x > 0) relax(k, k + W - 1, 1.414); }
+    }
+    const img = g.createImageData(W, H), data = img.data;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const d = dist[y * W + x] - .5;
+      if (d < 0 || d >= pad) continue;
+      if (BAYER[y & 3][x & 3] >= Math.round(16 * .45 * (1 - d / pad))) continue;
+      const i = (y * W + x) * 4;
+      data[i] = ANCHOR_RGB[0]; data[i + 1] = ANCHOR_RGB[1]; data[i + 2] = ANCHOR_RGB[2]; data[i + 3] = 255;
+    }
+    g.putImageData(img, 0, 0);
     o._anchor = { canvas: c, ox: x0, oy: y0 };
     return o._anchor;
   }
@@ -112,20 +143,22 @@
   function lookFor(o, sp, world) {
     if (o._look) return o._look;
     const { px, palette } = FP, L = look(o), c = document.createElement('canvas');
-    c.width = sp.canvas.width; c.height = sp.canvas.height;
+    const sc = o.w / sp.nomW;   // taille propre à l'obstacle (catalog : scale)
+    c.width = Math.max(3, Math.round(sp.canvas.width * sc)); c.height = Math.max(3, Math.round(sp.canvas.height * sc));
     const g = c.getContext('2d');
+    g.imageSmoothingEnabled = false;
     g.filter = 'hue-rotate(' + L.hue + 'deg) brightness(' + L.light + '%)';
-    g.drawImage(sp.canvas, 0, 0);
+    g.drawImage(sp.canvas, 0, 0, c.width, c.height);
     g.filter = 'none';
     g.globalCompositeOperation = 'source-atop';
     for (let i = 0; i < L.wear * 4; i++) {
       const k = (i * 2654435761 + L.light * 97) >>> 0;
-      px.rect(g, 2 + k % Math.max(1, c.width - 4), 2 + (k >>> 8) % Math.max(1, sp.canvas.height - 4), 1 + (k >>> 16) % 2, 1, RUST[(k >>> 20) % 3]);
+      px.rect(g, 2 + k % Math.max(1, c.width - 4), 2 + (k >>> 8) % Math.max(1, c.height - 4), 1 + (k >>> 16) % 2, 1, RUST[(k >>> 20) % 3]);
     }
     if (L.buried) {                                    // la terre ne recouvre que la silhouette (source-atop)
       g.globalCompositeOperation = 'source-atop';
       const d = Math.max(0, Math.min(.999, (o.y - FP.soil.surfaceTop(world)) / (world.height - FP.soil.surfaceTop(world))));
-      const base = sp.canvas.height - Math.round(sp.canvas.height * .28);
+      const base = c.height - Math.round(c.height * .28);
       for (let x = 0; x < c.width; x++) {
         const top = base + Math.round(Math.sin(x * .7 + L.hue) * 1.5 + Math.sin(x * .23) * 1.5);
         px.rect(g, x, top, 1, c.height - top, palette.strataTone(d, 1 + (x % 3 === 0 ? 1 : 0)));
@@ -133,9 +166,27 @@
       }
       g.globalCompositeOperation = 'source-over';
     }
-    o._look = { canvas: c, ox: sp.ox, oy: sp.oy };
+    o._look = { canvas: c, ox: -o.pivot[0] * (c.width - 2) - 1, oy: -o.pivot[1] * (c.height - 2) - 1 };
     return o._look;
   }
 
-  FP.obstacles = { draw, look };
+  // Préparation à l'avance : réduit une famille (et un sens) par appel, hors des moments de jeu, pour que le premier
+  // obstacle de chaque famille n'ait pas à payer sa réduction (20 à 80 ms) en pleine partie.
+  const warmed = new Set();   // familles et sens déjà préparés (`kind|flip`)
+  function prewarm() {
+    for (const [kind, a] of Object.entries(FP.catalog.assets)) {
+      for (const flip of a.render && a.render.mirrorSafe === false ? [1] : [1, -1]) {
+        const key = kind + '|' + flip;
+        if (warmed.has(key)) continue;
+        const o = FP.catalog.makeSolid({ kind, x: 0, y: 0, a: 0, flip });
+        if (!o || !FP.sprites.get(o.assetKey)) continue;   // image pas encore chargée : on réessaiera
+        spriteFor(o);
+        warmed.add(key);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  FP.obstacles = { draw, look, prewarm };
 })();
