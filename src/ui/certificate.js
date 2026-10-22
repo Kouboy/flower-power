@@ -60,7 +60,8 @@
         font.draw(g, r.label, x, y, { color: LABEL, outline: false });
         font.draw(g, r.value, x + inner, y, { color: r.beaten ? RED : TEXT, align: 'right', outline: false });
       } })),
-      { h: 10, draw: (x, y) => font.draw(g, FP.config.text.certificate.cause, x, y + 3, { color: LABEL, outline: false }) },
+      // Libellé de la cause : ses accents dépassent au-dessus, on le descend ; puis de l'air avant la cause elle-même.
+      { h: 17, draw: (x, y) => font.draw(g, FP.config.text.certificate.cause, x, y + 6, { color: LABEL, outline: false }) },
       ...causeLines.map(l => ({ h: 9, draw: (x, y) => font.draw(g, l, x, y, { color: TEXT, outline: false }) }))
     ];
     const stampAt = VEIL + RISE + items.length * LINE_STEP, stampH = 26;
