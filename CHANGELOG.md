@@ -14,7 +14,9 @@ Une entrée par version (voir `AGENTS.md`).
 - plus d'obstacles dès le premier passage (≈ 16 au lieu de 11 à 440 px) et une rampe plus franche, plafonnée à la capacité du terrain ;
 - dangers en violet chimique (nappes, limaces aux yeux jaune soufre, sillons), distincts de la pousse verte ;
 - la tige fouit : tunnel de terre remuée derrière la pointe, mottes qui la recouvrent par endroits (davantage sur les anciennes tiges), racines et mycélium ;
-- rendu au plus 1,7 ms par frame ; banc : 211 tests.
+- chaque déchet a sa taille (collision comprise), sa teinte, son usure, et parfois le bas enfoui ;
+- deux nouveaux déchets générés avec SpriteCook : trottinette et borne d'arcade ; outil `dev/tools/import-sprite.js` (détourage, contour de collision calculé et vérifié, fiche JSON, manifeste) ;
+- rendu au plus 1,7 ms par frame ; banc : 217 tests.
 
 ## v4.0.1 — Nettoyage
 

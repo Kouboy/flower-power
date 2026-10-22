@@ -1,6 +1,6 @@
-FP.test('catalog: 12 assets, dont le T-Rex signature', () => {
+FP.test('catalog: 14 assets, dont le T-Rex signature', () => {
   const keys = Object.keys(FP.catalog.assets).sort();
-  FP.assertEqual(keys.join(','), 'battery,cone,drone,extinguisher,microwave,nuclear,sarcophagus,server,solar,tire,trashbag,trex_signature');
+  FP.assertEqual(keys.join(','), 'arcade,battery,cone,drone,extinguisher,microwave,nuclear,sarcophagus,scooter,server,solar,tire,trashbag,trex_signature');
 });
 FP.test('catalog: dimensions et collision mises à l’échelle', () => {
   const o = FP.catalog.makeSolid({ kind: 'server', x: 100, y: 200, a: 0, flip: 1 });
@@ -42,4 +42,13 @@ FP.test('catalog: l’échelle agrandit le sprite et sa collision ensemble', () 
   FP.assert(Math.abs(b.w - a.w * 1.1) < 1e-9 && Math.abs(b.h - a.h * 1.1) < 1e-9);
   b.collision.forEach(([x, y], i) => FP.assert(Math.abs(x - a.collision[i][0] * 1.1) < 1e-9 && Math.abs(y - a.collision[i][1] * 1.1) < 1e-9));
   FP.assert(b.broadR > a.broadR);
+});
+FP.test('catalog: nouveaux déchets importés (trottinette, borne d’arcade), placés et nommés à la mort', () => {
+  for (const k of ['scooter', 'arcade']) {
+    FP.assert(FP.catalog.has(k), k + ' absent du catalogue');
+    FP.assert(FP.config.text.death[k], k + ' sans message de mort');
+    FP.assert(['upper', 'middle', 'deep'].some(b => FP.config.spawnTables[b].some(e => e.kind === k)), k + ' absent des tables d’apparition');
+  }
+  // tout ce que les tables peuvent tirer existe au catalogue et a son message
+  for (const b of ['upper', 'middle', 'deep']) for (const e of FP.config.spawnTables[b]) FP.assert(FP.catalog.has(e.kind) && FP.config.text.death[e.kind], e.kind);
 });

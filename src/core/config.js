@@ -79,7 +79,8 @@
       upper: [
         { kind: 'cone', w: .07, a: 1.05 }, { kind: 'extinguisher', w: .08, a: .95 },
         { kind: 'solar', w: .10, a: 1.22 }, { kind: 'drone', w: .10, a: 1.05 },
-        { kind: 'trashbag', w: .09, a: .95 }, { kind: 'battery', w: .08, a: .78 }
+        { kind: 'trashbag', w: .09, a: .95 }, { kind: 'battery', w: .08, a: .78 },
+        { kind: 'scooter', w: .08, a: .9 }                                                      // v4.1.0
       ],
       middle: [
         { kind: 'microwave', w: .09, a: .85 }, { kind: 'extinguisher', w: .08, a: 1.05 },
@@ -87,13 +88,15 @@
         { kind: 'tire', w: .09, a: 1.55 }, { kind: 'solar', w: .08, a: 1.28 },
         { kind: 'drone', w: .08, a: 1.08 }, { kind: 'trashbag', w: .08, a: .98 },
         { kind: 'battery', w: .07, a: .82 }, { kind: 'sarcophagus', w: .07, a: .62, noFlip: true },
-        { kind: 'nuclear', w: .06, a: .68 }
+        { kind: 'nuclear', w: .06, a: .68 },
+        { kind: 'scooter', w: .07, a: .95 }, { kind: 'arcade', w: .08, a: .7 }                 // v4.1.0
       ],
       deep: [
         { kind: 'microwave', w: .09, a: .95 }, { kind: 'extinguisher', w: .08, a: 1.08 },
         { kind: 'cone', w: .08, a: 1.15 }, { kind: 'tire', w: .10, a: 1.55 },
         { kind: 'server', w: .09, a: .75 }, { kind: 'trashbag', w: .08, a: 1.0 },
-        { kind: 'nuclear', w: .08, a: .72 }, { kind: 'sarcophagus', w: .08, a: .65, noFlip: true }
+        { kind: 'nuclear', w: .08, a: .72 }, { kind: 'sarcophagus', w: .08, a: .65, noFlip: true },
+        { kind: 'arcade', w: .09, a: .75 }                                                      // v4.1.0
       ]
     },
 
@@ -202,7 +205,8 @@
         server: 'rupture : rack serveur', nuclear: 'rupture : fût irradié', tire: 'rupture : pneu écrasé',
         sarcophagus: 'rupture : cercueil', drone: 'rupture : drone cassé', solar: 'rupture : panneau solaire',
         battery: 'rupture : batterie', cone: 'rupture : cône mou', trashbag: 'rupture : sac gonflé',
-        extinguisher: 'rupture : extincteur vide', microwave: 'rupture : micro-ondes', trex_signature: 'rupture : crâne enfoui'
+        extinguisher: 'rupture : extincteur vide', microwave: 'rupture : micro-ondes', trex_signature: 'rupture : crâne enfoui',
+        scooter: 'rupture : trottinette fossile', arcade: 'rupture : borne d’arcade'
       }
     },
 
