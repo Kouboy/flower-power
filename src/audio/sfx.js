@@ -73,6 +73,7 @@
     const t = b.now();
     b.note('drill', drillStep++ % 2 ? 59 : 52, t, .06, .8 + k * .4, SFX);   // mi3 / si3 : audible même sur des haut-parleurs d'ordinateur portable
     b.burst(t, .05, .025 + k * .015, 240, 'lowpass', SFX);
+    if (drillStep % 2) b.burst(t + .01, .03, .02 + k * .015, 1300 + Math.random() * 500, 'bandpass', SFX);   // grattement discret, un battement sur deux
   }
 
   // Bourdonnement du frôlement (logique de la v3) : proximité = hauteur et brillance, durée = puissance ; coupé net sur un choc.
