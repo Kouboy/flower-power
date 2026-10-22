@@ -2,7 +2,7 @@
 // s'écrivent, puis le tampon « VALIDÉ* » qui s'abat ; la relance n'est possible qu'après le tampon.
 // Lit     : state.time, state.score.{flowers,eco,recordBefore}, state.plant.stemCount, state.flow.overReason,
 //           FP.config.text.{certificate,again}, FP.font, FP.view.ui.
-// Écrit   : state.fx.ui.overAt uniquement (instant du premier dessin de la fin de partie).
+// Écrit   : state.fx.ui.{overAt, readyAfter} uniquement (début de la fin de partie ; délai avant relance, tampon compris).
 // Expose  : FP.certificate.lines(state), FP.certificate.canRestart(state) (purs, testés), FP.certificate.draw(g, state),
 //           FP.certificate.{READY_AT, MARGIN, PADDING}.
 (function () {
@@ -20,7 +20,7 @@
       { label: t.flowers, value: fmt(sc.flowers) },
       { label: t.eco, value: 'Ɇ' + fmt(sc.eco) },
       { label: t.stems, value: fmt(state.plant.stemCount) },
-      beaten ? { label: t.record, value: t.beaten, beaten: true } : { label: t.record, value: fmt(rb.flowers) + ' FLEURS', beaten: false }
+      beaten ? { label: t.record, value: t.beaten, beaten: true } : { label: t.record, value: fmt(rb.flowers) + ' ' + t.flowersUnit, beaten: false }
     ];
     if (!beaten) rows.push({ label: '', value: 'Ɇ' + fmt(rb.eco) });
     return { title: t.title, subtitle: t.subtitle, rows, cause: (state.flow.overReason || '').toLocaleUpperCase('fr-FR'), note: t.note, stamp: t.stamp };
@@ -28,7 +28,8 @@
 
   function canRestart(state) {
     const ui = state.fx.ui;
-    return !!ui && ui.overAt !== undefined && ui.overAt !== null && state.time - ui.overAt >= READY_AT;
+    // READY_AT au plus tôt, et jamais avant que le tampon soit tombé (il tombe plus tard si la cause tient sur plus de lignes).
+    return !!ui && ui.overAt !== undefined && ui.overAt !== null && state.time - ui.overAt >= Math.max(READY_AT, ui.readyAfter || 0);
   }
 
   // Voile : damier d'encre mis en cache à la taille de l'écran, dévoilé de haut en bas.
@@ -65,6 +66,7 @@
       ...causeLines.map(l => ({ h: 9, draw: (x, y) => font.draw(g, l, x, y, { color: TEXT, outline: false }) }))
     ];
     const stampAt = VEIL + RISE + items.length * LINE_STEP, stampH = 26;
+    ui.readyAfter = stampAt + SLAM;
     const ph = 8 + items.reduce((s, it) => s + it.h, 0) + stampH + 14, pw = w - 2 * MARGIN;
     const py0 = Math.max(6, Math.round((h - ph) / 2) - 8), kr = clamp01((age - VEIL) / RISE);
     if (kr <= 0) return;
@@ -89,7 +91,7 @@
       g.restore();
       font.draw(g, c.note, px + PADDING, py + ph - 14, { color: LABEL, outline: false });
     }
-    if (age >= READY_AT && Math.floor(age * 2) % 2 === 0) font.draw(g, FP.config.text.again, w / 2, Math.min(h - 12, py + ph + 8), { align: 'center' });
+    if (canRestart(state) && Math.floor(age * 2) % 2 === 0) font.draw(g, FP.config.text.again, w / 2, Math.min(h - 12, py + ph + 8), { align: 'center' });
   }
 
   FP.certificate = { lines, canRestart, draw, READY_AT, MARGIN, PADDING };

@@ -25,7 +25,7 @@ src/
 │   └── hazards.js    ✅ limaces en mouvement (cx, cy, cr, hitFlash), intensité des nappes
 ├── play/
 │   ├── plant.js      ✅ croissance, pilotage, trace (prepare / launch / update)
-│   ├── flow.js       ✅ morts (solide, lixiviat, brûlure toxique), exposition, éclosion minimale, transitions, messages
+│   ├── flow.js       ✅ morts (solide, lixiviat, brûlure toxique), exposition, éclosion, transitions (plus de messages texte : l'interface se déduit de l'état)
 │   ├── camera.js     ✅ défilement, cadrage ×1,18, zoom de frôlement
 │   ├── graze.js      ✅ frôlement : suivi par objet, paiement à la sortie, annulation au contact, mesures du flyover
 │   ├── powerups.js   ✅ flyover → pollen / goutte / spore, exclusivité, ramassage, bouclier organique
@@ -83,7 +83,7 @@ L'état de la partie en cours est `FP.state.current`, créé par `FP.state.creat
   plant:  { seed, tip, dir, guide, trail, oldTrails, stemAge, stemCount, reserves, corruption, toxicTimer, recentToxic, scrapeTimer },
   world:  { width, height, viewH, surfaceY, skyVariant, lawnVariant, safePath, safeRadius, solids, toxics, leaks, bonuses },
   query:  { solid, danger, near, toxic, leak, leakHit, grazes },
-  flow:   { timer, message, messageTimer, stage, fade, overReason },
+  flow:   { timer, stage, fade, overReason, blossom },
   garden: { flowers },
   graze:  { active /* Map objet → frôlement */ },
   power:  { shield, shieldGrace },

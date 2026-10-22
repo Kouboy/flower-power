@@ -33,3 +33,7 @@ FP.test('shout: le « ! » ne part jamais seul sur la deuxième ligne, quelle qu
     for (const e of events) for (const l of FP.font.wrap(FP.shout.textFor(e), artW - 8, { scale: 2 })) FP.assert(l.trim() !== '!', FP.shout.textFor(e) + ' à ' + artW);
   }
 });
+FP.test('shout: l’aide et « TOUCHER POUR POUSSER » passent au-dessus du combo, sans le toucher', () => {
+  const L = FP.hud.layout(366);
+  FP.assert(L.textY + FP.font.HEIGHT + 2 <= L.comboY - 2, 'texte ' + L.textY + ', combo ' + L.comboY);   // −2 : accents au-dessus du combo
+});

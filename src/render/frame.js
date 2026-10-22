@@ -1,7 +1,8 @@
-// render/frame.js — dessin d'une frame en deux couches. Lecture seule de l'état.
+// render/frame.js — dessin d'une frame. Lecture seule de l'état.
 // 1. Le monde est dessiné dans la toile monde à mi-résolution (FP.view.art), en pixels d'art.
-// 2. Elle est agrandie sans lissage vers l'écran, avec secousse et zoom.
-// 3. La couche nette (doigt, HUD, debug, fondu) est dessinée par-dessus à pleine résolution.
+// 2. Elle est agrandie sans lissage vers l'écran, avec secousse et zoom ; les gains « +Ɇ » suivent, dans le repère du monde.
+// 3. L'interface (doigt, HUD, cri, titre, certificat) est dessinée dans la toile FP.view.ui, agrandie sans secousse ni zoom.
+// 4. Les outils de réglage et le fondu, à pleine résolution, par-dessus tout.
 // Lit     : FP.config.camera.{zoomEpsilon,focalY}, state.world, state.camera.y, state.plant.{tip,seed}, FP.view, FP.camera.totalZoom, FP.input.focalX,
 //           FP.view.art, FP.px.SCALE, state.flow.fade, FP.sky, FP.soil, FP.hazardsRender, FP.obstacles, FP.powerupsRender, FP.plantRender, FP.flowersRender,
 //           FP.effects, FP.particles, FP.drillFx, FP.ui ; state.camera.shake (secousse) ; FP.perf, FP.flydebug (outils de réglage).
@@ -80,9 +81,7 @@
       ctx.restore();
     }
 
-    // Couche 3 : nette, à pleine résolution.
-
-    // Couche 4 : l'interface en pixels d'art, agrandie sans lissage, sans secousse ni zoom.
+    // Couche 3 : l'interface en pixels d'art, agrandie sans lissage, sans secousse ni zoom.
     let tu = perf && performance.now();
     const ui = FP.view.ui;
     FP.ui.draw(ui.ctx, state);
