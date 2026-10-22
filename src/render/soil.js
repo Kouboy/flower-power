@@ -1,8 +1,9 @@
 // render/soil.js — pelouse et terre en pixels d'art : touffes d'herbe, trois strates tramées, détails clairsemés.
-// Lit     : world.{width,height,surfaceY,lawnVariant}, state.camera.y, FP.view.{W,art}, FP.palette.{strata,strataBounds,lawn},
+// Lit     : world.{width,height,surfaceY,lawnVariant}, state.{seed,level}, state.camera.y, FP.view.{W,art}, FP.palette.{strata,strataBounds,lawn},
 //           FP.config.soil.surfaceOffset.
 // Écrit   : rien dans l'état (cache créé à la première utilisation).
-// Expose  : FP.soil.draw(actx, state) — repère d'art, la caméra est appliquée ici ; FP.soil.surfaceTop(world) (repère monde).
+// Expose  : FP.soil.draw(actx, state) — repère d'art, la caméra est appliquée ici ; FP.soil.surfaceTop(world) (repère monde) ;
+//           FP.soil.grainAt(x, y, seed) — grain noir de la terre (pur, testé).
 // Règles de lisibilité (spec §4) : contraste bas, aucun contour, détails rares et proches de leur strate, ni vert acide ni violet.
 (function () {
   'use strict';
@@ -13,6 +14,8 @@
   const TRANSITION = 6;          // rangées tramées entre deux teintes d'une même strate
   const STRATA_TRANSITION = 16;  // rangées tramées entre deux strates
   const WILDFLOWERS = ['#e8d890', '#e0a0b0', '#f0e8d0'];
+  const GRAIN = [10, 6, 5];      // #0a0605 : le même noir que le halo tramé autour des obstacles
+  const GRAIN_CELL = 32;         // une tache de grain par case de 32 × 32 pixels d'art (en moyenne)
 
   const surfaceTop = (world) => world.surfaceY + FP.config.soil.surfaceOffset;
 
@@ -21,6 +24,25 @@
     let a = seed >>> 0;
     return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
   }
+  // Empreinte stable de trois entiers (finaliseur de MurmurHash3).
+  function mix(a, b, c) {
+    let h = (Math.imul(a, 0x9e3779b1) + Math.imul(b, 0x85ebca77) + Math.imul(c, 0xc2b2ae3d)) | 0;
+    h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16;
+    return h >>> 0;
+  }
+
+  // Grain noir par petites touches (pur, testé) : des taches tramées comme le halo des obstacles, plus denses au centre,
+  // et quelques grains isolés. (x, y) en pixels d'art ; seed : graine du niveau.
+  function grainAt(x, y, seed) {
+    const cx = Math.floor(x / GRAIN_CELL), cy = Math.floor(y / GRAIN_CELL), h = mix(cx, cy, seed);
+    if (h % 100 < 85) {
+      const r = 3 + (h >>> 7) % 5, px = cx * GRAIN_CELL + 7 + (h >>> 10) % (GRAIN_CELL - 14), py = cy * GRAIN_CELL + 7 + (h >>> 15) % (GRAIN_CELL - 14);
+      const d = Math.hypot(x - px, y - py);
+      if (d <= r && BAYER[y & 3][x & 3] < 16 * .7 * (1 - d / r)) return true;
+    }
+    return mix(x, y, seed + 1) % 1000 < 20;
+  }
+
   const hex = (c) => [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16));
 
   // Teintes de haut en bas : chaque strate, de sa teinte claire à sa teinte sombre.
@@ -57,7 +79,7 @@
     const img = g.createImageData(w, hArt - topArt), data = img.data;
     for (let y = topArt; y < hArt; y++) {
       for (let x = 0; x < w; x++) {
-        const [r, gg, bb] = rgb[earthIndex(x, y, topArt, hArt)];
+        const [r, gg, bb] = y > topArt + 3 && grainAt(x, y, seed) ? GRAIN : rgb[earthIndex(x, y, topArt, hArt)];
         const i = ((y - topArt) * w + x) * 4;
         data[i] = r; data[i + 1] = gg; data[i + 2] = bb; data[i + 3] = 255;
       }
@@ -107,12 +129,14 @@
     if (!(world.width > 0 && world.height > 0)) return;
     const w = Math.ceil(Math.max(world.width, FP.view.W) / px.SCALE), hArt = Math.ceil(world.height / px.SCALE);
     const topArt = px.toArt(surfaceTop(world));
-    const key = w + '|' + hArt + '|' + topArt + '|' + world.lawnVariant;
-    if (key !== cacheKey) { build(w, hArt, topArt, world.lawnVariant, world.height * 31 + world.surfaceY * 7 + world.lawnVariant); cacheKey = key; }
+    // Graine du niveau (partie + numéro de niveau) : chaque niveau a sa propre terre, détails et grain compris.
+    const seed = mix(state.seed | 0, state.level | 0, world.lawnVariant);
+    const key = w + '|' + hArt + '|' + topArt + '|' + seed;
+    if (key !== cacheKey) { build(w, hArt, topArt, world.lawnVariant, seed); cacheKey = key; }
     const oy = px.toArt(state.camera.y), viewH = FP.view.art.h;
     const y0 = Math.max(0, oy - 8), y1 = Math.min(cache.height, oy + viewH + 8);
     if (y1 > y0) actx.drawImage(cache, 0, y0, cache.width, y1 - y0, 0, y0 - oy, cache.width, y1 - y0);
   }
 
-  FP.soil = { draw, surfaceTop };
+  FP.soil = { draw, surfaceTop, grainAt };
 })();

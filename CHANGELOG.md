@@ -16,7 +16,8 @@ Une entrée par version (voir `AGENTS.md`).
 - la tige fouit : tunnel de terre remuée derrière la pointe, mottes qui la recouvrent par endroits (davantage sur les anciennes tiges), racines et mycélium ;
 - chaque déchet a sa taille (collision comprise), sa teinte, son usure, et parfois le bas enfoui ;
 - deux nouveaux déchets générés avec SpriteCook : trottinette et borne d'arcade ; outil `dev/tools/import-sprite.js` (détourage, contour de collision calculé et vérifié, fiche JSON, manifeste) ;
-- rendu au plus 1,7 ms par frame ; banc : 217 tests.
+- grain noir par petites touches dans la terre, le même tramage que le halo des obstacles ; chaque niveau a sa propre terre ;
+- rendu au plus 1,7 ms par frame ; banc : 220 tests.
 
 ## v4.0.1 — Nettoyage
 
