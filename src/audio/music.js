@@ -3,7 +3,7 @@
 // Lit     : state.mode, state.score.flowers, state.plant.{tip,corruption,toxicTimer}, state.world.{surfaceY,height},
 //           state.graze.active, state.query.grazes, FP.certificate.canRestart, FP.songs, FP.sequencer.
 // Écrit   : rien dans l'état (le moteur audio uniquement).
-// Expose  : FP.music.{songFor, layersFor, tempoFor, filterFor, grazeDuck} (purs, testés), FP.music.update(state, events, backend),
+// Expose  : FP.music.{songFor (variante de jeu selon la pousse), layersFor, tempoFor, filterFor, grazeDuck} (purs, testés), FP.music.update(state, events, backend),
 //           FP.music.MUSIC_GAIN.
 (function () {
   'use strict';
@@ -16,7 +16,8 @@
     if (!state || state.mode === 'splash') return { song: null, gain: 0 };   // le son n'est pas encore débloqué
     if (state.mode === 'menu') return { song: 'title', gain: 1 };
     if (state.mode === 'over') return FP.certificate && FP.certificate.canRestart(state) ? { song: 'title', gain: .5 } : { song: null, gain: 0 };
-    return { song: 'game', gain: 1 };
+    // Une variante de la musique de jeu par pousse, en boucle : la nouvelle tige démarre sur sa propre progression.
+    return { song: 'game' + ((Math.max(1, state.plant.stemCount) - 1) % FP.songs.gameVariants.length), gain: 1 };
   }
 
   // Frôlement le plus fort en cours (0 à 1).
@@ -53,9 +54,9 @@
     const m = memoFor(backend), p = m.player, now = backend.now(), want = songFor(state);
     if (want.song !== p.current()) {
       if (!want.song) p.stop(OUT_FADE);
-      else p.play(want.song, { fade: want.song === 'title' ? TITLE_FADE : 0, gain: want.gain });
+      else p.play(want.song, { fade: want.song === 'title' ? TITLE_FADE : 0, gain: want.gain, bpm: want.song === 'title' ? 0 : tempoFor(state) });
     }
-    if (p.current() === 'game') { p.setTempo(tempoFor(state)); p.setLayers(layersFor(state)); }
+    if (p.current() && p.current().startsWith('game')) { p.setTempo(tempoFor(state)); p.setLayers(layersFor(state)); }
     for (const e of events || []) {
       if (e.type === 'death') m.duckUntil = Math.max(m.duckUntil, now + DEATH_TIME);
       if (e.type === 'blossom') m.duckUntil = Math.max(m.duckUntil, now + BLOSSOM_TIME);

@@ -28,7 +28,7 @@
     function play(songName, opts = {}) {
       name = songName; song = FP.songs[songName] || null;
       if (!song) return;
-      bpm = pending || song.bpm; pending = null;
+      bpm = opts.bpm || pending || song.bpm; pending = null;   // opts.bpm : repartir au tempo acquis (variante suivante)
       anchorTime = backend.now(); anchorBeat = 0; next = 0; swing = song.swing || 0;
       if (opts.fade) { backend.setGain('song', 0, 0); backend.setGain('song', opts.gain === undefined ? 1 : opts.gain, opts.fade); }
       else backend.setGain('song', opts.gain === undefined ? 1 : opts.gain, 0);
