@@ -41,7 +41,7 @@
   // Héros (tête-bourgeon) et ses visages.
   const hero = {
     outline: '#141c0c', skin: '#7fb04a', skinShade: '#5a8a34', skinLight: '#a8d066', toxic: '#9bb84a', toxicShade: '#6e8a2e',
-    eye: '#f4ecd8', pupil: '#140c08', mouth: '#5a1e1e', teeth: '#f4ecd8', tongue: '#e0606a', blush: '#e07a7a', sweat: '#7ac8f0', brow: '#1e2a12'
+    eye: '#f4ecd8', pupil: '#140c08', mouth: '#5a1e1e', teeth: '#f4ecd8', tongue: '#e0606a', sweat: '#7ac8f0', brow: '#1e2a12'
   };
 
   // Personnages des pousses (v4.4.0, render/cast*.js) : accessoires et mutations. Aucun violet de danger.
