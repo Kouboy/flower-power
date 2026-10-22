@@ -10,7 +10,8 @@
   const HEIGHT = 7, INK = '#1a0a12';
   const COLORS = { cream: '#fff6c8', eco: '#cfff78', gold: '#ffd166', pink: '#ff5fa0', danger: '#ffb08a' };
 
-  // Glyphes : 7 rangées de même longueur (1 à 5 colonnes ; Ɇ en 6, ™ en 7), « # » = pixel plein.
+  // Glyphes : 7 rangées de même longueur (1 à 5 colonnes ; Ɇ en 6, ™ et © en 7), « # » = pixel plein. Une capitale accentuée
+  // a 9 rangées : les 2 premières (l'accent) dépassent au-dessus de la ligne des capitales.
   const G = {
     A: ['.###.', '#...#', '#...#', '#####', '#...#', '#...#', '#...#'],
     B: ['####.', '#...#', '#...#', '####.', '#...#', '#...#', '####.'],
@@ -65,25 +66,20 @@
     '/': ['..#', '..#', '.#.', '.#.', '.#.', '#..', '#..'],
     '(': ['.#', '#.', '#.', '#.', '#.', '#.', '.#'],
     ')': ['#.', '.#', '.#', '.#', '.#', '.#', '#.'],
-    '©': ['.###.', '#...#', '#.###', '#.#..', '#.###', '#...#', '.###.'],
+    '©': ['..###..', '.#...#.', '#..##.#', '#.#...#', '#..##.#', '.#...#.', '..###..'],
     ' ': ['...', '...', '...', '...', '...', '...', '...'],
     ' ': ['..', '..', '..', '..', '..', '..', '..'],
     ' ': ['..', '..', '..', '..', '..', '..', '..']
   };
 
-  // Lettres accentuées : la lettre de base réduite à 5 rangées, sous 2 rangées d'accent (Ç : cédille dessous).
-  const SMALL = {
-    A: ['.###.', '#...#', '#####', '#...#', '#...#'], E: ['#####', '#....', '####.', '#....', '#####'],
-    I: ['###', '.#.', '.#.', '.#.', '###'], O: ['.###.', '#...#', '#...#', '#...#', '.###.'],
-    U: ['#...#', '#...#', '#...#', '#...#', '.###.'], C: ['.###.', '#....', '#....', '#....', '.###.']
-  };
+  // Lettres accentuées : la capitale entière, sous 2 rangées d'accent qui dépassent (Ç : cédille sur les 2 dernières rangées).
   const ACCENT = { grave: ['.#...', '..#..'], acute: ['...#.', '..#..'], circ: ['..#..', '.#.#.'], trema: ['.#.#.', '.....'] };
   const ACCENT3 = { circ: ['.#.', '#.#'], trema: ['#.#', '...'] };
   for (const [ch, base, acc] of [['À', 'A', 'grave'], ['Â', 'A', 'circ'], ['É', 'E', 'acute'], ['È', 'E', 'grave'], ['Ê', 'E', 'circ'],
     ['Ë', 'E', 'trema'], ['Î', 'I', 'circ'], ['Ï', 'I', 'trema'], ['Ô', 'O', 'circ'], ['Ù', 'U', 'grave'], ['Û', 'U', 'circ'], ['Ü', 'U', 'trema']]) {
-    G[ch] = [...(base === 'I' ? ACCENT3 : ACCENT)[acc], ...SMALL[base]];
+    G[ch] = [...(base === 'I' ? ACCENT3 : ACCENT)[acc], ...G[base]];
   }
-  G['Ç'] = [...SMALL.C, '..#..', '.##..'];
+  G['Ç'] = ['.###.', '#...#', '#....', '#....', '.###.', '..#..', '.##..'];
 
   const upper = (s) => String(s).toLocaleUpperCase('fr-FR');
   const glyph = (ch) => G[ch] || G['?'];
@@ -112,7 +108,7 @@
     const key = ch + '|' + color + '|' + s + '|' + outline;
     let c = cache.get(key);
     if (c) return c;
-    const rows = glyph(ch), w = rows[0].length * s, h = HEIGHT * s;
+    const rows = glyph(ch), w = rows[0].length * s, h = rows.length * s;
     c = document.createElement('canvas');
     c.width = w + 3; c.height = h + 3;
     const g = c.getContext('2d');
@@ -134,7 +130,7 @@
     const cy = Math.round(y);
     for (const ch of upper(text)) {
       const k = G[ch] ? ch : '?';
-      g.drawImage(rendered(k, color, s, outline), cx - 1, cy - 1);
+      g.drawImage(rendered(k, color, s, outline), cx - 1, cy - 1 - (glyph(k).length - HEIGHT) * s);   // l'accent dépasse au-dessus
       cx += (glyph(k)[0].length + 1) * s;
     }
     return width;

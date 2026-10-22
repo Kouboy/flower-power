@@ -1,11 +1,18 @@
-// ui/menu.js — écran titre et démarrage d'une partie.
-// Lit     : l'élément #menu, le clavier (Espace / Entrée → FP.input.press en partie), FP.view (via createRun), FP.level.startRun, FP.plant.launch.
-// Écrit   : FP.state.current (nouveau run), state.mode, state.events (runStart) ; à chaque redimensionnement, la taille de vue du run.
+// ui/menu.js — démarrage d'une partie depuis l'écran titre (dessiné par ui/title.js) ou la fin de partie.
+// Lit     : le clavier (Espace / Entrée → FP.input.press en partie), FP.view (via createRun), FP.level.startRun, FP.plant.launch.
+// Écrit   : FP.state.current (nouveau run), state.mode, state.events (runStart), state.camera.y (titre : tout en haut, sur le ciel) ;
+//           à chaque redimensionnement, la taille de vue du run.
 // Expose  : rien.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
-  const menu = document.getElementById('menu');
+
+  // Run du titre : la caméra montre le ciel et la pelouse.
+  function titleRun() {
+    const state = FP.state.createRun();
+    state.camera.y = 0;
+    return state;
+  }
 
   function startRun() {
     const state = FP.state.createRun();
@@ -13,7 +20,6 @@
     state.events.push({ type: 'runStart' });
     FP.plant.launch(state);
     FP.state.current = state;
-    menu.style.display = 'none';
   }
 
   window.addEventListener('pointerdown', (e) => {
@@ -38,9 +44,9 @@
   // en partie on garde le niveau et on adapte seulement la hauteur visible.
   window.addEventListener('resize', () => {
     const s = FP.state.current;
-    if (!s || s.mode === 'menu') FP.state.current = FP.state.createRun();
+    if (!s || s.mode === 'menu') FP.state.current = titleRun();
     else FP.state.applyView(s, FP.view);
   }, { passive: true });
 
-  FP.state.current = FP.state.createRun();
+  FP.state.current = titleRun();
 })();
