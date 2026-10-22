@@ -1,5 +1,5 @@
 // play/plant.js — croissance et pilotage de la pousse.
-// Lit     : state.input, state.time, state.rng, state.score.flowers, state.world.{width,height,viewH}, state.plant.corruption, FP.config.plant.
+// Lit     : state.input, state.time, state.rng, FP.config.cast, state.score.flowers, state.world.{width,height,viewH}, state.plant.corruption, FP.config.plant.
 // Écrit   : state.plant, state.mode (lancement), state.camera.{y,shake}, state.events (stemStart, growthTick) ;
 //           remise à zéro par pousse de state.power.{shield,shieldGrace} et state.score.flowerBonus.
 // Expose  : FP.plant.prepare(state), FP.plant.launch(state), FP.plant.speed(state), FP.plant.update(state, dt).
@@ -23,6 +23,15 @@
     state.camera.y = Math.max(0, w.height - w.viewH);
   }
 
+  // Personnage suivant de la pioche ; pioche vide → les 16 remélangés (Fisher-Yates, générateur propre à la pioche).
+  function nextCharacter(p) {
+    if (!p.cast.length) {
+      p.cast = FP.config.cast.ids.slice();
+      for (let i = p.cast.length - 1; i > 0; i--) { const j = Math.floor(p.castRng.next() * (i + 1)); [p.cast[i], p.cast[j]] = [p.cast[j], p.cast[i]]; }
+    }
+    return p.cast.shift();
+  }
+
   function launch(state) {
     const p = state.plant, cfg = FP.config.plant;
     prepare(state);
@@ -31,6 +40,7 @@
     p.trail = [{ x: p.tip.x, y: p.tip.y }];
     p.guide = { x: p.tip.x, y: p.tip.y - cfg.idleLookAhead };
     p.stemCount += 1;
+    p.character = nextCharacter(p);
     state.mode = 'playing';
     state.events.push({ type: 'stemStart', n: p.stemCount });
   }

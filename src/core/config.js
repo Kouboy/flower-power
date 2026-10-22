@@ -175,6 +175,13 @@
     shield: { grace: .48, back: 26, edge: 14, shake: .16 },
 
     // Parterre (v3 : bloom, flowerPalette) : 1 + pollen fleurs par éclosion, qui restent tout le run.
+    // Casting des pousses (v4.4.0) : un personnage par pousse, tiré sans remise ; dessins dans render/cast*.js.
+    cast: {
+      ids: ['hippie', 'lapin', 'cyclope', 'binoclard', 'langue', 'antennes', 'punk', 'pendouille',
+        'depareille', 'unedent', 'patate', 'gourou', 'champi', 'coquille', 'gobemouche', 'groucho'],
+      salt: 0x9e3779b9   // graine de la pioche = graine de la partie ^ salt : jamais state.rng
+    },
+
     garden: {
       spreadBase: 14, spreadPerBonus: 10, spreadMax: 54, jitter: 4, edge: 18, extraSize: [.78, .96], tilt: .22,
       growRate: 2.5, bakedAge: 1.05, bakedSize: .94,

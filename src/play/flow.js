@@ -33,7 +33,8 @@
       state.garden.flowers.push({
         x: FP.math.clamp(state.plant.tip.x + offset, g.edge, W - g.edge),
         size: 0, maxSize: i === 0 ? 1 : rng.range(g.extraSize[0], g.extraSize[1]), age: -FP.config.flow.hatchDelay,   // pousse quand la motte s'est fendue
-        palette: g.palettes[Math.floor(rng.next() * g.palettes.length)], tilt: rng.range(-g.tilt, g.tilt)
+        palette: g.palettes[Math.floor(rng.next() * g.palettes.length)], tilt: rng.range(-g.tilt, g.tilt),
+        character: state.plant.character   // clones de la pousse
       });
     }
   }
