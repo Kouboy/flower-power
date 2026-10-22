@@ -7,7 +7,7 @@ Une entrée par version (voir `AGENTS.md`).
 - chaque pousse a son personnage : 16 têtes débiles et mutantes (hippie défoncé, dents de lapin, cyclope, binoclard, langue tirée, mutant à antennes, punk à crête, œil qui pendouille, yeux dépareillés, sourire à une dent, gros nez patate, gourou moustachu, champi sur le crâne, coquille sur la tête, gobe-mouche, lunettes Groucho), tirés sans doublon tant que les 16 ne sont pas passés ;
 - gros yeux globuleux et grandes bouches : les humeurs de danger (frôlement, alerte, toxique, mort) restent lisibles par-dessus chaque personnage ;
 - la fleur garde le personnage de sa pousse, en plus abruti ; les fleurs bonus d'une éclosion sont ses clones ;
-- banc : 310 tests.
+- banc : 313 tests.
 
 ## v4.3.1 — Nappes toxiques à la distance
 

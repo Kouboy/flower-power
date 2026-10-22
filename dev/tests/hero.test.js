@@ -50,3 +50,16 @@ FP.test('hero: les huit premiers personnages sont définis', () => {
 FP.test('hero: le casting est complet', () => {
   for (const id of FP.config.cast.ids) { const d = FP.cast.get(id); FP.assert(d && d.id === id && typeof d.flower === 'function', id); }
 });
+FP.test('hero: chez les 16, les pupilles tournent juste avant la brûlure', () => {
+  for (const id of FP.config.cast.ids) {
+    const frames = new Set([0, .13, .26, .39].map(t => pixelsOf(paintPx(id, 'toxic', { dizzy: true, t }))));
+    FP.assert(frames.size >= 2, id);
+  }
+});
+FP.test('hero: chez les 16, les dents serrées du frôlement restent visibles', () => {
+  const teeth = FP.palette.hero.teeth;
+  for (const id of FP.config.cast.ids) {
+    const c = paintPx(id, 'graze', {});
+    FP.assert([...c.px.entries()].some(([k, col]) => col === teeth && +k.split(',')[1] >= 2), id);
+  }
+});

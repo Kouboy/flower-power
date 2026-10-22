@@ -1,10 +1,10 @@
 // render/plant.js — tige, anciennes tiges, graine endormie, héros et guide du pointeur, en pixels d'art.
 // Lit     : state.plant, state.input, state.mode, state.time, state.world.viewH, state.camera.y, FP.config.plant.control, FP.plant.speed,
-//           FP.px, FP.palette.{stem,seed,strataTone}, FP.soil.surfaceTop, FP.geom.{clampUpAngle,distPointToSegment}, FP.hero, FP.powerupsRender.drawShield.
+//           FP.px, FP.palette.{stem,seed,strataTone}, FP.soil.surfaceTop, FP.geom.{clampUpAngle,distPointToSegment}, FP.hero, FP.cast, FP.powerupsRender.drawShield.
 // Écrit   : rien (le canvas uniquement).
 // Expose  : FP.plantRender.drawOld(actx, state) (anciennes tiges, sous les obstacles), FP.plantRender.draw(actx, state) (repère d'art, caméra appliquée ici), FP.plantRender.drawFinger(g, state) (toile d'interface),
 //           FP.plantRender.buried(x, y, old) — portion de tige recouverte de terre, FP.plantRender.haloLevel(d, old) — densité
-//           du halo tramé autour de la tige et de la graine, FP.plantRender.drill(state) — foreuse devant la tête (pures, testées).
+//           du halo tramé autour de la tige et de la graine, FP.plantRender.drill(state) — foreuse devant la tête, FP.plantRender.drillStart(id) — où elle commence (pures, testées).
 // Porté de la v3.43.16 (drawTrail, drawPlant, drawPointer), redessiné en pixels pour la v4.1.0.
 (function () {
   'use strict';
@@ -142,14 +142,17 @@
 
   // Mèche devant la tête : un cône plein qui se resserre vers l'avant, rayé de bandes diagonales qui défilent
   // avec la rotation (vis de foreuse), contour sombre. Quelques points de vitesse traînent sur les côtés.
+  // Distance du centre de la tête où la foreuse commence : au-dessus de la pointe, ou des accessoires qui la remplacent.
+  const drillStart = (id) => ((FP.cast.get(id) || {}).tip === false ? 12 : 9);
+
   function drawDrill(g, state, hx, hy) {
     const d = drill(state);
     if (!d.active) return;
     const { px } = FP, p = state.plant, ux = p.dir.x, uy = p.dir.y, nx = -uy, ny = ux;
-    const [light, mid] = DRILL_TONES, L = d.length + 2, phase = d.angle / Math.PI * 2;
+    const [light, mid] = DRILL_TONES, L = d.length + 2, phase = d.angle / Math.PI * 2, o = drillStart(p.character);
     for (let t = 0; t <= L; t++) {
       const w = Math.round(DRILL.radius * (1 - t / (L + 1)));
-      const cx = hx + ux * (4 + t), cy = hy + uy * (4 + t);
+      const cx = hx + ux * (o + t), cy = hy + uy * (o + t);
       for (let s = -w - 1; s <= w + 1; s++) {
         const x = Math.round(cx + nx * s), y = Math.round(cy + ny * s);
         if (Math.abs(s) > w) { px.rect(g, x, y, 1, 1, HALO); continue; }                 // contour du cône
@@ -157,7 +160,7 @@
         px.rect(g, x, y, 1, 1, band === 0 ? light : (band === 1 ? mid : HALO));
       }
     }
-    px.rect(g, Math.round(hx + ux * (5 + L)), Math.round(hy + uy * (5 + L)), 1, 1, HALO);    // pointe
+    px.rect(g, Math.round(hx + ux * (o + 1 + L)), Math.round(hy + uy * (o + 1 + L)), 1, 1, HALO);    // pointe
     if (d.k > DRILL.streak) for (const side of [-1, 1]) for (let i = 0; i < 3; i++) {
       const o = 8 + (i % 2), back = 2 + i * 3 + ((Math.floor(state.time * 24) + i) % 2);
       px.rect(g, Math.round(hx + nx * side * o - ux * back), Math.round(hy + ny * side * o - uy * back), 1, 1, light);
@@ -232,5 +235,5 @@
     }
   }
 
-  FP.plantRender = { drawOld, draw, drawFinger, buried, haloLevel, drill };
+  FP.plantRender = { drawOld, draw, drawFinger, buried, haloLevel, drill, drillStart };
 })();

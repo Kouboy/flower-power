@@ -127,9 +127,13 @@
       if (mood === 'alarm') { F.pupil(g, ax + lx, ay + y, 1, 1); F.pupil(g, ax + dx, ay + dy, 1, 1); return; }
       if (mood === 'graze') { R(lx - 2, y, 5, 2, h.outline); F.pupil(g, ax + dx - 1, ay + dy); return; }
       if (o.blink) { F.lid(g, ax + lx, ay + y, 4, o.skin); F.lid(g, ax + dx, ay + dy, 4, o.skin); return; }
+      if (mood === 'toxic') {                                      // vertige : les deux pupilles tournent, en sens contraire
+        const k = o.dizzy ? Math.floor((o.t || 0) * 8) % 4 : 0, p = [[0, 0], [1, 0], [1, 1], [0, 1]][k];
+        F.pupil(g, ax + lx - 2 + 2 * p[0], ay + y - 2 + 2 * p[1]); F.pupil(g, ax + dx - 2 * p[0], ay + dy - 2 * p[1] + 1);
+        return;
+      }
       F.pupil(g, ax + lx, ay + y); F.pupil(g, ax + dx, ay + dy + 1);
-      if (mood === 'toxic') F.pupil(g, ax + lx - 2, ay + y - 2);
-      else if (calmish(mood, o) && mood !== 'calm') F.lid(g, ax + lx, ay + y, mood === 'shield' ? 2 : 1, o.skin);
+      if (calmish(mood, o) && mood !== 'calm') F.lid(g, ax + lx, ay + y, mood === 'shield' ? 2 : 1, o.skin);
     },
     mouth(g, ax, ay) { F.mouth(g, ax, ay, 'focus'); },             // l'air ahuri : bouche en trait
     flower(g, ax, ay) {

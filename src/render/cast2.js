@@ -17,7 +17,10 @@
       if (mood === 'dead') { F.cross(g, ax - 3, ay + by); R(4, sy, 1, 1, h.pupil); return; }
       if (mood === 'alarm') { F.pupil(g, ax - 3, ay + by, 1, 1); return; }
       if (o.blink) { F.lid(g, ax - 3, ay + by, 6, o.skin, 3); R(3, sy, 3, 1, h.outline); return; }
-      if (mood === 'toxic') { F.pupil(g, ax - 2, ay + by); R(4, sy - 1, 1, 1, h.pupil); return; }
+      if (mood === 'toxic') {                                      // vertige : la grosse pupille tourne
+        const k = o.dizzy ? Math.floor((o.t || 0) * 8) % 4 : 0, p = [[-2, -2], [0, -2], [0, 0], [-2, 0]][k];
+        F.pupil(g, ax - 3 + p[0], ay + by + p[1]); R(4, sy - 1, 1, 1, h.pupil); return;
+      }
       F.pupil(g, ax - 5, ay + by - 2); R(4, sy + 1, 1, 1, h.pupil);
       if (mood === 'focus' || mood === 'shield') F.lid(g, ax - 3, ay + by, mood === 'focus' ? 1 : 3, o.skin, 3);
     },
@@ -106,11 +109,14 @@
     },
     front(g, ax, ay, mood) {
       const { R, D } = pen(g, ax, ay), h = H(), K = h.outline;
-      const by = mood === 'alarm' ? F.EY - 6 : (mood === 'focus' || mood === 'graze' ? F.EY - 3 : F.EY - 4);   // les sourcils parlent
+      const by = mood === 'alarm' ? F.EY - 6 : (mood === 'focus' ? F.EY - 3 : F.EY - 4);   // les sourcils parlent
       R(-7, by, 6, 2, K); R(2, by, 6, 2, K);
       D(0, 1, 2, K); D(0, 1, 1, C().pink);
       R(-4, 3, 9, 2, K); R(-5, 4, 1, 1, K); R(5, 4, 1, 1, K);
+      // La moustache cache la bouche commune : le danger se redit dessous.
       if (mood === 'alarm') R(-1, 5, 3, 2, h.mouth); else if (mood === 'dead') R(-1, 5, 3, 1, h.mouth);
+      else if (mood === 'graze') { R(-3, 5, 6, 2, K); R(-2, 5, 4, 1, h.teeth); R(0, 5, 1, 1, K); }
+      else if (mood === 'toxic') { pen(g, ax, ay).P([[-3, 6], [-2, 5], [-1, 6], [0, 5], [1, 6], [2, 5]], K); R(0, 6, 2, 2, h.tongue); }
     },
     flower(g, ax, ay) {
       const { R, D } = pen(g, ax, ay), h = H(), K = h.outline;
