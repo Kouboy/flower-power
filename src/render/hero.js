@@ -1,8 +1,9 @@
 // render/hero.js — le héros : une tête-bourgeon à visage, dont l'expression raconte le danger.
 // Lit     : state.mode, state.time, state.events (death), state.plant.toxicTimer, state.graze.active, state.query.{grazes,danger},
-//           state.input.down, state.power.shield, FP.config.toxic.burnAt, FP.px, FP.palette.hero.
+//           state.input.down, state.power.shield, state.plant.character, FP.config.toxic.burnAt, FP.px, FP.palette.hero, FP.faces, FP.cast.
 // Écrit   : rien dans l'état (mémoire d'humeur interne, remise à zéro à chaque nouvelle partie).
 // Expose  : FP.hero.mood(state, memory) → memory (pur) ; FP.hero.draw(actx, state, ax, ay, dir) ;
+//           FP.hero.paint(actx, ax, ay, id, mood, opts) — une tête de personnage seule (testée) ;
 //           FP.hero.face(actx, ax, ay, name, opts) — un visage seul, réutilisé par les fleurs.
 // Les visages restent droits (lisibles) : seul le regard suit la pousse. Ne touche pas au DOM : testable sous Node.
 (function () {
@@ -97,16 +98,29 @@
     if (opts.sweat) { px.rect(g, ax + 4, ay - 4, 1, 1, c.sweat); px.rect(g, ax + 4, ay - 3, 2, 2, c.sweat); }
   }
 
-  // Tête-bourgeon : contour, chair, reflet, pointe, deux petites feuilles basses. Teinte verdâtre dans le toxique.
-  function head(g, ax, ay, toxic) {
+  // Tête-bourgeon (15 px) : feuilles basses, pointe, contour, chair, ombre, reflet. Teinte verdâtre dans le toxique.
+  function head(g, ax, ay, toxic, tip) {
     const { px } = FP, c = FP.palette.hero, skin = toxic ? c.toxic : c.skin, shade = toxic ? c.toxicShade : c.skinShade;
-    px.disc(g, ax - 6, ay + 4, 2, c.outline); px.disc(g, ax + 6, ay + 4, 2, c.outline);
-    px.disc(g, ax - 6, ay + 4, 1, shade); px.disc(g, ax + 6, ay + 4, 1, shade);
-    px.rect(g, ax - 1, ay - 8, 2, 2, c.outline); px.rect(g, ax, ay - 7, 1, 1, skin);
-    px.disc(g, ax, ay, 6, c.outline);
-    px.disc(g, ax, ay, 5, skin);
-    px.rect(g, ax - 4, ay + 3, 9, 2, shade); px.rect(g, ax - 2, ay + 5, 5, 1, shade);
-    px.rect(g, ax - 3, ay - 4, 2, 1, c.skinLight); px.rect(g, ax - 4, ay - 3, 1, 2, c.skinLight);
+    px.disc(g, ax - 7, ay + 5, 2, c.outline); px.disc(g, ax + 7, ay + 5, 2, c.outline);
+    px.disc(g, ax - 7, ay + 5, 1, shade); px.disc(g, ax + 7, ay + 5, 1, shade);
+    if (tip) { px.rect(g, ax - 1, ay - 9, 2, 2, c.outline); px.rect(g, ax, ay - 8, 1, 1, skin); }
+    px.disc(g, ax, ay, 7, c.outline);
+    px.disc(g, ax, ay, 6, skin);
+    px.rect(g, ax - 5, ay + 4, 11, 2, shade); px.rect(g, ax - 3, ay + 6, 7, 1, shade);
+    px.rect(g, ax - 5, ay + 1, 1, 2, c.skinLight);
+  }
+
+  // Une tête de personnage dans une humeur : tête, couches du personnage, yeux et bouche (communs sauf exception), sueur.
+  // o : { gaze: {x, y}, blink, sweat, dizzy, t, cause }. La bouche du personnage ne sort qu'au calme et en concentration.
+  function paint(g, ax, ay, id, mood, o = {}) {
+    const def = FP.cast.get(id) || {}, toxic = mood === 'toxic', c = FP.palette.hero;
+    const opts = { ...o, skin: toxic ? c.toxic : c.skin };
+    head(g, ax, ay, toxic, def.tip !== false);
+    if (def.back) def.back(g, ax, ay, mood, opts);
+    (def.eyes || FP.faces.eyes)(g, ax, ay, mood, opts);
+    if (def.mouth && (mood === 'calm' || mood === 'focus')) def.mouth(g, ax, ay, mood, opts); else FP.faces.mouth(g, ax, ay, mood, opts);
+    if (def.front) def.front(g, ax, ay, mood, opts);
+    if (o.sweat) FP.faces.sweat(g, ax, ay);
   }
 
   let owner = null, memory = null;
@@ -114,9 +128,8 @@
   function draw(g, state, ax, ay, dir) {
     if (state !== owner) { owner = state; memory = null; }
     memory = mood(state, memory);
-    head(g, ax, ay, memory.name === 'toxic');
-    face(g, ax, ay, memory.name, { gaze: dir, blink: memory.name !== 'dead' && blinking(state.time), sweat: memory.sweat, dizzy: memory.dizzy, t: state.time, cause: memory.cause });
+    paint(g, ax, ay, state.plant.character, memory.name, { gaze: dir, blink: memory.name !== 'dead' && blinking(state.time), sweat: memory.sweat, dizzy: memory.dizzy, t: state.time, cause: memory.cause });
   }
 
-  FP.hero = { mood, draw, face };
+  FP.hero = { mood, draw, paint, face };
 })();
