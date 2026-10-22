@@ -1,9 +1,10 @@
 // render/plant.js — tige, anciennes tiges, graine endormie, héros et guide du pointeur, en pixels d'art.
 // Lit     : state.plant, state.input, state.mode, state.time, state.world.viewH, state.camera.y, FP.config.plant.control,
-//           FP.px, FP.palette.{stem,seed,strataTone}, FP.soil.surfaceTop, FP.geom.clampUpAngle, FP.hero, FP.powerupsRender.drawShield.
+//           FP.px, FP.palette.{stem,seed,strataTone}, FP.soil.surfaceTop, FP.geom.{clampUpAngle,distPointToSegment}, FP.hero, FP.powerupsRender.drawShield.
 // Écrit   : rien (le canvas uniquement).
 // Expose  : FP.plantRender.draw(actx, state) (repère d'art, caméra appliquée ici), FP.plantRender.drawFinger(ctx, state) (couche nette),
-//           FP.plantRender.buried(x, y, old) — portion de tige recouverte de terre (pure, testée).
+//           FP.plantRender.buried(x, y, old) — portion de tige recouverte de terre, FP.plantRender.haloLevel(d, old) — densité
+//           du halo tramé autour de la tige et de la graine (pures, testées).
 // Porté de la v3.43.16 (drawTrail, drawPlant, drawPointer), redessiné en pixels pour la v4.1.0.
 (function () {
   'use strict';
@@ -15,6 +16,31 @@
   // --- Enfouissement : la tige fouit, la terre la recouvre par endroits ---------------------------
 
   const ROOT = '#7a6248', MYCELIUM = '#d8cfbe';
+  const HALO = '#0a0605', HALO_BAND = 3;   // même noir tramé que le halo des obstacles et le grain de la terre
+  const BAYER = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]];
+
+  // Densité (niveau de Bayer, 0 à 16) du halo à d pixels d'art du bord de la tige : dense contre la tige, nul au bord de la bande.
+  function haloLevel(d, old) {
+    if (d >= HALO_BAND) return 0;
+    return Math.round(16 * (old ? .3 : .55) * (1 - Math.max(0, d) / HALO_BAND));
+  }
+
+  // Halo tramé autour d'un segment (pixels d'art) ; motif ancré sur la grille du monde (y + oy) : il ne scintille pas.
+  function haloAround(g, q, oy, old, half) {
+    const [ax, ay] = q.a, [bx, by] = q.b, len = Math.max(1, Math.hypot(bx - ax, by - ay)), nx = -(by - ay) / len, ny = (bx - ax) / len;
+    // On ne parcourt que la bande : le long du segment, puis de part et d'autre, pixel par pixel.
+    for (let t = 0; t <= len; t++) {
+      const cx = ax + (bx - ax) * t / len, cy = ay + (by - ay) * t / len;
+      for (let k = 0; k < HALO_BAND; k++) {
+        const lv = haloLevel(k, old);
+        for (const side of [-1, 1]) {
+          const x = Math.round(cx + nx * side * (half + k + .5)), y = Math.round(cy + ny * side * (half + k + .5));
+          if (BAYER[(y + oy) & 3][x & 3] < lv) FP.px.rect(g, x, y, 1, 1, HALO);
+        }
+      }
+    }
+  }
+
   const CELL = 10;                         // taille (px monde) des portions recouvertes ou non
 
   // Empreinte stable (finaliseur de MurmurHash3) de deux entiers : ne dépend que de la position, pas de l'ordre des points.
@@ -55,6 +81,8 @@
       const d = depthOf(world, q.my), ax = px.toArt(q.mx), ay = px.toArt(q.my) - oy;
       for (const side of [-1, 1]) for (let k = 3; k <= 4; k++) px.rect(g, ax + Math.round(q.nx * k * side), ay + Math.round(q.ny * k * side), 1, 1, palette.strataTone(d, k === 3 ? 0 : 3));
     }
+    // Halo de terre tassée autour de la tige, comme autour des obstacles.
+    for (const q of seg) haloAround(g, q, oy, !current, current ? 2 : 1.5);
     // Racines fines qui partent de la tige dans la terre.
     for (const q of seg) {
       const h = cellHash(q.mx, q.my, 2);
@@ -102,6 +130,11 @@
   // Graine du fond : elle dort en attendant le lancement.
   function drawSeed(g, seed, oy) {
     const { px } = FP, c = FP.palette.seed, ax = px.toArt(seed.x), ay = px.toArt(seed.y) - oy;
+    // Halo tramé autour de la graine, le même que celui des obstacles et de la tige.
+    for (let y = -11; y <= 11; y++) for (let x = -11; x <= 11; x++) {
+      const lv = haloLevel(Math.hypot(x, y) - 7.5, false);
+      if (lv && BAYER[(ay + y + oy) & 3][(ax + x) & 3] < lv) px.rect(g, ax + x, ay + y, 1, 1, HALO);
+    }
     px.disc(g, ax, ay, 7, c.outline);
     px.disc(g, ax, ay, 6, c.body);
     px.rect(g, ax + 1, ay - 3, 4, 8, c.shade);
@@ -152,5 +185,5 @@
     ctx.restore();
   }
 
-  FP.plantRender = { draw, drawFinger, buried };
+  FP.plantRender = { draw, drawFinger, buried, haloLevel };
 })();

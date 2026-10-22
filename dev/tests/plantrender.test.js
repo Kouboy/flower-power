@@ -12,3 +12,9 @@ FP.test('plantRender: les mottes sont réparties, pas groupées', () => {
     for (let i = 0; i + 12 <= flags.length; i++) { const n = flags.slice(i, i + 12).reduce((a, b) => a + b, 0); FP.assert(n <= 6, 'x=' + x + ' : ' + n + ' segments recouverts sur 12'); }
   }
 });
+FP.test('plantRender: le halo de la tige s’éclaircit avec la distance et s’arrête au bord de la bande', () => {
+  const lv = (d, old) => FP.plantRender.haloLevel(d, old);
+  for (let d = 0; d < 3; d += .5) FP.assert(lv(d, false) >= lv(d + .5, false), 'd=' + d);
+  FP.assert(lv(0, false) > 0); FP.assertEqual(lv(3, false), 0); FP.assertEqual(lv(10, false), 0);
+  FP.assert(lv(0, true) < lv(0, false), 'les anciennes tiges plus clairsemées');
+});
