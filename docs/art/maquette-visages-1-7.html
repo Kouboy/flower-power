@@ -1,0 +1,134 @@
+<style>
+  .grid { display: grid; grid-template-columns: 140px repeat(7, 1fr); gap: 6px 8px; align-items: center; max-width: 1100px; }
+  .grid .h { font-weight: 600; font-size: 13px; text-align: center; opacity: .8; }
+  .grid .name { font-size: 13px; line-height: 1.3; }
+  .grid .name b { display: block; font-size: 14px; }
+  .grid canvas { width: 100px; height: 100px; image-rendering: pixelated; background: #2a1e14; border-radius: 6px; justify-self: center; }
+  .grid .flower canvas { background: #3c5a2a; }
+  .real { display: flex; gap: 18px; align-items: center; margin: 8px 0 18px; }
+  .real canvas { image-rendering: pixelated; background: #2a1e14; border-radius: 4px; }
+</style>
+
+<h2>Casting v2 : gros yeux, grandes bouches</h2>
+<p class="subtitle">Yeux globuleux de 5×5 cerclés de noir (ils débordent en haut de la tête), pupilles 2×2, bouches de 6 px de large qui s'ouvrent vraiment. Les traits fixes restent ; l'humeur change yeux et bouche. Ajout de la colonne « frôlement » (yeux plissés, dents serrées).</p>
+<div class="real"><span>Taille réelle (×2 comme en jeu) :</span><canvas id="real" width="230" height="30" style="width:460px;height:60px"></canvas></div>
+
+<div class="grid" id="grid">
+  <div></div><div class="h">calme</div><div class="h">concentré</div><div class="h">frôlement</div><div class="h">alerte</div><div class="h">toxique</div><div class="h">mort</div><div class="h">fleur</div>
+</div>
+
+<script>
+(function () {
+  const C = { outline: '#141c0c', skin: '#7fb04a', skinShade: '#5a8a34', skinLight: '#a8d066', toxic: '#9bb84a', toxicShade: '#6e8a2e',
+    eye: '#f4ecd8', pupil: '#140c08', mouth: '#5a1e1e', teeth: '#f4ecd8', tongue: '#e0606a', brow: '#1e2a12',
+    band: '#e07a3a', bandDot: '#f8d070', red: '#d86a5a', glow: '#d8f050', crest: '#e0508a', crestLight: '#f6a0b8', metal: '#9aa4b0', drool: '#bfe8f8', frame: '#3a2a1a', glass: '#cfe8f0' };
+  const hs = (r, dy) => { let h = 0; while ((h + 1) * (h + 1) + dy * dy <= r * r + r) h++; return h; };
+  let g, ax, ay;
+  const R = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(ax + x, ay + y, w, h); };
+  const D = (x, y, r, c) => { g.fillStyle = c; for (let dy = -r; dy <= r; dy++) { if (dy * dy > r * r + r) continue; const h = hs(r, dy); g.fillRect(ax + x - h, ay + y + dy, 2 * h + 1, 1); } };
+  const P = (pts, c) => { for (const [x, y] of pts) R(x, y, 1, 1, c); };
+  const EY = -3;
+
+  function head(toxic, noTip) {
+    const skin = toxic ? C.toxic : C.skin, shade = toxic ? C.toxicShade : C.skinShade;
+    D(-7, 5, 2, C.outline); D(7, 5, 2, C.outline); D(-7, 5, 1, shade); D(7, 5, 1, shade);
+    if (!noTip) { R(-1, -9, 2, 2, C.outline); R(0, -8, 1, 1, skin); }
+    D(0, 0, 7, C.outline); D(0, 0, 6, skin);
+    R(-5, 4, 11, 2, shade); R(-3, 6, 7, 1, shade);
+    R(-5, 1, 1, 2, C.skinLight);
+  }
+  function flowerHead(pal) {
+    for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3 + .3; D(Math.round(Math.cos(a) * 10), Math.round(Math.sin(a) * 10), 5, C.outline); }
+    for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3 + .3; D(Math.round(Math.cos(a) * 10), Math.round(Math.sin(a) * 10), 4, pal[0]); }
+    D(0, 0, 7, C.outline); D(0, 0, 6, pal[1]);
+  }
+
+  // Un œil globuleux centré en (x, y) : contour r+1, blanc r. Retourne rien ; les pupilles sont posées après.
+  const ball = (x, y, r = 2) => { D(x, y, r + 1, C.outline); D(x, y, r, C.eye); };
+  const pupil = (x, y, w = 2, h = 2) => R(x, y, w, h, C.pupil);
+  const cross = (x, y) => P([[-2, -2], [-1, -1], [0, 0], [1, 1], [2, 2], [2, -2], [1, -1], [-1, 1], [-2, 2]].map(([a, b]) => [x + a, y + b]), C.pupil);
+  // Paupière : couvre le haut de l'œil avec la peau (n rangées), trait de paupière dessous.
+  const lid = (x, y, n, skin) => { for (let i = 0; i < n; i++) { const dy = -2 + i, h = hs(2, dy); R(x - h, y + dy, 2 * h + 1, 1, skin); } const dy = -2 + n, h = hs(2, dy); R(x - h - 1, y + dy, 2 * h + 3, 1, C.outline); };
+
+  // Deux yeux selon l'humeur. o : { stoned, crossEyed }
+  function eyes(m, o = {}) {
+    const skin = m === 'toxic' ? C.toxic : C.skin, xs = [-3, 3];
+    if (m === 'alarm') { for (const x of xs) { ball(x, EY - 1, 3); pupil(x, EY - 1, 1, 1); } return; }
+    if (m === 'graze') { for (const x of xs) { const s = x < 0 ? 1 : -1; for (const k of [0, 1]) P([[x - 2 * s - k * s, EY - 2], [x - s - k * s, EY - 1], [x - k * s, EY], [x - s - k * s, EY + 1], [x - 2 * s - k * s, EY + 2]], C.outline); } return; }
+    for (const x of xs) ball(x, EY);
+    if (m === 'dead') { for (const x of xs) cross(x, EY); return; }
+    if (m === 'toxic') { pupil(-3, EY - 2); pupil(3, EY + 1); return; }
+    if (o.crossEyed) { pupil(-2, EY); pupil(2, EY); return; }
+    pupil(-3, EY); pupil(3, EY);
+    if (o.stoned && m === 'calm') { for (const x of xs) { lid(x, EY, 2, skin); R(x - 2, EY + 1, 1, 1, C.red); R(x + 2, EY + 1, 1, 1, C.red); } }
+    if (m === 'focus') { for (const x of xs) lid(x, EY, 1, skin); R(-6, EY - 4, 3, 1, C.brow); R(-3, EY - 3, 2, 1, C.brow); R(4, EY - 4, 3, 1, C.brow); R(1, EY - 3, 2, 1, C.brow); }
+  }
+  // Grande bouche selon l'humeur (6 px de large, de x −3 à 2).
+  function mouth(m, o = {}) {
+    const M = (x, y, w, h = 1, c = C.mouth) => R(x, y, w, h, c), K = C.outline;
+    if (m === 'dead') { M(-3, 3, 6, 1, K); M(-2, 4, 1, 1, C.tongue); return; }
+    if (m === 'alarm') { M(-2, 2, 4, 4, K); M(-1, 3, 2, 2, C.mouth); M(-1, 4, 2, 1, C.tongue); return; }
+    if (m === 'graze') { M(-4, 2, 8, 3, K); M(-3, 3, 6, 1, C.teeth); P([[-1, 3], [1, 3]], K); return; }
+    if (m === 'toxic') { P([[-4, 3], [-3, 2], [-2, 3], [-1, 2], [0, 3], [1, 2], [2, 3], [3, 2]], K); M(0, 4, 2, 2, C.tongue); return; }
+    if (m === 'focus') { M(-3, 3, 6, 1, K); M(3, 2, 1, 1, K); return; }
+    // calme : grand sourire ouvert
+    M(-4, 2, 1, 1, K); M(3, 2, 1, 1, K); M(-3, 3, 6, 2, K); M(-2, 3, 4, 1, C.mouth); M(-1, 4, 2, 1, C.tongue);
+  }
+  const danger = (m) => m === 'alarm' || m === 'dead' || m === 'graze' || m === 'toxic';
+
+  const glasses = (ofsL = 0) => { const fr = (x, y) => { D(x, y, 3, C.frame); D(x, y, 2, C.eye); }; fr(-3, EY + ofsL); fr(3, EY); R(-1, EY - 1, 3, 1, C.frame); R(-7, EY - 1, 1, 1, C.frame); R(7, EY - 1, 1, 1, C.frame); };
+
+  const CAST = [
+    { name: 'Hippie défoncé', note: 'bandeau, paupières lourdes, yeux injectés', fl: 'fleur : pupilles qui divergent, sourire béat',
+      draw(m) { head(m === 'toxic'); R(-6, -7, 13, 2, C.band); R(-2, -7, 1, 1, C.bandDot); R(6, -5, 1, 3, C.band); R(7, -4, 1, 3, C.band); eyes(m, { stoned: true }); mouth(m); },
+      flower(p) { flowerHead(p); R(-6, -7, 13, 2, C.band); R(6, -5, 1, 3, C.band); ball(-3, EY); ball(3, EY); pupil(-4, EY - 1); pupil(3, EY + 1); lid(-3, EY, 1, p[1]); lid(3, EY, 1, p[1]); mouth('calm'); } },
+    { name: 'Dents de lapin', note: 'deux énormes incisives', fl: 'fleur : incisives + filet de bave',
+      draw(m) { head(m === 'toxic'); eyes(m); if (danger(m) && m !== 'graze') mouth(m); else { R(-3, 2, 6, 1, C.outline); R(-2, 3, 4, 3, C.outline); R(-2, 3, 2, 2, C.teeth); R(1, 3, 2, 2, C.teeth); R(0, 3, 1, 3, C.outline); if (m === 'focus') R(-3, 2, 6, 1, C.outline); } },
+      flower(p) { flowerHead(p); eyes('calm', { crossEyed: true }); R(-3, 2, 6, 1, C.outline); R(-2, 3, 4, 3, C.outline); R(-2, 3, 2, 2, C.teeth); R(1, 3, 2, 2, C.teeth); R(0, 3, 1, 3, C.outline); R(3, 3, 1, 4, C.drool); R(3, 7, 1, 1, C.drool); } },
+    { name: 'Cyclope', note: 'un seul œil énorme', fl: 'fleur : l’œil roule vers le haut + bagues',
+      draw(m) { head(m === 'toxic');
+        if (m === 'graze') P([[-3, EY - 2], [-2, EY - 1], [-1, EY], [0, EY], [1, EY], [2, EY - 1], [3, EY - 2]], C.outline);
+        else { ball(0, EY - 1, m === 'alarm' ? 4 : 3);
+          if (m === 'dead') P([[-2, -6], [-1, -5], [0, -4], [1, -3], [2, -2], [2, -6], [1, -5], [-1, -3], [-2, -2]], C.pupil);
+          else if (m === 'alarm') pupil(0, EY - 1, 1, 1);
+          else if (m === 'toxic') pupil(1, EY - 3);
+          else { pupil(-1, EY - 1, 3, 3); if (m === 'focus') { lid(0, EY - 1, 1, C.skin); R(-3, EY - 5, 7, 1, C.brow); } } }
+        mouth(m); },
+      flower(p) { flowerHead(p); ball(0, EY - 1, 3); pupil(0, EY - 4, 2, 2); R(-3, 2, 6, 3, C.outline); R(-2, 3, 4, 1, C.teeth); P([[-2, 3], [0, 3], [1, 3]], C.metal); R(-2, 4, 4, 1, C.mouth); } },
+    { name: 'Binoclard', note: 'grosses lunettes rondes (les yeux restent visibles dedans)', fl: 'fleur : lunettes de travers, un verre fêlé',
+      draw(m) { head(m === 'toxic'); glasses();
+        if (m === 'dead') { cross(-3, EY); cross(3, EY); } else if (m === 'alarm') { pupil(-3, EY, 1, 1); pupil(3, EY, 1, 1); }
+        else if (m === 'graze') { R(-5, EY, 5, 1, C.outline); R(1, EY, 5, 1, C.outline); } else if (m === 'toxic') { pupil(-4, EY - 2); pupil(3, EY + 1); }
+        else { pupil(-3, EY); pupil(2, EY); if (m === 'focus') { R(-6, EY - 4, 3, 1, C.brow); R(4, EY - 4, 3, 1, C.brow); } }
+        R(-2, EY - 2, 1, 1, '#ffffff'); R(4, EY - 2, 1, 1, '#ffffff'); mouth(m); },
+      flower(p) { flowerHead(p); glasses(1); pupil(-3, EY + 1); pupil(2, EY); P([[2, EY - 2], [3, EY - 1], [4, EY - 1], [5, EY]], C.frame); R(-3, 3, 6, 1, C.outline); R(-1, 4, 3, 2, C.tongue); } },
+    { name: 'Langue tirée', note: 'grande langue qui pend sur le côté', fl: 'fleur : langue jusqu’au menton + bave',
+      draw(m) { head(m === 'toxic'); eyes(m); if (m === 'calm' || m === 'focus') { R(-3, 3, 6, 1, C.outline); R(0, 3, 3, 1, C.mouth); R(0, 4, 3, 2, C.tongue); R(1, 6, 2, 1, C.tongue); R(1, 5, 1, 1, '#b84050'); } else mouth(m); },
+      flower(p) { flowerHead(p); eyes('calm', { crossEyed: true }); R(-3, 2, 6, 2, C.outline); R(-1, 3, 3, 1, C.mouth); R(-1, 4, 3, 4, C.tongue); R(0, 5, 1, 2, '#b84050'); R(-3, 4, 1, 3, C.drool); } },
+    { name: 'Mutant à antennes', note: 'deux antennes qui brillent', fl: 'fleur : trois yeux',
+      draw(m) { head(m === 'toxic', true); R(-4, -10, 1, 4, C.skinShade); R(3, -10, 1, 4, C.skinShade); D(-4, -11, 1, C.glow); D(3, -11, 1, C.glow); eyes(m); mouth(m); },
+      flower(p) { flowerHead(p); ball(-4, EY + 1); ball(4, EY + 1); ball(0, EY - 2); pupil(-4, EY + 1); pupil(3, EY); pupil(0, EY - 3); mouth('calm'); } },
+    { name: 'Punk à crête', note: 'crête rose à la place de la pointe', fl: 'fleur : crête + bagues + strabisme',
+      draw(m) { head(m === 'toxic', true); for (const [x, h] of [[-3, 3], [-2, 4], [-1, 5], [0, 6], [1, 5], [2, 4], [3, 3]]) R(x, -6 - h, 1, h, C.crest); R(0, -12, 1, 2, C.crestLight); R(-1, -10, 1, 2, C.crestLight); eyes(m); mouth(m); },
+      flower(p) { flowerHead(p); for (const [x, h] of [[-3, 3], [-2, 4], [-1, 5], [0, 6], [1, 5], [2, 4], [3, 3]]) R(x, -7 - h, 1, h, C.crest); eyes('calm', { crossEyed: true }); R(-4, 2, 8, 3, C.outline); R(-3, 3, 6, 1, C.teeth); P([[-3, 3], [-1, 3], [1, 3]], C.metal); } }
+  ];
+
+  const PALS = [['#f8d070', '#e8b860'], ['#f6a0b8', '#f0c860'], ['#b8a0f0', '#f0d070'], ['#f08a5a', '#f4d890'], ['#f0ece0', '#e8b048'], ['#f6a0b8', '#f0c860'], ['#f8d070', '#e8b860']];
+  const MOODS = ['calm', 'focus', 'graze', 'alarm', 'toxic', 'dead', 'flower'];
+  const grid = document.getElementById('grid');
+  CAST.forEach((c, i) => {
+    const name = document.createElement('div'); name.className = 'name';
+    name.innerHTML = '<b>' + (i + 1) + '. ' + c.name + '</b>' + c.note + '<br><i>' + c.fl + '</i>';
+    grid.appendChild(name);
+    for (const m of MOODS) {
+      const wrap = document.createElement('div'); if (m === 'flower') wrap.className = 'flower';
+      const cv = document.createElement('canvas'); cv.width = 29; cv.height = 29; wrap.appendChild(cv); grid.appendChild(wrap);
+      g = cv.getContext('2d'); ax = 14; ay = 15;
+      if (m === 'flower') { ay = 14; c.flower(PALS[i]); } else c.draw(m);
+    }
+  });
+  // Taille réelle : la rangée « calme ».
+  g = document.getElementById('real').getContext('2d');
+  CAST.forEach((c, i) => { ax = 14 + i * 32; ay = 15; c.draw('calm'); });
+})();
+</script>
