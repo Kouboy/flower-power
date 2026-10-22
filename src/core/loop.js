@@ -11,7 +11,7 @@
   // Ordre de la spec §6. Chaque système expose update(state, dt) ; un système absent (pas encore porté) est sauté.
   // hazards avant collision (les limaces bougent avant la requête de pointe), camera en dernier (suit la pointe).
   // flow (mort, éclosion, transitions) après le score, avant la caméra.
-  // Les systèmes tournent dans tous les modes sauf 'menu' : chacun décide selon state.mode.
+  // Les systèmes tournent dans tous les modes sauf 'splash' et 'menu' : chacun décide selon state.mode.
   // powerups après scoring : ramassage et bouclier interceptent un choc avant que flow ne décide d'une mort.
   const UPDATE_ORDER = ['input', 'plant', 'hazards', 'collision', 'graze', 'scoring', 'powerups', 'flow', 'camera'];
 
@@ -32,7 +32,7 @@
     const perf = FP.perf;
     let t = perf && perf.begin(dt);
 
-    if (state.mode !== 'menu') {
+    if (state.mode !== 'menu' && state.mode !== 'splash') {
       guard('mise à jour', () => {
         for (const name of UPDATE_ORDER) {
           if (FP[name] && FP[name].update) FP[name].update(state, dt);

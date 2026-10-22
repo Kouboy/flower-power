@@ -2,6 +2,11 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.2.6 — PRESS TO START
+
+- au lancement, un écran d'accueil figé façon Mega Drive : le titre immobile et « PRESS TO START » ; le premier appui débloque le son, passe en plein écran sur téléphone et tablette (portrait verrouillé quand Android le permet ; sans plein écran sur iPhone) et réveille le titre (logo animé, « TOUCHER POUR POUSSER ») ; sur ordinateur, pas de plein écran ;
+- banc : 266 tests.
+
 ## v4.2.5 — Finitions de l'interface
 
 - le logo du titre passe en ×2 quand la place le permet (écran d'ordinateur) ; sur téléphone, ×1 reste le maximum ;

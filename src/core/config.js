@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '4.2.5',
+    version: '4.2.6',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -190,6 +190,7 @@
     // Textes affichés.
     text: {
       ready: 'TOUCHER POUR POUSSER',
+      pressStart: 'PRESS TO START',   // écran d'accueil figé, clin d'œil Mega Drive
       // Interface pixel (v4.2.0) : cris de mort hors obstacles, aide de première pousse, relance, pied du titre, certificat.
       shout: { leak: 'LIXIVIAT\u00a0!', toxic: 'BRÛLÉE\u00a0!' },   // espace insécable avant « ! »
       help: { hold: 'MAINTIENS POUR POUSSER', guide: 'GUIDE LA POINTE' },

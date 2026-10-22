@@ -9,7 +9,7 @@
   function draw(g, state) {
     g.clearRect(0, 0, FP.view.ui.w, FP.view.ui.h);
     const m = state.mode;
-    if (m === 'menu') FP.title.draw(g, state);
+    if (m === 'splash' || m === 'menu') FP.title.draw(g, state);
     if (m === 'over') FP.certificate.draw(g, state);
     if (m === 'playing') FP.plantRender.drawFinger(g, state);
     if (m === 'playing' || m === 'dying' || m === 'bloom' || m === 'ready') { FP.hud.draw(g, state); FP.shout.draw(g, state); }

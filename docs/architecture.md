@@ -76,7 +76,7 @@ L'état de la partie en cours est `FP.state.current`, créé par `FP.state.creat
 
 ```js
 {
-  mode: 'menu' | 'ready' | 'playing' | 'dying' | 'bloom' | 'over',
+  mode: 'splash' | 'menu' | 'ready' | 'playing' | 'dying' | 'bloom' | 'over',
   time, seed, level, rng, signature,
   input:  { x, screenX, y, down, active, pressed },
   camera: { y, manual, near, zoom, shake },
@@ -104,7 +104,7 @@ Un niveau est généré par `FP.level.startRun(state)` (tirage du T-Rex signatur
 `FP.loop.step(state, dt)` :
 
 1. `dt` plafonné à `config.loop.maxDt` (dt invalide → `fallbackDt`) ; `state.time += dt` ;
-2. dans tous les modes sauf `menu`, `FP[nom].update(state, dt)` pour `input → plant → hazards → collision → graze → scoring → powerups → flow → camera` (un système pas encore porté est sauté ; chacun décide selon `state.mode`). **Tout système expose `update(state, dt)`** : par exemple la requête de pointe vit dans `FP.collision.update` ;
+2. dans tous les modes sauf `splash` et `menu`, `FP[nom].update(state, dt)` pour `input → plant → hazards → collision → graze → scoring → powerups → flow → camera` (un système pas encore porté est sauté ; chacun décide selon `state.mode`). **Tout système expose `update(state, dt)`** : par exemple la requête de pointe vit dans `FP.collision.update` ;
 3. `FP.audio.consume(state.events, state, dt)` ;
 4. `FP.render.frame(state)` ;
 5. `state.events` est vidé.
@@ -180,7 +180,7 @@ Spec : `docs/superpowers/specs/2026-10-22-interface-pixel-design.md` ; maquettes
 
 ## Modes
 
-`menu` (écran titre) → `playing` (pousse en vol) → `dying` (0,85 s, puis nouveau niveau et nouvelle pousse) ou `bloom` → `ready` (graine posée, attend un **nouvel** appui ou Espace / Entrée) → `playing`… ; `over` quand il n'y a plus de graines (le certificat ; un appui relance un run neuf une fois le tampon tombé).
+`splash` (écran d'accueil figé « PRESS TO START », au lancement seulement : le premier appui débloque le son, passe en plein écran sur écran tactile et réveille le titre) → `menu` (écran titre) → `playing` (pousse en vol) → `dying` (0,85 s, puis nouveau niveau et nouvelle pousse) ou `bloom` → `ready` (graine posée, attend un **nouvel** appui ou Espace / Entrée) → `playing`… ; `over` quand il n'y a plus de graines (le certificat ; un appui relance un run neuf une fois le tampon tombé).
 
 `bloom` enchaîne trois temps (`flow.stage`) : `show` (1,55 s, les fleurs éclosent), `fadeOut` (.46 s, voile noir), nouveau niveau sous le noir, `fadeIn` (.48 s), puis `ready` (événement `ready`).
 
