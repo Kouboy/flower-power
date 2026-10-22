@@ -38,3 +38,20 @@ FP.test('hazards: position initiale cohérente (pas de saut à la première fram
   FP.hazards.update(s, 1 / 60);
   FP.assert(Math.hypot(l.cx - c0[0], l.cy - c0[1]) < 3, String(Math.hypot(l.cx - c0[0], l.cy - c0[1])));
 });
+FP.test('hazards: une limace regarde toujours dans le sens où elle avance', () => {
+  const s = FP.state.createRun(8, { W: 440, H: 783 }); FP.level.startRun(s); FP.plant.launch(s);
+  const l = s.world.leaks[0]; l.angle = .4; s.world.leaks = [l];
+  FP.hazards.update(s, 1 / 60);   // première position sur le va-et-vient (celle de la génération est le centre du trajet)
+  let flips = 0, last = null;
+  for (let i = 0; i < 400; i++) {
+    const x0 = l.cx, y0 = l.cy;
+    FP.hazards.update(s, 1 / 60); s.time += 1 / 60;
+    if (x0 === undefined) continue;
+    const moved = (l.cx - x0) * Math.cos(l.angle) + (l.cy - y0) * Math.sin(l.angle);
+    if (Math.abs(moved) < 1e-3) continue;   // au point de rebroussement
+    FP.assertEqual(FP.hazards.leakHeading(l), Math.sign(moved), 'frame ' + i);
+    if (last !== null && last !== Math.sign(moved)) flips++;
+    last = Math.sign(moved);
+  }
+  FP.assert(flips >= 1, 'elle a fait au moins un aller-retour');
+});

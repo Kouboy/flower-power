@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '4.2.2',
+    version: '4.2.3',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -52,11 +52,11 @@
       solids: { base: 8.5, perLevel: 1.2, maxExtra: 6, scale: .84, framing: .92, worldScaleMax: 2.45, tries: 110, relaxAfter: 34, jitter: .27,
         giveUpAfter: 4,              // 4 obstacles impossibles de suite : le niveau est plein
         sizeJitter: [.88, 1.12] },   // v4.1.0 : chaque obstacle a sa taille (collision comprise)
-      // Zones toxiques diffuses : plutôt en profondeur, jamais sur le chemin sûr.
+      // Zones toxiques diffuses : réparties sur les trois tiers de la hauteur, jamais sur le chemin sûr ; un peu plus grosses au fond.
       // v4.2.2 : plus nombreuses et plus grandes, et elles se multiplient vite (v3 : base 3, perLevel .14, maxExtra 4, rx 30-58, ry 23-48).
       toxics: {
         base: 5, perLevel: .6, maxExtra: 7, scale: .70, tries: 80, relaxAfter: 30, jitter: .29,
-        deepDepth: .48, shallowDepth: .30, rx: [36, 70], ry: [28, 58], bigDepth: .58, bigRx: 1.08, bigRy: 1.10,
+        rx: [36, 70], ry: [28, 58], bigDepth: .58, bigRx: 1.08, bigRy: 1.10,
         lobes: 6, specks: 7, lightChance: .42, safeK: .62, safeExtra: 4,
         // Forme des nappes : lobes (position et taille relatives au rayon) et taches.
         shape: { lobeR: [.32, .88], lobeSx: [.28, .58], lobeSy: [.22, .52], speckX: .64, speckY: .58, speckR: [1.2, 3.1] },

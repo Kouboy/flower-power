@@ -145,3 +145,14 @@ FP.test('level: les nappes toxiques se multiplient vite avec les niveaux', () =>
   const a = toxicCover(0), b = toxicCover(6);
   FP.assert(b.n >= a.n + 4 && b.cov >= a.cov + .04, a.n + ' → ' + b.n);
 });
+FP.test('level: les nappes toxiques se répartissent sur toute la hauteur, surface comprise', () => {
+  const area = [0, 0, 0];
+  for (let seed = 1; seed <= 12; seed++) {
+    const s = FP.state.createRun(seed, { W: 440, H: 783 }); s.level = 3; FP.level.startRun(s);
+    const w = s.world;
+    for (const o of w.toxics) area[Math.min(2, Math.floor((o.y - w.surfaceY) / (w.height - w.surfaceY) * 3))] += Math.PI * o.rx * o.ry;
+  }
+  const total = area[0] + area[1] + area[2];
+  FP.assert(area[0] / total >= .25, 'tiers de surface : ' + Math.round(area[0] / total * 100) + ' %');
+  FP.assert(area[2] / total <= .42, 'tiers du fond : ' + Math.round(area[2] / total * 100) + ' %');
+});
