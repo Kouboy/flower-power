@@ -22,7 +22,8 @@ Une entrée par version (voir `AGENTS.md`).
 - émergence en motte de taupe : la pelouse gonfle au-dessus de la pointe qui approche, la mèche en perce le sommet, la motte se fend et projette sa terre, puis la fleur sort ; motte de terre de la couche du haut sous une peau de pelouse soulevée, tas assorti ; un petit tas reste au pied de chaque fleur ;
 - les anciennes tiges passent sous les nappes, les limaces et les déchets : le terrain reste lisible ;
 - plus d'à-coups quand un déchet entre à l'écran (sprites préparés à l'avance, ancrage calculé sans relecture du GPU) ;
-- rendu au plus 3,6 ms par frame ; banc : 229 tests.
+- - la tige accélère nettement à chaque pousse (≈ +12 % par éclosion au lieu de +5 %) ;
+- rendu au plus 3,6 ms par frame ; banc : 230 tests.
 
 ## v4.0.1 — Nettoyage
 
