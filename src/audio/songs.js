@@ -2,7 +2,7 @@
 // de jeu « funk 70s hanté » (B), dont l'orgue et le sitar de A forment des couches de danger.
 // Lit     : rien.
 // Écrit   : rien.
-// Expose  : FP.songs.title, FP.songs.game = { bpm, bars, beatsPerBar, pcs, notes, swing? } ; note = { beat, dur, inst, midi?, vel?, layer, bend? }.
+// Expose  : FP.songs.title, FP.songs.game = { bpm, bars, beatsPerBar, pcs, notes, swing? }, FP.songs.jingles.{death,blossom,record} ; note = { beat, dur, inst, midi?, vel?, layer, bend? }.
 //           swing : retard aléatoire maximal (s) de la caisse claire et des charlestons (« boîte à rythmes qui boite »).
 // Temps en beats (noire = 1) depuis le début de la boucle ; pcs = classes de hauteur de la gamme (contrôlées par les tests).
 (function () {
@@ -69,5 +69,22 @@
     return { bpm: 100, bars: 8, beatsPerBar: 4, pcs: [4, 7, 9, 10, 11, 2], swing: .025, notes: sorted(n) };
   }
 
-  FP.songs = { title: title(), game: game() };
+  // --- Jingles (bus des effets, joués une fois, 160 BPM) ------------------------------------------
+  function jingles() {
+    const j = (notes) => ({ bpm: 160, bars: 1, beatsPerBar: 4, pcs: [4, 5, 7, 8, 9, 10, 11, 0, 2], notes: sorted(notes) });
+    const n = (beat, inst, midi, dur, vel, bend) => ({ beat, dur, inst, midi, vel, layer: 'jingle', ...(bend ? { bend } : {}) });
+    return {
+      // Les cuivres qui tombent (repris de B), puis la basse qui s'effondre.
+      death: j([n(0, 'brass', 59, .5, 1.2, .82), n(0, 'brass', 62, .5, 1.1, .82), n(0, 'brass', 64, .5, 1.1, .82),
+        n(.75, 'brass', 55, 1.2, 1, .7), n(.75, 'brass', 52, 1.2, 1, .7), n(1, 'slap', 28, 1, 1)]),
+      // La fleur qui sort : arpège montant de sitar en mi, sur un accord d'orgue, et une clochette au sommet.
+      blossom: j([n(0, 'organ', 52, 1.5, 1.6), n(0, 'organ', 56, 1.5, 1.4), n(0, 'organ', 59, 1.5, 1.4),
+        n(0, 'sitar', 64, .5, 1), n(.25, 'sitar', 68, .5, 1), n(.5, 'sitar', 71, .5, 1), n(.75, 'sitar', 76, .75, 1.1, 1.06), n(1.25, 'bell', 83, .6, 1)]),
+      // Record battu : clochettes qui montent, cuivres qui claironnent.
+      record: j([n(0, 'bell', 76, .25, 1), n(.25, 'bell', 80, .25, 1), n(.5, 'bell', 83, .25, 1), n(.75, 'bell', 88, .5, 1.1),
+        n(1, 'brass', 52, 1, 1.2), n(1, 'brass', 59, 1, 1.1), n(1, 'brass', 64, 1, 1.1)])
+    };
+  }
+
+  FP.songs = { title: title(), game: game(), jingles: jingles() };
 })();

@@ -1,8 +1,8 @@
 // audio/synth.js — moteur FM façon Mega Drive (YM2612) : voix à 2 opérateurs, batterie en bruit filtré, écho, bus de mixage.
 // Lit     : rien de l'état ; reçoit un AudioContext.
 // Écrit   : rien dans l'état (le graphe Web Audio uniquement).
-// Expose  : FP.synth.create(ac) → moteur { now, note, drum, burst, setGain, setFilter, drone, suspend, resume, context,
-//           tone, noise (compatibilité v3, retirée avec les anciennes recettes) } ; FP.synth.INSTRUMENTS, FP.synth.DRUMS.
+// Expose  : FP.synth.create(ac) → moteur { now, note, drum, burst, setGain, setFilter, drone, suspend, resume, context } ;
+//           FP.synth.INSTRUMENTS, FP.synth.DRUMS.
 // Seul fichier du jeu qui crée des nœuds Web Audio.
 (function () {
   'use strict';
@@ -108,41 +108,33 @@
     }
     function setFilter(hz, ramp) { filter.frequency.setTargetAtTime(hz, ac.currentTime, (ramp || .2) / 3); }
 
-    // Bourdonnement continu du frôlement (logique de la v3) : drone(true, fréquence, filtre, q, gain) ; drone(false, net).
+    // Bourdonnement continu du frôlement, en FM : drone(true, fréquence, filtre, q, gain) ; drone(false, net).
     let drone = null;
     function setDrone(on, freq, filt, q, gain) {
       const n = ac.currentTime;
       if (!on) {
         if (!drone) return;
         const d = drone, fast = freq === true; drone = null;
-        d.gain.gain.cancelScheduledValues(n); d.gain.gain.setTargetAtTime(.0001, n, fast ? .018 : .055); d.osc.stop(n + (fast ? .08 : .22));
+        d.gain.gain.cancelScheduledValues(n); d.gain.gain.setTargetAtTime(.0001, n, fast ? .018 : .055); d.osc.stop(n + (fast ? .08 : .22)); d.mod.stop(n + (fast ? .08 : .22));
         return;
       }
       if (!drone) {
-        const osc = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain();
-        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(180, n);
+        const osc = ac.createOscillator(), mod = ac.createOscillator(), mg = ac.createGain(), f = ac.createBiquadFilter(), g = ac.createGain();
+        osc.frequency.setValueAtTime(180, n); mod.frequency.setValueAtTime(270, n); mg.gain.setValueAtTime(360, n);   // FM : modulateur ×1,5, indice 2
+        mod.connect(mg); mg.connect(osc.frequency); mod.start(n);
         f.type = 'bandpass'; f.frequency.setValueAtTime(900, n); f.Q.setValueAtTime(6, n);
         g.gain.setValueAtTime(.0001, n);
         osc.connect(f); f.connect(g); g.connect(sfx); osc.start(n);
-        drone = { osc, filt: f, gain: g };
+        drone = { osc, mod, mg, filt: f, gain: g };
       }
       drone.osc.frequency.setTargetAtTime(freq, n, .018);
+      drone.mod.frequency.setTargetAtTime(freq * 1.5, n, .018); drone.mg.gain.setTargetAtTime(freq * 2, n, .018);
       drone.filt.frequency.setTargetAtTime(filt, n, .018);
       drone.filt.Q.setTargetAtTime(q, n, .028);
       drone.gain.gain.setTargetAtTime(Math.max(.0001, gain), n, .018);
     }
 
-    // Compatibilité v3 (anciennes recettes d'effets) : retirée avec elles.
-    function tone(freq, dur = .12, type = 'sine', gain = .05, when = 0, bend = 0) {
-      const n = ac.currentTime + when, o = ac.createOscillator(), g = ac.createGain();
-      o.type = type; o.frequency.setValueAtTime(Math.max(20, freq), n);
-      if (bend) o.frequency.exponentialRampToValueAtTime(Math.max(20, freq * bend), n + Math.max(.025, dur));
-      g.gain.setValueAtTime(.0001, n); g.gain.exponentialRampToValueAtTime(Math.max(.0002, gain), n + .008); g.gain.exponentialRampToValueAtTime(.0001, n + dur);
-      o.connect(g); g.connect(sfx); o.start(n); o.stop(n + dur + .04);
-    }
-    const noise = (dur = .16, gain = .04, filterFreq = 650, type = 'lowpass', when = 0) => burst(ac.currentTime + when, dur, gain, filterFreq, type, { bus: 'sfx' });
-
-    return { now: () => ac.currentTime, note, drum, burst, setGain, setFilter, drone: setDrone, tone, noise,
+    return { now: () => ac.currentTime, note, drum, burst, setGain, setFilter, drone: setDrone,
       suspend: () => ac.suspend && ac.suspend().catch(() => {}), resume: () => ac.resume && ac.resume().catch(() => {}), context: ac };
   }
 

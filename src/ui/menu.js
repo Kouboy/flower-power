@@ -33,6 +33,7 @@
   function wake(s, pointerType) {
     if (FP.title.wantsFullscreen(pointerType)) goFullscreen();
     FP.title.wake(s);
+    FP.audio.sfx('wake');   // après unlock (même geste) : le son est débloqué
   }
 
   function startRun() {

@@ -2,8 +2,9 @@
 // s'écrivent, puis le tampon « VALIDÉ* » qui s'abat ; la relance n'est possible qu'après le tampon.
 // Lit     : state.time, state.score.{flowers,eco,recordBefore}, state.plant.stemCount, state.flow.overReason,
 //           FP.config.text.{certificate,again}, FP.font, FP.view.ui.
-// Écrit   : state.fx.ui.{overAt, readyAfter} uniquement (début de la fin de partie ; délai avant relance, tampon compris).
-// Expose  : FP.certificate.lines(state), FP.certificate.canRestart(state) (purs, testés), FP.certificate.draw(g, state),
+// Écrit   : state.fx.ui.{overAt, readyAfter, certCue} uniquement (début de la fin de partie ; délai avant relance, tampon compris).
+// Expose  : FP.certificate.lines(state), FP.certificate.canRestart(state), FP.certificate.cues(state) (purs hors mémoire, testés),
+//           FP.certificate.draw(g, state),
 //           FP.certificate.{READY_AT, MARGIN, PADDING}.
 (function () {
   'use strict';
@@ -32,6 +33,26 @@
     return !!ui && ui.overAt !== undefined && ui.overAt !== null && state.time - ui.overAt >= Math.max(READY_AT, ui.readyAfter || 0);
   }
 
+  // Nombre d'éléments écrits sur la feuille et instant du tampon (même calcul que le dessin).
+  function schedule(state, w) {
+    const c = lines(state), inner = w - 2 * MARGIN - 2 * PADDING, causeLines = FP.font.wrap(c.cause, inner);
+    const count = 2 + c.rows.length + 1 + causeLines.length;
+    return { c, causeLines, inner, count, stampAt: VEIL + RISE + count * LINE_STEP };
+  }
+
+  // Sons dus depuis le dernier appel : « type » par ligne nouvellement écrite, « stamp » au tampon, « record » s'il est battu.
+  function cues(state) {
+    const ui = state.fx.ui;
+    if (!ui || ui.overAt === undefined || ui.overAt === null) return [];
+    const w = FP.view && FP.view.ui ? FP.view.ui.w : FP.config.view.minW / FP.px.SCALE;
+    const age = state.time - ui.overAt, s = schedule(state, w), m = ui.certCue || (ui.certCue = { shown: 0, stamped: false });
+    const shown = Math.max(0, Math.min(s.count, Math.floor((age - VEIL - RISE) / LINE_STEP) + 1)), out = [];
+    for (let i = m.shown; i < shown; i++) out.push('type');
+    m.shown = Math.max(m.shown, shown);
+    if (age >= s.stampAt && !m.stamped) { m.stamped = true; out.push('stamp'); if (s.c.rows[3].beaten) out.push('record'); }
+    return out;
+  }
+
   // Voile : damier d'encre mis en cache à la taille de l'écran, dévoilé de haut en bas.
   let veil = null;
   function veilFor(w, h) {
@@ -48,12 +69,13 @@
   function draw(g, state) {
     const ui = state.fx.ui || (state.fx.ui = {});
     if (ui.overAt === undefined || ui.overAt === null) ui.overAt = state.time;
-    const age = state.time - ui.overAt, { w, h } = FP.view.ui, font = FP.font, c = lines(state);
+    const age = state.time - ui.overAt, { w, h } = FP.view.ui, font = FP.font, S = schedule(state, w), c = S.c;
+    for (const cue of cues(state)) FP.audio.sfx(cue);
     const kv = clamp01(age / VEIL);
     if (kv > 0) g.drawImage(veilFor(w, h), 0, 0, w, Math.ceil(h * kv), 0, 0, w, Math.ceil(h * kv));
 
     // Contenu de la feuille, dans l'ordre d'écriture.
-    const inner = w - 2 * MARGIN - 2 * PADDING, causeLines = font.wrap(c.cause, inner);
+    const inner = S.inner, causeLines = S.causeLines;
     const items = [
       { h: 16, draw: (x, y) => font.draw(g, c.title, w / 2, y, { scale: 2, color: TEXT, align: 'center', outline: false }) },
       { h: 13, draw: (x, y) => font.draw(g, c.subtitle, w / 2, y, { color: TEXT, align: 'center', outline: false }) },
@@ -65,7 +87,7 @@
       { h: 17, draw: (x, y) => font.draw(g, FP.config.text.certificate.cause, x, y + 6, { color: LABEL, outline: false }) },
       ...causeLines.map(l => ({ h: 9, draw: (x, y) => font.draw(g, l, x, y, { color: TEXT, outline: false }) }))
     ];
-    const stampAt = VEIL + RISE + items.length * LINE_STEP, stampH = 26;
+    const stampAt = S.stampAt, stampH = 26;
     ui.readyAfter = stampAt + SLAM;
     const ph = 8 + items.reduce((s, it) => s + it.h, 0) + stampH + 14, pw = w - 2 * MARGIN;
     const py0 = Math.max(6, Math.round((h - ph) / 2) - 8), kr = clamp01((age - VEIL) / RISE);
@@ -94,5 +116,5 @@
     if (canRestart(state) && Math.floor(age * 2) % 2 === 0) font.draw(g, FP.config.text.again, w / 2, Math.min(h - 12, py + ph + 8), { align: 'center' });
   }
 
-  FP.certificate = { lines, canRestart, draw, READY_AT, MARGIN, PADDING };
+  FP.certificate = { lines, canRestart, cues, draw, READY_AT, MARGIN, PADDING };
 })();
