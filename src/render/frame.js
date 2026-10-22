@@ -83,6 +83,13 @@
     // Couche 3 : nette, à pleine résolution.
 
     FP.plantRender.drawFinger(ctx, state);
+    // Couche 4 : l'interface en pixels d'art, agrandie sans lissage, sans secousse ni zoom.
+    let tu = perf && performance.now();
+    const ui = FP.view.ui;
+    FP.ui.draw(ui.ctx, state);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(ui.canvas, 0, 0, ui.w * FP.px.SCALE, ui.h * FP.px.SCALE);
+    if (perf) perf.mark('ui', tu);
     FP.hud.draw(ctx, state);
     if (FP.flydebug) FP.flydebug.draw(ctx, state);
     if (perf) perf.draw(ctx, state);

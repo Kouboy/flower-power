@@ -189,7 +189,14 @@
 
     // Textes affichés.
     text: {
-      ready: 'TOUCHE POUR POUSSER',
+      ready: 'TOUCHER POUR POUSSER',
+      // Interface pixel (v4.2.0) : cris de mort hors obstacles, aide de première pousse, relance, pied du titre, certificat.
+      shout: { leak: 'LIXIVIAT !', toxic: 'BRÛLÉE !' },
+      help: { hold: 'MAINTIENS POUR POUSSER', guide: 'GUIDE LA POINTE' },
+      again: 'TOUCHER POUR REPOUSSER',
+      footer: ['© 2026 ÉCOSOFT™', 'UNE FILIALE DE PÉTROFLORE'],
+      certificate: { title: 'CERTIFICAT', subtitle: 'D’ÉCO-RESPONSABILITÉ', flowers: 'FLEURS PLANTÉES', eco: 'ÉCOCRÉDITS™',
+        stems: 'TIGES SACRIFIÉES', record: 'RECORD', beaten: 'BATTU', cause: 'CAUSE DU DÉCÈS :', stamp: 'VALIDÉ*', note: '* SOUS RÉSERVE' },
       elanStep: 3,   // HUD : « élan » gagne 3 % par tige (affichage de la v3)
       spore: { cleaned: 'SPORE : {n} DÉPÔT{s} NETTOYÉ{s}', empty: 'SPORE : ZONE NETTOYÉE' },
       stem: 'POUSSE ',

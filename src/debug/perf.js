@@ -10,7 +10,7 @@
   const { lerp } = FP.math;
 
   // Moyennes glissantes : lissées pour rester lisibles à l'œil (FPS un peu plus lent).
-  const stats = { fps: 60, update: 0, render: 0, soil: 0, hazards: 0, bonuses: 0, plant: 0 };   // bonuses : mesuré, non affiché (v3)
+  const stats = { fps: 60, update: 0, render: 0, soil: 0, hazards: 0, bonuses: 0, plant: 0, ui: 0 };   // bonuses : mesuré, non affiché (v3)
 
   function begin(dt) {
     stats.fps = lerp(stats.fps, 1 / Math.max(.001, dt), .08);
@@ -25,7 +25,7 @@
   }
 
   function draw(ctx, state) {
-    const x = FP.view.W - 8, y = 8, w = 126, h = 112, xx = x - w + 8;
+    const x = FP.view.W - 8, y = 8, w = 126, h = 124, xx = x - w + 8;
     ctx.save();
     ctx.globalAlpha = .90; ctx.fillStyle = 'rgba(5,7,6,.78)'; ctx.beginPath(); ctx.roundRect(x - w, y, w, h, 8); ctx.fill();
     ctx.globalAlpha = 1; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.font = '700 10px monospace';
@@ -37,8 +37,9 @@
     ctx.fillText(' soil    ' + stats.soil.toFixed(2), xx, y + 58);
     ctx.fillText(' hazards ' + stats.hazards.toFixed(2), xx, y + 70);
     ctx.fillText(' plant   ' + stats.plant.toFixed(2), xx, y + 82);
+    ctx.fillText(' ui      ' + stats.ui.toFixed(2), xx, y + 94);
     ctx.fillStyle = '#bdb79d';
-    ctx.fillText('F ' + state.garden.flowers.length + ' P ' + state.fx.particles.length + ' O ' + state.world.solids.length, xx, y + 96);
+    ctx.fillText('F ' + state.garden.flowers.length + ' P ' + state.fx.particles.length + ' O ' + state.world.solids.length, xx, y + 108);
     ctx.restore();
   }
 
