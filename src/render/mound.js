@@ -11,6 +11,7 @@
   const RANGE = 80;               // px monde sous la surface où la motte commence à gonfler
   const MAX_H = 13, HEAP_H = 3;    // hauteur de la motte pleine, puis du tas qui reste (pixels d'art)
   const CRACK_TIME = .1, SETTLE = .35;
+  const SINK = 3;                 // le dôme descend sous le tapis d'herbe et le remplace : la pelouse est soulevée, pas recouverte
   // Terre de la couche du haut (humus, FP.palette.strata) : la motte est raccord avec le sol ; RIM, un reflet du ciel sur la crête.
   const CRACK = '#0a0605', RIM = '#3a2a1e';
   const HUMUS = FP.palette.strata.humus;
@@ -35,8 +36,8 @@
   // Dôme de terre soulevée, éclairé par la gauche, quelques brins d'herbe restés dessus. side : -1 moitié gauche, 1 moitié droite, 0 entier ; gap écarte les moitiés.
   function dome(g, cx, base, h, w, lawn, side, gap) {
     const { px } = FP;
-    for (let r = 0; r < h; r++) {
-      const hw = halfAt(r, h, w), y = base - 1 - r;
+    for (let r = 0; r < h + SINK; r++) {
+      const hw = halfAt(r, h + SINK, w), y = base - 1 - r + SINK;
       let x0 = cx - hw, x1 = cx + hw;
       if (side < 0) { x1 = cx - gap; x0 -= gap; }
       if (side > 0) { x0 = cx + gap; x1 += gap; }
@@ -46,10 +47,10 @@
       for (let x = x0; x <= x1; x++) if ((x * 7 + y * 3) % 11 === 0) px.rect(g, x, y, 1, 1, CRACK);   // grain noir, comme dans la terre
       if (lit > x0) px.rect(g, x0, y, Math.min(lit, x1 + 1) - x0, 1, EARTH[2]);
       if (shade <= x1) px.rect(g, Math.max(shade, x0), y, x1 - Math.max(shade, x0) + 1, 1, EARTH[0]);
-      if (r === h - 1 && h > 2) px.rect(g, x0, y, Math.max(1, Math.min(lit, x1 + 1) - x0 + 2), 1, EARTH[3]);   // crête éclairée : le dôme se détache de l'herbe
+      if (r === h + SINK - 1 && h > 2) px.rect(g, x0, y, Math.max(1, Math.min(lit, x1 + 1) - x0 + 2), 1, EARTH[3]);   // crête éclairée : le dôme se détache de l'herbe
       // Faces de terre à vif le long de la fente.
-      if (side < 0) px.rect(g, x1, y, 1, 1, r < h * .5 ? CRACK : RIM);
-      if (side > 0) px.rect(g, x0, y, 1, 1, r < h * .5 ? CRACK : RIM);
+      if (side < 0) px.rect(g, x1, y, 1, 1, r < (h + SINK) * .5 ? CRACK : RIM);
+      if (side > 0) px.rect(g, x0, y, 1, 1, r < (h + SINK) * .5 ? CRACK : RIM);
     }
     // Brins d'herbe sur le dessus.
     if (h >= 3 && side === 0) for (const dx of [-2, 1, 3]) px.rect(g, cx + dx, base - h - 1, 1, dx === 1 ? 2 : 1, lawn[3]);
@@ -100,7 +101,7 @@
       } else if (a < hatch + SETTLE) {
         const p = Math.min(1, (a - CRACK_TIME) / (hatch - CRACK_TIME)), q = Math.max(0, (a - hatch) / SETTLE);
         const gap = Math.round(1 + 4 * p - 3 * q), h = Math.round(MAX_H * (1 - .35 * p) * (1 - q) + HEAP_H * q);
-        px.rect(g, cx - gap + 1, base - 2, Math.max(1, 2 * gap - 1), 2, CRACK);   // terre à vif au fond de la fente
+        px.rect(g, cx - gap + 1, base - 2, Math.max(1, 2 * gap - 1), 2 + SINK, CRACK);   // la fente ouvre aussi la pelouse
         dome(g, cx, base, h, w, lawn, -1, gap);
         dome(g, cx, base, h, w, lawn, 1, gap);
       } else {
