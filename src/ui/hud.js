@@ -3,7 +3,7 @@
 // Lit     : state.mode, state.time, state.plant.reserves, state.score.{eco,flowerBonus,combo}, FP.config.{plant.seeds,text.ready},
 //           FP.palette.seed, FP.font, FP.view.ui.
 // Écrit   : state.fx.ui.hud uniquement (animations : score affiché, graines perdues, rebonds).
-// Expose  : FP.hud.items(state) (pur, testé), FP.hud.draw(g, state) (toile d'interface), FP.hud.MARGIN.
+// Expose  : FP.hud.items(state), FP.hud.layout(h) (purs, testés), FP.hud.draw(g, state) (toile d'interface), FP.hud.MARGIN.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
@@ -21,13 +21,19 @@
     };
   }
 
+  // Rangées du HUD pour une toile de hauteur h ; textY : l'aide et « TOUCHER POUR POUSSER », au-dessus du combo.
+  function layout(h) {
+    const seedY = h - MARGIN - 7, scoreY = h - MARGIN - FP.font.HEIGHT * 2, comboY = scoreY - 11;
+    return { seedY, scoreY, comboY, pollenY: seedY - 12, textY: comboY - 13 };
+  }
+
   function memo(state, it) {
     const ui = state.fx.ui || (state.fx.ui = {});
     return ui.hud || (ui.hud = { shownEco: it.eco, seeds: it.seeds, lostAt: [], pollen: null, pollenAt: -9, combo: null, comboAt: -9, last: state.time });
   }
 
   // Graine : ovale brun avec reflet et pousse ; vide et sombre une fois perdue ; fendue juste après la perte.
-  function seed(g, x, y, state, full, crack) {
+  function seed(g, x, y, full, crack) {
     const p = FP.palette.seed;
     g.fillStyle = FP.font.INK;
     g.fillRect(x + 1, y, 4, 1); g.fillRect(x, y + 1, 6, 5); g.fillRect(x + 1, y + 6, 4, 1);
@@ -54,31 +60,31 @@
     // Graines : celles perdues depuis la dernière frame se fendent puis s'éteignent.
     for (let i = it.seeds; i < m.seeds; i++) m.lostAt[i] = t;
     m.seeds = it.seeds;
-    const seedY = h - MARGIN - 7;
+    const L = layout(h), seedY = L.seedY;
     for (let i = 0; i < it.seedsMax; i++) {
       const lost = t - (m.lostAt[i] !== undefined ? m.lostAt[i] : -9);
       const full = i < it.seeds || lost < LOST_TIME, crack = i >= it.seeds && lost < LOST_TIME && lost >= 0;
-      seed(g, MARGIN + i * SEED_STEP, seedY, state, full && !(crack && lost > CRACK_TIME), crack);
+      seed(g, MARGIN + i * SEED_STEP, seedY, full && !(crack && lost > CRACK_TIME), crack);
     }
 
     // Score : compteur d'arcade qui rattrape le vrai score en ~0,5 s ; un score qui baisse (nouveau run) est repris tel quel.
     m.shownEco = it.eco < m.shownEco ? it.eco : m.shownEco + (it.eco - m.shownEco) * Math.min(1, dt * 8);
     if (Math.abs(it.eco - m.shownEco) < 1) m.shownEco = it.eco;
-    const scoreY = h - MARGIN - font.HEIGHT * 2;
+    const scoreY = L.scoreY;
     font.draw(g, 'Ɇ' + Math.round(m.shownEco).toLocaleString('fr-FR'), w - MARGIN, scoreY, { scale: 2, color: font.COLORS.eco, align: 'right' });
 
     // Pollen et combo : apparaissent d'un petit bond, au-dessus des graines et du score.
     if (it.pollen !== m.pollen) { if (it.pollen) m.pollenAt = t; m.pollen = it.pollen; }
     if (it.pollen) {
-      const y = seedY - 12 - (t - m.pollenAt < .15 ? 2 : 0);
+      const y = L.pollenY - (t - m.pollenAt < .15 ? 2 : 0);
       flower(g, MARGIN + 1, y);
       font.draw(g, '+' + it.pollen, MARGIN + 10, y, { color: font.COLORS.pink });
     }
     if (it.combo !== m.combo) { if (it.combo) m.comboAt = t; m.combo = it.combo; }
-    if (it.combo) font.draw(g, 'COMBO ×' + it.combo, w - MARGIN, scoreY - 11 - (t - m.comboAt < .12 ? 1 : 0), { color: font.COLORS.gold, align: 'right' });
+    if (it.combo) font.draw(g, 'COMBO ×' + it.combo, w - MARGIN, L.comboY - (t - m.comboAt < .12 ? 1 : 0), { color: font.COLORS.gold, align: 'right' });
 
-    if (it.ready && Math.floor(t * 2) % 2 === 0) font.draw(g, FP.config.text.ready, w / 2, h - 34, { align: 'center' });
+    if (it.ready && Math.floor(t * 2) % 2 === 0) font.draw(g, FP.config.text.ready, w / 2, L.textY, { align: 'center' });
   }
 
-  FP.hud = { items, draw, MARGIN };
+  FP.hud = { items, layout, draw, MARGIN };
 })();

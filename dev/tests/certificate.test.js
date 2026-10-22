@@ -30,3 +30,13 @@ FP.test('certificat: relance refusée avant le tampon, acceptée après', () => 
   s.fx.ui.overAt = s.time - .5; FP.assert(!FP.certificate.canRestart(s));
   s.fx.ui.overAt = s.time - FP.certificate.READY_AT; FP.assert(FP.certificate.canRestart(s));
 });
+FP.test('certificat: la relance attend toujours le tampon, même s’il tombe tard', () => {
+  const s = overRun(); s.fx.ui = { overAt: s.time - (FP.certificate.READY_AT + .1), readyAfter: FP.certificate.READY_AT + .5 };
+  FP.assert(!FP.certificate.canRestart(s), 'le tampon n’est pas encore tombé');
+  s.fx.ui.overAt = s.time - (FP.certificate.READY_AT + .5); FP.assert(FP.certificate.canRestart(s));
+});
+FP.test('certificat: le libellé du record à battre vient de la config', () => {
+  const s = overRun(), t = FP.config.text.certificate, keep = t.flowersUnit;
+  s.score.recordBefore = { flowers: 9, eco: 99000 };
+  try { t.flowersUnit = 'FLEURETTES'; FP.assertEqual(FP.certificate.lines(s).rows[3].value, '9 FLEURETTES'); } finally { t.flowersUnit = keep; }
+});

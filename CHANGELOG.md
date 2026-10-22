@@ -2,6 +2,13 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.2.5 — Finitions de l'interface
+
+- le logo du titre passe en ×2 quand la place le permet (écran d'ordinateur) ; sur téléphone, ×1 reste le maximum ;
+- l'aide de première pousse et « TOUCHER POUR POUSSER » passent au-dessus du combo, sans jamais le chevaucher ;
+- certificat : la relance attend toujours la chute du tampon, même si la cause tient sur plusieurs lignes ; le libellé du record à battre vient de la config ;
+- commentaires et documentation remis à jour ; banc : 263 tests.
+
 ## v4.2.4 — Plus fluide sous Firefox
 
 - les lignes en pixels (tige, sillons des limaces, effets) et le corps des limaces peignent d'un seul trait les pixels voisins de même couleur : exactement les mêmes pixels, environ deux fois moins d'appels de dessin ; mesuré dans Firefox (fenêtre 412 × 732, niveau 6) : 4,4 → 3,7 ms par image, limaces 1,26 → 0,73 ms ;

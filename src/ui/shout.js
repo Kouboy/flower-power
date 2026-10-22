@@ -1,7 +1,7 @@
 // ui/shout.js — le cri de mort (« RACK SERVEUR ! ») en lettres qui tombent et rebondissent, et l'aide de la toute
 // première pousse.
 // Lit     : state.events (death), state.time, state.mode, state.plant.{stemCount,trail}, state.score.flowers, state.input.down,
-//           FP.config.text.{death,deathDefault,shout,help}, FP.font, FP.hud.MARGIN, FP.view.ui.
+//           FP.config.text.{death,deathDefault,shout,help}, FP.font, FP.hud.layout, FP.view.ui.
 // Écrit   : state.fx.ui.shout uniquement ({ text, t0 } du dernier cri).
 // Expose  : FP.shout.textFor(event), FP.shout.helpFor(state) (purs, testés), FP.shout.draw(g, state) (toile d'interface).
 (function () {
@@ -51,7 +51,7 @@
     for (const e of state.events) if (e.type === 'death') ui.shout = { text: textFor(e), t0: state.time };
     if (ui.shout) drawShout(g, ui.shout, state.time);
     const help = helpFor(state);
-    if (help) FP.font.draw(g, help, FP.view.ui.w / 2, FP.view.ui.h - FP.hud.MARGIN - 30, { align: 'center' });
+    if (help) FP.font.draw(g, help, FP.view.ui.w / 2, FP.hud.layout(FP.view.ui.h).textY, { align: 'center' });   // au-dessus du combo
   }
 
   FP.shout = { textFor, helpFor, draw };
