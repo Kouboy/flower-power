@@ -1,7 +1,7 @@
 // render/drillfx.js — effets de la foreuse (ROW ROW FIGHT THE POWER) : fissures devant la mèche, onde de forage à chaque
 // battement de croissance, étincelles quand la mèche racle un obstacle.
-// Lit     : state.mode, state.time, state.events (growthTick), state.plant.{tip,dir}, state.camera.y, state.graze.active,
-//           state.query.grazes, FP.plantRender.drill, FP.px.
+// Lit     : state.mode, state.time, state.events (growthTick), state.plant.{tip,dir}, state.camera.y, state.world, state.graze.active,
+//           state.query.grazes, FP.plantRender.drill, FP.soil.surfaceTop, FP.px.
 // Écrit   : state.fx.drill uniquement (réservé au rendu) ; aléatoire purement visuel (Math.random).
 // Expose  : FP.drillFx.drawUnder(actx, state) (fissures, sous la plante), FP.drillFx.drawOver(actx, state) (ondes et étincelles,
 //           devant la tête) — repère d'art, caméra appliquée ici ; FP.drillFx.sparkSources(state) (pur, testé).
@@ -13,7 +13,7 @@
   const BAYER = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]];
   const CRACK = '#0a0605', DIRT = '#b8916a', DIRT_DARK = '#7a5a3e', SPARKS = ['#fff0a0', '#ffd060', '#ff9030'];
   const HEAD = 3;   // le centre de la tête est 3 pixels d'art au-dessus de la pointe (render/plant.js)
-  const AHEAD = 40, CRACK_AHEAD = 62;   // px monde : ondes au bout de la mèche, fissures dans la terre encore intacte devant
+  const AHEAD = 14, CRACK_AHEAD = 62;   // px monde : ondes collées à la mèche (elles mordent sur le visage), fissures dans la terre intacte devant
   const rand = (a, b) => a + (b - a) * Math.random();
 
   // D'où partent les étincelles : un point au bord de la tête, du côté de chaque obstacle frôlé (les limaces ne font pas
@@ -37,11 +37,13 @@
   function spawn(state, fx, dt) {
     const d = FP.plantRender.drill(state);
     if (!d.active) return d;
-    const p = state.plant, ux = p.dir.x, uy = p.dir.y, t = state.time;
+    const p = state.plant, ux = p.dir.x, uy = p.dir.y, t = state.time, ground = FP.soil.surfaceTop(state.world);
     for (const e of state.events) {
       if (e.type !== 'growthTick') continue;
-      fx.rings.push({ t0: t, x: p.tip.x + ux * AHEAD, y: p.tip.y + uy * AHEAD - HEAD * 2 });
-      if (Math.random() < .45 + .45 * d.k) {
+      // Rien dans le ciel : près de la surface, c'est la motte (render/mound.js) qui prend le relais.
+      const ry = p.tip.y + uy * AHEAD - HEAD * 2;
+      if (ry > ground) fx.rings.push({ t0: t, x: p.tip.x + ux * AHEAD, y: ry });
+      if (p.tip.y + uy * CRACK_AHEAD - HEAD * 2 > ground + 8 && Math.random() < .45 + .45 * d.k) {
         const base = Math.atan2(uy, ux) + rand(-.9, .9), pts = [[p.tip.x + ux * CRACK_AHEAD, p.tip.y + uy * CRACK_AHEAD - HEAD * 2]];
         for (let i = 0; i < 3; i++) { const a = base + rand(-.6, .6), l = rand(5, 9); const [x, y] = pts[pts.length - 1]; pts.push([x + Math.cos(a) * l, y + Math.sin(a) * l]); }
         fx.cracks.push({ t0: t, pts });
