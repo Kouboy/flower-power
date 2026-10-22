@@ -65,13 +65,14 @@
     }
   }
 
-  // Grattement de la tige qui creuse, au rythme du battement de croissance : terre, et petit « tchk » de foreuse.
+  // Ronron de la foreuse, au rythme du battement de croissance : une note FM grave et douce (mi, puis la quinte), à peine
+  // soulignée d'un souffle de terre sourd. (Le grattement en bruit aigu de la v3 devenait irritant à force d'être répété.)
+  let drillStep = 0;
   function scrape(b, k) {
     if (!allowed(b, 'scrape')) return;
     const t = b.now();
-    b.burst(t, .074, .086 + k * .05, 980 + Math.random() * 1050, 'bandpass', SFX);
-    b.burst(t + .004, .052, .05 + k * .028, 260 + Math.random() * 320, 'lowpass', SFX);
-    if (Math.random() < .82) b.note('pluck', 40 + Math.round(k * 12), t, .04, .5, SFX);
+    b.note('drill', drillStep++ % 2 ? 47 : 40, t, .06, .7 + k * .4, SFX);
+    b.burst(t, .05, .025 + k * .015, 240, 'lowpass', SFX);
   }
 
   // Bourdonnement du frôlement (logique de la v3) : proximité = hauteur et brillance, durée = puissance ; coupé net sur un choc.
