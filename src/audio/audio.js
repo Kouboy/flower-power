@@ -1,5 +1,6 @@
-// audio/audio.js — son procédural (Web Audio, aucun fichier) : effets, drone du frôlement, grattement de la pousse.
-// Lit     : les événements de la frame (dont growthTick pour le grattement), state.mode, state.graze.active, state.query.grazes.
+// audio/audio.js — chef d'orchestre du son (Web Audio, aucun fichier) : déblocage, effets, drone du frôlement, grattement, musique.
+// Lit     : les événements de la frame (dont growthTick pour le grattement), state.mode, state.graze.active, state.query.grazes,
+//           FP.synth (moteur), FP.music (musique), FP.state.current.
 // Écrit   : rien dans l'état.
 // Expose  : FP.audio.consume(events, state, dt), FP.audio.sfx(kind, intensity), FP.audio.unlock(),
 //           FP.audio._backend (moteur de son ; remplaçable par un espion dans les tests, null tant que l'audio est muet).
@@ -11,87 +12,20 @@
   const FP = window.FP = window.FP || {};
   const { clamp } = FP.math;
 
-  // --- Moteur Web Audio --------------------------------------------------------
-
-  function webBackend(ac) {
-    const master = ac.createGain();
-    master.gain.value = .78;
-    master.connect(ac.destination);
-    let noiseBuf = null, drone = null;
-
-    function tone(freq, dur = .12, type = 'sine', gain = .05, when = 0, bend = 0) {
-      const n = ac.currentTime + when, o = ac.createOscillator(), g = ac.createGain();
-      o.type = type; o.frequency.setValueAtTime(Math.max(20, freq), n);
-      if (bend) o.frequency.exponentialRampToValueAtTime(Math.max(20, freq * bend), n + Math.max(.025, dur));
-      g.gain.setValueAtTime(.0001, n);
-      g.gain.exponentialRampToValueAtTime(Math.max(.0002, gain), n + .008);
-      g.gain.exponentialRampToValueAtTime(.0001, n + dur);
-      o.connect(g); g.connect(master); o.start(n); o.stop(n + dur + .04);
-    }
-
-    // Bruit généré une seule fois, rejoué à un décalage aléatoire.
-    function buffer() {
-      if (noiseBuf) return noiseBuf;
-      const len = Math.max(1, Math.floor(ac.sampleRate * 1.35)), buf = ac.createBuffer(1, len, ac.sampleRate), data = buf.getChannelData(0);
-      let x = 0x6d2b79f5;
-      for (let i = 0; i < len; i++) { x = (x * 1664525 + 1013904223) >>> 0; data[i] = (x / 4294967296) * 2 - 1; }
-      return (noiseBuf = buf);
-    }
-
-    function noise(dur = .16, gain = .04, filterFreq = 650, type = 'lowpass', when = 0) {
-      const n = ac.currentTime + when, buf = buffer();
-      const src = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
-      f.type = type; f.frequency.setValueAtTime(filterFreq, n);
-      g.gain.setValueAtTime(.0001, n);
-      g.gain.exponentialRampToValueAtTime(Math.max(.0002, gain), n + .008);
-      g.gain.exponentialRampToValueAtTime(.0001, n + dur);
-      src.buffer = buf; src.connect(f); f.connect(g); g.connect(master);
-      const maxOffset = Math.max(0, buf.duration - Math.max(.02, dur + .02));
-      src.start(n, maxOffset ? Math.random() * maxOffset : 0); src.stop(n + dur + .04);
-    }
-
-    // Drone continu du frôlement : proximité = timbre, durée = puissance.
-    // drone(true, freq, filt, q, gain) règle le son ; drone(false, fast) l'arrête : lentement en temps normal,
-    // net sur un choc ou un changement de niveau (v3 : stopGrazeDrone(fast)).
-    function setDrone(on, freq, filt, q, gain) {
-      const n = ac.currentTime;
-      if (!on) {
-        if (!drone) return;
-        const d = drone, fast = freq === true; drone = null;
-        d.gain.gain.cancelScheduledValues(n); d.gain.gain.setTargetAtTime(.0001, n, fast ? .018 : .055); d.osc.stop(n + (fast ? .08 : .22));
-        return;
-      }
-      if (!drone) {
-        const osc = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain();
-        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(180, n);
-        f.type = 'bandpass'; f.frequency.setValueAtTime(900, n); f.Q.setValueAtTime(6, n);
-        g.gain.setValueAtTime(.0001, n);
-        osc.connect(f); f.connect(g); g.connect(master); osc.start(n);
-        drone = { osc, filt: f, gain: g };
-      }
-      drone.osc.frequency.setTargetAtTime(freq, n, .018);
-      drone.filt.frequency.setTargetAtTime(filt, n, .018);
-      drone.filt.Q.setTargetAtTime(q, n, .028);
-      drone.gain.gain.setTargetAtTime(Math.max(.0001, gain), n, .018);
-    }
-
-    return { now: () => ac.currentTime, tone, noise, drone: setDrone, context: ac };
-  }
-
   // Les navigateurs n'autorisent le son qu'après un geste du joueur.
   function unlock() {
     try {
       if (!FP.audio._backend) {
         const AC = typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext);
         if (!AC) return;
-        FP.audio._backend = webBackend(new AC());
+        const b = FP.audio._backend = FP.synth.create(new AC());
+        // La musique est planifiée sur sa propre horloge (25 ms), indépendante des images du jeu.
+        setInterval(() => { try { FP.music.update(FP.state.current, [], b); } catch (e) { /* musique muette plutôt qu'une erreur */ } }, 25);
       }
       const ac = FP.audio._backend.context;
       if (ac && ac.state === 'suspended') ac.resume().catch(() => {});
     } catch (e) { /* audio indisponible : le jeu reste muet */ }
   }
-
-  // --- Effets --------------------------------------------------------------------
 
   // Anti-rafale par type de son, propre à chaque moteur (une spore qui paie dix fois ne joue qu'un « eco »).
   function allowed(b, kind, gap) {
@@ -187,6 +121,7 @@
     try {
       for (const e of events) play(e);
       updateDrone(b, state, events);
+      FP.music.update(state, events, b);
     } catch (e) { /* audio muet plutôt qu'une partie figée */ }
   }
 
