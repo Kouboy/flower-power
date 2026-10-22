@@ -2,6 +2,14 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.2.1 — Échelle et difficulté
+
+- les déchets à l'échelle du réel (compressée) : la batterie et le drone gardent leur taille, le cône et le sac sont moyens, le rack, la trottinette, le panneau et le cercueil sont grands, la borne d'arcade est la plus grande ; les collisions suivent ;
+- la tige part plus vite (90 au lieu de 76, plafond 210 au lieu de 196) ;
+- les gains « +Ɇ » s'affichent au-dessus de la tête, à gauche puis à droite, et suivent la pointe ;
+- certificat : de l'air autour de la cause du décès ;
+- banc : 255 tests.
+
 ## v4.2.0 — Interface pixel « hippie contaminé »
 
 - toute l'interface passe en pixels d'art, sur une toile à la même échelle que le monde : police bitmap 5×7 dessinée à la main (majuscules accentuées, Ɇ, ™), contour encre et ombre, sans police système ni emoji ;
