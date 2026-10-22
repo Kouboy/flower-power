@@ -30,6 +30,7 @@
     let t = perf && performance.now();
     FP.sky.draw(g, state);
     FP.soil.draw(g, state);
+    FP.plantRender.drawOld(g, state);   // anciennes tiges : sous les dangers et les déchets
     if (perf) t = perf.mark('soil', t);
     FP.hazardsRender.drawBase(g, state);
     FP.hazardsRender.drawLeaks(g, state);

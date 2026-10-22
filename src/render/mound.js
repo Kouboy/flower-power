@@ -1,7 +1,7 @@
 // render/mound.js — émergence en motte de taupe : la pelouse gonfle au-dessus de la pointe qui approche, se fend à
 // l'éclosion, puis retombe en un petit tas de terre qui reste au pied de la fleur tout le run.
 // Lit     : state.mode, state.time, state.events (bloom), state.plant.tip, state.world.{surfaceY,lawnVariant}, state.camera.y,
-//           FP.config.flow.hatchDelay, FP.palette.lawn, FP.soil.surfaceTop, FP.px.
+//           FP.config.flow.hatchDelay, FP.palette.{lawn,strata}, FP.soil.surfaceTop, FP.px.
 // Écrit   : state.fx.mound uniquement (réservé au rendu) ; aléatoire purement visuel (Math.random).
 // Expose  : FP.mound.draw(actx, state) (repère d'art, caméra appliquée ici) ; FP.mound.swell(state) (pur, testé).
 // Ne touche pas au DOM : testable sous Node. La gerbe de terre de la fente est dans render/particles.js (événement bloom).
@@ -11,7 +11,10 @@
   const RANGE = 80;               // px monde sous la surface où la motte commence à gonfler
   const MAX_H = 13, HEAP_H = 3;    // hauteur de la motte pleine, puis du tas qui reste (pixels d'art)
   const CRACK_TIME = .1, SETTLE = .35;
-  const CRACK = '#0a0605', DIRT = '#b8916a', DIRT_DARK = '#7a5a3e', DIRT_DEEP = '#4e3826';
+  // Terre de la couche du haut (humus, FP.palette.strata) : la motte est raccord avec le sol ; RIM, un reflet du ciel sur la crête.
+  const CRACK = '#0a0605', RIM = '#3a2a1e';
+  const HUMUS = FP.palette.strata.humus;
+  const EARTH = [HUMUS[0], HUMUS[2], HUMUS[3], RIM];   // ombre, corps, éclairé, crête
   const rand = (a, b) => a + (b - a) * Math.random();
 
   // Gonflement : k de 0 (loin) à 1 (la pointe touche la surface), centré sur la pointe. Seulement pendant la pousse.
@@ -29,7 +32,7 @@
   // Demi-largeur de la rangée r (0 = la base) d'un dôme de hauteur h et de demi-largeur w.
   const halfAt = (r, h, w) => Math.round(w * Math.sqrt(Math.max(0, 1 - ((r + .5) / h) ** 2)));
 
-  // Dôme de pelouse soulevée, éclairé par la gauche. side : -1 moitié gauche, 1 moitié droite, 0 entier ; gap écarte les moitiés.
+  // Dôme de terre soulevée, éclairé par la gauche, quelques brins d'herbe restés dessus. side : -1 moitié gauche, 1 moitié droite, 0 entier ; gap écarte les moitiés.
   function dome(g, cx, base, h, w, lawn, side, gap) {
     const { px } = FP;
     for (let r = 0; r < h; r++) {
@@ -39,25 +42,26 @@
       if (side > 0) { x0 = cx + gap; x1 += gap; }
       if (x1 < x0) continue;
       const lit = Math.round(cx - hw / 3) - (side < 0 ? gap : 0), shade = Math.round(cx + hw / 2) + (side > 0 ? gap : 0);
-      px.rect(g, x0, y, x1 - x0 + 1, 1, lawn[1]);
-      if (lit > x0) px.rect(g, x0, y, Math.min(lit, x1 + 1) - x0, 1, lawn[2]);
-      if (shade <= x1) px.rect(g, Math.max(shade, x0), y, x1 - Math.max(shade, x0) + 1, 1, lawn[0]);
-      if (r === h - 1 && h > 2) px.rect(g, x0, y, Math.max(1, Math.min(lit, x1 + 1) - x0 + 2), 1, lawn[3]);   // crête éclairée : le dôme se détache de l'herbe
+      px.rect(g, x0, y, x1 - x0 + 1, 1, EARTH[1]);
+      for (let x = x0; x <= x1; x++) if ((x * 7 + y * 3) % 11 === 0) px.rect(g, x, y, 1, 1, CRACK);   // grain noir, comme dans la terre
+      if (lit > x0) px.rect(g, x0, y, Math.min(lit, x1 + 1) - x0, 1, EARTH[2]);
+      if (shade <= x1) px.rect(g, Math.max(shade, x0), y, x1 - Math.max(shade, x0) + 1, 1, EARTH[0]);
+      if (r === h - 1 && h > 2) px.rect(g, x0, y, Math.max(1, Math.min(lit, x1 + 1) - x0 + 2), 1, EARTH[3]);   // crête éclairée : le dôme se détache de l'herbe
       // Faces de terre à vif le long de la fente.
-      if (side < 0) px.rect(g, x1, y, 1, 1, r < h * .5 ? DIRT_DARK : DIRT);
-      if (side > 0) px.rect(g, x0, y, 1, 1, r < h * .5 ? DIRT_DARK : DIRT);
+      if (side < 0) px.rect(g, x1, y, 1, 1, r < h * .5 ? CRACK : RIM);
+      if (side > 0) px.rect(g, x0, y, 1, 1, r < h * .5 ? CRACK : RIM);
     }
     // Brins d'herbe sur le dessus.
     if (h >= 3 && side === 0) for (const dx of [-2, 1, 3]) px.rect(g, cx + dx, base - h - 1, 1, dx === 1 ? 2 : 1, lawn[3]);
   }
 
-  // Le tas qui reste : bas, dans les tons de terre retournée, sans contour (il ne doit pas brouiller la surface).
+  // Le tas qui reste : bas, dans la terre de la couche du haut, sans contour (il ne doit pas brouiller la surface).
   function heap(g, cx, base) {
     const { px } = FP;
-    px.rect(g, cx - 5, base - 1, 11, 1, DIRT_DEEP);
-    px.rect(g, cx - 3, base - 2, 7, 1, DIRT_DARK);
-    px.rect(g, cx - 3, base - 2, 2, 1, DIRT);
-    px.rect(g, cx - 1, base - 3, 3, 1, DIRT_DARK);
+    px.rect(g, cx - 5, base - 1, 11, 1, EARTH[1]);
+    px.rect(g, cx - 3, base - 2, 7, 1, EARTH[2]);
+    px.rect(g, cx - 3, base - 2, 2, 1, RIM);
+    px.rect(g, cx - 1, base - 3, 3, 1, EARTH[2]);
     px.rect(g, cx, base - 2, 1, 1, CRACK);   // le trou d'où la tige est sortie
   }
 
@@ -82,7 +86,7 @@
       if (h > 0) dome(g, cx, base, h, w, lawn, 0, 0);
       if (s.k > .3 && Math.random() < dt * 9 * s.k) {
         const side = Math.random() < .5 ? -1 : 1;
-        fx.crumbs.push({ x: cx + side * rand(0, 2), y: base - h + oy, vx: side * rand(8, 22), vy: rand(-12, 0), life: rand(.3, .55), c: Math.random() < .5 ? DIRT_DARK : lawn[0] });
+        fx.crumbs.push({ x: cx + side * rand(0, 2), y: base - h + oy, vx: side * rand(8, 22), vy: rand(-12, 0), life: rand(.3, .55), c: Math.random() < .5 ? EARTH[2] : RIM });
       }
     }
 
@@ -96,7 +100,7 @@
       } else if (a < hatch + SETTLE) {
         const p = Math.min(1, (a - CRACK_TIME) / (hatch - CRACK_TIME)), q = Math.max(0, (a - hatch) / SETTLE);
         const gap = Math.round(1 + 4 * p - 3 * q), h = Math.round(MAX_H * (1 - .35 * p) * (1 - q) + HEAP_H * q);
-        px.rect(g, cx - gap + 1, base - 2, Math.max(1, 2 * gap - 1), 2, DIRT_DEEP);   // terre à vif au fond de la fente
+        px.rect(g, cx - gap + 1, base - 2, Math.max(1, 2 * gap - 1), 2, CRACK);   // terre à vif au fond de la fente
         dome(g, cx, base, h, w, lawn, -1, gap);
         dome(g, cx, base, h, w, lawn, 1, gap);
       } else {

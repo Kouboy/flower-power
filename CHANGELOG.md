@@ -11,7 +11,7 @@ Une entrée par version (voir `AGENTS.md`).
 - à l'éclosion, le héros devient la fleur ; parterre de visages variés (forme, nombre de pétales, teinte, expression) ;
 - nappes, limaces, bonus, bouclier, effets et particules en pixels ;
 - ciel plus haut qu'en v3 (19 % de la hauteur de vue) pour qu'on voie le crépuscule ;
-- plus d'obstacles dès le premier passage (≈ 16 au lieu de 11 à 440 px) et une rampe plus franche, plafonnée à la capacité du terrain ;
+- plus d'obstacles dès le premier passage (≈ 16 au lieu de 11 à 440 px) et une rampe deux fois plus rapide (≈ 21 au niveau 3), sur une grille plus serrée ; plus de limaces (3 dès le départ, 7 au niveau 6) ;
 - dangers en violet chimique (nappes, limaces aux yeux jaune soufre, sillons), distincts de la pousse verte ;
 - la tige fouit : tunnel de terre remuée derrière la pointe, mottes qui la recouvrent par endroits (davantage sur les anciennes tiges), racines et mycélium ;
 - chaque déchet a sa taille (collision comprise), sa teinte, son usure, et parfois le bas enfoui ;
@@ -19,7 +19,8 @@ Une entrée par version (voir `AGENTS.md`).
 - grain noir par petites touches dans la terre, le même tramage que le halo des obstacles ; chaque niveau a sa propre terre ;
 - halo tramé autour de la tige et de la graine ; la tête de la tige devient une foreuse (mèche de terre rayée qui tourne plus vite quand la pousse accélère, éclats en tourbillon, points de vitesse) ;
 - effets de foreuse : fissures qui s'ouvrent devant la mèche, ondes de forage collées à la tête à chaque battement et étincelles quand la mèche racle un obstacle, projetées devant la tête (rien dans le ciel) ;
-- émergence en motte de taupe : la pelouse gonfle au-dessus de la pointe qui approche, la mèche en perce le sommet, la motte se fend et projette sa terre, puis la fleur sort ; un petit tas de terre reste au pied de chaque fleur ;
+- émergence en motte de taupe : la pelouse gonfle au-dessus de la pointe qui approche, la mèche en perce le sommet, la motte se fend et projette sa terre, puis la fleur sort ; motte et tas dans la terre de la couche du haut ; un petit tas reste au pied de chaque fleur ;
+- les anciennes tiges passent sous les nappes, les limaces et les déchets : le terrain reste lisible ;
 - plus d'à-coups quand un déchet entre à l'écran (sprites préparés à l'avance, ancrage calculé sans relecture du GPU) ;
 - rendu au plus 3,6 ms par frame ; banc : 229 tests.
 

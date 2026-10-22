@@ -52,7 +52,7 @@
     for (let i = 0; i < n; i++) {
       const r = Math.random();
       list.push({ x: x + rand(-6, 6), y: floor - rand(4, 14), vx: rand(-115, 115), vy: rand(-230, -90), g: 520, floor,
-        life: rand(.55, 1.0), r: rand(1.6, 3.6), type: r < .5 ? 'soil' : r < .8 ? 'clod' : 'turf' });
+        life: rand(.55, 1.0), r: rand(1.6, 3.6), type: r < .5 ? 'clod' : r < .8 ? 'clodRim' : 'turf' });
     }
   }
 
@@ -84,7 +84,7 @@
     }
   }
 
-  const COLORS = { water: '#93ddff', bud: '#cfff9a', acid: '#b45cff', bomb: '#a6ff7a', impact: '#ff815f', petal: '#fff1a6', eco: '#cfff78', soil: '#7a5436', chip: '#4a3020', clod: '#b8916a', turf: '#4a7a2a', shield: '#caffde' };
+  const COLORS = { water: '#93ddff', bud: '#cfff9a', acid: '#b45cff', bomb: '#a6ff7a', impact: '#ff815f', petal: '#fff1a6', eco: '#cfff78', soil: '#7a5436', chip: '#4a3020', clod: '#221914', clodRim: '#3a2a1e', turf: '#4a7a2a', shield: '#caffde' };
 
   // Carré de 1 à 2 pixels d'art : il rétrécit en fin de vie au lieu de devenir transparent.
   function drawOne(g, q, oy) {

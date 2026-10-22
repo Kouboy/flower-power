@@ -2,7 +2,7 @@
 // Lit     : state.plant, state.input, state.mode, state.time, state.world.viewH, state.camera.y, FP.config.plant.control, FP.plant.speed,
 //           FP.px, FP.palette.{stem,seed,strataTone}, FP.soil.surfaceTop, FP.geom.{clampUpAngle,distPointToSegment}, FP.hero, FP.powerupsRender.drawShield.
 // Écrit   : rien (le canvas uniquement).
-// Expose  : FP.plantRender.draw(actx, state) (repère d'art, caméra appliquée ici), FP.plantRender.drawFinger(ctx, state) (couche nette),
+// Expose  : FP.plantRender.drawOld(actx, state) (anciennes tiges, sous les obstacles), FP.plantRender.draw(actx, state) (repère d'art, caméra appliquée ici), FP.plantRender.drawFinger(ctx, state) (couche nette),
 //           FP.plantRender.buried(x, y, old) — portion de tige recouverte de terre, FP.plantRender.haloLevel(d, old) — densité
 //           du halo tramé autour de la tige et de la graine, FP.plantRender.drill(state) — foreuse devant la tête (pures, testées).
 // Porté de la v3.43.16 (drawTrail, drawPlant, drawPointer), redessiné en pixels pour la v4.1.0.
@@ -197,9 +197,14 @@
     }
   }
 
+  // Anciennes tiges : juste après la terre, sous les dangers et les déchets (elles ne brouillent pas le terrain).
+  function drawOld(g, state) {
+    const oy = FP.px.toArt(state.camera.y);
+    for (const t of state.plant.oldTrails) drawStem(g, t, oy, false, state.world, state.world.viewH);
+  }
+
   function draw(g, state) {
     const { px } = FP, p = state.plant, camY = state.camera.y, oy = px.toArt(camY);
-    for (const t of p.oldTrails) drawStem(g, t, oy, false, state.world, state.world.viewH);
     if (p.trail.length) drawStem(g, p.trail, oy, true, state.world, state.world.viewH);
     const seedVisible = p.seed.y + 38 >= camY - 70 && p.seed.y - 38 <= camY + state.world.viewH + 70;
     if (seedVisible && !(p.tip && Math.hypot(p.tip.x - p.seed.x, p.tip.y - p.seed.y) < 24)) drawSeed(g, p.seed, oy);
@@ -223,5 +228,5 @@
     ctx.restore();
   }
 
-  FP.plantRender = { draw, drawFinger, buried, haloLevel, drill };
+  FP.plantRender = { drawOld, draw, drawFinger, buried, haloLevel, drill };
 })();

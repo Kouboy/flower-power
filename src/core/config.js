@@ -30,11 +30,11 @@
 
     level: {
       // Marge de respiration autour du rectangle rendu de chaque PNG (placement sans chevauchement).
-      padding: { authored: 7, signature: 12 },
+      padding: { authored: 5, signature: 12 },   // v4.1.0 : 5 (v3 : 7), terrain plus dense
       // Bandes de profondeur (fraction entre surface et fond).
       bands: { upper: .26, middle: .58 },
-      // Grille de spawn : 5 colonnes, une rangée tous les ~72 px.
-      grid: { cols: 5, rowPx: 72, minRows: 10, marginX: 36, topPad: 58, bottomPad: 126 },
+      // Grille de spawn : 5 colonnes, une rangée tous les ~60 px (v3 : 72).
+      grid: { cols: 5, rowPx: 60, minRows: 10, marginX: 36, topPad: 58, bottomPad: 126 },
       // Chemin sûr invisible : toujours possible, jamais un boulevard au centre.
       safePath: {
         startPad: 54, endPad: 36, segmentPx: 145, minNodes: 9, edge: 52,
@@ -48,8 +48,8 @@
       fit: { centerMarginX: 26, centerTop: 48, centerBottom: 118, maxOutside: { authored: 8, signature: 70 }, edgeTop: 34, edgeBottom: 100, safeExtra: 8, safeApproxK: .38 },
       // Densité cible (jamais un quota forcé). .92 = densité du cadrage B.
       skyVariants: 4, lawnVariants: 4, mirrorChance: .5,   // palettes de ciel / pelouse, obstacles retournés
-      // v4.1.0 : plus dense dès le premier passage (v3 : base 6, perLevel .18, maxExtra 6) ; plafond à la capacité du terrain (≈ 19 obstacles à 440 px).
-      solids: { base: 8.5, perLevel: .6, maxExtra: 2, scale: .84, framing: .92, worldScaleMax: 2.45, tries: 110, relaxAfter: 34, jitter: .27,
+      // v4.1.0 : plus dense dès le premier passage et plus vite (v3 : base 6, perLevel .18, maxExtra 6) ; plafond à la capacité du terrain (≈ 22 obstacles à 440 px).
+      solids: { base: 8.5, perLevel: 1.2, maxExtra: 6, scale: .84, framing: .92, worldScaleMax: 2.45, tries: 110, relaxAfter: 34, jitter: .27,
         giveUpAfter: 4,              // 4 obstacles impossibles de suite : le niveau est plein
         sizeJitter: [.88, 1.12] },   // v4.1.0 : chaque obstacle a sa taille (collision comprise)
       // Zones toxiques diffuses : plutôt en profondeur, jamais sur le chemin sûr.
@@ -63,7 +63,8 @@
       },
       // Limaces de lixiviat : trajets inclinés, une partie près de la route pour mettre la pression.
       leaks: {
-        base: 1, perLevel: .10, maxExtra: 3, scale: .68, tries: 120, relaxAfter: 32, jitter: .24, minDepth: .22,
+        // v4.1.0 : plus de limaces, plus vite (v3 : base 1, perLevel .10, maxExtra 3).
+        base: 2, perLevel: .35, maxExtra: 4, scale: .68, tries: 120, relaxAfter: 32, jitter: .24, minDepth: .22,
         nearRouteChance: .46, routeTop: 86, routeBottom: 142, routeOffset: [22, 62], routeMarginX: 42,
         angledChance: .90, angleJitter: .24, len: [42, 176], lenPerLevel: 3.2, lenLevelMax: 54, lenDepth: 22,
         rate: [.24, .92], r: [11, 16.2], marginX: 24, top: 48, bottom: 116,

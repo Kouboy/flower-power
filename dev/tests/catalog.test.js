@@ -25,8 +25,9 @@ FP.test('catalog: T-Rex signature jamais retourné', () => {
 FP.test('catalog: footprint = rectangle rendu + padding', () => {
   const o = FP.catalog.makeSolid({ kind: 'server', x: 100, y: 200, a: 0, flip: 1 });
   FP.assertEqual(o.footprint.length, 4);
-  FP.assertEqual(o.footprint[0].x, 100 - 40 - 7);
-  FP.assertEqual(o.footprint[2].x, 100 + 40 + 7);
+  const pad = FP.config.level.padding.authored;
+  FP.assertEqual(o.footprint[0].x, 100 - 40 - pad);
+  FP.assertEqual(o.footprint[2].x, 100 + 40 + pad);
 });
 FP.test('catalog: famille inconnue → null', () => FP.assertEqual(FP.catalog.makeSolid({ kind: 'pipe', x: 0, y: 0, a: 0, flip: 1 }), null));
 FP.test('catalog: asset sans polygone exclu', () => {
