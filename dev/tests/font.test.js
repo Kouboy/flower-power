@@ -1,8 +1,8 @@
 // Police bitmap de l'interface : glyphes, mesures, retour à la ligne (logique pure).
-FP.test('font: les textes de mort et de l’interface n’ont que des glyphes connus', () => {
-  const t = FP.config.text, all = [...Object.values(t.death), t.deathDefault, t.deathLeak, t.deathToxic,
-    t.ready, ...Object.values(t.shout), ...Object.values(t.help), t.again, ...t.footer, ...Object.values(t.certificate),
-    '0123456789Ɇ×+-%', (1234567).toLocaleString('fr-FR')];
+FP.test('font: tous les textes du jeu n’ont que des glyphes connus', () => {
+  const all = ['0123456789Ɇ×+-%', (1234567).toLocaleString('fr-FR')];
+  const walk = (v) => { if (typeof v === 'string') all.push(v); else if (v && typeof v === 'object') Object.values(v).forEach(walk); };
+  walk(FP.config.text);
   for (const s of all) for (const ch of s.toLocaleUpperCase('fr-FR')) FP.assert(FP.font.has(ch), 'glyphe manquant : ' + JSON.stringify(ch) + ' dans ' + s);
 });
 FP.test('font: largeur = chasses + 1 px entre glyphes, ×2 double', () => {

@@ -123,7 +123,7 @@
     },
 
     // Exposition toxique : ~1,14 s dans une nappe brûle la pointe ; on récupère 5× plus vite.
-    toxic: { exposureRate: .72, recoveryRate: 3.6, burnAt: .82, corruption: .28, messageTime: .82, messageCooldown: .72 },
+    toxic: { exposureRate: .72, recoveryRate: 3.6, burnAt: .82, corruption: .28, messageCooldown: .72 },   // messageCooldown : espace l'événement toxicEnter
 
     // Dangers diffus (v3.43.16).
     hazards: {
@@ -159,7 +159,6 @@
     // Récompenses de flyover (v3.42) : naissance devant la pointe, ramassage, spore.
     powerups: {
       formMax: .48, radius: { pollen: 13, water: 15, spore: 16 }, pickupPad: 9, missedBehind: 155, maxAge: 9.5,
-      messageTime: { flyover: .95, water: 1.15, pollen: 1.05, sporeCleaned: 1.35, sporeEmpty: 1.18 },
       spawn: { dirCone: 48, idealAhead: 80, aheadRisk: 24, minAhead: 38, surfacePad: 48, aheadSlack: 7,
         nearSurfaceUp: 92, minProjectionNear: 32, minProjection: 58, marginX: 30, top: 42, bottom: 52,
         leadNearSurface: 16, lead: 30, nearSurfaceSpan: 105, solidPad: 13, toxicMax: .10, leakPad: 22, spacing: 58, probeR: 16 },
@@ -167,7 +166,7 @@
     },
 
     // Bouclier organique : un choc absorbé, puis .48 s de grâce ; la pointe recule de 26 px sur sa trajectoire.
-    shield: { grace: .48, back: 26, edge: 14, shake: .16, messageTime: .92 },
+    shield: { grace: .48, back: 26, edge: 14, shake: .16 },
 
     // Parterre (v3 : bloom, flowerPalette) : 1 + pollen fleurs par éclosion, qui restent tout le run.
     garden: {
@@ -184,8 +183,7 @@
 
     // Déroulé de partie. hatchDelay : la motte se fend, puis la fleur sort (render/mound.js).
     flow: {
-      dyingTime: .85, bloomTime: 1.55, hatchDelay: .24, hatchShake: .1, fadeOutTime: .46, fadeInTime: .48, oldTrailsMax: 6, trailSimplifyPx: 11, deathShake: .28,
-      stemMessageTime: 1.35, deathMessageTime: 1.25, readyMessageTime: 2.2
+      dyingTime: .85, bloomTime: 1.55, hatchDelay: .24, hatchShake: .1, fadeOutTime: .46, fadeInTime: .48, oldTrailsMax: 6, trailSimplifyPx: 11, deathShake: .28
     },
 
     // Textes affichés.
@@ -198,18 +196,9 @@
       footer: ['© 2026 ÉCOSOFT™', 'UNE FILIALE DE PÉTROFLORE'],
       certificate: { title: 'CERTIFICAT', subtitle: 'D’ÉCO-RESPONSABILITÉ', flowers: 'FLEURS PLANTÉES', eco: 'ÉCOCRÉDITS™',
         stems: 'TIGES SACRIFIÉES', record: 'RECORD', beaten: 'BATTU', cause: 'CAUSE DU DÉCÈS :', stamp: 'VALIDÉ*', note: '* SOUS RÉSERVE' },
-      spore: { cleaned: 'SPORE : {n} DÉPÔT{s} NETTOYÉ{s}', empty: 'SPORE : ZONE NETTOYÉE' },
-      stem: 'POUSSE ',
-      seedsLeft: ' · graines restantes : ',
       deathDefault: 'rupture : déchet',
       deathLeak: 'lixiviat vivant : pointe brûlée',
       deathToxic: 'pointe brûlée dans une zone toxique',
-      toxicEnter: 'ZONE TOXIQUE : CROISSANCE DÉVIÉE',
-      corrupted: 'croissance déviée',
-      flyover: { pollen: 'FLYOVER : POLLEN LIBÉRÉ', water: 'FLYOVER : GOUTTE LIBÉRÉE', spore: 'FLYOVER RISQUÉ : SPORE LIBÉRÉE' },
-      pickup: { pollen: 'POLLEN RARE : +1 FLEUR', water: 'GOUTTE D’EAU : BOUCLIER ORGANIQUE' },
-      shieldBroken: 'BOUCLIER ORGANIQUE : MEMBRANE ROMPUE',
-      shield: 'bouclier organique',
       death: {
         server: 'rupture : rack serveur', nuclear: 'rupture : fût irradié', tire: 'rupture : pneu écrasé',
         sarcophagus: 'rupture : cercueil', drone: 'rupture : drone cassé', solar: 'rupture : panneau solaire',

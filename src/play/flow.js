@@ -1,18 +1,14 @@
-// play/flow.js — déroulé de partie : mort, éclosion, transitions, fin de partie, messages.
+// play/flow.js — déroulé de partie : mort, éclosion, transitions, fin de partie.
 // Lit     : state.mode, state.query, state.plant, state.input.pressed, state.events, state.rng, state.world.{surfaceY,width},
 //           FP.config.{flow,text,toxic,garden,soil}.
 // Écrit   : state.mode, state.flow, state.garden.flowers (création, croissance), state.plant.{reserves,oldTrails,corruption,toxicTimer,recentToxic}, state.score.flowers,
 //           state.level, state.camera.shake, state.events (death, bloom, blossom, toxicEnter, ready) ; appelle FP.level.generate et FP.plant.prepare/launch.
-// Expose  : FP.flow.update(state, dt), FP.flow.simplifyTrail(points, minStep), FP.flow.say(state, text, time).
+// Expose  : FP.flow.update(state, dt), FP.flow.simplifyTrail(points, minStep). Les textes à l'écran sont l'affaire de ui/*.
 // Porté de la v3.43.16 (die, bloom, transitions de update()) ; éclosion visuelle et fondu : étape 6.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
 
-  function say(state, text, time) {
-    state.flow.message = text;
-    state.flow.messageTimer = time;
-  }
 
   // Ancienne trace allégée : un point tous les minStep px, extrémités conservées.
   function simplifyTrail(points, minStep) {
@@ -58,17 +54,15 @@
     state.mode = 'bloom';
     state.flow.timer = cfg.bloomTime;
     state.flow.stage = 'show'; state.flow.fade = 0;
-    state.flow.messageTimer = 0;
   }
 
   // cause : 'solid' | 'leak' | 'toxic' ; kind : famille de l'obstacle (cause solid uniquement).
   function die(state, cause, kind, reason) {
-    const cfg = FP.config.flow, text = FP.config.text, p = state.plant;
+    const cfg = FP.config.flow, p = state.plant;
     p.reserves -= 1;
     state.events.push({ type: 'death', cause, kind, x: p.tip.x, y: p.tip.y });
     state.camera.shake = Math.max(state.camera.shake, cfg.deathShake);   // .28 pour toute mort, comme en v3
     if (p.reserves <= 0) { state.mode = 'over'; state.flow.overReason = reason; return; }
-    say(state, reason + text.seedsLeft + p.reserves, cfg.deathMessageTime);
     state.mode = 'dying';
     state.flow.timer = cfg.dyingTime;
   }
@@ -93,7 +87,6 @@
         f.fade = 0; f.stage = 'show';
         state.mode = 'ready';
         state.events.push({ type: 'ready' });
-        say(state, FP.config.text.ready, cfg.readyMessageTime);
       }
     }
   }
@@ -105,7 +98,6 @@
       p.toxicTimer += dt * t.exposureRate;
       p.corruption = Math.max(p.corruption, t.corruption);
       if (p.recentToxic <= 0) {
-        say(state, FP.config.text.toxicEnter, t.messageTime);
         p.recentToxic = t.messageCooldown;
         state.events.push({ type: 'toxicEnter', x: p.tip.x, y: p.tip.y });
       }
@@ -120,8 +112,6 @@
     for (const fl of state.garden.flowers) { fl.age += dt; if (fl.age > 0) fl.size = Math.min(fl.maxSize, fl.size + dt * gr * fl.maxSize); }
     p.corruption = Math.max(0, p.corruption - dt);
     p.recentToxic = Math.max(0, p.recentToxic - dt);
-    for (const e of state.events) if (e.type === 'stemStart') say(state, FP.config.text.stem + e.n, cfg.stemMessageTime);
-    if (f.messageTimer > 0) f.messageTimer = Math.max(0, f.messageTimer - dt);
 
     switch (state.mode) {
       case 'playing': {
@@ -134,17 +124,17 @@
       }
       case 'dying':
         f.timer -= dt;
-        if (f.timer <= 0) { FP.level.generate(state); FP.plant.launch(state); say(state, FP.config.text.stem + state.plant.stemCount, cfg.stemMessageTime); }
+        if (f.timer <= 0) { FP.level.generate(state); FP.plant.launch(state); }
         break;
       case 'bloom':
         f.timer -= dt;
         bloomStages(state, cfg);
         break;
       case 'ready':
-        if (state.input.pressed) { FP.plant.launch(state); say(state, FP.config.text.stem + state.plant.stemCount, cfg.stemMessageTime); }
+        if (state.input.pressed) FP.plant.launch(state);
         break;
     }
   }
 
-  FP.flow = { update, simplifyTrail, say };
+  FP.flow = { update, simplifyTrail };
 })();
