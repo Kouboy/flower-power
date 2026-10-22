@@ -1,7 +1,7 @@
 const hzRun = () => { const s = FP.state.createRun(5, { W: 440, H: 783 }); FP.level.startRun(s); FP.plant.launch(s); return s; };
 FP.test('hazards: vitesse bornée', () => {
   const s = hzRun(); s.plant.stemCount = 50; s.score.flowers = 50; s.plant.stemAge = 500;
-  FP.assertEqual(FP.hazards.leakSpeedScale(s), 2.45);
+  FP.assertEqual(FP.hazards.leakSpeedScale(s), 1 + FP.config.hazards.leakScaleMax);
 });
 FP.test('hazards: la limace parcourt son trajet', () => {
   const s = hzRun(), l = s.world.leaks[0], seen = [];
@@ -54,4 +54,9 @@ FP.test('hazards: une limace regarde toujours dans le sens où elle avance', () 
     last = Math.sign(moved);
   }
   FP.assert(flips >= 1, 'elle a fait au moins un aller-retour');
+});
+FP.test('hazards: les limaces vont nettement plus vite (+50 % de base, plafond ×3)', () => {
+  FP.assertEqual(FP.config.hazards.leakRateK, 2.6);
+  const s = FP.state.createRun(8, { W: 440, H: 783 }); FP.level.startRun(s); FP.plant.launch(s);
+  s.plant.stemCount = 99; s.score.flowers = 99; FP.assertEqual(FP.hazards.leakSpeedScale(s), 3);
 });

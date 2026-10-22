@@ -2,8 +2,8 @@
 // première pousse.
 // Lit     : state.events (death), state.time, state.mode, state.plant.{stemCount,trail}, state.score.flowers, state.input.down,
 //           FP.config.text.{death,deathDefault,shout,help}, FP.font, FP.hud.layout, FP.view.ui.
-// Écrit   : state.fx.ui.shout uniquement ({ text, t0 } du dernier cri).
-// Expose  : FP.shout.textFor(event), FP.shout.helpFor(state) (purs, testés), FP.shout.draw(g, state) (toile d'interface).
+// Écrit   : state.fx.ui.{shout, shoutCue} uniquement (dernier cri ; lettres déjà sonnées).
+// Expose  : FP.shout.textFor(event), FP.shout.helpFor(state), FP.shout.cues(state) (purs hors mémoire, testés), FP.shout.draw(g, state).
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
@@ -46,13 +46,30 @@
     });
   }
 
+  // Largeur de la toile d'interface (celle de l'écran le plus étroit sous Node, sans toile).
+  const uiWidth = () => (FP.view && FP.view.ui ? FP.view.ui.w : FP.config.view.minW / FP.px.SCALE);
+
+  // Sons dus depuis le dernier appel : un « letter » par lettre (hors espaces) qui a fini de tomber, dans l'ordre du dessin.
+  function cues(state) {
+    const ui = state.fx.ui, s = ui && ui.shout;
+    if (!s) return [];
+    if (!ui.shoutCue || ui.shoutCue.t0 !== s.t0) ui.shoutCue = { t0: s.t0, n: 0 };
+    const age = state.time - s.t0;
+    let i = 0, landed = 0;
+    for (const line of FP.font.wrap(s.text, uiWidth() - 8, { scale: 2 })) for (const ch of line) { if (!/\s/.test(ch) && age >= i * STAGGER + FALL) landed++; i++; }
+    const out = Array(Math.max(0, landed - ui.shoutCue.n)).fill('letter');
+    ui.shoutCue.n = Math.max(ui.shoutCue.n, landed);
+    return out;
+  }
+
   function draw(g, state) {
     const ui = state.fx.ui || (state.fx.ui = {});
     for (const e of state.events) if (e.type === 'death') ui.shout = { text: textFor(e), t0: state.time };
+    for (const c of cues(state)) FP.audio.sfx(c);
     if (ui.shout) drawShout(g, ui.shout, state.time);
     const help = helpFor(state);
     if (help) FP.font.draw(g, help, FP.view.ui.w / 2, FP.hud.layout(FP.view.ui.h).textY, { align: 'center' });   // au-dessus du combo
   }
 
-  FP.shout = { textFor, helpFor, draw };
+  FP.shout = { textFor, helpFor, cues, draw };
 })();

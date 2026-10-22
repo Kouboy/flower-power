@@ -156,3 +156,36 @@ FP.test('level: les nappes toxiques se répartissent sur toute la hauteur, surfa
   FP.assert(area[0] / total >= .25, 'tiers de surface : ' + Math.round(area[0] / total * 100) + ' %');
   FP.assert(area[2] / total <= .42, 'tiers du fond : ' + Math.round(area[2] / total * 100) + ' %');
 });
+FP.test('level: le chemin sûr se resserre avec les niveaux, jusqu’à presque la largeur de la tête', () => {
+  const r = (level) => { const s = FP.state.createRun(3, { W: 440, H: 783 }); s.level = level; FP.level.generate(s); return s.world.safeRadius; };
+  FP.assertEqual(r(0), 25); FP.assert(r(4) < 20 && r(4) > 17, String(r(4))); FP.assertEqual(r(8), 12); FP.assertEqual(r(20), 12);
+});
+// Franchissabilité à tous les niveaux (le chemin sûr se resserre) : géométrie réelle, pas la formule de placement.
+const genAt = (seed, level) => { const s = FP.state.createRun(seed, { W: 440, H: 783 }); s.level = level; FP.level.generate(s); return s.world; };
+const pathPoints = (w) => { const pts = [], P = w.safePath; for (let i = 1; i < P.length; i++) { const a = P[i - 1], b = P[i], n = Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 4); for (let k = 0; k <= n; k++) pts.push({ x: a.x + (b.x - a.x) * k / n, y: a.y + (b.y - a.y) * k / n }); } return pts; };
+const LEVELS = [0, 4, 8, 12], SEEDS = [...Array(30).keys()].map(i => i + 1);
+FP.test('level: à tous les niveaux, aucune nappe toxique ne recouvre le chemin sûr', () => {
+  for (const level of LEVELS) for (const seed of SEEDS) {
+    const w = genAt(seed, level), pts = pathPoints(w);
+    for (const o of w.toxics) {
+      const ca = Math.cos(-o.a), sa = Math.sin(-o.a);
+      for (const p of pts) { const dx = p.x - o.x, dy = p.y - o.y, u = (dx * ca - dy * sa) / o.rx, v = (dx * sa + dy * ca) / o.ry; FP.assert(u * u + v * v > 1, `niveau ${level}, graine ${seed}`); }
+    }
+  }
+});
+FP.test('level: à tous les niveaux, aucune limace ne touche le chemin sûr', () => {
+  const h = FP.config.hazards;
+  for (const level of LEVELS) for (const seed of SEEDS) {
+    const w = genAt(seed, level), pts = pathPoints(w);
+    for (const l of w.leaks) {
+      const ax = l.x - Math.cos(l.angle) * l.len / 2, ay = l.y - Math.sin(l.angle) * l.len / 2, bx = l.x + Math.cos(l.angle) * l.len / 2, by = l.y + Math.sin(l.angle) * l.len / 2;
+      for (const p of pts) FP.assert(FP.geom.distPointToSegment(p.x, p.y, ax, ay, bx, by) > l.r + h.leakWobble + h.leakHitPad, `niveau ${level}, graine ${seed}`);
+    }
+  }
+});
+FP.test('level: à tous les niveaux, aucun déchet ne mord sur le chemin sûr', () => {
+  for (const level of LEVELS) for (const seed of SEEDS) {
+    const w = genAt(seed, level);
+    for (const o of w.solids) for (const p of FP.catalog.visibleFootprint(o)) FP.assert(FP.level.distToSafePath(w, p.x, p.y) >= w.safeRadius, `niveau ${level}, graine ${seed}, ${o.kind}`);
+  }
+});

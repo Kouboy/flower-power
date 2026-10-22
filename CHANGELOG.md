@@ -2,6 +2,16 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.3.0 — Sound design FM et tension
+
+- tout le son est refait en synthèse FM façon Mega Drive (puce YM2612), sans aucun fichier son : un même moteur pour la musique et les effets ;
+- bande-son « hippie contaminée » : thème psyché 60s au titre, funk 70s hanté en jeu, en 4 variantes (une par pousse) ; couches selon le danger (percussions au frôlement, orgue dans une nappe, sitar près de la surface, thérémine lointain), tempo qui accélère à chaque éclosion (100 → 125 BPM), veille entre deux niveaux, musique qui baisse au frôlement, à la mort et quand la fleur sort ;
+- effets refaits en FM, accordés en mi, et nouveaux sons : réveil du titre, départ, ronron de la pousse, motte qui se fend, jingles (mort, fleur, record), lettres du cri, machine à écrire et tampon du certificat ;
+- réglage du son sur l'écran titre (tout, effets seuls, muet), mémorisé ; son en pause quand l'onglet est caché ;
+- plus de tension : la tige part à 120 (90), gagne +6 par tige et par fleur, plafond 260 ; limaces +50 % ; la marge du chemin sûr se resserre de 25 à 12 au niveau 8 ;
+- le squelette de dinosaure militant redevient un monument (280 de large, réglé sur l'écran) ; la tige passe par-dessus la motte ;
+- banc : 289 tests.
+
 ## v4.2.6 — PRESS TO START
 
 - au lancement, un écran d'accueil figé façon Mega Drive : le titre immobile et « PRESS TO START » ; le premier appui débloque le son, passe en plein écran sur téléphone et tablette (portrait verrouillé quand Android le permet ; sans plein écran sur iPhone) et réveille le titre (logo animé, « TOUCHER POUR POUSSER ») ; sur ordinateur, pas de plein écran ;

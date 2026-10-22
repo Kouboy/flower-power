@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '4.2.6',
+    version: '4.3.0',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -41,7 +41,8 @@
         firstStep: [52, 86], swapChance: .18, swapNodes: [3, 6], spread: [.18, .34],
         baseStep: 58, stepBonusMax: 12, pull: .48, wobble: .42,
         centerDeadzone: 38, centerPush: [42, 72], endJitter: 44,
-        radiusBase: 25, radiusPerLevel: 1.25, radiusMax: 10
+        // v4.3.0 : la marge du chemin sûr se resserre avec les niveaux (v3 : elle s'élargissait de 25 à 35), jusqu'à presque la tête.
+        radiusBase: 25, radiusPerLevel: -1.625, radiusMin: 12
       },
       // Où un solide a le droit de se poser.
       // maxOutside : de combien de px un obstacle peut dépasser du bord gauche/droit (il doit rester identifiable).
@@ -103,14 +104,15 @@
     },
 
     // T-Rex « NON AUX ESSAIS NUCLÉAIRES » : armé dans 38 % des runs, au plus une fois, à partir d'un niveau tiré entre 1 et 4.
-    signature: { chance: .38, minLevel: 1, maxLevel: 4, tries: 110, minDepth: .55, jitter: .10, angle: .18 },
+    // maxWidthK : le squelette (280 de large) se règle sur l'écran pour laisser passer la tige (62 % de la largeur au plus).
+    signature: { chance: .38, minLevel: 1, maxLevel: 4, tries: 110, minDepth: .55, jitter: .10, angle: .18, maxWidthK: .62 },
 
     // Pousse (v3.43.16, cadrage B : vitesse ×.88). v4.1.0 : accélération par pousse franche (v3 : perStem 2.7, perFlower 1.35),
-    // ≈ +12 % par éclosion, plafond vers la 13e. v4.2.1 : départ 90 (v3 : 76), plafond 210 (v3 : 196) : le jeu était trop facile.
+    // v4.3.0 : départ 120 (v3 : 76), +6 par tige et par fleur, plafond 260 (v3 : 196) : les testeurs trouvaient le jeu trop facile.
     plant: {
       seeds: 3,   // graines de départ (vies)
       seedOffset: 46, startWobble: .07, floorOffset: 22,
-      speed: { base: 90, max: 210, perStem: 5, perFlower: 4, livePerSec: 1.45, liveMax: 16, framing: .88, controlled: .985 },
+      speed: { base: 120, max: 260, perStem: 6, perFlower: 6, livePerSec: 1.45, liveMax: 16, framing: .88, controlled: .985 },
       swayFreq: 1.25, swayDepth: .018, swayAmp: .035,
       control: { lookAheadTop: 185, lookAheadBottom: 92, guideRate: 10, turnDivisor: 138, turnGain: 1.18, sharpTop: .88, sharpBottom: 1.28, desiredY: -.78 },
       idleGuideRate: 4, idleLookAhead: 140,
@@ -128,7 +130,8 @@
 
     // Dangers diffus (v3.43.16).
     hazards: {
-      leakRateK: 1.75, leakScaleMax: 1.45, leakPerStem: .12, leakPerFlower: .035, leakPerSec: .018,
+      leakRateK: 2.6, leakScaleMax: 2, leakPerStem: .18,   // v4.3.0 : limaces +50 %, accélèrent davantage (v3 : 1.75, 1.45, .12)
+      leakPerFlower: .035, leakPerSec: .018,
       leakWobbleFreq: 5, leakWobble: 2, leakHitPad: 6, leakHitGain: 2.4,
       leakGrazeInner: 7, leakGrazeOuter: 38, leakDangerMax: .98, hitFlash: .18,
       toxicFalloff: .48, toxicMin: .18
@@ -205,7 +208,7 @@
         server: 'rupture : rack serveur', nuclear: 'rupture : fût irradié', tire: 'rupture : pneu écrasé',
         sarcophagus: 'rupture : cercueil', drone: 'rupture : drone cassé', solar: 'rupture : panneau solaire',
         battery: 'rupture : batterie', cone: 'rupture : cône mou', trashbag: 'rupture : sac gonflé',
-        extinguisher: 'rupture : extincteur vide', microwave: 'rupture : micro-ondes', trex_signature: 'rupture : crâne enfoui',
+        extinguisher: 'rupture : extincteur vide', microwave: 'rupture : micro-ondes', trex_signature: 'rupture : dinosaure militant',
         scooter: 'rupture : trottinette fossile', arcade: 'rupture : borne d’arcade'
       }
     },

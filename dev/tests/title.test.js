@@ -19,3 +19,10 @@ FP.test('title: plein écran seulement sur écran tactile', () => {
   FP.assertEqual(FP.title.wantsFullscreen('mouse'), false);
   FP.assertEqual(FP.title.wantsFullscreen(undefined), false, 'clavier');
 });
+FP.test('title: l’icône de son est touchable, et seulement elle', () => {
+  const r = FP.title.iconRect(206, 366);
+  FP.assert(FP.title.hitIcon(r.x + 2, r.y + 2, 206, 366));
+  FP.assert(FP.title.hitIcon(r.x - 4, r.y + r.h + 4, 206, 366), 'marge pour le doigt');
+  FP.assert(!FP.title.hitIcon(103, 183, 206, 366), 'le centre lance la partie');
+  FP.assert(r.x + r.w <= 206 && r.y >= 0);
+});

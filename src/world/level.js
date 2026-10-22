@@ -73,7 +73,7 @@
     }
     nodes.push({ x: clamp(x + rng.range(-p.endJitter, p.endJitter), lo, hi), y: endY });
     world.safePath = nodes;
-    world.safeRadius = p.radiusBase + Math.min(p.radiusMax, level * p.radiusPerLevel);
+    world.safeRadius = Math.max(p.radiusMin, p.radiusBase + level * p.radiusPerLevel);
   }
 
   function distToSafePath(world, x, y) {
@@ -135,7 +135,8 @@
     for (let tries = 0; tries < cfg.tries && !sig.spawned; tries++) {
       const cell = pickCell(grid, rng, c => c.r > 1 && c.r < grid.rows - 2 && depthK(world, c.y) > cfg.minDepth);
       const pos = cellPos(grid, rng, cell, cfg.jitter);
-      const o = FP.catalog.makeSolid({ kind: 'trex_signature', x: pos.x, y: pos.y, a: rng.range(-cfg.angle, cfg.angle), flip: 1 });
+      const nominal = FP.catalog.assets.trex_signature.render.worldWidth, scale = Math.min(1, world.width * cfg.maxWidthK / nominal);
+      const o = FP.catalog.makeSolid({ kind: 'trex_signature', x: pos.x, y: pos.y, a: rng.range(-cfg.angle, cfg.angle), flip: 1, scale });
       if (objectFits(world, o)) { world.solids.push(o); sig.spawned = true; }
       else cell.used = false;
     }
@@ -185,6 +186,10 @@
     return Math.round((c.base + Math.min(c.maxExtra, Math.floor(state.level * c.perLevel))) * worldScaleOf(state.world) * c.scale);
   }
 
+  // Marge du chemin sûr pour les nappes et les limaces : celle d'origine (radiusBase), même quand le chemin se resserre pour les
+  // déchets avec les niveaux — leurs règles de placement (ellipse, va-et-vient) ne tiennent qu'avec cette marge.
+  const hazardRadius = (world) => Math.max(world.safeRadius, FP.config.level.safePath.radiusBase);
+
   function placeToxics(state, grid) {
     const world = state.world, rng = state.rng, c = FP.config.level.toxics;
     const count = countFor(c, state);
@@ -205,7 +210,7 @@
         for (let q = 0; q < c.specks; q++) o.specks.push({ x: rng.range(-c.shape.speckX, c.shape.speckX), y: rng.range(-c.shape.speckY, c.shape.speckY), r: rng.range(...c.shape.speckR), light: rng.next() < c.lightChance });
         // Une nappe peut déborder du cadre, mais on doit en voir assez pour l'anticiper.
         const visible = (Math.min(world.width, o.x + o.rx) - Math.max(0, o.x - o.rx)) / (2 * o.rx);
-        if (visible >= c.minVisible && distToSafePath(world, o.x, o.y) > world.safeRadius + Math.max(o.rx, o.ry) * c.safeK + c.safeExtra) { world.toxics.push(o); placed = true; }
+        if (visible >= c.minVisible && distToSafePath(world, o.x, o.y) > hazardRadius(world) + Math.max(o.rx, o.ry) * c.safeK + c.safeExtra) { world.toxics.push(o); placed = true; }
         else cell.used = false;
       }
     }
@@ -276,7 +281,7 @@
         const notBuried = !nearSolid(world, pos.x, pos.y, c.solidPad) && !nearToxic(world, pos.x, pos.y, c.toxicPad);
         const breathing = !nearLeak(world, pos.x, pos.y, c.spacingCenter) && pts.every(p => !nearLeak(world, p.x, p.y, c.spacingPath));
         // Une limace peut mettre la pression près du chemin, jamais le condamner.
-        const pathOpen = pts.every(p => distToSafePath(world, p.x, p.y) >= world.safeRadius * c.safeK + leak.r);
+        const pathOpen = pts.every(p => distToSafePath(world, p.x, p.y) >= hazardRadius(world) * c.safeK + leak.r);
         if (inBounds && notBuried && breathing && pathOpen) { world.leaks.push(leak); placed = true; }
       }
     }

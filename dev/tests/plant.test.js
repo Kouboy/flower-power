@@ -7,14 +7,14 @@ FP.test('plant: lancement depuis la graine', () => {
   FP.assertEqual(s.plant.stemCount, 1);
   FP.assert(s.events.some(e => e.type === 'stemStart'));
 });
-FP.test('plant: vitesse de départ v4.2.1 (cadrage B)', () => {
+FP.test('plant: vitesse de départ v4.3.0 (cadrage B)', () => {
   const s = plantRun();
-  FP.assertEqual(FP.plant.speed(s), 90 * .88);
+  FP.assertEqual(FP.plant.speed(s), 120 * .88);
 });
 FP.test('plant: monte sans contrôle', () => {
   const s = plantRun(), y0 = s.plant.tip.y;
   for (let i = 0; i < 60; i++) FP.plant.update(s, 1 / 60);
-  FP.assert(y0 - s.plant.tip.y > 65 && y0 - s.plant.tip.y < 89, String(y0 - s.plant.tip.y));
+  FP.assert(y0 - s.plant.tip.y > 85 && y0 - s.plant.tip.y < 118, String(y0 - s.plant.tip.y));
   FP.assert(s.plant.trail.length > 5);
 });
 FP.test('plant: tourne vers le pointeur sans jamais redescendre', () => {
