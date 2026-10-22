@@ -107,6 +107,7 @@
     // Pousse (v3.43.16, cadrage B : vitesse ×.88). v4.1.0 : accélération par pousse franche (v3 : perStem 2.7, perFlower 1.35),
     // ≈ +12 % par éclosion, plafond vers la 13e.
     plant: {
+      seeds: 3,   // graines de départ (vies)
       seedOffset: 46, startWobble: .07, floorOffset: 22,
       speed: { base: 76, max: 196, perStem: 5, perFlower: 4, livePerSec: 1.45, liveMax: 16, framing: .88, controlled: .985 },
       swayFreq: 1.25, swayDepth: .018, swayAmp: .035,
@@ -197,7 +198,6 @@
       footer: ['© 2026 ÉCOSOFT™', 'UNE FILIALE DE PÉTROFLORE'],
       certificate: { title: 'CERTIFICAT', subtitle: 'D’ÉCO-RESPONSABILITÉ', flowers: 'FLEURS PLANTÉES', eco: 'ÉCOCRÉDITS™',
         stems: 'TIGES SACRIFIÉES', record: 'RECORD', beaten: 'BATTU', cause: 'CAUSE DU DÉCÈS :', stamp: 'VALIDÉ*', note: '* SOUS RÉSERVE' },
-      elanStep: 3,   // HUD : « élan » gagne 3 % par tige (affichage de la v3)
       spore: { cleaned: 'SPORE : {n} DÉPÔT{s} NETTOYÉ{s}', empty: 'SPORE : ZONE NETTOYÉE' },
       stem: 'POUSSE ',
       seedsLeft: ' · graines restantes : ',
