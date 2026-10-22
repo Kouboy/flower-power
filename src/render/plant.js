@@ -2,7 +2,7 @@
 // Lit     : state.plant, state.input, state.mode, state.time, state.world.viewH, state.camera.y, FP.config.plant.control, FP.plant.speed,
 //           FP.px, FP.palette.{stem,seed,strataTone}, FP.soil.surfaceTop, FP.geom.{clampUpAngle,distPointToSegment}, FP.hero, FP.powerupsRender.drawShield.
 // Écrit   : rien (le canvas uniquement).
-// Expose  : FP.plantRender.drawOld(actx, state) (anciennes tiges, sous les obstacles), FP.plantRender.draw(actx, state) (repère d'art, caméra appliquée ici), FP.plantRender.drawFinger(ctx, state) (couche nette),
+// Expose  : FP.plantRender.drawOld(actx, state) (anciennes tiges, sous les obstacles), FP.plantRender.draw(actx, state) (repère d'art, caméra appliquée ici), FP.plantRender.drawFinger(g, state) (toile d'interface),
 //           FP.plantRender.buried(x, y, old) — portion de tige recouverte de terre, FP.plantRender.haloLevel(d, old) — densité
 //           du halo tramé autour de la tige et de la graine, FP.plantRender.drill(state) — foreuse devant la tête (pures, testées).
 // Porté de la v3.43.16 (drawTrail, drawPlant, drawPointer), redessiné en pixels pour la v4.1.0.
@@ -217,15 +217,19 @@
     }
   }
 
-  // Cercle sous le doigt (couche nette, repère écran) : plein quand on pilote, discret sinon.
-  function drawFinger(ctx, state) {
+  // Anneau sous le doigt (toile d'interface, pixels d'art) : plein quand on pilote, un pixel sur trois sinon.
+  function drawFinger(g, state) {
     const i = state.input;
     if (!i.active || state.mode !== 'playing') return;
-    ctx.save();
-    ctx.globalAlpha = i.down ? .95 : .22;
-    ctx.strokeStyle = i.down ? '#fff0ad' : 'rgba(255,240,173,.4)'; ctx.lineWidth = i.down ? 2 : 1;
-    ctx.beginPath(); ctx.arc(i.screenX, i.y, 22 + Math.sin(state.time * 7) * 2, 0, TAU); ctx.stroke();
-    ctx.restore();
+    const { px } = FP, cx = px.toArt(i.screenX), cy = px.toArt(i.y), r = 11 + Math.round(Math.sin(state.time * 7));
+    const steps = Math.ceil(TAU * r * 1.4), seen = new Set();
+    g.fillStyle = '#fff0ad';
+    for (let s = 0; s < steps; s++) {
+      const x = cx + Math.round(Math.cos(s / steps * TAU) * r), y = cy + Math.round(Math.sin(s / steps * TAU) * r), k = x + ',' + y;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      if (i.down || seen.size % 3 === 0) g.fillRect(x, y, 1, 1);
+    }
   }
 
   FP.plantRender = { drawOld, draw, drawFinger, buried, haloLevel, drill };
