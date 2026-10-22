@@ -31,7 +31,7 @@
     const s = pickSeed(seed);
     const height = worldHeightFor(dims.H);
     return {
-      mode: 'menu',          // 'menu' | 'ready' | 'playing' | 'dying' | 'bloom' | 'over'
+      mode: 'menu',          // 'splash' (accueil figé, au lancement) | 'menu' | 'ready' | 'playing' | 'dying' | 'bloom' | 'over'
       time: 0,
       seed: s,
       level: 0,
