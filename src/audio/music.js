@@ -54,7 +54,8 @@
     const m = memoFor(backend), p = m.player, now = backend.now(), want = songFor(state);
     if (want.song !== p.current()) {
       if (!want.song) p.stop(OUT_FADE);
-      else p.play(want.song, { fade: want.song === 'title' ? TITLE_FADE : 0, gain: want.gain, bpm: want.song === 'title' ? 0 : tempoFor(state) });
+      else p.play(want.song, { fade: want.song === 'title' ? TITLE_FADE : 0, gain: want.gain, bpm: want.song === 'title' ? 0 : tempoFor(state),
+        atBar: want.song.startsWith('game') && !!p.current() && p.current().startsWith('game') });   // variante suivante : relais en fin de mesure
     }
     if (p.current() && p.current().startsWith('game')) { p.setTempo(tempoFor(state)); p.setLayers(layersFor(state)); }
     for (const e of events || []) {

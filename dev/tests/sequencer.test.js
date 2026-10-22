@@ -46,3 +46,14 @@ FP.test('music: silence à l’accueil, thème du titre une fois réveillé', ()
   FP.assertEqual(FP.music.songFor(s).song, null);
   s.mode = 'menu'; FP.assertEqual(FP.music.songFor(s).song, 'title');
 });
+FP.test('sequencer: en changeant de morceau, le nouveau démarre après ce que l’ancien a déjà planifié (pas de doublé)', () => {
+  const spy = audioSpy(), p = FP.sequencer.createPlayer(spy);
+  p.play('game0', { fade: 0, gain: 1, bpm: 100 });
+  for (let i = 0; i <= 36; i++) { spy.t = i * .025; p.update(spy.t); }   // 0,9 s : en pleine mesure
+  const at = (c) => (c[0] === 'drum' ? c[2] : c[3]), sounding = (c) => c[0] === 'note' || c[0] === 'drum';
+  const old = spy.calls.filter(sounding).map(at), lastOld = Math.max(...old), mark = spy.calls.length;
+  p.play('game1', { fade: 0, gain: 1, bpm: 100, atBar: true }); p.update(spy.t);
+  for (let i = 37; i <= 60; i++) { spy.t = i * .025; p.update(spy.t); }
+  const fresh = spy.calls.slice(mark).filter(sounding).map(at);
+  FP.assert(fresh.length > 0 && Math.min(...fresh) >= lastOld + .05, 'nouveau ' + Math.min(...fresh).toFixed(3) + ' / ancien ' + lastOld.toFixed(3));
+});
