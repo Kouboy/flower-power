@@ -99,9 +99,15 @@
     const rx = r * (l.morph === 'fat' ? 1.38 : (l.morph === 'clear' ? 1.32 : 1.22)), ry = r * (l.morph === 'fat' ? .78 : .63) + Math.sin(t * 8 + l.phase) * .4;
     const R = Math.ceil(rx) + 2, body = flash ? FP.palette.slug.flash : (l.morph === 'clear' ? FP.palette.slug.clear : FP.palette.slug.body);
     const inside = (x, y, k) => { const u = (x * ca + y * sa) / (rx + k), v = (-x * sa + y * ca) / (ry + k); return u * u + v * v <= 1; };
-    for (let y = -R; y <= R; y++) for (let x = -R; x <= R; x++) {
-      if (inside(x, y, 0)) px.rect(g, cx + x, cy + y, 1, 1, (-x * sa + y * ca) > ry * .35 ? FP.palette.slug.shade : body);
-      else if (inside(x, y, 1)) px.rect(g, cx + x, cy + y, 1, 1, FP.palette.slug.outline);
+    // Rangée par rangée, les pixels voisins de même couleur sont peints d'un seul trait (mêmes pixels, bien moins d'appels).
+    for (let y = -R; y <= R; y++) {
+      let run = null, x0 = 0;
+      for (let x = -R; x <= R + 1; x++) {
+        const c = x > R ? null : inside(x, y, 0) ? ((-x * sa + y * ca) > ry * .35 ? FP.palette.slug.shade : body) : (inside(x, y, 1) ? FP.palette.slug.outline : null);
+        if (c === run) continue;
+        if (run) px.rect(g, cx + x0, cy + y, x - x0, 1, run);
+        run = c; x0 = x;
+      }
     }
     // La tête (antennes, taches) passe du côté où la limace avance : miroir le long du trajet, l'ombre du corps reste en bas.
     const dir = FP.hazards.leakHeading(l), at = (u, v) => [cx + Math.round(dir * u * ca - v * sa), cy + Math.round(dir * u * sa + v * ca)];

@@ -19,18 +19,22 @@
     ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
   }
 
-  // Bresenham ; chaque point est un carré de `thick` pixels centré sur la ligne.
+  // Bresenham ; chaque point est un carré de `thick` pixels centré sur la ligne. Les points contigus d'une même rangée
+  // (ou d'une même colonne) sont peints d'un seul rectangle : mêmes pixels, beaucoup moins d'appels (Firefox les paie cher).
   function line(ctx, x0, y0, x1, y1, color, thick = 1) {
     x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1);
     const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1, o = (thick - 1) >> 1;
-    let err = dx + dy;
+    let err = dx + dy, rx = x0, ry = y0, ex = x0, ey = y0;   // segment en cours : de (rx, ry) à (ex, ey)
+    const flush = () => ctx.fillRect(Math.min(rx, ex) - o, Math.min(ry, ey) - o, Math.abs(ex - rx) + thick, Math.abs(ey - ry) + thick);
     ctx.fillStyle = color;
     for (;;) {
-      ctx.fillRect(x0 - o, y0 - o, thick, thick);
-      if (x0 === x1 && y0 === y1) return;
+      if (x0 === x1 && y0 === y1) { flush(); return; }
       const e2 = 2 * err;
       if (e2 >= dy) { err += dy; x0 += sx; }
       if (e2 <= dx) { err += dx; y0 += sy; }
+      if (y0 === ey && ry === ey && Math.abs(x0 - ex) === 1) ex = x0;          // même rangée, pixel voisin
+      else if (x0 === ex && rx === ex && Math.abs(y0 - ey) === 1) ey = y0;     // même colonne, pixel voisin
+      else { flush(); rx = ex = x0; ry = ey = y0; }
     }
   }
 
