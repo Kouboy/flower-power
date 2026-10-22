@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><title>Flower Power — maquettes de la bande-son</title>
+<style>body{font:15px/1.5 system-ui;margin:24px;max-width:900px}.cards{display:flex;gap:16px;flex-wrap:wrap}.card{flex:1;min-width:280px;border:1px solid #ccc;border-radius:10px;padding:14px}.subtitle{color:#666}</style></head><body>
+<!-- Maquettes de direction musicale écoutées en séance (2026-10-22) : A = écran titre, B = jeu. Ouvrir dans un navigateur, cliquer sur Écouter. -->
+<style>
+  .demo { display: flex; gap: 12px; align-items: center; margin-top: 10px; }
+  .demo button { font: 600 15px system-ui; padding: 9px 18px; border-radius: 8px; border: 1px solid #888; background: #fff; cursor: pointer; }
+  .demo button.on { background: #2a3a1c; color: #fff; }
+  .demo .bar { flex: 1; height: 6px; background: #ddd; border-radius: 3px; overflow: hidden; }
+  .demo .bar i { display: block; height: 100%; width: 0; background: #7ed636; }
+</style>
+
+<h2>Bande-son : quelle couleur ?</h2>
+<p class="subtitle">Maquettes sonores jouées en direct par un petit synthé FM (2 opérateurs par voix, comme la puce de la Mega Drive). Boucles d'environ 20 s. Mets le son, clique sur Écouter. Ce sont des directions, pas le morceau final.</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <h3>A · Psyché 60s qui a mal tourné</h3>
+      <p>92 BPM, gamme orientale (mi phrygien dominant). Orgue tremblant et désaccordé, basse ronde, ligne au timbre de sitar qui glisse, tambourin. Écho long.</p>
+      <div class="demo"><button data-demo="A" onclick="event.stopPropagation(); play('A', this)">Écouter</button><div class="bar"><i id="barA"></i></div></div>
+    </div>
+  </div>
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <h3>B · Funk 70s hanté</h3>
+      <p>100 BPM, blues mineur. Basse slap FM, clavinet étouffé, cuivres qui tombent, boîte à rythmes qui boite, et un thérémine fantôme en fond.</p>
+      <div class="demo"><button data-demo="B" onclick="event.stopPropagation(); play('B', this)">Écouter</button><div class="bar"><i id="barB"></i></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleSelect() {}
+let ac = null, master = null, send = null, current = null, timer = null, raf = null;
+const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
+
+// Un circuit de sortie neuf à chaque lecture : volume, compresseur, écho.
+function setup() {
+  if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+  master = ac.createGain(); master.gain.value = .55;
+  const comp = ac.createDynamicsCompressor(); master.connect(comp); comp.connect(ac.destination);
+  // Écho : retard + rétroaction filtrée (le côté « spooky »).
+  send = ac.createGain(); send.gain.value = 1;
+  const d = ac.createDelay(1.5), fb = ac.createGain(), lp = ac.createBiquadFilter(), wet = ac.createGain();
+  d.delayTime.value = .33; fb.gain.value = .38; lp.type = 'lowpass'; lp.frequency.value = 2400; wet.gain.value = .32;
+  send.connect(d); d.connect(lp); lp.connect(fb); fb.connect(d); lp.connect(wet); wet.connect(master);
+}
+
+// Voix FM à 2 opérateurs : le modulateur (fréquence × ratio) fait vibrer la fréquence de la porteuse ; l'indice
+// (profondeur) qui décroît donne l'attaque métallique typique de la YM2612.
+function fm(t, midi, dur, o) {
+  const f = mtof(midi) * (o.detune ? Math.pow(2, o.detune / 1200) : 1);
+  const car = ac.createOscillator(), mod = ac.createOscillator(), mg = ac.createGain(), env = ac.createGain();
+  car.type = o.wave || 'sine'; mod.type = 'sine';
+  car.frequency.setValueAtTime(f, t); mod.frequency.setValueAtTime(f * (o.ratio || 1), t);
+  if (o.bend) { car.frequency.setValueAtTime(f, t + (o.bendAt || 0)); car.frequency.exponentialRampToValueAtTime(f * o.bend, t + dur); mod.frequency.exponentialRampToValueAtTime(f * (o.ratio || 1) * o.bend, t + dur); }
+  const i0 = (o.index || 1) * f, i1 = (o.indexEnd !== undefined ? o.indexEnd : (o.index || 1) * .3) * f;
+  mg.gain.setValueAtTime(i0, t); mg.gain.exponentialRampToValueAtTime(Math.max(.01, i1), t + (o.indexTime || dur));
+  const a = o.attack || .005, r = o.release || .08, g = o.gain || .1;
+  env.gain.setValueAtTime(0.0001, t); env.gain.exponentialRampToValueAtTime(g, t + a);
+  env.gain.setTargetAtTime(g * (o.sustain !== undefined ? o.sustain : .6), t + a, (o.decay || .15));
+  env.gain.setTargetAtTime(0.0001, t + dur, r / 3);
+  if (o.vibrato) { const l = ac.createOscillator(), lg = ac.createGain(); l.frequency.value = o.vibrato[0]; lg.gain.value = f * o.vibrato[1]; l.connect(lg); lg.connect(car.frequency); l.start(t); l.stop(t + dur + r + .1); }
+  if (o.trem) { const l = ac.createOscillator(), lg = ac.createGain(), tg = ac.createGain(); l.frequency.value = o.trem; lg.gain.value = .45; tg.gain.value = .55; l.connect(lg); lg.connect(tg.gain); env.connect(tg); tg.connect(master); if (o.wet) tg.connect(send); l.start(t); l.stop(t + dur + r + .1); }
+  else { env.connect(master); if (o.wet) { const w = ac.createGain(); w.gain.value = o.wet; env.connect(w); w.connect(send); } }
+  mod.connect(mg); mg.connect(car.frequency); car.connect(env);
+  car.start(t); mod.start(t); car.stop(t + dur + r + .1); mod.stop(t + dur + r + .1);
+}
+
+let noiseBuf = null;
+function noise(t, dur, gain, filt, type, q) {
+  if (!noiseBuf) { noiseBuf = ac.createBuffer(1, ac.sampleRate, ac.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+  const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+  s.buffer = noiseBuf; f.type = type; f.frequency.value = filt; if (q) f.Q.value = q;
+  g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  s.connect(f); f.connect(g); g.connect(master); s.start(t, Math.random() * .5); s.stop(t + dur + .05);
+}
+function kick(t, g = .55) { const o = ac.createOscillator(), e = ac.createGain(); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(42, t + .12); e.gain.setValueAtTime(g, t); e.gain.exponentialRampToValueAtTime(.0001, t + .28); o.connect(e); e.connect(master); o.start(t); o.stop(t + .3); }
+function snare(t, g = .22) { noise(t, .16, g, 1900, 'bandpass', .8); fm(t, 50, .06, { ratio: 1.5, index: 2, gain: .06, release: .05 }); }
+function hat(t, g = .07, open) { noise(t, open ? .18 : .04, g, 7500, 'highpass'); }
+function tamb(t, g = .06) { noise(t, .09, g, 9000, 'bandpass', 2); noise(t + .015, .06, g * .6, 6000, 'highpass'); }
+
+// ---------- Démo A : psyché 60s qui a mal tourné (mi phrygien dominant) ----------
+const A = { bpm: 92, bars: 8, build(t0, step) {
+  const s16 = step, bar = 16 * s16;
+  const chords = [[52, 56, 59], [53, 57, 60], [52, 56, 59], [50, 53, 57], [52, 56, 59], [53, 57, 60], [48, 52, 55], [52, 56, 59]];   // E F E Dm E F C E
+  const roots = [40, 41, 40, 38, 40, 41, 36, 40];
+  const sitar = [[0, 64, 2], [2, 65, 2], [4, 68, 3], [7, 69, 1], [8, 71, 4], [12, 72, 2], [14, 71, 2]];
+  const sitar2 = [[0, 76, 3], [3, 74, 1], [4, 72, 2], [6, 71, 2], [8, 69, 2], [10, 68, 2], [12, 65, 2], [14, 64, 2]];
+  for (let b = 0; b < this.bars; b++) {
+    const t = t0 + b * bar;
+    // Orgue tremblant, deux couches désaccordées.
+    for (const n of chords[b]) { fm(t, n, bar * .96, { ratio: 1, index: .9, indexEnd: .7, attack: .06, sustain: .8, gain: .035, trem: 6.2, wet: .4, release: .15 }); fm(t, n + 12, bar * .96, { ratio: 2, index: .5, attack: .08, gain: .015, detune: 14, wet: .6 }); }
+    // Basse ronde.
+    for (const [p, d, oct] of [[0, 3, 0], [3, 1, 0], [6, 2, 7], [8, 3, 0], [11, 1, 12], [12, 2, 0], [14, 2, -2]]) fm(t + p * s16, roots[b] + oct, d * s16 * .9, { ratio: .5, index: 1.2, indexEnd: .4, gain: .16, sustain: .5, decay: .12 });
+    // Sitar FM (ratio inharmonique, glissés) sur les mesures paires.
+    if (b % 2 === 1) for (const [p, n, d] of (b % 4 === 3 ? sitar2 : sitar)) fm(t + p * s16, n, d * s16, { ratio: 3.51, index: 3.2, indexEnd: .6, indexTime: .25, gain: .05, sustain: .4, decay: .2, bend: d > 2 ? 1.06 : 1, bendAt: d * s16 * .5, wet: .5, vibrato: [5.5, .006] });
+    // Batterie : grosse caisse lourde, caisse claire, tambourin aux croches.
+    kick(t); kick(t + 10 * s16, .4); snare(t + 4 * s16); snare(t + 12 * s16);
+    for (let i = 0; i < 16; i += 2) tamb(t + i * s16, i % 4 === 2 ? .07 : .035);
+  }
+  return this.bars * bar;
+} };
+
+// ---------- Démo B : funk 70s hanté (mi mineur blues) ----------
+const B = { bpm: 100, bars: 8, build(t0, step) {
+  const s16 = step, bar = 16 * s16, late = () => (Math.random() * .025);   // la boîte à rythmes boite
+  const bassA = [[0, 40, 1], [2, 52, 1], [3, 40, 1], [6, 43, 1], [7, 45, 1], [8, 46, 1], [9, 47, 2], [12, 40, 1], [14, 50, 1], [15, 52, 1]];
+  const bassB = [[0, 40, 1], [2, 52, 1], [4, 40, 1], [6, 47, 1], [7, 46, 1], [8, 45, 2], [11, 43, 1], [12, 40, 1], [13, 52, 1], [14, 38, 2]];
+  for (let b = 0; b < this.bars; b++) {
+    const t = t0 + b * bar;
+    // Basse slap : indice fort qui chute vite (le « clac »), notes hautes pincées.
+    for (const [p, n, d] of (b % 2 ? bassB : bassA)) fm(t + p * s16, n, d * s16 * .8, { ratio: 1, index: n > 48 ? 6 : 3.5, indexEnd: .5, indexTime: .06, gain: n > 48 ? .12 : .17, sustain: .45, decay: .07, release: .05 });
+    // Clavinet étouffé : accords Em7 sur les contretemps.
+    for (const p of [1, 5, 7, 10, 13]) for (const n of [64, 67, 71, 74]) fm(t + p * s16, n, s16 * .45, { ratio: 3, index: 2.2, indexEnd: .3, indexTime: .05, gain: .02, sustain: .2, decay: .03, release: .03 });
+    // Cuivres qui tombent en fin de mesure impaire.
+    if (b % 2 === 1) for (const n of [59, 62, 66]) fm(t + 14 * s16, n, s16 * 2, { ratio: 1, index: 2.5, indexEnd: 4, attack: .03, gain: .05, sustain: .8, bend: .82, bendAt: s16, wet: .3 });
+    // Thérémine fantôme : sinus avec vibrato, glissés lents, très loin dans l'écho.
+    if (b % 4 === 0) fm(t, 76, bar * 1.9, { ratio: 1, index: .05, attack: .5, gain: .03, sustain: .9, vibrato: [6, .015], bend: .667, bendAt: bar, wet: .9, release: .6 });
+    // Boîte à rythmes qui boite.
+    kick(t); kick(t + 3 * s16 + late(), .45); kick(t + 10 * s16, .5);
+    snare(t + 4 * s16 + late()); snare(t + 12 * s16 + late()); if (b % 2) snare(t + 15 * s16, .1);
+    for (let i = 0; i < 16; i++) hat(t + i * s16 + (i % 2 ? s16 * .2 : 0) + late() * .5, i % 4 === 2 ? .08 : .04, i === 14);
+  }
+  return this.bars * bar;
+} };
+
+const DEMOS = { A, B };
+function stop() {
+  if (timer) clearTimeout(timer); timer = null; if (raf) cancelAnimationFrame(raf); raf = null;
+  if (master) { master.gain.setTargetAtTime(0, ac.currentTime, .05); const old = master, oldSend = send; setTimeout(() => { old.disconnect(); oldSend.disconnect(); }, 400); master = null; send = null; }
+  document.querySelectorAll('.demo button').forEach(b => { b.classList.remove('on'); b.textContent = 'Écouter'; });
+  document.querySelectorAll('.demo .bar i').forEach(i => i.style.width = '0');
+  current = null;
+}
+function play(name, btn) {
+  const again = current === name;
+  stop();
+  if (again) return;
+  setup();
+  ac.resume();
+  current = name; btn.classList.add('on'); btn.textContent = 'Stop';
+  const demo = DEMOS[name], step = 60 / demo.bpm / 4;
+  let start = ac.currentTime + .1;
+  const loop = () => { const len = demo.build(start, step); const s0 = start; start += len; timer = setTimeout(loop, (start - ac.currentTime - 1) * 1000);
+    const bar = document.getElementById('bar' + name); const tick = () => { if (current !== name) return; bar.style.width = Math.min(100, (ac.currentTime - s0) / len * 100) + '%'; raf = requestAnimationFrame(tick); }; tick(); };
+  loop();
+}
+</script>
+
+</body></html>
