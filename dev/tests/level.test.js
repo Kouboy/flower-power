@@ -39,7 +39,7 @@ FP.test('level: le T-Rex signature trouve sa place sur écran étroit', () => {
 });
 FP.test('level: densité plausible, familles PNG uniquement', () => {
   const s = gen(1234);
-  FP.assert(s.world.solids.length >= 8 && s.world.solids.length <= 14, String(s.world.solids.length));
+  FP.assert(s.world.solids.length >= 12 && s.world.solids.length <= 22, String(s.world.solids.length));   // v4.1.0 : plus dense
   for (const o of s.world.solids) FP.assert(FP.catalog.has(o.kind) && o.kind !== 'trex_signature', o.kind);
 });
 FP.test('level: chemin sûr du fond vers la surface', () => {
@@ -118,4 +118,13 @@ FP.test('level: des trajets de limaces peuvent dépasser du cadre', () => {
     }
   }
   FP.assert(out > 0, 'aucun trajet ne dépasse');
+});
+// Difficulté v4.1.0 : plus dense dès le premier passage, et une rampe qui se sent (moyenne sur 12 graines, fenêtre 440 × 783).
+const meanSolids = (level) => { let n = 0; for (let seed = 1; seed <= 12; seed++) { const s = FP.state.createRun(seed, { W: 440, H: 783 }); s.level = level; FP.level.startRun(s); n += s.world.solids.length; } return n / 12; };
+FP.test('level: premier niveau plus dense', () => { const m = meanSolids(0); FP.assert(m >= 14, 'moyenne ' + m); });
+FP.test('level: la densité monte nettement avec les niveaux', () => { const a = meanSolids(0), b = meanSolids(4); FP.assert(b >= a + 2.5, a + ' → ' + b); });   // le terrain plafonne vers 20 obstacles
+FP.test('level: les obstacles d’un niveau n’ont pas tous la même taille', () => {
+  const s = FP.state.createRun(21, { W: 440, H: 783 }); FP.level.startRun(s);
+  const widths = new Set(s.world.solids.filter(o => !o.signature).map(o => Math.round(o.w)));
+  FP.assert(widths.size >= 4, String([...widths]));
 });

@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '4.0.0',
+    version: '4.1.0',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -15,10 +15,11 @@
       dprMax: 1.15,
       minW: 300,
       minH: 520,
-      // Hauteur du ciel : H * surfaceRatio, bornée.
-      surfaceRatio: .136,
-      surfaceMin: 82,
-      surfaceMax: 116
+      // Hauteur du ciel : H * surfaceRatio, bornée. v4.1.0 : plus haut que la v3 (.136, 82–116)
+      // pour que le ciel du crépuscule reste visible sous le cadrage ×1,18.
+      surfaceRatio: .19,
+      surfaceMin: 100,
+      surfaceMax: 160
     },
 
     // Hauteur du monde : la graine part bien plus bas que l'écran visible.
@@ -29,11 +30,11 @@
 
     level: {
       // Marge de respiration autour du rectangle rendu de chaque PNG (placement sans chevauchement).
-      padding: { authored: 7, signature: 12 },
+      padding: { authored: 5, signature: 12 },   // v4.1.0 : 5 (v3 : 7), terrain plus dense
       // Bandes de profondeur (fraction entre surface et fond).
       bands: { upper: .26, middle: .58 },
-      // Grille de spawn : 5 colonnes, une rangée tous les ~72 px.
-      grid: { cols: 5, rowPx: 72, minRows: 10, marginX: 36, topPad: 58, bottomPad: 126 },
+      // Grille de spawn : 5 colonnes, une rangée tous les ~60 px (v3 : 72).
+      grid: { cols: 5, rowPx: 60, minRows: 10, marginX: 36, topPad: 58, bottomPad: 126 },
       // Chemin sûr invisible : toujours possible, jamais un boulevard au centre.
       safePath: {
         startPad: 54, endPad: 36, segmentPx: 145, minNodes: 9, edge: 52,
@@ -47,7 +48,10 @@
       fit: { centerMarginX: 26, centerTop: 48, centerBottom: 118, maxOutside: { authored: 8, signature: 70 }, edgeTop: 34, edgeBottom: 100, safeExtra: 8, safeApproxK: .38 },
       // Densité cible (jamais un quota forcé). .92 = densité du cadrage B.
       skyVariants: 4, lawnVariants: 4, mirrorChance: .5,   // palettes de ciel / pelouse, obstacles retournés
-      solids: { base: 6, perLevel: .18, maxExtra: 6, scale: .84, framing: .92, worldScaleMax: 2.45, tries: 110, relaxAfter: 34, jitter: .27 },
+      // v4.1.0 : plus dense dès le premier passage et plus vite (v3 : base 6, perLevel .18, maxExtra 6) ; plafond à la capacité du terrain (≈ 22 obstacles à 440 px).
+      solids: { base: 8.5, perLevel: 1.2, maxExtra: 6, scale: .84, framing: .92, worldScaleMax: 2.45, tries: 110, relaxAfter: 34, jitter: .27,
+        giveUpAfter: 4,              // 4 obstacles impossibles de suite : le niveau est plein
+        sizeJitter: [.88, 1.12] },   // v4.1.0 : chaque obstacle a sa taille (collision comprise)
       // Zones toxiques diffuses : plutôt en profondeur, jamais sur le chemin sûr.
       toxics: {
         base: 3, perLevel: .14, maxExtra: 4, scale: .70, tries: 80, relaxAfter: 30, jitter: .29,
@@ -59,7 +63,8 @@
       },
       // Limaces de lixiviat : trajets inclinés, une partie près de la route pour mettre la pression.
       leaks: {
-        base: 1, perLevel: .10, maxExtra: 3, scale: .68, tries: 120, relaxAfter: 32, jitter: .24, minDepth: .22,
+        // v4.1.0 : plus de limaces, plus vite (v3 : base 1, perLevel .10, maxExtra 3).
+        base: 2, perLevel: .35, maxExtra: 4, scale: .68, tries: 120, relaxAfter: 32, jitter: .24, minDepth: .22,
         nearRouteChance: .46, routeTop: 86, routeBottom: 142, routeOffset: [22, 62], routeMarginX: 42,
         angledChance: .90, angleJitter: .24, len: [42, 176], lenPerLevel: 3.2, lenLevelMax: 54, lenDepth: 22,
         rate: [.24, .92], r: [11, 16.2], marginX: 24, top: 48, bottom: 116,
@@ -75,7 +80,8 @@
       upper: [
         { kind: 'cone', w: .07, a: 1.05 }, { kind: 'extinguisher', w: .08, a: .95 },
         { kind: 'solar', w: .10, a: 1.22 }, { kind: 'drone', w: .10, a: 1.05 },
-        { kind: 'trashbag', w: .09, a: .95 }, { kind: 'battery', w: .08, a: .78 }
+        { kind: 'trashbag', w: .09, a: .95 }, { kind: 'battery', w: .08, a: .78 },
+        { kind: 'scooter', w: .08, a: .9 }                                                      // v4.1.0
       ],
       middle: [
         { kind: 'microwave', w: .09, a: .85 }, { kind: 'extinguisher', w: .08, a: 1.05 },
@@ -83,23 +89,26 @@
         { kind: 'tire', w: .09, a: 1.55 }, { kind: 'solar', w: .08, a: 1.28 },
         { kind: 'drone', w: .08, a: 1.08 }, { kind: 'trashbag', w: .08, a: .98 },
         { kind: 'battery', w: .07, a: .82 }, { kind: 'sarcophagus', w: .07, a: .62, noFlip: true },
-        { kind: 'nuclear', w: .06, a: .68 }
+        { kind: 'nuclear', w: .06, a: .68 },
+        { kind: 'scooter', w: .07, a: .95 }, { kind: 'arcade', w: .08, a: .7 }                 // v4.1.0
       ],
       deep: [
         { kind: 'microwave', w: .09, a: .95 }, { kind: 'extinguisher', w: .08, a: 1.08 },
         { kind: 'cone', w: .08, a: 1.15 }, { kind: 'tire', w: .10, a: 1.55 },
         { kind: 'server', w: .09, a: .75 }, { kind: 'trashbag', w: .08, a: 1.0 },
-        { kind: 'nuclear', w: .08, a: .72 }, { kind: 'sarcophagus', w: .08, a: .65, noFlip: true }
+        { kind: 'nuclear', w: .08, a: .72 }, { kind: 'sarcophagus', w: .08, a: .65, noFlip: true },
+        { kind: 'arcade', w: .09, a: .75 }                                                      // v4.1.0
       ]
     },
 
     // T-Rex « NON AUX ESSAIS NUCLÉAIRES » : armé dans 38 % des runs, au plus une fois, à partir d'un niveau tiré entre 1 et 4.
     signature: { chance: .38, minLevel: 1, maxLevel: 4, tries: 110, minDepth: .55, jitter: .10, angle: .18 },
 
-    // Pousse (v3.43.16, cadrage B : vitesse ×.88).
+    // Pousse (v3.43.16, cadrage B : vitesse ×.88). v4.1.0 : accélération par pousse franche (v3 : perStem 2.7, perFlower 1.35),
+    // ≈ +12 % par éclosion, plafond vers la 13e.
     plant: {
       seedOffset: 46, startWobble: .07, floorOffset: 22,
-      speed: { base: 76, max: 196, perStem: 2.7, perFlower: 1.35, livePerSec: 1.45, liveMax: 16, framing: .88, controlled: .985 },
+      speed: { base: 76, max: 196, perStem: 5, perFlower: 4, livePerSec: 1.45, liveMax: 16, framing: .88, controlled: .985 },
       swayFreq: 1.25, swayDepth: .018, swayAmp: .035,
       control: { lookAheadTop: 185, lookAheadBottom: 92, guideRate: 10, turnDivisor: 138, turnGain: 1.18, sharpTop: .88, sharpBottom: 1.28, desiredY: -.78 },
       idleGuideRate: 4, idleLookAhead: 140,
@@ -172,9 +181,9 @@
       ]
     },
 
-    // Déroulé de partie.
+    // Déroulé de partie. hatchDelay : la motte se fend, puis la fleur sort (render/mound.js).
     flow: {
-      dyingTime: .85, bloomTime: 1.55, fadeOutTime: .46, fadeInTime: .48, oldTrailsMax: 6, trailSimplifyPx: 11, deathShake: .28,
+      dyingTime: .85, bloomTime: 1.55, hatchDelay: .24, hatchShake: .1, fadeOutTime: .46, fadeInTime: .48, oldTrailsMax: 6, trailSimplifyPx: 11, deathShake: .28,
       stemMessageTime: 1.35, deathMessageTime: 1.25, readyMessageTime: 2.2
     },
 
@@ -198,7 +207,8 @@
         server: 'rupture : rack serveur', nuclear: 'rupture : fût irradié', tire: 'rupture : pneu écrasé',
         sarcophagus: 'rupture : cercueil', drone: 'rupture : drone cassé', solar: 'rupture : panneau solaire',
         battery: 'rupture : batterie', cone: 'rupture : cône mou', trashbag: 'rupture : sac gonflé',
-        extinguisher: 'rupture : extincteur vide', microwave: 'rupture : micro-ondes', trex_signature: 'rupture : crâne enfoui'
+        extinguisher: 'rupture : extincteur vide', microwave: 'rupture : micro-ondes', trex_signature: 'rupture : crâne enfoui',
+        scooter: 'rupture : trottinette fossile', arcade: 'rupture : borne d’arcade'
       }
     },
 
@@ -217,29 +227,6 @@
     },
 
     // Rendu du sol : la lisière d'herbe est dessinée 11 px sous surfaceY ; marge de tranche visible.
-    soil: { surfaceOffset: 11, viewPad: 70 },
-
-    // Palettes v3.43 : plus terre/papier, pour laisser respirer les sprites.
-    palette: {
-      skies: [
-        ['#6eabb9', '#a8ced0', '#dbe1c5', '#ead49d'],
-        ['#75b2bd', '#b4d3cf', '#e8e4c5', '#eed7a5'],
-        ['#718fae', '#aabbd0', '#d8d9c8', '#ead9aa'],
-        ['#78b4ad', '#b8d5c9', '#e3e3c2', '#efd2a0']
-      ],
-      lawns: [
-        ['rgba(132,165,72,.98)', 'rgba(75,116,57,.98)', 'rgba(48,79,43,.72)'],
-        ['rgba(151,175,73,.98)', 'rgba(86,123,57,.98)', 'rgba(51,81,43,.72)'],
-        ['rgba(113,158,83,.98)', 'rgba(64,111,68,.98)', 'rgba(45,76,52,.72)'],
-        ['rgba(164,170,72,.98)', 'rgba(95,119,55,.98)', 'rgba(57,78,42,.72)']
-      ],
-      soilBands: [
-        { a: 0, b: .18, c: 'rgba(189,125,68,.15)' },
-        { a: .18, b: .34, c: 'rgba(132,82,48,.15)' },
-        { a: .34, b: .53, c: 'rgba(91,56,39,.17)' },
-        { a: .53, b: .74, c: 'rgba(48,31,24,.20)' },
-        { a: .74, b: 1, c: 'rgba(10,7,6,.28)' }
-      ]
-    }
+    soil: { surfaceOffset: 11, viewPad: 70 }
   };
 })();

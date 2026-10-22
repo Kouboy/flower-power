@@ -22,19 +22,20 @@ FP.test('state: graine aléatoire si absente', () => {
   FP.assert(Number.isInteger(s.seed) && s.seed >= 0 && s.seed < 999999, String(s.seed));
 });
 FP.test('config: version et clé de record', () => {
-  FP.assertEqual(FP.config.version, '4.0.0');
+  FP.assertEqual(FP.config.version, '4.1.0');
   FP.assertEqual(FP.config.storageKey, 'flower_power_v4_best');
-  FP.assertEqual(FP.config.palette.skies.length, 4);
+  FP.assertEqual(FP.palette.sky.length, FP.config.level.skyVariants);   // une palette de ciel par variante tirée
+  FP.assertEqual(FP.palette.lawn.length, FP.config.level.lawnVariants);
 });
 FP.test('state: dimensions du monde à la création', () => {
   const s = FP.state.createRun(1, { W: 440, H: 783 });
   FP.assertEqual(s.world.width, 440);
   FP.assertEqual(s.world.viewH, 783);
   FP.assertEqual(s.world.height, 1840);          // max(783+620, floor(783*2.35))
-  FP.assertEqual(s.world.surfaceY, 783 * .136);
+  FP.assertEqual(s.world.surfaceY, 783 * .19);
   FP.assertEqual(s.camera.y, 1840 - 783);
-  FP.assertEqual(FP.state.createRun(1, { W: 440, H: 600 }).world.surfaceY, 82);
-  FP.assertEqual(FP.state.createRun(1, { W: 440, H: 2000 }).world.surfaceY, 116);
+  FP.assertEqual(FP.state.createRun(1, { W: 440, H: 600 }).world.surfaceY, 114);
+  FP.assertEqual(FP.state.createRun(1, { W: 440, H: 2000 }).world.surfaceY, 160);
 });
 FP.test('state: T-Rex signature désarmé à la création', () => {
   const s = FP.state.createRun(1, { W: 440, H: 783 });

@@ -1,0 +1,30 @@
+{
+  "assets": [
+    {
+      "asset_id": "f74ea8ce-055d-4c31-9387-9e60030d18bf",
+      "sha12": "16eb5c76ca73",
+      "file": "docs/art/reference-crepuscule.png",
+      "label": "Planche de référence : crépuscule pollué onirique, pelouse, strates (Nano Banana 2.1, 12 crédits)"
+    },
+    {
+      "asset_id": "debf046b-8454-40cc-a036-be9f6400f77c",
+      "file": "assets/obstacles/server01.png",
+      "label": "Référence de style importée : rack serveur"
+    },
+    {
+      "asset_id": "d65c98d1-7fc5-48e5-bd16-da307c3a4b6a",
+      "file": "assets/obstacles/pneu.png",
+      "label": "Référence de style importée : pneu"
+    },
+    {
+      "asset_id": "0fe8f504-7e36-40e3-8232-8e24c68e2112",
+      "file": "assets/obstacles/scooter01.png",
+      "label": "Trottinette (Nano Banana 2.1, 12 crédits, fond cyan détouré)"
+    },
+    {
+      "asset_id": "a31d21f1-edda-4211-aa89-335c7e8aacd8",
+      "file": "assets/obstacles/arcade01.png",
+      "label": "Borne d'arcade (Nano Banana 2.1, 12 crédits, fond cyan détouré)"
+    }
+  ]
+}

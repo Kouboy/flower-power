@@ -88,10 +88,10 @@ FP.test('flow: fleurs bornées au bord de l’écran', () => {
   FP.collision.update(s); FP.flow.update(s, 0);
   for (const f of s.garden.flowers) FP.assert(f.x >= 18 && f.x <= s.world.width - 18, String(f.x));
 });
-FP.test('flow: une fleur pousse en ~.4 s puis reste', () => {
+FP.test('flow: une fleur pousse en ~.4 s après la fente de la motte puis reste', () => {
   const s = flowRun(); s.plant.tip = { x: 220, y: s.world.surfaceY - 1 };
   FP.collision.update(s); FP.flow.update(s, 0);
-  for (let i = 0; i < 30; i++) FP.flow.update(s, 1 / 60);
+  for (let i = 0; i < 30 + Math.ceil(FP.config.flow.hatchDelay * 60); i++) FP.flow.update(s, 1 / 60);
   FP.assertEqual(s.garden.flowers[0].size, 1);
 });
 FP.test('flow: le parterre survit au niveau suivant, pas à un nouveau run', () => {

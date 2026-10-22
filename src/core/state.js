@@ -51,7 +51,7 @@
         solids: [], toxics: [], leaks: [], bonuses: []     // bonuses : récompenses de flyover (play/powerups.js)
       },
       query: { solid: null, danger: 0, near: null, toxic: 0, leak: 0, leakHit: null, grazes: [] },          // requête de pointe de la frame (world/collision.js)
-      flow: { timer: 0, message: '', messageTimer: 0, stage: 'show', fade: 0, overReason: '' },       // déroulé de partie (play/flow.js)
+      flow: { timer: 0, message: '', messageTimer: 0, stage: 'show', fade: 0, overReason: '', blossom: null },       // déroulé de partie (play/flow.js)
       garden: { flowers: [] },                                // parterre : fleurs écloses pendant tout le run
       graze: { active: new Map() },                           // frôlements en cours (play/graze.js)
       power: { shield: false, shieldGrace: 0 },              // bouclier organique (play/powerups.js)

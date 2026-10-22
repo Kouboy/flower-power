@@ -1,7 +1,7 @@
 // world/catalog.js — obstacles authorés : JSON de l'Asset Editor → solides prêts à placer.
 // Lit     : window.FLOWER_POWER_AUTHORED_ASSETS (assets/obstacles/manifest.js), FP.config.level.padding, FP.geom.toWorld.
 // Écrit   : rien.
-// Expose  : FP.catalog.assets, FP.catalog.has(kind), FP.catalog.makeSolid({kind,x,y,a,flip}),
+// Expose  : FP.catalog.assets, FP.catalog.has(kind), FP.catalog.makeSolid({kind,x,y,a,flip,scale}),
 //           FP.catalog.visibleFootprint(solid), FP.catalog.filterAssets(raw).
 // Le JSON est la source de vérité : worldWidth, pivot, mirrorSafe, polygone, grazeRadius, flyoverEligible.
 (function () {
@@ -39,13 +39,13 @@
     return a.spawn && a.spawn.signature === true ? p.signature : p.authored;
   }
 
-  function makeSolid({ kind, x, y, a, flip }) {
+  function makeSolid({ kind, x, y, a, flip, scale: size = 1 }) {
     const asset = assets[kind];
     if (!asset) return null;
     const render = asset.render || {};
     const srcW = Math.max(1, Number(asset.source && asset.source.width) || 1);
     const srcH = Math.max(1, Number(asset.source && asset.source.height) || 1);
-    const w = Number(render.worldWidth) || 80;
+    const w = (Number(render.worldWidth) || 80) * size;   // size : variation de taille par instance (collision comprise)
     const scale = w / srcW;
     const f = render.mirrorSafe === false ? 1 : (flip < 0 ? -1 : 1);
 

@@ -1,6 +1,6 @@
-FP.test('catalog: 12 assets, dont le T-Rex signature', () => {
+FP.test('catalog: 14 assets, dont le T-Rex signature', () => {
   const keys = Object.keys(FP.catalog.assets).sort();
-  FP.assertEqual(keys.join(','), 'battery,cone,drone,extinguisher,microwave,nuclear,sarcophagus,server,solar,tire,trashbag,trex_signature');
+  FP.assertEqual(keys.join(','), 'arcade,battery,cone,drone,extinguisher,microwave,nuclear,sarcophagus,scooter,server,solar,tire,trashbag,trex_signature');
 });
 FP.test('catalog: dimensions et collision mises à l’échelle', () => {
   const o = FP.catalog.makeSolid({ kind: 'server', x: 100, y: 200, a: 0, flip: 1 });
@@ -25,8 +25,9 @@ FP.test('catalog: T-Rex signature jamais retourné', () => {
 FP.test('catalog: footprint = rectangle rendu + padding', () => {
   const o = FP.catalog.makeSolid({ kind: 'server', x: 100, y: 200, a: 0, flip: 1 });
   FP.assertEqual(o.footprint.length, 4);
-  FP.assertEqual(o.footprint[0].x, 100 - 40 - 7);
-  FP.assertEqual(o.footprint[2].x, 100 + 40 + 7);
+  const pad = FP.config.level.padding.authored;
+  FP.assertEqual(o.footprint[0].x, 100 - 40 - pad);
+  FP.assertEqual(o.footprint[2].x, 100 + 40 + pad);
 });
 FP.test('catalog: famille inconnue → null', () => FP.assertEqual(FP.catalog.makeSolid({ kind: 'pipe', x: 0, y: 0, a: 0, flip: 1 }), null));
 FP.test('catalog: asset sans polygone exclu', () => {
@@ -36,4 +37,19 @@ FP.test('catalog: chaque asset a son runtime.src', () => { for (const a of Objec
 // level.js échantillonne le chemin sûr autour du centre de l'obstacle : un pivot décentré devra être pris en compte là-bas.
 FP.test('catalog: tous les assets ont un pivot centré', () => {
   for (const a of Object.values(FP.catalog.assets)) FP.assert(a.render.pivot[0] === .5 && a.render.pivot[1] === .5, a.id);
+});
+FP.test('catalog: l’échelle agrandit le sprite et sa collision ensemble', () => {
+  const a = FP.catalog.makeSolid({ kind: 'tire', x: 0, y: 0, a: 0, flip: 1 }), b = FP.catalog.makeSolid({ kind: 'tire', x: 0, y: 0, a: 0, flip: 1, scale: 1.1 });
+  FP.assert(Math.abs(b.w - a.w * 1.1) < 1e-9 && Math.abs(b.h - a.h * 1.1) < 1e-9);
+  b.collision.forEach(([x, y], i) => FP.assert(Math.abs(x - a.collision[i][0] * 1.1) < 1e-9 && Math.abs(y - a.collision[i][1] * 1.1) < 1e-9));
+  FP.assert(b.broadR > a.broadR);
+});
+FP.test('catalog: nouveaux déchets importés (trottinette, borne d’arcade), placés et nommés à la mort', () => {
+  for (const k of ['scooter', 'arcade']) {
+    FP.assert(FP.catalog.has(k), k + ' absent du catalogue');
+    FP.assert(FP.config.text.death[k], k + ' sans message de mort');
+    FP.assert(['upper', 'middle', 'deep'].some(b => FP.config.spawnTables[b].some(e => e.kind === k)), k + ' absent des tables d’apparition');
+  }
+  // tout ce que les tables peuvent tirer existe au catalogue et a son message
+  for (const b of ['upper', 'middle', 'deep']) for (const e of FP.config.spawnTables[b]) FP.assert(FP.catalog.has(e.kind) && FP.config.text.death[e.kind], e.kind);
 });

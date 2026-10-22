@@ -124,7 +124,8 @@
     for (const e of table) { if (r < e.w) { entry = e; break; } r -= e.w; }
     const a = rng.range(-entry.a, entry.a);
     const flip = entry.noFlip ? 1 : (rng.next() < FP.config.level.mirrorChance ? -1 : 1);
-    return FP.catalog.makeSolid({ kind: entry.kind, x: pos.x, y: pos.y, a, flip });
+    const scale = rng.range(...FP.config.level.solids.sizeJitter);
+    return FP.catalog.makeSolid({ kind: entry.kind, x: pos.x, y: pos.y, a, flip, scale });
   }
 
   // Le grand PNG signature réserve sa place AVANT le mobilier courant.
@@ -145,7 +146,8 @@
     const worldScale = worldScaleOf(world);
     const count = Math.round((s.base + Math.min(s.maxExtra, Math.floor(state.level * s.perLevel))) * worldScale * s.scale * s.framing);
     const bands = ['upper', 'middle', 'deep'];
-    for (let i = 0; i < count; i++) {
+    let misses = 0;
+    for (let i = 0; i < count && misses < s.giveUpAfter; i++) {
       const preferred = bands[i % 3];
       let placed = false;
       for (let tries = 0; tries < s.tries && !placed; tries++) {
@@ -156,7 +158,9 @@
         if (o && objectFits(world, o)) { world.solids.push(o); placed = true; }
         else cell.used = false;
       }
-      // Pas de place : on accepte un décor moins dense plutôt que de superposer deux assets.
+      // Pas de place : on accepte un décor moins dense plutôt que de superposer deux assets ;
+      // après plusieurs échecs de suite, le niveau est plein et on arrête de chercher.
+      misses = placed ? 0 : misses + 1;
     }
   }
 

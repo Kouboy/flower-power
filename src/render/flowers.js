@@ -1,53 +1,88 @@
-// render/flowers.js — fleurs illustrées du parterre (cache pour les fleurs finies, dessin animé pour celles qui poussent).
+// render/flowers.js — le parterre : chaque fleur est le héros éclos, avec son visage et ses variantes, en pixels d'art.
 // Lit     : state.garden.flowers (x, size, maxSize, age, palette, tilt), state.world.{surfaceY,viewH}, state.camera.y,
-//           FP.view.W, FP.config.{garden,soil}.
-// Écrit   : rien dans l'état (canvas de cache interne).
-// Expose  : FP.flowersRender.draw(ctx, state) (repère monde).
-// Porté de la v3.43.16 (drawIllustratedFlower, rebuildFlowerCache, drawFlowerCache, partie fleurs de drawPlant).
+//           state.flow.stage, FP.view.W, FP.config.{garden,soil}, FP.px, FP.palette.{flowers,stem}, FP.hero.face.
+// Écrit   : rien dans l'état (cache des fleurs finies, créé à la première utilisation).
+// Expose  : FP.flowersRender.draw(actx, state) (repère d'art, caméra appliquée ici), FP.flowersRender.variant(flower), extent(flower) (purs), CACHE_TOP.
+// Ne touche pas au DOM au chargement : testable sous Node.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
   const TAU = FP.TAU;
-  const CACHE_TOP = -126, CACHE_H = 144;   // le cache couvre 126 px au-dessus de la base et 18 px en dessous
+  const SHAPES = ['round', 'pointy', 'cup', 'double'];
+  const FACES = ['sleepy', 'asleep', 'smirk', 'blush', 'wink'];
+  const CACHE_TOP = 50, CACHE_H = 58;   // le cache couvre 50 pixels d'art au-dessus de la base et 8 en dessous (voir extent)
 
-  const cache = document.createElement('canvas');
-  const cg = cache.getContext('2d');
-  // Le cache dépend de la liste de fleurs du run (nouvelle à chaque partie), du nombre de fleurs finies et de la largeur.
-  let cachedList = null, cachedCount = -1, cachedW = -1;
+  // Empreinte 32 bits des données de la fleur (aucun tirage : une même fleur donne toujours la même variante).
+  function hash(f) {
+    const pal = Math.max(0, FP.config.garden.palettes.indexOf(f.palette));
+    let h = 2166136261;
+    for (const v of [Math.round(f.x * 10), Math.round(f.tilt * 1000), Math.round(f.maxSize * 1000), pal]) {
+      h = Math.imul(h ^ (v & 0xffff), 16777619); h = Math.imul(h ^ (v >>> 16), 16777619);
+    }
+    h ^= h >>> 15; h = Math.imul(h, 0x2c1b3c6d); h ^= h >>> 12; h = Math.imul(h, 0x297a2d39); h ^= h >>> 15;
+    return h >>> 0;
+  }
 
-  // Tige contourée comme la pousse souterraine, deux feuilles, cinq pétales irréguliers, cœur ponctué.
-  function drawFlower(g, f, baseY, size, animated) {
-    const s = Math.max(.04, size), pal = f.palette;
-    const stemLen = 44 + f.maxSize * 18, seed = f.x * .071 + f.tilt * 3.1;
-    g.save(); g.translate(f.x, baseY); g.rotate(f.tilt + (animated ? Math.sin(f.age * 1.4) * .022 : 0));
-    g.lineCap = 'round'; g.lineJoin = 'round';
-    g.strokeStyle = '#354727'; g.lineWidth = 5.4;
-    g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(-5, -stemLen * .36, 0, -stemLen); g.stroke();
-    g.strokeStyle = '#7fa75c'; g.lineWidth = 3.1;
-    g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(-4, -stemLen * .35, 0, -stemLen + 1); g.stroke();
-    g.strokeStyle = 'rgba(205,218,137,.62)'; g.lineWidth = .9;
-    g.beginPath(); g.moveTo(1, -5); g.quadraticCurveTo(-1, -stemLen * .38, 1, -stemLen + 3); g.stroke();
-    for (const [lx, ly, la] of [[-8, -stemLen * .43, -.82], [8, -stemLen * .25, .82]]) {
-      g.save(); g.translate(lx, ly); g.rotate(la);
-      g.fillStyle = '#718f50'; g.strokeStyle = '#354727'; g.lineWidth = 1.7;
-      g.beginPath(); g.ellipse(0, 0, 5.7, 10.6, 0, 0, TAU); g.fill(); g.stroke();
-      g.strokeStyle = 'rgba(211,220,143,.55)'; g.lineWidth = .9; g.beginPath(); g.moveTo(0, 7); g.lineTo(0, -7); g.stroke();
-      g.restore();
+  function variant(f) {
+    const h = hash(f), r = (h >>> 19) % 100;
+    return {
+      shape: SHAPES[h % 4], petals: 5 + ((h >>> 2) % 4), hue: ((h >>> 4) % 25) - 12,
+      stemK: .85 + ((h >>> 9) % 31) / 100, leafK: .85 + ((h >>> 14) % 31) / 100,
+      face: r < 4 ? 'tongue' : FACES[r % FACES.length]
+    };
+  }
+
+  // Décalage de teinte (degrés) d'une couleur #rrggbb.
+  function shiftHue(hex, deg) {
+    let [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
+    const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2, d = max - min;
+    if (!d || !deg) return hex;
+    const s = d / (1 - Math.abs(2 * l - 1));
+    let h = max === r ? ((g - b) / d) % 6 : (max === g ? (b - r) / d + 2 : (r - g) / d + 4);
+    h = ((h * 60 + deg) % 360 + 360) % 360;
+    const c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2;
+    [r, g, b] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+    return '#' + [r, g, b].map(v => Math.round((v + m) * 255).toString(16).padStart(2, '0')).join('');
+  }
+
+  // Dimensions en pixels d'art pour une croissance k (0 à 1) : longueur de tige, distance et rayon des pétales.
+  function geometry(f, v, k) {
+    const s = f.maxSize, open = Math.min(1, Math.max(0, (k - .35) / .5));
+    return { len: Math.round((20 + s * 9) * v.stemK * Math.min(1, k * 1.6)), dist: Math.round((4 + 3 * s) * open + 2), pr: Math.max(1, Math.round((2 + s) * open)) };
+  }
+
+  // Hauteur atteinte au-dessus de la base par une fleur épanouie (pétale ou rayon le plus haut, contour compris).
+  function extent(f) {
+    const v = variant(f), g = geometry(f, v, 1);
+    return g.len + Math.max(g.dist + g.pr + (v.shape === 'pointy' ? 3 : 1), 7);
+  }
+
+  // Une fleur en pixels d'art, base de tige en (bx, by). k = croissance de 0 à 1 ; face = nom du visage.
+  function drawFlower(g, f, bx, by, k, face) {
+    const { px, palette } = FP, v = variant(f), st = palette.stem;
+    const pal = palette.flowers[Math.max(0, FP.config.garden.palettes.indexOf(f.palette)) % palette.flowers.length];
+    const petal = pal.petal.map(c => shiftHue(c, v.hue)), s = f.maxSize, { len, dist, pr } = geometry(f, v, k);
+    const tx = bx + Math.round(Math.sin(f.tilt) * len), ty = by - len;
+    px.line(g, bx, by, tx, ty, st.outline, 3); px.line(g, bx, by, tx, ty, st.body, 1);
+    if (k > .4) {
+      const ly = by - Math.round(len * .42 * v.leafK), lx = bx + Math.round(Math.sin(f.tilt) * len * .42 * v.leafK);
+      for (const side of [-1, 1]) { px.rect(g, lx + (side < 0 ? -4 : 1), ly - 1, 4, 3, st.outline); px.rect(g, lx + (side < 0 ? -3 : 1), ly - 1, 3, 2, st.leaf); }
     }
-    g.translate(0, -stemLen);
-    for (let i = 0; i < 5; i++) {
-      const irregular = .92 + .12 * Math.sin(seed + i * 3.73);
-      const plen = (12.2 + 2.2 * Math.sin(seed * .7 + i * 1.93)) * s, pw = (6.5 + .8 * Math.cos(seed + i * 2.4)) * s;
-      g.save(); g.rotate(i * TAU / 5 + .08 * Math.sin(seed + i * 2.1));
-      g.fillStyle = pal[i % pal.length]; g.strokeStyle = 'rgba(82,59,42,.78)'; g.lineWidth = Math.max(1.1, 1.5 * s);
-      g.beginPath(); g.ellipse(0, -plen * .72, pw * irregular, plen, 0, 0, TAU); g.fill(); g.stroke();
-      g.restore();
-    }
-    g.fillStyle = pal[2]; g.strokeStyle = 'rgba(76,57,38,.86)'; g.lineWidth = Math.max(1.1, 1.6 * s);
-    g.beginPath(); g.arc(0, 0, 5.8 * s, 0, TAU); g.fill(); g.stroke();
-    g.fillStyle = 'rgba(91,69,35,.72)';
-    for (let i = 0; i < 4; i++) { const a = i * TAU / 4 + seed; g.beginPath(); g.arc(Math.cos(a) * 2.4 * s, Math.sin(a) * 2.4 * s, 1.05 * s, 0, TAU); g.fill(); }
-    g.restore();
+    if (k < .35) return;                                    // bourgeon encore fermé : la tige pousse d'abord
+    const angles = [];
+    for (let i = 0; i < v.petals; i++) angles.push(v.shape === 'cup' ? Math.PI + (i + .5) * Math.PI / v.petals : i * TAU / v.petals + f.tilt);
+    const ring = (d, r, col) => { for (const a of angles) px.disc(g, tx + Math.round(Math.cos(a) * d), ty + Math.round(Math.sin(a) * d), r, col); };
+    const rays = (extra, col, thick) => { for (const a of angles) px.line(g, tx, ty, tx + Math.round(Math.cos(a) * (dist + pr + extra)), ty + Math.round(Math.sin(a) * (dist + pr + extra)), col, thick); };
+    ring(dist, pr + 1, st.outline);
+    if (v.shape === 'pointy') rays(2, st.outline, 2);
+    ring(dist, pr, petal[1]);
+    if (v.shape === 'pointy') rays(1, petal[1], 1);
+    if (v.shape === 'double') ring(Math.max(2, dist - 3), Math.max(1, pr - 1), petal[0]);
+    else for (const a of angles) px.rect(g, tx + Math.round(Math.cos(a) * (dist + 1)) - 1, ty + Math.round(Math.sin(a) * (dist + 1)) - 1, 1, 1, petal[0]);
+    // Cœur : la tête du héros, avec son visage.
+    px.disc(g, tx, ty, 6, st.outline);
+    px.disc(g, tx, ty, 5, pal.heart);
+    FP.hero.face(g, tx, ty, face, { small: s < .95 });
   }
 
   // Une fleur finie ne bouge plus : elle passe dans le cache, redessiné seulement quand une autre finit de pousser.
@@ -56,29 +91,34 @@
     return f.age > g.bakedAge && f.size >= f.maxSize * g.bakedSize;
   }
 
-  function drawCache(ctx, state, baseY, finished) {
-    const W = Math.max(1, Math.ceil(FP.view.W));
-    const list = state.garden.flowers;
+  let cache = null, cachedList = null, cachedCount = -1, cachedW = -1;
+
+  function drawCache(actx, state, by, finished) {
+    const { px } = FP, W = Math.max(1, Math.ceil(FP.view.W / px.SCALE)), list = state.garden.flowers;
+    if (!cache) cache = document.createElement('canvas');
     if (list !== cachedList || finished.length !== cachedCount || W !== cachedW) {
       cache.width = W; cache.height = CACHE_H;
-      cg.clearRect(0, 0, W, CACHE_H);
-      for (const f of finished) drawFlower(cg, f, -CACHE_TOP, f.maxSize, false);
+      const g = cache.getContext('2d');
+      g.clearRect(0, 0, W, CACHE_H);
+      for (const f of finished) drawFlower(g, f, px.toArt(f.x), CACHE_TOP, 1, variant(f).face);
       cachedList = list; cachedCount = finished.length; cachedW = W;
     }
-    ctx.drawImage(cache, 0, baseY + CACHE_TOP);
+    actx.drawImage(cache, 0, by - CACHE_TOP);
   }
 
-  function draw(ctx, state) {
+  function draw(actx, state) {
     const flowers = state.garden.flowers;
     if (!flowers.length) return;
-    const baseY = state.world.surfaceY + FP.config.soil.surfaceOffset;
+    const { px } = FP, baseY = state.world.surfaceY + FP.config.soil.surfaceOffset;
     // Masquage de la v3 (drawFlowerCache) : centre 68 px au-dessus de la base, marge 185 px.
     const cy = baseY - 68, top = state.camera.y, bottom = state.camera.y + state.world.viewH;
-    if (cy + 185 < top || cy - 185 > bottom) return;            // parterre hors de l'écran
+    if (cy + 185 < top || cy - 185 > bottom) return;
+    const by = px.toArt(baseY) - px.toArt(state.camera.y);
     const finished = flowers.filter(isFinished);
-    if (finished.length) drawCache(ctx, state, baseY, finished);
-    for (const f of flowers) if (!isFinished(f)) drawFlower(ctx, f, baseY, f.size, true);
+    if (finished.length) drawCache(actx, state, by, finished);
+    const glory = state.flow.stage === 'show';
+    for (const f of flowers) if (!isFinished(f)) drawFlower(actx, f, px.toArt(f.x), by, f.size / f.maxSize, glory ? 'joy' : variant(f).face);
   }
 
-  FP.flowersRender = { draw };
+  FP.flowersRender = { draw, variant, extent, CACHE_TOP };
 })();

@@ -66,3 +66,8 @@ FP.test('plant: chaque tige gratte dès sa première frame', () => {
   s.events.length = 0; FP.plant.update(s, 1 / 60);
   FP.assert(!s.events.some(e => e.type === 'growthTick'), 'cadence ≥ 37 ms');
 });
+FP.test('plant: chaque éclosion rend la pousse suivante nettement plus rapide (≥ 10 %)', () => {
+  const s = plantRun(), v1 = FP.plant.speed(s);
+  s.plant.stemCount += 1; s.score.flowers += 1; s.plant.stemAge = 0;
+  FP.assert(FP.plant.speed(s) >= v1 * 1.1, FP.plant.speed(s) + ' vs ' + v1);
+});

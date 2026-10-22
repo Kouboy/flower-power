@@ -31,18 +31,22 @@ src/
 │   ├── powerups.js   ✅ flyover → pollen / goutte / spore, exclusivité, ramassage, bouclier organique
 │   └── scoring.js    ✅ ÉcoCrédits™, combo, records persistants
 ├── render/
-│   ├── view.js       ✅ canvas, DPR, 9:16
+│   ├── palette.js    ✅ palettes nommées (ciel, strates, pelouse, tige, graine, héros, fleurs) ; couleurs réservées au danger
+│   ├── px.js         ✅ boîte à outils pixel : rect, line, disc, ring, dither, downscale, posterize, outline
+│   ├── view.js       ✅ canvas, DPR, 9:16 ; toile monde à mi-résolution (FP.view.art)
 │   ├── sprites.js    ✅ chargement des PNG, FP.sprites.get(clé)
-│   ├── soil.js       ✅ ciel + pelouse + terre en cache offscreen
-│   ├── obstacles.js  ✅ ancrage sombre en cache + sprite
-│   ├── hazards.js    ✅ nappes (base + pellicule), limaces et sillons, anneau d'exposition
-│   ├── powerups.js   ✅ récompenses (naissance, glyphes), membrane du bouclier
-│   ├── plant.js      ✅ tige, anciennes traces, graine, bourgeon, guide, cercle du doigt
+│   ├── sky.js        ✅ ciel de crépuscule pollué : bandes tramées, soleil voilé, usines, smog qui dérive
+│   ├── soil.js       ✅ pelouse et trois strates tramées (humus, argile, pierre), détails clairsemés, en cache
+│   ├── obstacles.js  ✅ sprites ramenés sur la grille (8 niveaux par canal, contour), ancrage tramé
+│   ├── hazards.js    ✅ nappes tramées (base + pellicule), limaces et sillons, anneau d'exposition
+│   ├── powerups.js   ✅ récompenses (naissance, glyphes pixel), membrane du bouclier
+│   ├── hero.js       ✅ le héros : tête-bourgeon à visage, humeurs (FP.hero.mood), visages réutilisés par les fleurs
+│   ├── plant.js      ✅ tige pixel qui fouit (tunnel, mottes, racines, mycélium ; FP.plantRender.buried), graine, héros, guide, doigt
 │   ├── hud.js        ✅ panneaux, messages, écrans ready / over
-│   ├── frame.js      ✅ FP.render.frame(state) : secousse, zoom, caméra, ordre de dessin, HUD, fondu
-│   ├── effects.js    ✅ chiffres +Ɇ, anneaux de frôlement, ramassage, rupture, onde de spore, impact
-│   ├── flowers.js    ✅ fleurs illustrées du parterre, cache des fleurs finies
-│   └── particles.js  ✅ gerbes nées des événements, terre et éclats de la pointe, plafond 84 / 128
+│   ├── frame.js      ✅ FP.render.frame(state) : toile monde, agrandissement (secousse, zoom), couche nette, fondu
+│   ├── effects.js    ✅ anneaux en pixels (frôlement, ramassage, rupture, spore, impact, éclosion) ; chiffres +Ɇ nets
+│   ├── flowers.js    ✅ le héros devenu fleur, variantes par fleur (FP.flowersRender.variant), cache des fleurs finies
+│   └── particles.js  ✅ gerbes nées des événements, terre et éclats de la pointe, carrés de 1 à 2 pixels, plafond 84 / 128
 ├── audio/audio.js    ✅ son procédural (Web Audio) : effets, drone de frôlement, grattement de la pousse
 ├── ui/
 │   ├── menu.js       ✅ écran titre / fin de partie → nouveau run ; Espace / Entrée ; redimensionnement
@@ -85,7 +89,7 @@ L'état de la partie en cours est `FP.state.current`, créé par `FP.state.creat
 
 Toute valeur aléatoire de gameplay passe par `state.rng` (seedé), jamais par `Math.random()`.
 
-`createRun(seed, dims)` fixe pour tout le run `world.width`, `world.height` et `world.surfaceY` à partir de la taille de la vue : le niveau garde ses coordonnées. Si la fenêtre change en cours de partie, `ui/menu.js` appelle `FP.state.applyView` qui met à jour `world.viewH` et ramène la caméra dans ses bornes ; au menu, un run neuf est recréé. Le sol couvre toujours la largeur visible. `render/view.js` n'écrit jamais dans l'état. Seule exception tolérée côté rendu : `render/obstacles.js` met en cache le pochoir d'ancrage sur l'objet solide (`o._stencil`), jamais lu par la simulation.
+`createRun(seed, dims)` fixe pour tout le run `world.width`, `world.height` et `world.surfaceY` à partir de la taille de la vue : le niveau garde ses coordonnées. Si la fenêtre change en cours de partie, `ui/menu.js` appelle `FP.state.applyView` qui met à jour `world.viewH` et ramène la caméra dans ses bornes ; au menu, un run neuf est recréé. Le sol couvre toujours la largeur visible. `render/view.js` n'écrit jamais dans l'état. Seules exceptions tolérées côté rendu : `render/obstacles.js` met en cache l'ancrage pixel sur l'objet solide (`o._anchor`) et `render/hazards.js` les images d'une nappe (`o._px`), jamais lus par la simulation.
 
 Un niveau est généré par `FP.level.startRun(state)` (tirage du T-Rex signature puis `generate`) ; `generate` lit uniquement `state.rng`, donc `?seed=N` donne un niveau reproductible dans la v4 (pas le même que dans l'archive v3, qui tirait aussi des éléments retirés).
 
@@ -101,9 +105,28 @@ Un niveau est généré par `FP.level.startRun(state)` (tirage du T-Rex signatur
 
 Avec `?perf=1`, la boucle et `frame.js` mesurent update, render et les tranches sol / dangers / plante (`FP.perf`, `null` sinon).
 
+## Rendu pixel (v4.1.0)
+
+Spec : `docs/superpowers/specs/2026-10-21-rendu-pixel-design.md` ; référence d'ambiance : `docs/art/reference-crepuscule.png`.
+
+- **Deux couches.**
+  - Le monde est dessiné dans une toile à mi-résolution, `FP.view.art` : 1 pixel d'art = 2 pixels CSS, environ 220 pixels de large. Elle est ensuite agrandie sans lissage vers l'écran, avec la secousse et le zoom de caméra (les pixels font alors environ 2 à 2,4 px CSS).
+  - La couche nette (doigt, HUD, chiffres « +Ɇ », outils de réglage, fondu) est dessinée ensuite, à pleine résolution.
+- **Dessin.**
+  - Tout dessin du monde passe par `FP.px`, en pixels entiers, sans tracé lissé. Les modules du monde reçoivent le contexte de la toile et appliquent eux-mêmes la caméra (`toArt(y) - toArt(camera.y)`).
+  - Pas de transparence : un effet qui s'estompe perd des pixels selon un motif de Bayer.
+- **Palettes.**
+  - `FP.palette` nomme toutes les couleurs.
+  - Le violet chimique des dangers (`FP.palette.toxic`, `FP.palette.slug`, liste `FP.palette.danger`) leur est réservé : des tests vérifient qu'aucune couleur de décor ni aucun vert de la pousse ne s'en approche.
+- **Lisibilité.** Terre sombre à contraste bas, sans contour ; contours sombres réservés aux obstacles, à la tige, au héros, aux bonus et aux limaces.
+- **Héros.**
+  - Son humeur se déduit de l'état existant, sans rien ajouter à la simulation (`FP.hero.mood`). Par priorité : mort, toxique, frôlement, alerte, concentration, calme ; une humeur tient au moins 0,25 s.
+  - Les fleurs reprennent son visage, avec une variante tirée d'une empreinte de leurs données.
+- **Mesures (v4.1.0, fenêtre de 440 × 783)** : rendu de 0,6 à 0,9 ms en partie, au plus 1,7 ms pendant les effets (spore, bouclier, éclosion). Avec 30 fleurs, la tranche « plante » prend 0,7 ms.
+
 ## Ordre de chargement
 
-`index.html` charge : `assets/obstacles/manifest.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `hazards.js`, `src/play/plant.js`, `src/world/collision.js`, `src/play/flow.js`, `graze.js`, `scoring.js`, `powerups.js`, `src/play/camera.js`, `src/render/view.js`, `sprites.js`, `soil.js`, `obstacles.js`, `hazards.js`, `powerups.js`, `plant.js`, `hud.js`, `effects.js`, `flowers.js`, `particles.js`, `frame.js`, `src/audio/audio.js`, `src/debug/perf.js`, `flydebug.js`, `src/core/loop.js`, `src/ui/input.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` (pour le catalogue).
+`index.html` charge : `assets/obstacles/manifest.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `hazards.js`, `src/play/plant.js`, `src/world/collision.js`, `src/play/flow.js`, `graze.js`, `scoring.js`, `powerups.js`, `src/play/camera.js`, `src/render/palette.js`, `px.js`, `view.js`, `sprites.js`, `soil.js`, `sky.js`, `obstacles.js`, `hazards.js`, `powerups.js`, `hero.js`, `plant.js`, `hud.js`, `effects.js`, `flowers.js`, `particles.js`, `drillfx.js`, `mound.js`, `frame.js`, `src/audio/audio.js`, `src/debug/perf.js`, `flydebug.js`, `src/core/loop.js`, `src/ui/input.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` (pour le catalogue).
 
 `dev/check.html` charge aussi `src/audio/audio.js`, `src/debug/perf.js`, `flydebug.js` et `src/ui/input.js` (sans canvas ni paramètre d'URL : `FP.perf` et `FP.flydebug` valent `null`, le son reste muet, le pointeur n'est pas écouté).
 
@@ -138,6 +161,7 @@ Avec `?perf=1`, la boucle et `frame.js` mesurent update, render et les tranches 
 
 - `audio/audio.js` traduit les événements de la frame en sons (recettes de la v3, anti-rafale par type) et tient le drone du frôlement (proximité = timbre, durée = puissance). La pousse qui creuse émet un battement `growthTick { k, near }` (`play/plant.js`, cadence de la v3) : l'audio en fait le grattement, les particules la terre et les éclats, ensemble comme en v3. Le son ne démarre qu'après un premier geste (règle des navigateurs) ; sans Web Audio, le jeu reste muet. `FP.audio._backend` est remplaçable par un espion dans les tests.
 - `render/particles.js` crée ses gerbes à partir des événements (comme les effets) et vit dans `state.fx.particles`. Plafond : 84 pendant l'éclosion ou quand la pointe est près du haut de l'écran, 128 sinon.
+- `render/mound.js` dessine l'émergence : la pelouse gonfle au-dessus de la pointe (`FP.mound.swell`, pur et testé), se fend à l'événement `bloom`, puis laisse un petit tas au pied de la fleur (`state.fx.mound.heaps`, pour tout le run). `play/flow.js` émet `blossom` `flow.hatchDelay` (.24 s) après `bloom` : l'anneau doré et les pétales partent alors, et la fleur ne pousse qu'à partir de là.
 - `?flydebug=1` affiche la décision de chaque flyover : `powerups` émet `{ type: 'flyover', outcome: 'spawn' | 'blocked' | 'noSpot' | 'notQualified', kind, risk, time, effective, progress }`, et `bonusMissed` porte `gate`.
 
 ## Modes
@@ -146,12 +170,13 @@ Avec `?perf=1`, la boucle et `frame.js` mesurent update, render et les tranches 
 
 `bloom` enchaîne trois temps (`flow.stage`) : `show` (1,55 s, les fleurs éclosent), `fadeOut` (.46 s, voile noir), nouveau niveau sous le noir, `fadeIn` (.48 s), puis `ready` (événement `ready`).
 
-Pour ajouter un fichier : une ligne `<script>` après ses dépendances (celles listées dans son en-tête « Lit »), avant `ui/menu.js`. Un fichier de simulation (`core/`, `world/`, `play/`) s'ajoute aussi à `dev/check.html`, avant `harness.js`, avec son fichier de tests dans `dev/tests/`. Les fichiers `render/` et `ui/menu.js` ne sont pas chargés par `check.html` (ils ont besoin du DOM).
+Pour ajouter un fichier : une ligne `<script>` après ses dépendances (celles listées dans son en-tête « Lit »), avant `ui/menu.js`. Un fichier de simulation (`core/`, `world/`, `play/`) s'ajoute aussi à `dev/check.html`, avant `harness.js`, avec son fichier de tests dans `dev/tests/`. Les fichiers `render/` et `ui/menu.js` ne sont pas chargés par `check.html` (ils ont besoin du DOM), sauf `palette.js`, `px.js`, `hero.js` et `flowers.js`, qui ne touchent pas au DOM au chargement et sont testés.
 
 ## Vérification
 
 - `dev/check.html` : assertions sur la simulation, sans rendu. `node dev/run-checks.js` exécute la même liste en ligne de commande.
 - Gamefeel : `archive/v3.43.16/index.html?seed=N` côte à côte avec la v4, même taille de fenêtre.
+- `node dev/tools/import-sprite.js <image.png> <kind> <id> <largeur>` : importe un déchet généré sur fond cyan uni (détourage, recadrage, contour de collision calculé et vérifié, `<id>.png`, `<id>.json`, entrée du manifeste). Il reste à l'ajouter aux tables d'apparition et aux messages de mort (`config.js`).
 - `node dev/bench-level.js` : temps de génération d'un niveau (v4.0.1 : médiane 20 ms à 300 px de large, 3 ms à 440 px).
 - Parterre (`?perf=1`, tranche `plant`) : 30 fleurs finies coûtent 0,01 ms de plus que 0 (cache) ; seules les fleurs en train de pousser sont redessinées.
 - Mise à jour, son et rendu sont gardés séparément (`core/loop.js`) : une erreur est signalée une fois en console et n'arrête pas les autres ; `frame.js` restaure toujours le contexte du canvas.

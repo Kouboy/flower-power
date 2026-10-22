@@ -2,6 +2,29 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.1.0 — Rendu pixel
+
+- tout le monde est dessiné sur une grille de pixels d'art (grain 2), agrandie sans lissage ; HUD, chiffres « +Ɇ » et textes restent nets ;
+- ciel de crépuscule pollué animé (smog, fumées), pelouse, trois strates de terre tramées à contraste bas, d'après une planche de référence générée avec SpriteCook (`docs/art/`) ;
+- obstacles ramenés sur la grille (8 niveaux par canal, contour, ancrage tramé) ;
+- le héros : une tête-bourgeon à visage avec six humeurs (calme, concentré, frôlement, alerte, toxique, mort), tige pixel à feuilles, graine endormie ;
+- à l'éclosion, le héros devient la fleur ; parterre de visages variés (forme, nombre de pétales, teinte, expression) ;
+- nappes, limaces, bonus, bouclier, effets et particules en pixels ;
+- ciel plus haut qu'en v3 (19 % de la hauteur de vue) pour qu'on voie le crépuscule ;
+- plus d'obstacles dès le premier passage (≈ 16 au lieu de 11 à 440 px) et une rampe deux fois plus rapide (≈ 21 au niveau 3), sur une grille plus serrée ; plus de limaces (3 dès le départ, 7 au niveau 6) ;
+- dangers en violet chimique (nappes, limaces aux yeux jaune soufre, sillons), distincts de la pousse verte ;
+- la tige fouit : tunnel de terre remuée derrière la pointe, mottes qui la recouvrent par endroits (davantage sur les anciennes tiges), racines et mycélium ;
+- chaque déchet a sa taille (collision comprise), sa teinte, son usure, et parfois le bas enfoui ;
+- deux nouveaux déchets générés avec SpriteCook : trottinette et borne d'arcade ; outil `dev/tools/import-sprite.js` (détourage, contour de collision calculé et vérifié, fiche JSON, manifeste) ;
+- grain noir par petites touches dans la terre, le même tramage que le halo des obstacles ; chaque niveau a sa propre terre ;
+- halo tramé autour de la tige et de la graine ; la tête de la tige devient une foreuse (mèche de terre rayée qui tourne plus vite quand la pousse accélère, éclats en tourbillon, points de vitesse) ;
+- effets de foreuse : fissures qui s'ouvrent devant la mèche, ondes de forage collées à la tête à chaque battement et étincelles quand la mèche racle un obstacle, projetées devant la tête (rien dans le ciel) ;
+- émergence en motte de taupe : la pelouse gonfle au-dessus de la pointe qui approche, la mèche en perce le sommet, la motte se fend et projette sa terre, puis la fleur sort ; motte de terre de la couche du haut sous une peau de pelouse soulevée, tas assorti ; un petit tas reste au pied de chaque fleur ;
+- les anciennes tiges passent sous les nappes, les limaces et les déchets : le terrain reste lisible ;
+- plus d'à-coups quand un déchet entre à l'écran (sprites préparés à l'avance, ancrage calculé sans relecture du GPU) ;
+- la tige accélère nettement à chaque pousse (≈ +12 % par éclosion au lieu de +5 %) ;
+- rendu au plus 3,6 ms par frame ; banc : 230 tests.
+
 ## v4.0.1 — Nettoyage
 
 - une erreur dans la mise à jour, le son ou le rendu ne fige plus le jeu : elle est signalée une fois en console et le reste continue ;

@@ -2,7 +2,7 @@
 // Lit     : state.mode, state.query, state.plant, state.input.pressed, state.events, state.rng, state.world.{surfaceY,width},
 //           FP.config.{flow,text,toxic,garden,soil}.
 // Écrit   : state.mode, state.flow, state.garden.flowers (création, croissance), state.plant.{reserves,oldTrails,corruption,toxicTimer,recentToxic}, state.score.flowers,
-//           state.level, state.camera.shake, state.events (death, bloom, toxicEnter, ready) ; appelle FP.level.generate et FP.plant.prepare/launch.
+//           state.level, state.camera.shake, state.events (death, bloom, blossom, toxicEnter, ready) ; appelle FP.level.generate et FP.plant.prepare/launch.
 // Expose  : FP.flow.update(state, dt), FP.flow.simplifyTrail(points, minStep), FP.flow.say(state, text, time).
 // Porté de la v3.43.16 (die, bloom, transitions de update()) ; éclosion visuelle et fondu : étape 6.
 (function () {
@@ -36,7 +36,7 @@
       const offset = (i - mid) * (count === 1 ? 0 : spread / Math.max(1, mid + 1)) + rng.range(-g.jitter, g.jitter);
       state.garden.flowers.push({
         x: FP.math.clamp(state.plant.tip.x + offset, g.edge, W - g.edge),
-        size: 0, maxSize: i === 0 ? 1 : rng.range(g.extraSize[0], g.extraSize[1]), age: 0,
+        size: 0, maxSize: i === 0 ? 1 : rng.range(g.extraSize[0], g.extraSize[1]), age: -FP.config.flow.hatchDelay,   // pousse quand la motte s'est fendue
         palette: g.palettes[Math.floor(rng.next() * g.palettes.length)], tilt: rng.range(-g.tilt, g.tilt)
       });
     }
@@ -50,7 +50,11 @@
     state.level += count;
     p.oldTrails.push(simplifyTrail(p.trail, cfg.trailSimplifyPx));
     if (p.oldTrails.length > cfg.oldTrailsMax) p.oldTrails.shift();
-    state.events.push({ type: 'bloom', x: p.tip.x, y: state.world.surfaceY + FP.config.soil.surfaceOffset - 9, count, bonus: state.score.flowerBonus });
+    // bloom : la motte se fend (terre projetée) ; blossom, hatchDelay plus tard : la fleur sort (anneau doré, pétales).
+    const burst = { x: p.tip.x, y: state.world.surfaceY + FP.config.soil.surfaceOffset - 9, count, bonus: state.score.flowerBonus };
+    state.events.push({ type: 'bloom', ...burst });
+    state.flow.blossom = burst;
+    state.camera.shake = Math.max(state.camera.shake, cfg.hatchShake);
     state.mode = 'bloom';
     state.flow.timer = cfg.bloomTime;
     state.flow.stage = 'show'; state.flow.fade = 0;
@@ -74,6 +78,7 @@
   function bloomStages(state, cfg) {
     const f = state.flow, clamp = FP.math.clamp;
     if (f.stage === 'show') {
+      if (f.blossom && cfg.bloomTime - f.timer >= cfg.hatchDelay) { state.events.push({ type: 'blossom', ...f.blossom }); f.blossom = null; }
       if (f.timer <= 0) { f.stage = 'fadeOut'; f.timer = cfg.fadeOutTime; f.fade = 0; }
     } else if (f.stage === 'fadeOut') {
       f.fade = clamp(1 - f.timer / cfg.fadeOutTime, 0, 1);
@@ -112,7 +117,7 @@
 
   function update(state, dt) {
     const cfg = FP.config.flow, f = state.flow, p = state.plant, gr = FP.config.garden.growRate;
-    for (const fl of state.garden.flowers) { fl.age += dt; fl.size = Math.min(fl.maxSize, fl.size + dt * gr * fl.maxSize); }
+    for (const fl of state.garden.flowers) { fl.age += dt; if (fl.age > 0) fl.size = Math.min(fl.maxSize, fl.size + dt * gr * fl.maxSize); }
     p.corruption = Math.max(0, p.corruption - dt);
     p.recentToxic = Math.max(0, p.recentToxic - dt);
     for (const e of state.events) if (e.type === 'stemStart') say(state, FP.config.text.stem + e.n, cfg.stemMessageTime);
