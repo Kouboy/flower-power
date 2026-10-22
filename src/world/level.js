@@ -135,7 +135,8 @@
     for (let tries = 0; tries < cfg.tries && !sig.spawned; tries++) {
       const cell = pickCell(grid, rng, c => c.r > 1 && c.r < grid.rows - 2 && depthK(world, c.y) > cfg.minDepth);
       const pos = cellPos(grid, rng, cell, cfg.jitter);
-      const o = FP.catalog.makeSolid({ kind: 'trex_signature', x: pos.x, y: pos.y, a: rng.range(-cfg.angle, cfg.angle), flip: 1 });
+      const nominal = FP.catalog.assets.trex_signature.render.worldWidth, scale = Math.min(1, world.width * cfg.maxWidthK / nominal);
+      const o = FP.catalog.makeSolid({ kind: 'trex_signature', x: pos.x, y: pos.y, a: rng.range(-cfg.angle, cfg.angle), flip: 1, scale });
       if (objectFits(world, o)) { world.solids.push(o); sig.spawned = true; }
       else cell.used = false;
     }

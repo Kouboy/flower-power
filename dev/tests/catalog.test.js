@@ -20,7 +20,7 @@ FP.test('catalog: flip miroir sur x', () => {
 FP.test('catalog: T-Rex signature jamais retourné', () => {
   const o = FP.catalog.makeSolid({ kind: 'trex_signature', x: 0, y: 0, a: 0, flip: -1 });
   FP.assertEqual(o.flip, 1);
-  FP.assertEqual(o.w, 160);   // v4.3.0 : le plus gros déchet, mais à l'échelle des autres (cercueil 146, borne 150)
+  FP.assertEqual(o.w, 280);   // v4.3.0 : squelette entier de T-Rex (12 m) : un monument, bien plus grand que tout le reste
   FP.assertEqual(o.signature, true);
 });
 FP.test('catalog: footprint = rectangle rendu + padding', () => {
