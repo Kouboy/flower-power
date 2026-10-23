@@ -94,3 +94,9 @@ FP.test('audio: la commande sonne le tiroir-caisse, plus le tampon', () => withB
   FP.audio.consume([{ type: 'shopOrder' }], auRun(), 0);
   FP.assert(sounding(b).some(c => c[1] === 'clonk') && !sounding(b).some(c => c[0] === 'drum'));
 }));
+// Équilibre (v4.6.2) : jetons plus discrets, musique plus présente.
+FP.test('audio: le tink d’un jeton est discret', () => withBackend(b => {
+  FP.audio.consume([{ type: 'coin', rank: 3 }], auRun(), 0);
+  FP.assert(sounding(b).every(c => c[5] <= .4), JSON.stringify(sounding(b).map(c => c[5])));
+}));
+FP.test('music: la musique est plus présente', () => FP.assertEqual(FP.music.MUSIC_GAIN, .8));

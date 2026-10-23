@@ -8,10 +8,15 @@
   'use strict';
   const FP = window.FP = window.FP || {};
 
-  // Tranches d'une hauteur d'écran, de la surface (marge comprise) jusqu'au-dessus de la graine.
+  // Bas de la zone des pièces : au-dessus de la graine, de startClear (la pousse vient de démarrer).
+  const startLine = (world) => world.height - FP.config.plant.seedOffset - FP.config.coins.startClear;
+
+  // Tranches égales d'environ une hauteur d'écran, de la surface (marge comprise) à la zone de départ : la densité
+  // est la même partout (plus de petite tranche surchargée en bas).
   function slices(world) {
-    const m = FP.config.coins.sliceMargin, top = world.surfaceY + m, bottom = world.height - m, out = [];
-    for (let y = top; y < bottom; y += world.viewH) out.push({ top: y, bottom: Math.min(bottom, y + world.viewH) });
+    const top = world.surfaceY + FP.config.coins.sliceMargin, bottom = startLine(world);
+    const count = Math.max(1, Math.round((bottom - top) / world.viewH)), h = (bottom - top) / count, out = [];
+    for (let i = 0; i < count; i++) out.push({ top: top + i * h, bottom: top + (i + 1) * h });
     return out;
   }
 
@@ -25,7 +30,7 @@
   // et sans toucher une pièce d'un chapelet déjà posé.
   function fits(world, x, y) {
     const k = FP.config.coins;
-    if (x < k.radius + k.edge || x > world.width - k.radius - k.edge || y <= world.surfaceY + k.sliceMargin || y >= world.height) return false;
+    if (x < k.radius + k.edge || x > world.width - k.radius - k.edge || y <= world.surfaceY + k.sliceMargin || y >= startLine(world)) return false;
     // Rejet rapide en hauteur (même résultat) : un obstacle ou une nappe trop haut ou trop bas ne peut pas toucher la pièce.
     return world.solids.every(o => Math.abs(o.y - y) > o.broadR + k.radius + 2 || FP.collision.distanceTo(o, x, y) >= k.radius + 2) &&
       world.toxics.every(t => Math.abs(t.y - y) > Math.max(t.rx, t.ry) || ellipseK(t, x, y) >= 1 - k.toxicBite) &&
@@ -39,22 +44,42 @@
     return best.length >= FP.config.coins.minChain ? best : [];
   }
 
-  // Traînée facile : elle ondule autour du chemin sûr (une ou deux vagues d'amplitude wave), décalée de offset ;
+  // Traînée facile : grande route sinueuse autour du chemin sûr (vagues d'amplitude amp × scale), décalée de offset ;
   // deux pièces voisines sont à `spacing` l'une de l'autre (on remonte le chemin pas à pas).
-  function easyPoints(world, rng, slice, offset = 0) {
-    const k = FP.config.coins, n = k.easy.min + Math.floor(rng.next() * (k.easy.max - k.easy.min + 1));
-    const amp = k.wave[0] + rng.next() * (k.wave[1] - k.wave[0]), waves = k.waves[0] + rng.next() * (k.waves[1] - k.waves[0]);
-    const span = (n - 1) * k.spacing * .8;   // hauteur parcourue, à peu près : l'ondulation avance avec la montée, sans à-coup
-    const phase = rng.next() * Math.PI * 2, lat = (dy) => offset + amp * Math.sin(phase + Math.PI * 2 * waves * dy / span);
-    let y = slice.bottom - rng.next() * Math.max(0, slice.bottom - slice.top - n * k.spacing);
-    const y0 = y, pts = [{ x: FP.level.pathXAt(world, y) + lat(0), y }];
-    for (let i = 1; i < n; i++) {
-      const prev = pts[i - 1];
-      let ny = prev.y, x = prev.x;
-      while (Math.hypot(x - prev.x, ny - prev.y) < k.spacing && ny > slice.top - k.spacing * n) { ny -= .25; x = FP.level.pathXAt(world, ny) + lat(y0 - ny); }
-      pts.push({ x, y: ny });
+  // La courbe est échantillonnée tous les 2 px de hauteur, puis les pièces y sont posées à espacement exact (interpolation).
+  function easyPoints(world, slice, q, scale) {
+    const k = FP.config.coins, lat = (dy) => q.offset + q.amp * scale * Math.sin(q.phase + Math.PI * 2 * q.waves * dy / q.span);
+    const at = (y) => ({ x: FP.level.pathXAt(world, y) + lat(q.y0 - y), y });
+    const pts = [at(q.y0)], stop = slice.top - k.spacing * q.n;
+    let prev = pts[0];
+    for (let y = q.y0 - 2; y > stop && pts.length < q.n; y -= 2) {
+      const cur = at(y), last = pts[pts.length - 1];
+      while (pts.length < q.n && Math.hypot(cur.x - last.x, cur.y - last.y) >= k.spacing) {
+        // Point du segment [prev, cur] à exactement spacing de la dernière pièce (dichotomie).
+        let lo = 0, hi = 1, l = pts[pts.length - 1];
+        for (let it = 0; it < 12; it++) { const m = (lo + hi) / 2, d = Math.hypot(prev.x + (cur.x - prev.x) * m - l.x, prev.y + (cur.y - prev.y) * m - l.y); if (d < k.spacing) lo = m; else hi = m; }
+        pts.push({ x: prev.x + (cur.x - prev.x) * hi, y: prev.y + (cur.y - prev.y) * hi });
+        if (Math.hypot(cur.x - pts[pts.length - 1].x, cur.y - pts[pts.length - 1].y) < k.spacing) break;
+      }
+      prev = cur;
     }
     return pts;
+  }
+
+  // Tirage d'une traînée facile, puis amplitude adaptative : si les obstacles ou les bords la coupent trop, on resserre
+  // l'ondulation (× .7, .45, .25) ; on garde la première presque entière (≥ 85 %), sinon la plus longue.
+  function easyChain(world, rng, slice, offset = 0) {
+    const k = FP.config.coins, n = k.easy.min + Math.floor(rng.next() * (k.easy.max - k.easy.min + 1));
+    const q = { n, offset, amp: k.wave[0] + rng.next() * (k.wave[1] - k.wave[0]), waves: k.waves[0] + rng.next() * (k.waves[1] - k.waves[0]),
+      phase: rng.next() * Math.PI * 2, span: (n - 1) * k.spacing * .8 };   // span : hauteur parcourue, à peu près
+    q.y0 = slice.bottom - rng.next() * Math.max(0, slice.bottom - slice.top - q.span);   // départ tiré dans toute la tranche
+    let best = [];
+    for (const scale of [1, .7, .45, .25]) {
+      const run = longestRun(world, easyPoints(world, slice, q, scale));
+      if (run.length > best.length) best = run;
+      if (run.length >= .85 * n) break;
+    }
+    return best;
   }
 
   // Nombre de pièces d'un appât.
@@ -99,10 +124,10 @@
   // Mordre : ligne verticale qui frôle la nappe en y entrant d'au plus toxicBite de son rayon.
   function toxicBite(world, t, side, n) {
     const k = FP.config.coins, span = (n - 1) * k.spacing / 2;
-    for (let d = 0; d <= t.rx + t.ry; d += 1) {
+    for (let d = 0; d <= t.rx + t.ry; d += 2) {
       const x = t.x + side * d;
       let minK = Infinity;
-      for (let y = t.y - span; y <= t.y + span; y += 2) minK = Math.min(minK, ellipseK(t, x, y));
+      for (let y = t.y - span; y <= t.y + span; y += 4) minK = Math.min(minK, ellipseK(t, x, y));
       if (minK >= 1 - k.toxicBite + .02) return minK < 1 ? lineThrough(x, t.y, 0, -1, n) : [];
     }
     return [];
@@ -126,7 +151,7 @@
     }
     // Décalé d'au moins un espacement au-delà des deux ondulations : les deux traînées restent distinctes.
     const side = rng.next() < .5 ? -1 : 1, k = FP.config.coins;
-    return { anchor: 'path', pts: longestRun(world, easyPoints(world, rng, slice, side * (2 * k.wave[1] + k.spacing))) };
+    return { anchor: 'path', pts: easyChain(world, rng, slice, side * (2 * k.wave[1] + k.spacing)) };
   }
 
   function addChain(world, kind, anchor, pts) {
@@ -141,7 +166,7 @@
     const rng = FP.createRng((state.seed ^ k.salt ^ Math.imul(state.level, 2654435761)) >>> 0);
     world.coins = []; world.chains = [];
     for (const slice of slices(world)) {
-      addChain(world, 'easy', 'path', longestRun(world, easyPoints(world, rng, slice)));
+      addChain(world, 'easy', 'path', easyChain(world, rng, slice));
       const bait = baitChain(world, rng, slice);
       addChain(world, 'bait', bait.anchor, bait.pts);
     }

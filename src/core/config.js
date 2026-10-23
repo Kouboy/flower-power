@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '4.6.1',
+    version: '4.6.2',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -178,8 +178,9 @@
     // Circuits de pièces (v4.5.0) : par tranche d'une hauteur d'écran, un chapelet facile (chemin sûr) et un appât (près
     // d'un danger). Tirage propre (graine ^ salt ^ niveau) : jamais state.rng. Pièces de 25 Ɇ, bonus au chapelet complet.
     coins: {
-      salt: 0x2c1b3c6d, sliceMargin: 70, easy: { min: 10, max: 14 }, bait: { min: 10, max: 14 }, spacing: 30,
-      wave: [35, 60], waves: [1, 2],   // traînée facile : ondulation autour du chemin sûr (amplitude en px, nombre de vagues)
+      salt: 0x2c1b3c6d, sliceMargin: 70, startClear: 180, easy: { min: 12, max: 16 }, bait: { min: 8, max: 12 }, spacing: 45,
+      wave: [60, 110], waves: [1, 1.5],   // traînée facile : grande route sinueuse autour du chemin sûr (amplitude en px, nombre de vagues)
+      // startClear : rien dans les 180 px au-dessus de la graine (la pousse vient de démarrer, elle ne peut pas aller chercher).
       pickup: 14, radius: 5, missBelow: 40, value: 25, chainBonus: { easy: 150, bait: 400 }, toxicBite: 1 / 3,
       minChain: 4, spinFps: 6, edge: 4
     },

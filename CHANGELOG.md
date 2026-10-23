@@ -2,6 +2,13 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.6.2 — Grandes routes de jetons, son rééquilibré
+
+- traînées de jetons en grandes routes sinueuses : 12 à 16 jetons espacés de 45 px, ondulation de 60 à 110 px autour du chemin sûr (resserrée automatiquement si les déchets ou les bords la coupent) ;
+- répartition homogène du haut au bas du niveau (tranches égales), et plus aucun jeton juste au-dessus de la graine ;
+- « tink » des jetons et accord de la traînée complète plus discrets ; musique (titre et jeu) plus forte ;
+- banc : 394 tests.
+
 ## v4.6.1 — Boutique moins fréquente, traînées sinueuses
 
 - le bon de commande ne s'ouvre plus qu'une pousse sur trois (la boutique de dernière chance, elle, toujours) ;
