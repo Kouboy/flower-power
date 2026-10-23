@@ -50,7 +50,7 @@
     function emit(n, beat) {
       // Boîte à rythmes qui boite : retard aléatoire sur caisse claire et charleston (morceaux avec « swing »).
       const late = swing && (n.inst === 'snare' || n.inst === 'hat' || n.inst === 'openhat') ? Math.random() * swing : 0;
-      const t = timeOf(beat) + late, route = { bus: 'music', layer: n.layer, bend: n.bend };
+      const t = timeOf(beat) + late, route = { bus: 'music', layer: n.layer, bend: n.bend, detune: n.detune };
       if (FP.synth.DRUMS.includes(n.inst)) backend.drum(n.inst, t, n.vel === undefined ? 1 : n.vel, route);
       else backend.note(n.inst, n.midi, t, n.dur * 60 / bpm, n.vel === undefined ? 1 : n.vel, route);
     }

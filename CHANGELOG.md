@@ -8,7 +8,8 @@ Une entrée par version (voir `AGENTS.md`).
 - 9 articles pour la pousse suivante : Graine Bio™ (une graine de plus), Membrane organique (bouclier), Aimant à jetons, Jetons premium, Compost lent, Spore de départ, Filtre à charbon, Bière anti-limaces, Lobbying (moins de déchets) ;
 - dernière chance : après la mort de la dernière graine, la Graine Bio™ est toujours proposée — on peut vider son score pour continuer ;
 - livraison au bilan carbone soigneusement compensé ; tampon « VALIDÉ », froissement de papier et « tic » de crayon ;
-- banc : 381 tests.
+- pendant le bon, un reggae d'ascenseur pollué tourne en boucle : one drop, basse ronde, skank désaccordé qui vacille, bubble d'orgue, ritournelle de cloches qui dérape, aigus poussés façon sono de supermarché ;
+- banc : 384 tests.
 
 ## v4.5.0 — Circuits de pièces
 

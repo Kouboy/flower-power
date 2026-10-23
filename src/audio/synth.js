@@ -1,7 +1,7 @@
 // audio/synth.js — moteur FM façon Mega Drive (YM2612) : voix à 2 opérateurs, batterie en bruit filtré, écho, bus de mixage.
 // Lit     : rien de l'état ; reçoit un AudioContext.
 // Écrit   : rien dans l'état (le graphe Web Audio uniquement).
-// Expose  : FP.synth.create(ac) → moteur { now, note, drum, burst, setGain, setFilter, drone, suspend, resume, context } ;
+// Expose  : FP.synth.create(ac) → moteur { now, note, drum, burst, setGain, setFilter, setTreble, drone, suspend, resume, context } ;
 //           FP.synth.INSTRUMENTS, FP.synth.DRUMS.
 // Seul fichier du jeu qui crée des nœuds Web Audio.
 (function () {
@@ -23,6 +23,9 @@
     theremin: { ratio: 1, index: .05, attack: .5, gain: .03, sustain: .9, vibrato: [6, .015], wet: .9, release: .6 },
     bell: { ratio: 3.5, index: 4, indexEnd: .2, indexTime: .4, gain: .06, sustain: .2, decay: .25, release: .4, wet: .3 },
     drill: { ratio: 1.41, index: 1.5, indexEnd: .3, indexTime: .04, gain: .08, sustain: .1, decay: .03, release: .03 },   // ronron de la foreuse, doux
+    // Reggae de la boutique (v4.6.0) : skank de clavinet avec écho, bubble d'orgue sec et court.
+    skank: { ratio: 3, index: 2.2, indexEnd: .3, indexTime: .05, gain: .03, sustain: .2, decay: .03, release: .03, wet: .35 },
+    bubble: { ratio: 1, index: 1.1, indexEnd: .8, attack: .01, gain: .05, sustain: .55, decay: .06, release: .05 },
     pluck: { ratio: 2, index: 3, indexEnd: .2, indexTime: .08, gain: .07, sustain: .1, decay: .08, release: .1 }
   };
   const DRUMS = ['kick', 'snare', 'hat', 'openhat', 'tamb'];
@@ -34,7 +37,9 @@
     const musicMute = ac.createGain(); musicMute.connect(master);   // interrupteur du réglage « effets seuls », que rien d'autre ne touche
     const song = ac.createGain(); song.gain.value = 0; song.connect(musicMute);
     const filter = ac.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 20000; filter.connect(song);
-    const music = ac.createGain(); music.gain.value = .5; music.connect(filter);
+    // Plateau d'aigus (sono de supermarché pour le reggae de la boutique), neutre par défaut.
+    const treble = ac.createBiquadFilter(); treble.type = 'highshelf'; treble.frequency.value = 2800; treble.gain.value = 0; treble.connect(filter);
+    const music = ac.createGain(); music.gain.value = .5; music.connect(treble);
     // Écho : retard + rétroaction filtrée, partagé (le côté « spooky »).
     const echo = ac.createGain(), delay = ac.createDelay(1.5), fb = ac.createGain(), lp = ac.createBiquadFilter(), wet = ac.createGain();
     delay.delayTime.value = .33; fb.gain.value = .38; lp.type = 'lowpass'; lp.frequency.value = 2400; wet.gain.value = .32;
@@ -46,7 +51,8 @@
     function note(inst, midi, time, dur, vel = 1, route) {
       const o = INSTRUMENTS[inst];
       if (!o) return;
-      const t = Math.max(time, ac.currentTime), f = mtof(midi) * (o.detune ? Math.pow(2, o.detune / 1200) : 1);
+      const cents = (o.detune || 0) + ((route && route.detune) || 0);   // désaccord de l'instrument, plus celui de la note
+      const t = Math.max(time, ac.currentTime), f = mtof(midi) * (cents ? Math.pow(2, cents / 1200) : 1);
       const car = ac.createOscillator(), mod = ac.createOscillator(), mg = ac.createGain(), env = ac.createGain();
       car.frequency.setValueAtTime(f, t); mod.frequency.setValueAtTime(f * o.ratio, t);
       const bend = route && route.bend;
@@ -109,6 +115,7 @@
       if (!ramp) p.setValueAtTime(value, n); else p.setTargetAtTime(value, n, ramp / 3);
     }
     function setFilter(hz, ramp) { filter.frequency.setTargetAtTime(hz, ac.currentTime, (ramp || .2) / 3); }
+    function setTreble(db, ramp) { treble.gain.setTargetAtTime(db, ac.currentTime, (ramp || .2) / 3); }
 
     // Bourdonnement continu du frôlement, en FM : drone(true, fréquence, filtre, q, gain) ; drone(false, net).
     let drone = null;
@@ -136,7 +143,7 @@
       drone.gain.gain.setTargetAtTime(Math.max(.0001, gain), n, .018);
     }
 
-    return { now: () => ac.currentTime, note, drum, burst, setGain, setFilter, drone: setDrone,
+    return { now: () => ac.currentTime, note, drum, burst, setGain, setFilter, setTreble, drone: setDrone,
       suspend: () => ac.suspend && ac.suspend().catch(() => {}), resume: () => ac.resume && ac.resume().catch(() => {}), context: ac };
   }
 
