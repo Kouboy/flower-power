@@ -1,7 +1,7 @@
 // ui/menu.js — écran d'accueil « PRESS TO START » (premier appui : son, plein écran sur écran tactile, réveil du titre),
 // puis démarrage d'une partie depuis l'écran titre (dessiné par ui/title.js) ou la fin de partie.
 // Lit     : le clavier (Espace / Entrée → FP.input.press en partie), FP.view (via createRun), FP.level.startRun, FP.plant.launch,
-//           FP.scoring.records, FP.certificate.canRestart, FP.title.{wake,wantsFullscreen}, document.documentElement (plein écran), screen.orientation.
+//           FP.scoring.records, FP.certificate.canRestart, FP.title.{wake,wantsFullscreen}, FP.shop.{toggle,order,decline}, FP.orderForm.hit (mode shop : toucher, 1/2/3, Entrée, Échap), document.documentElement (plein écran), screen.orientation.
 // Écrit   : FP.state.current (nouveau run), state.mode, state.events (runStart), state.camera.y (titre : tout en haut, sur le ciel),
 //           state.score.recordBefore (records d'avant la partie, pour le certificat) ;
 //           à chaque redimensionnement, la taille de vue du run.
@@ -29,11 +29,21 @@
     } catch (e) { /* plein écran refusé : le jeu continue dans la page */ }
   }
 
-  // Le toucher en pixels d'art de la toile d'interface, comparé à la zone de l'icône du son.
-  function onIcon(e) {
+  // Le toucher en pixels d'art de la toile d'interface.
+  function uiPoint(e) {
     const canvas = FP.view.canvas, r = canvas.getBoundingClientRect(), S = FP.px.SCALE;
-    const ax = (e.clientX - r.left) * FP.view.W / r.width / S, ay = (e.clientY - r.top) * FP.view.H / r.height / S;
-    return FP.title.hitIcon(ax, ay, FP.view.ui.w, FP.view.ui.h);
+    return { ax: (e.clientX - r.left) * FP.view.W / r.width / S, ay: (e.clientY - r.top) * FP.view.H / r.height / S };
+  }
+  // Comparé à la zone de l'icône du son.
+  function onIcon(e) { const { ax, ay } = uiPoint(e); return FP.title.hitIcon(ax, ay, FP.view.ui.w, FP.view.ui.h); }
+
+  // Bon de commande (v4.6.0) : une ligne coche ou décoche, les boutons commandent ou refusent ; hors de la feuille, rien.
+  function onOrderForm(s, e) {
+    const { ax, ay } = uiPoint(e), h = FP.orderForm.hit(s, ax, ay);
+    if (!h) return;
+    if (h.kind === 'line') FP.shop.toggle(s, h.i);
+    else if (h.kind === 'order') FP.shop.order(s);
+    else FP.shop.decline(s);
   }
 
   // Premier appui : le son est débloqué par audio.js (même geste) ; le titre se réveille, la partie ne démarre pas encore.
@@ -63,6 +73,7 @@
     if (s && s.mode === 'splash') { e.preventDefault(); wake(s, e.pointerType); return; }
     // Titre : un toucher sur l'icône du son change le réglage, sans lancer la partie.
     if (s && s.mode === 'menu' && onIcon(e)) { e.preventDefault(); FP.audio.cycleSetting(); return; }
+    if (s && s.mode === 'shop') { e.preventDefault(); onOrderForm(s, e); return; }
     if (!atStart(s)) return;
     e.preventDefault();
     if (mayStart(s)) startRun();
@@ -72,6 +83,16 @@
 
   // Clavier (v3) : Espace ou Entrée démarre depuis le titre ou la fin de partie, sinon vaut un appui.
   window.addEventListener('keydown', (e) => {
+    const shop = FP.state.current && FP.state.current.mode === 'shop' ? FP.state.current : null;
+    if (shop) {   // bon de commande : 1, 2, 3 cochent ; Entrée commande ; Échap refuse
+      const i = ['Digit1', 'Digit2', 'Digit3'].indexOf(e.code), np = ['Numpad1', 'Numpad2', 'Numpad3'].indexOf(e.code);
+      if (i >= 0 || np >= 0) FP.shop.toggle(shop, Math.max(i, np));
+      else if (e.code === 'Enter' || e.code === 'NumpadEnter') FP.shop.order(shop);
+      else if (e.code === 'Escape') FP.shop.decline(shop);
+      else return;
+      e.preventDefault();
+      return;
+    }
     if (e.code !== 'Space' && e.code !== 'Enter') return;
     e.preventDefault();
     if (e.repeat) return;

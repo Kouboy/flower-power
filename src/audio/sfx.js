@@ -21,6 +21,12 @@
 
   // Recettes : (note, bruit, batterie, t, intensité). note(inst, midi, délai, durée, vel, bend?) ; bruit(délai, durée, gain, Hz, type, q?).
   const COIN_NOTES = [76, 79, 81, 83, 86, 88, 91, 93];   // mi5 sol5 la5 si5 ré6 mi6 sol6 la6
+  const rnd = (a, b) => a + Math.random() * (b - a);   // variations sensorielles : chaque froissement est différent
+  const GRAINS = ['grainA', 'grainB', 'grainC'];
+  // Papier froissé : count craquements FM de hauteurs et de timbres variés, serrés au début puis qui s'espacent, sur len secondes.
+  function crumple(n, count, len) {
+    for (let i = 0; i < count; i++) { const k = i / count; n(GRAINS[Math.floor(Math.random() * 3)], rnd(78, 100), len * k * k * 1.1 + rnd(0, .012), rnd(.015, .045), 1 - k * .6); }
+  }
   const RECIPES = {
     start: (n, z) => { n('brass', 52, 0, .35, 1.3); n('brass', 59, .04, .35, 1.2); n('brass', 64, .08, .4, 1.2); n('bell', 76, .12, .5, 1); z(0, .25, .06, 3000, 'highpass'); },
     growStart: (n, z) => { n('pluck', 40, 0, .08, 1.3); n('pluck', 47, .03, .08, 1); z(0, .1, .08, 400, 'lowpass'); },
@@ -29,6 +35,19 @@
     // Pièce (v4.5.0) : « tink » qui monte d'une note par pièce du chapelet (mi mineur pentatonique), puis l'accord du chapelet complet.
     coin: (n, z, d, rank) => { n('bell', COIN_NOTES[Math.min(COIN_NOTES.length - 1, Math.max(0, Math.round(rank)))], 0, .1, .9); },
     chain: (n) => { for (const m of [76, 83, 88, 91]) n('bell', m, 0, .7, .6); n('brass', 64, .02, .4, .5); },
+    // Bon de commande (v4.6.0), en FM pur : papier froissé (apparition, départ), gratouillis de crayon, tiroir-caisse.
+    crumple: (n) => crumple(n, 14, .35),
+    crumpleOut: (n) => crumple(n, 8, .22),
+    pencil: (n) => {
+      for (let i = 0; i < 4; i++) n('grainA', 94 + rnd(-2, 2), i * .014, rnd(.012, .02), .8);                          // petit trait vers le bas
+      for (let i = 0; i < 9; i++) n('grainB', 96 + i * .5 + rnd(-2, 2), .075 + i * .016, rnd(.012, .022), .86 * (1 - i / 14));   // long trait vers le haut
+    },
+    register: (n) => {
+      n('beep', 96, 0, .06); n('beep', 96, .09, .06);                                                   // bip bip
+      n('bell', 88, .2, .6, 1.15); n('bell', 95, .2, .5, .65);                                          // ding
+      n('clonk', 33, .23, .14);                                                                         // le tiroir s'ouvre
+      for (let i = 0, at = .3; i < 4; i++, at += rnd(.035, .06)) n('tinkle', 100 + rnd(-3, 3), at, .05);   // pièces
+    },
     water: (n) => { n('bell', 64, 0, .08, 1, 1.3); n('bell', 71, .07, .08, .9); n('bell', 76, .14, .12, .8); },
     bud: (n) => { n('bell', 76, 0, .1, 1); n('bell', 83, .07, .14, .9); },
     bomb: (n, z, d) => { d('kick', 0, 1.5); z(0, .35, .1, 400, 'lowpass'); n('pluck', 64, .12, .06, .5); n('pluck', 71, .18, .06, .5); n('pluck', 76, .24, .06, .4); },

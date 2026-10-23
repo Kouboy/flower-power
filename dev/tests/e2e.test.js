@@ -43,3 +43,16 @@ FP.test('e2e: suivre un chapelet facile paie chaque pièce puis le bonus', () =>
   FP.assertEqual(seen.join(), [...coins.map((c, r) => r), 'done'].join());
   FP.assertEqual(s.score.eco, coins.length * FP.config.coins.value + FP.config.coins.chainBonus.easy);
 });
+FP.test('e2e: mourir, cocher membrane et aimant, commander → la pousse suivante en profite', () => {
+  const s = FP.state.createRun(4, { W: 440, H: 783 }); FP.level.startRun(s); FP.plant.launch(s); s.events.length = 0; s.score.eco = 4000;
+  s.query = { ...s.query, solid: { kind: 'cone' }, leak: 0, toxic: 0 }; FP.flow.update(s, 0); s.query = { ...s.query, solid: null };
+  for (let i = 0; i < 200 && s.mode !== 'shop'; i++) { s.time += 1 / 60; FP.flow.update(s, 1 / 60); }
+  FP.assertEqual(s.mode, 'shop');
+  s.time += 1; FP.shop.update(s, 1);   // fin de l'apparition
+  s.shop.items = [{ id: 'membrane', price: 700, base: 700, promo: false, checked: false }, { id: 'magnet', price: 250, base: 500, promo: true, checked: false },
+    { id: 'beer', price: 600, base: 600, promo: false, checked: false }];
+  FP.shop.toggle(s, 0); FP.shop.toggle(s, 1); FP.shop.order(s);
+  for (let i = 0; i < 120 && s.mode === 'shop'; i++) { s.time += 1 / 60; FP.shop.update(s, 1 / 60); }
+  FP.assertEqual(s.mode, 'playing'); FP.assert(s.power.shield && s.boosts.magnet && !s.boosts.beer);
+  FP.assertEqual(s.score.eco, 4000 - 950);
+});

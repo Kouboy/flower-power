@@ -83,3 +83,14 @@ FP.test('audio: un gain de pièce ne sonne pas, un chapelet complet sonne', () =
 FP.test('audio: le bonus de chapelet ne double pas l’accord avec le kling du score', () => {
   withBackend(b => { FP.audio.consume([{ type: 'eco', amount: 400, combo: 2, kind: 'chain' }], auRun(), 0); FP.assertEqual(sounding(b).length, 0); });
 });
+// Bon de commande (v4.6.0) : froissement à l'ouverture, « tic » de crayon à chaque case, tampon à la commande.
+FP.test('audio: ouvrir, cocher, commander et fermer le bon font chacun un son FM, sans bruit blanc', () => {
+  for (const type of ['shopOpen', 'shopTick', 'shopOrder', 'shopClose']) withBackend(b => {
+    FP.audio.consume([{ type }], auRun(), 0);
+    const snd = sounding(b); FP.assert(snd.length > 0, type); FP.assert(snd.every(c => c[0] === 'note'), type + ' : que des opérateurs FM');
+  });
+});
+FP.test('audio: la commande sonne le tiroir-caisse, plus le tampon', () => withBackend(b => {
+  FP.audio.consume([{ type: 'shopOrder' }], auRun(), 0);
+  FP.assert(sounding(b).some(c => c[1] === 'clonk') && !sounding(b).some(c => c[0] === 'drum'));
+}));

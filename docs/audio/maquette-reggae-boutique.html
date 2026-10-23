@@ -1,0 +1,135 @@
+<style>
+  .demo { display: flex; gap: 12px; align-items: center; margin-top: 10px; }
+  .demo button { font: 600 15px system-ui; padding: 9px 18px; border-radius: 8px; border: 1px solid #888; background: #fff; cursor: pointer; }
+  .demo button.on { background: #2a3a1c; color: #fff; }
+  .demo .bar { flex: 1; height: 6px; background: #ddd; border-radius: 3px; overflow: hidden; }
+  .demo .bar i { display: block; height: 100%; width: 0; background: #7ed636; }
+</style>
+
+<h2>Musique de la boutique : un reggae pollué</h2>
+<p class="subtitle">Deux pistes jouées en direct par le même petit synthé FM que la bande-son du jeu. Boucles de 4 mesures, en mi mineur comme le jeu. Mets le son, clique sur Écouter : elles tournent en boucle comme pendant le bon de commande.</p>
+
+<div class="cards">
+  <div class="card" data-choice="r1" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <h3>R1 · Reggae d'ascenseur</h3>
+      <p><b>Retouché :</b> basse plus forte, cloches plus discrètes, orgue remonté, aigus poussés (+7 dB au-dessus de 2,8 kHz) façon sono de supermarché. 72 BPM, one drop. Basse ronde qui traîne, skank de clavinet désaccordé qui vacille (cassette restée au soleil), bubble d'orgue, et une ritournelle de cloches façon jingle de supermarché bio, dont la dernière note dérape.</p>
+      <div class="demo"><button onclick="event.stopPropagation(); play('R1', this)">Écouter</button><div class="bar"><i id="barR1"></i></div></div>
+    </div>
+  </div>
+  <div class="card" data-choice="r2" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <h3>R2 · Dub contaminé</h3>
+      <p>66 BPM, plus lourd et plus spongieux. Même skank, mais écho dub qui déborde, mélodica de cuivre fatigué à la place des cloches, et une sirène de thérémine qui passe de temps en temps.</p>
+      <div class="demo"><button onclick="event.stopPropagation(); play('R2', this)">Écouter</button><div class="bar"><i id="barR2"></i></div></div>
+    </div>
+  </div>
+</div>
+<script>
+let ac = null, master = null, send = null, current = null, timer = null, raf = null;
+const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
+
+// Un circuit de sortie neuf à chaque lecture : volume, compresseur, écho.
+function setup() {
+  if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+  master = ac.createGain(); master.gain.value = .55;
+  const comp = ac.createDynamicsCompressor(), shelf = ac.createBiquadFilter(); shelf.type = "highshelf"; shelf.frequency.value = 2800; shelf.gain.value = current === "R1" ? 7 : 0;
+  master.connect(shelf); shelf.connect(comp); comp.connect(ac.destination);   // aigus poussés : haut-parleur de supermarché
+  // Écho : retard + rétroaction filtrée (le côté « spooky »).
+  send = ac.createGain(); send.gain.value = 1;
+  const d = ac.createDelay(1.5), fb = ac.createGain(), lp = ac.createBiquadFilter(), wet = ac.createGain();
+  d.delayTime.value = current === "R2" ? .62 : .41; fb.gain.value = current === "R2" ? .55 : .38; lp.type = 'lowpass'; lp.frequency.value = 2400; wet.gain.value = .32;
+  send.connect(d); d.connect(lp); lp.connect(fb); fb.connect(d); lp.connect(wet); wet.connect(master);
+}
+
+// Voix FM à 2 opérateurs : le modulateur (fréquence × ratio) fait vibrer la fréquence de la porteuse ; l'indice
+// (profondeur) qui décroît donne l'attaque métallique typique de la YM2612.
+function fm(t, midi, dur, o) {
+  const f = mtof(midi) * (o.detune ? Math.pow(2, o.detune / 1200) : 1);
+  const car = ac.createOscillator(), mod = ac.createOscillator(), mg = ac.createGain(), env = ac.createGain();
+  car.type = o.wave || 'sine'; mod.type = 'sine';
+  car.frequency.setValueAtTime(f, t); mod.frequency.setValueAtTime(f * (o.ratio || 1), t);
+  if (o.bend) { car.frequency.setValueAtTime(f, t + (o.bendAt || 0)); car.frequency.exponentialRampToValueAtTime(f * o.bend, t + dur); mod.frequency.exponentialRampToValueAtTime(f * (o.ratio || 1) * o.bend, t + dur); }
+  const i0 = (o.index || 1) * f, i1 = (o.indexEnd !== undefined ? o.indexEnd : (o.index || 1) * .3) * f;
+  mg.gain.setValueAtTime(i0, t); mg.gain.exponentialRampToValueAtTime(Math.max(.01, i1), t + (o.indexTime || dur));
+  const a = o.attack || .005, r = o.release || .08, g = o.gain || .1;
+  env.gain.setValueAtTime(0.0001, t); env.gain.exponentialRampToValueAtTime(g, t + a);
+  env.gain.setTargetAtTime(g * (o.sustain !== undefined ? o.sustain : .6), t + a, (o.decay || .15));
+  env.gain.setTargetAtTime(0.0001, t + dur, r / 3);
+  if (o.vibrato) { const l = ac.createOscillator(), lg = ac.createGain(); l.frequency.value = o.vibrato[0]; lg.gain.value = f * o.vibrato[1]; l.connect(lg); lg.connect(car.frequency); l.start(t); l.stop(t + dur + r + .1); }
+  if (o.trem) { const l = ac.createOscillator(), lg = ac.createGain(), tg = ac.createGain(); l.frequency.value = o.trem; lg.gain.value = .45; tg.gain.value = .55; l.connect(lg); lg.connect(tg.gain); env.connect(tg); tg.connect(master); if (o.wet) tg.connect(send); l.start(t); l.stop(t + dur + r + .1); }
+  else { env.connect(master); if (o.wet) { const w = ac.createGain(); w.gain.value = o.wet; env.connect(w); w.connect(send); } }
+  mod.connect(mg); mg.connect(car.frequency); car.connect(env);
+  car.start(t); mod.start(t); car.stop(t + dur + r + .1); mod.stop(t + dur + r + .1);
+}
+
+let noiseBuf = null;
+function noise(t, dur, gain, filt, type, q) {
+  if (!noiseBuf) { noiseBuf = ac.createBuffer(1, ac.sampleRate, ac.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+  const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+  s.buffer = noiseBuf; f.type = type; f.frequency.value = filt; if (q) f.Q.value = q;
+  g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  s.connect(f); f.connect(g); g.connect(master); s.start(t, Math.random() * .5); s.stop(t + dur + .05);
+}
+function kick(t, g = .55) { const o = ac.createOscillator(), e = ac.createGain(); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(42, t + .12); e.gain.setValueAtTime(g, t); e.gain.exponentialRampToValueAtTime(.0001, t + .28); o.connect(e); e.connect(master); o.start(t); o.stop(t + .3); }
+function snare(t, g = .22) { noise(t, .16, g, 1900, 'bandpass', .8); fm(t, 50, .06, { ratio: 1.5, index: 2, gain: .06, release: .05 }); }
+function hat(t, g = .07, open) { noise(t, open ? .18 : .04, g, 7500, 'highpass'); }
+function tamb(t, g = .06) { noise(t, .09, g, 9000, 'bandpass', 2); noise(t + .015, .06, g * .6, 6000, 'highpass'); }
+
+// Instruments du jeu (src/audio/synth.js), à peine retouchés.
+const I = {
+  bass: { ratio: .5, index: 1.4, indexEnd: .5, gain: .3, sustain: .7, decay: .2 },
+  clav: { ratio: 3, index: 2.2, indexEnd: .3, indexTime: .05, gain: .03, sustain: .2, decay: .03, release: .03, wet: .35 },
+  organ: { ratio: 1, index: 1.1, indexEnd: .8, attack: .01, gain: .05, sustain: .55, decay: .06, release: .05 },
+  bell: { ratio: 3.5, index: 3, indexEnd: .2, indexTime: .3, gain: .02, sustain: .15, decay: .2, release: .3, wet: .3 },
+  brass: { ratio: 1, index: 1.4, indexEnd: 2.2, attack: .05, gain: .045, sustain: .8, wet: .5, vibrato: [5, .006] },
+  theremin: { ratio: 1, index: .05, attack: .5, gain: .025, sustain: .9, vibrato: [6, .015], wet: .9, release: .6 }
+};
+const CHORDS = [[64, 67, 71], [64, 69, 72], [62, 66, 69], [64, 67, 71]];   // Em Am D Em
+const ROOTS = [40, 45, 38, 40];
+// Basse qui traîne : fondamentale, quinte, retour, en notes longues décalées (indices de doubles-croches).
+const BASS = [[0, 0, 6], [7, 0, 2], [10, 7, 3], [14, 5, 2]];
+const BELLS = [[[0, 79, 4], [4, 81, 2], [6, 83, 6]], [[0, 81, 4], [4, 79, 4], [8, 76, 8]], [[0, 74, 4], [4, 76, 2], [6, 79, 6]], [[0, 83, 4], [4, 81, 2], [6, 79, 2], [8, 78, 8, true]]];
+function reggae(o) { return { bpm: o.bpm, bars: 4, build(t0, s16) {
+  const bar = 16 * s16, wob = () => (Math.random() - .5) * o.wobble;
+  for (let b = 0; b < 4; b++) {
+    const t = t0 + b * bar, ch = CHORDS[b];
+    // One drop : grosse caisse et caisse claire ensemble sur le 3e temps ; charleston en croches.
+    kick(t + 8 * s16, .5); snare(t + 8 * s16, .14);
+    for (let i = 0; i < 16; i += 2) hat(t + i * s16 + (i % 4 ? s16 * .25 : 0), i % 4 ? .05 : .03, i === 14 && b % 2);
+    for (const [i, iv, d] of BASS) fm(t + i * s16 + s16 * .1, ROOTS[b] + iv, d * s16, I.bass);
+    // Skank sur les temps 2 et 4, désaccordé et vacillant.
+    for (const i of [4, 12]) for (const m of ch) fm(t + i * s16, m, s16 * 1.2, { ...I.clav, detune: wob() * 40, bend: 1 + wob() * .02, bendAt: s16 * .3 });
+    // Bubble d'orgue : croches en rebond sous le skank.
+    for (const i of [2, 6, 10, 14]) fm(t + i * s16, ch[0] - 12, s16 * .8, { ...I.organ, detune: wob() * 15 });
+    for (const i of [3, 7, 11, 15]) fm(t + i * s16, ch[2] - 12, s16 * .6, { ...I.organ, gain: .035 });
+    // Mélodie : cloches (R1) ou mélodica de cuivre (R2) ; la dernière note dérape vers le bas.
+    for (const [i, m, d, sour] of BELLS[b]) fm(t + i * s16, m - (o.lead === 'brass' ? 12 : 0), d * s16, { ...I[o.lead], ...(sour ? { bend: .955, bendAt: d * s16 * .4 } : {}) });
+    if (o.siren && b === 2) fm(t + 4 * s16, 88, 8 * s16, { ...I.theremin, bend: 1.5, bendAt: 0 });
+  }
+  return 4 * bar;
+} }; }
+const R1 = reggae({ bpm: 72, wobble: .9, lead: 'bell' });
+const R2 = reggae({ bpm: 66, wobble: 1.4, lead: 'brass', siren: true });
+const DEMOS = { R1, R2 };
+function stop() {
+  if (timer) clearTimeout(timer); timer = null; if (raf) cancelAnimationFrame(raf); raf = null;
+  if (master) { master.gain.setTargetAtTime(0, ac.currentTime, .05); const old = master, oldSend = send; setTimeout(() => { old.disconnect(); oldSend.disconnect(); }, 400); master = null; send = null; }
+  document.querySelectorAll('.demo button').forEach(b => { b.classList.remove('on'); b.textContent = 'Écouter'; });
+  document.querySelectorAll('.demo .bar i').forEach(i => i.style.width = '0');
+  current = null;
+}
+function play(name, btn) {
+  const again = current === name;
+  stop();
+  if (again) return;
+  current = name; setup();
+  ac.resume();
+  current = name; btn.classList.add('on'); btn.textContent = 'Stop';
+  const demo = DEMOS[name], step = 60 / demo.bpm / 4;
+  let start = ac.currentTime + .1;
+  const loop = () => { const len = demo.build(start, step); const s0 = start; start += len; timer = setTimeout(loop, (start - ac.currentTime - 1) * 1000);
+    const bar = document.getElementById('bar' + name); const tick = () => { if (current !== name) return; bar.style.width = Math.min(100, (ac.currentTime - s0) / len * 100) + '%'; raf = requestAnimationFrame(tick); }; tick(); };
+  loop();
+}
+</script>

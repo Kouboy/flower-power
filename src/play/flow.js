@@ -1,9 +1,10 @@
 // play/flow.js — déroulé de partie : mort, éclosion, transitions, fin de partie.
-// Lit     : state.mode, state.query, state.plant, state.input.pressed, state.events, state.rng, state.world.{surfaceY,width},
+// Lit     : state.mode, state.query, state.plant, state.input.pressed, state.events, state.rng, state.boosts.filter, state.world.{surfaceY,width},
 //           FP.config.{flow,text,toxic,garden,soil}.
 // Écrit   : state.mode, state.flow, state.garden.flowers (création, croissance), state.plant.{reserves,oldTrails,corruption,toxicTimer,recentToxic}, state.score.flowers,
 //           state.level, state.camera.shake, state.events (death, bloom, blossom, toxicEnter, ready) ; appelle FP.level.generate et FP.plant.prepare/launch.
-// Expose  : FP.flow.update(state, dt), FP.flow.simplifyTrail(points, minStep). Les textes à l'écran sont l'affaire de ui/*.
+// Expose  : FP.flow.update(state, dt), FP.flow.simplifyTrail(points, minStep), FP.flow.afterShop(state, after) (fin du bon de commande).
+//           Entre deux pousses (et après la dernière mort), FP.shop.open ouvre le bon de commande (mode shop). Les textes à l'écran sont l'affaire de ui/*.
 // Porté de la v3.43.16 (die, bloom, transitions de update()) ; éclosion visuelle et fondu : étape 6.
 (function () {
   'use strict';
@@ -42,6 +43,7 @@
   // Chaque pollen ramassé ajoute une fleur (et fait avancer d'autant de niveaux, comme en v3).
   function bloom(state) {
     const cfg = FP.config.flow, p = state.plant, count = 1 + state.score.flowerBonus;
+    state.boosts = {};   // fin de pousse : les achats de la boutique s'arrêtent là
     plantFlowers(state, count);
     state.score.flowers += count;
     state.level += count;
@@ -60,10 +62,11 @@
   // cause : 'solid' | 'leak' | 'toxic' ; kind : famille de l'obstacle (cause solid uniquement).
   function die(state, cause, kind, reason) {
     const cfg = FP.config.flow, p = state.plant;
+    state.boosts = {};   // fin de pousse : les achats de la boutique s'arrêtent là
     p.reserves -= 1;
     state.events.push({ type: 'death', cause, kind, x: p.tip.x, y: p.tip.y });
     state.camera.shake = Math.max(state.camera.shake, cfg.deathShake);   // .28 pour toute mort, comme en v3
-    if (p.reserves <= 0) { state.mode = 'over'; state.flow.overReason = reason; return; }
+    state.flow.overReason = reason;   // gardé pour le certificat si la dernière chance est refusée
     state.mode = 'dying';
     state.flow.timer = cfg.dyingTime;
   }
@@ -84,11 +87,7 @@
       }
     } else if (f.stage === 'fadeIn') {
       f.fade = clamp(f.timer / cfg.fadeInTime, 0, 1);
-      if (f.timer <= 0) {
-        f.fade = 0; f.stage = 'show';
-        state.mode = 'ready';
-        state.events.push({ type: 'ready' });
-      }
+      if (f.timer <= 0) { f.fade = 0; f.stage = 'show'; FP.shop.open(state, { after: 'bloom' }); }   // bon de commande, puis « prête »
     }
   }
 
@@ -102,7 +101,7 @@
         p.recentToxic = t.messageCooldown;
         state.events.push({ type: 'toxicEnter', x: p.tip.x, y: p.tip.y });
       }
-      if (p.toxicTimer > t.burnAt) die(state, 'toxic', null, FP.config.text.deathToxic);
+      if (p.toxicTimer > t.burnAt && !state.boosts.filter) die(state, 'toxic', null, FP.config.text.deathToxic);   // Filtre à charbon (boutique)
     } else {
       p.toxicTimer = Math.max(0, p.toxicTimer - dt * t.recoveryRate);
     }
@@ -125,7 +124,10 @@
       }
       case 'dying':
         f.timer -= dt;
-        if (f.timer <= 0) { FP.level.generate(state); FP.plant.launch(state); }
+        if (f.timer <= 0) {
+          if (p.reserves <= 0) FP.shop.open(state, { after: 'last' });   // dernière chance : la Graine Bio™ est garantie
+          else { FP.level.generate(state); FP.plant.prepare(state); FP.shop.open(state, { after: 'death' }); }
+        }
         break;
       case 'bloom':
         f.timer -= dt;
@@ -137,5 +139,15 @@
     }
   }
 
-  FP.flow = { update, simplifyTrail };
+  // Fin du bon de commande : on reprend là où la pousse s'était arrêtée.
+  function afterShop(state, after) {
+    if (after === 'bloom') { state.mode = 'ready'; state.events.push({ type: 'ready' }); return; }
+    if (after === 'last') {
+      if (state.plant.reserves <= 0) { state.mode = 'over'; return; }
+      if (!state.boosts.lobbying) FP.level.generate(state);   // Lobbying a déjà regénéré le niveau
+    }
+    FP.plant.launch(state);
+  }
+
+  FP.flow = { update, simplifyTrail, afterShop };
 })();

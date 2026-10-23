@@ -1,5 +1,5 @@
 // world/level.js — génération d'un niveau à partir de la graine du run.
-// Lit     : state.rng, state.level, state.world.{width,height,viewH,surfaceY}, state.signature,
+// Lit     : state.rng, state.level, FP.config.shop.lobbyingK (option lobbying), state.world.{width,height,viewH,surfaceY}, state.signature,
 //           FP.config.{level,spawnTables,signature}, FP.catalog, FP.geom.
 // Écrit   : state.world.{skyVariant,lawnVariant,safePath,safeRadius,solids,toxics,leaks,bonuses}, state.signature ;
 //           puis FP.coins.place écrit state.world.{coins,chains}.
@@ -143,10 +143,10 @@
     }
   }
 
-  function placeSolids(state, grid) {
+  function placeSolids(state, grid, k = 1) {
     const world = state.world, rng = state.rng, s = FP.config.level.solids;
     const worldScale = worldScaleOf(world);
-    const count = Math.round((s.base + Math.min(s.maxExtra, Math.floor(state.level * s.perLevel))) * worldScale * s.scale * s.framing);
+    const count = Math.round((s.base + Math.min(s.maxExtra, Math.floor(state.level * s.perLevel))) * worldScale * s.scale * s.framing * k);
     const bands = ['upper', 'middle', 'deep'];
     let misses = 0;
     for (let i = 0; i < count && misses < s.giveUpAfter; i++) {
@@ -291,7 +291,8 @@
 
   // --- Points d'entrée -----------------------------------------------------
 
-  function generate(state) {
+  // opts.lobbying (boutique) : moins d'obstacles (× FP.config.shop.lobbyingK).
+  function generate(state, opts = {}) {
     const world = state.world, rng = state.rng, g = FP.config.level.grid;
     world.solids = []; world.toxics = []; world.leaks = []; world.bonuses = [];
     world.skyVariant = Math.floor(rng.next() * FP.config.level.skyVariants);
@@ -299,7 +300,7 @@
     const grid = makeGrid(world.width, world.surfaceY + g.topPad, world.height - g.bottomPad);
     generateSafePath(world, rng, state.level);
     placeSignature(state, grid);
-    placeSolids(state, grid);
+    placeSolids(state, grid, opts.lobbying ? FP.config.shop.lobbyingK : 1);
     placeToxics(state, grid);
     placeLeaks(state, grid);
     FP.coins.place(state);   // chapelets de pièces, tirage propre (world/coins.js)

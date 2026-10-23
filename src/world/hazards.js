@@ -1,5 +1,5 @@
 // world/hazards.js — dangers diffus : limaces de lixiviat en mouvement, intensité des zones toxiques.
-// Lit     : state.time, state.world.leaks, state.plant.{stemCount,stemAge}, state.score.flowers, FP.config.hazards.
+// Lit     : state.time, state.world.leaks, state.plant.{stemCount,stemAge}, state.score.flowers, state.boosts.beer, FP.config.{hazards,shop.beerK}.
 // Écrit   : leak.{s,cx,cy,cr} (phase intégrée, position et rayon du corps cette frame), leak.hitFlash (décroissance).
 // Expose  : FP.hazards.update(state, dt), FP.hazards.leakSpeedScale(state), FP.hazards.toxicIntensityAt(o, x, y),
 //           FP.hazards.leakHeading(leak) (sens de marche : 1 ou −1).
@@ -35,7 +35,7 @@
   function update(state, dt) {
     const h = FP.config.hazards, t = state.time, scale = leakSpeedScale(state);
     for (const l of state.world.leaks) {
-      l.s += dt * l.rate * h.leakRateK * scale;
+      l.s += dt * l.rate * h.leakRateK * scale * (state.boosts.beer ? FP.config.shop.beerK : 1);   // Bière anti-limaces (boutique)
       const k = leakOffset(l);
       l.cx = l.x + Math.cos(l.angle) * l.len * k;
       l.cy = l.y + Math.sin(l.angle) * l.len * k;

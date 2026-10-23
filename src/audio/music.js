@@ -3,18 +3,20 @@
 // Lit     : state.mode, state.score.flowers, state.plant.{tip,corruption,toxicTimer}, state.world.{surfaceY,height},
 //           state.graze.active, state.query.grazes, FP.certificate.canRestart, FP.songs, FP.sequencer.
 // Écrit   : rien dans l'état (le moteur audio uniquement).
-// Expose  : FP.music.{songFor (variante de jeu selon la pousse), layersFor, tempoFor, filterFor, grazeDuck} (purs, testés), FP.music.update(state, events, backend),
+// Expose  : FP.music.{songFor (variante de jeu selon la pousse, reggae en boutique), layersFor, tempoFor, filterFor, trebleFor, grazeDuck} (purs, testés), FP.music.update(state, events, backend),
 //           FP.music.MUSIC_GAIN.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
   const MUSIC_GAIN = .5, TITLE_FADE = 1, OUT_FADE = .5;
   const DEATH_DUCK = Math.pow(10, -9 / 20), DEATH_TIME = 1, BLOSSOM_TIME = 1.2, OPEN = 20000, ASLEEP = 900;
-  const IN_GAME = { playing: true, dying: true, bloom: true, ready: true };
+  const IN_GAME = { playing: true, dying: true, bloom: true, ready: true, shop: true };
+  const STANDBY = { ready: true, shop: true };   // une seule couche : veille avant de pousser, reggae de la boutique (sa seule couche)
 
   function songFor(state) {
     if (!state || state.mode === 'splash') return { song: null, gain: 0 };   // le son n'est pas encore débloqué
     if (state.mode === 'menu') return { song: 'title', gain: 1 };
+    if (state.mode === 'shop') return { song: 'shop', gain: 1 };   // reggae de la boutique
     if (state.mode === 'over') return FP.certificate && FP.certificate.canRestart(state) ? { song: 'title', gain: .5 } : { song: null, gain: 0 };
     // Une variante de la musique de jeu par pousse, en boucle : la nouvelle tige démarre sur sa propre progression.
     return { song: 'game' + ((Math.max(1, state.plant.stemCount) - 1) % FP.songs.gameVariants.length), gain: 1 };
@@ -31,7 +33,7 @@
   function layersFor(state) {
     const off = { groove: 0, clav: 0, perc: 0, organ: 0, sitar: 0, ghost: 0 };
     if (!IN_GAME[state.mode]) return off;
-    if (state.mode === 'ready') return { ...off, groove: 1 };   // veille : basse et batterie seules (filtrées)
+    if (STANDBY[state.mode]) return { ...off, groove: 1 };   // veille : basse et batterie seules (filtrées)
     const p = state.plant, w = state.world, tip = p.tip;
     const depth = tip ? (tip.y - w.surfaceY) / Math.max(1, w.height - w.surfaceY) : 1;
     return { groove: 1, clav: 1, perc: grazeLevel(state), organ: p.corruption > 0 || p.toxicTimer > 0 ? 1 : 0, sitar: depth < 1 / 3 ? 1 : 0, ghost: 1 };
@@ -39,6 +41,8 @@
 
   const tempoFor = (state) => Math.min(125, 100 + 3.5 * state.score.flowers);
   const filterFor = (state) => (state.mode === 'ready' ? ASLEEP : OPEN);
+  const TREBLE = 7;   // dB d'aigus en plus pour le reggae de la boutique : sono de supermarché
+  const trebleFor = (state) => (state.mode === 'shop' ? TREBLE : 0);
   const grazeDuck = (intensity) => Math.pow(10, -6 * intensity / 20);
 
   // État par moteur : lecteur, baisse en cours (une seule à la fois), dernières valeurs envoyées.
@@ -54,10 +58,11 @@
     const m = memoFor(backend), p = m.player, now = backend.now(), want = songFor(state);
     if (want.song !== p.current()) {
       if (!want.song) p.stop(OUT_FADE);
-      else p.play(want.song, { fade: want.song === 'title' ? TITLE_FADE : 0, gain: want.gain, bpm: want.song === 'title' ? 0 : tempoFor(state),
+      else p.play(want.song, { fade: want.song === 'title' ? TITLE_FADE : 0, gain: want.gain, bpm: want.song === 'title' || want.song === 'shop' ? 0 : tempoFor(state),
         atBar: want.song.startsWith('game') && !!p.current() && p.current().startsWith('game') });   // variante suivante : relais en fin de mesure
     }
     if (p.current() && p.current().startsWith('game')) { p.setTempo(tempoFor(state)); p.setLayers(layersFor(state)); }
+    if (p.current() === 'shop') p.setLayers(layersFor(state));
     for (const e of events || []) {
       if (e.type === 'death') m.duckUntil = Math.max(m.duckUntil, now + DEATH_TIME);
       if (e.type === 'blossom') m.duckUntil = Math.max(m.duckUntil, now + BLOSSOM_TIME);
@@ -66,8 +71,10 @@
     if (m.gain === null || Math.abs(gain - m.gain) > .005) { backend.setGain('music', gain, .1); m.gain = gain; }
     const filter = filterFor(state);
     if (filter !== m.filter) { backend.setFilter(filter, .3); m.filter = filter; }
+    const treble = trebleFor(state);
+    if (treble !== m.treble && backend.setTreble) { backend.setTreble(treble, .3); m.treble = treble; }
     p.update(now);
   }
 
-  FP.music = { songFor, layersFor, tempoFor, filterFor, grazeDuck, update, MUSIC_GAIN };
+  FP.music = { songFor, layersFor, tempoFor, filterFor, trebleFor, grazeDuck, update, MUSIC_GAIN };
 })();

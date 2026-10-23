@@ -57,6 +57,7 @@
       garden: { flowers: [] },                                // parterre : fleurs écloses pendant tout le run
       graze: { active: new Map() },                           // frôlements en cours (play/graze.js)
       power: { shield: false, shieldGrace: 0 },              // bouclier organique (play/powerups.js)
+      shop: null, shopVisits: 0, boosts: {},                 // boutique de fin de pousse et effets achetés (play/shop.js)
       score: { eco: 0, flowers: 0, flowerBonus: 0, combo: 0, comboTimer: 0 },
       fx: { particles: [], effects: [] },   // écrit uniquement par render/* et ui/*
       events: []                                            // vidé à chaque frame par core/loop.js

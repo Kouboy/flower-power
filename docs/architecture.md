@@ -30,6 +30,7 @@ src/
 │   ├── camera.js     ✅ défilement, cadrage ×1,18, zoom de frôlement
 │   ├── graze.js      ✅ frôlement : suivi par objet, paiement à la sortie, annulation au contact, mesures du flyover
 │   ├── coins.js      ✅ ramassage des pièces (FP.coinPlay) : pièce au combo en cours, bonus du chapelet complet
+│   ├── shop.js       ✅ boutique de fin de pousse (FP.shop) : tirage de 3 articles (un à −50 %), coches, commande, effets
 │   ├── powerups.js   ✅ flyover → pollen / goutte / spore, exclusivité, ramassage, bouclier organique
 │   └── scoring.js    ✅ ÉcoCrédits™, combo, records persistants
 ├── render/
@@ -64,6 +65,7 @@ src/
 │   ├── hud.js        ✅ HUD des coins du bas (FP.hud.items, pur) : graines, ÉcoCrédits™, pollen et combo actifs, « TOUCHER POUR POUSSER »
 │   ├── shout.js      ✅ cri de mort (FP.shout.textFor), aide de première pousse (FP.shout.helpFor)
 │   ├── cheer.js      ✅ cri du chapelet complet (« KARMA ! », « GREEN ! », « 0 DÉCHET ! ») et son montant
+│   ├── order.js      ✅ bon de commande en papier recyclé (FP.orderForm) : mise en page, zones de toucher, dessin
 │   ├── logo.js       ✅ logo groovy radioactif (FP.logo.layout, pur) : lettres tramées, anneaux, coulures, trèfle
 │   ├── title.js      ✅ écran titre
 │   ├── certificate.js ✅ certificat de fin (FP.certificate.lines, canRestart, purs)
@@ -117,7 +119,7 @@ Un niveau est généré par `FP.level.startRun(state)` (tirage du T-Rex signatur
 `FP.loop.step(state, dt)` :
 
 1. `dt` plafonné à `config.loop.maxDt` (dt invalide → `fallbackDt`) ; `state.time += dt` ;
-2. dans tous les modes sauf `splash` et `menu`, `FP[nom].update(state, dt)` pour `input → plant → hazards → collision → graze → coinPlay → scoring → powerups → flow → camera` (un système pas encore porté est sauté ; chacun décide selon `state.mode`). **Tout système expose `update(state, dt)`** : par exemple la requête de pointe vit dans `FP.collision.update` ;
+2. dans tous les modes sauf `splash` et `menu`, `FP[nom].update(state, dt)` pour `input → plant → hazards → collision → graze → coinPlay → scoring → powerups → shop → flow → camera` (un système pas encore porté est sauté ; chacun décide selon `state.mode`). **Tout système expose `update(state, dt)`** : par exemple la requête de pointe vit dans `FP.collision.update` ;
 3. `FP.audio.consume(state.events, state, dt)` ;
 4. `FP.render.frame(state)` ;
 5. `state.events` est vidé.
@@ -169,6 +171,7 @@ Spec : `docs/superpowers/specs/2026-10-22-interface-pixel-design.md` ; maquettes
 - `collision` liste les frôlements de la frame (`query.grazes`) ; `graze` tient un frôlement par objet dans `state.graze.active` (Map). Rien n'est payé avant .22 s ; à la sortie, `FP.scoring.award` paie (arrondi à 25) ; un contact ou la fin de la partie annule tout sans payer.
 - `scoring` gère le combo (`state.score.combo/comboTimer`, fenêtre 2 s, ×8 max) et les records.
 - **Pièces (v4.5.0).** `world/coins.js` pose les chapelets à la fin de `FP.level.generate` avec son propre générateur (graine ^ salt ^ niveau) : `state.rng` n'est pas touché, les niveaux restent ceux d'avant. `coinPlay` (après `graze`, avant `scoring`) ramasse à 14 px : une pièce paie 25 Ɇ au multiplicateur du combo en cours et en relance le délai sans le faire monter (`FP.scoring.awardCoin`, gain discret sans nombre flottant) ; le chapelet complet paie 150 (facile) ou 400 (appât) par `FP.scoring.award` (+1 cran) et émet `chainDone` ; une pièce laissée à plus de 40 px sous la pointe rate son chapelet.
+- **Boutique (v4.6.0).** Entre deux pousses, le mode `shop` affiche un bon de commande (`state.shop`) : 3 articles tirés (tirage propre : graine ^ salt ^ passage) dont un à −50 %, achetés au score (qui baisse, jamais sous 0 ; le record ne baisse pas). Déroulé : mort → nouveau niveau + `prepare` → `shop` → lancement ; éclosion → fondu → `shop` → `ready` ; dernière mort → `shop` de dernière chance (Graine Bio™ garantie) → lancement si une graine est achetée, sinon `over`. Les effets vivent dans `state.boosts`, effacés à la fin de chaque pousse (`die`, `bloom`) : `FP.plant.launch` applique membrane (bouclier) et spore (`FP.powerups.detonate`), les systèmes lisent leur drapeau (aimant et premium : pièces ; compost : vitesse ; bière : limaces ; filtre : brûlure des nappes) ; Lobbying regénère le niveau (`FP.level.generate(state, { lobbying: true })`).
 - Exception documentée : `FP.scoring.records` (meilleurs fleurs et ÉcoCrédits™) vit hors de `FP.state`, car il persiste entre les runs ; chargé au démarrage, sauvegardé dès qu'il est battu, dans la clé `flower_power_v4_best`.
 - `render/effects.js` transforme les événements `eco` en chiffres flottants rangés dans `state.fx.effects` (réservé au rendu).
 

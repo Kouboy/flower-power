@@ -2,8 +2,8 @@
 // de jeu « funk 70s hanté » (B), dont l'orgue et le sitar de A forment des couches de danger.
 // Lit     : rien.
 // Écrit   : rien.
-// Expose  : FP.songs.title, FP.songs.game0..3 (variantes de la musique de jeu, une par pousse ; FP.songs.gameVariants, FP.songs.game = la 1re)
-//           = { bpm, bars, beatsPerBar, pcs, notes, swing? }, FP.songs.jingles.{death,blossom,record} ; note = { beat, dur, inst, midi?, vel?, layer, bend? }.
+// Expose  : FP.songs.title, FP.songs.shop (reggae de la boutique), FP.songs.game0..3 (variantes de la musique de jeu, une par pousse ; FP.songs.gameVariants, FP.songs.game = la 1re)
+//           = { bpm, bars, beatsPerBar, pcs, notes, swing? }, FP.songs.jingles.{death,blossom,record} ; note = { beat, dur, inst, midi?, vel?, layer, bend?, detune? (cents) }.
 //           swing : retard aléatoire maximal (s) de la caisse claire et des charlestons (« boîte à rythmes qui boite »).
 // Temps en beats (noire = 1) depuis le début de la boucle ; pcs = classes de hauteur de la gamme (contrôlées par les tests).
 (function () {
@@ -108,7 +108,30 @@
     };
   }
 
+  // --- Boutique (v4.6.0) : reggae d'ascenseur pollué, 72 BPM, mi mineur naturel (mi fa♯ sol la si do ré) ------
+  // One drop (grosse caisse et caisse claire sur le 3e temps), basse ronde qui traîne, skank désaccordé qui vacille
+  // (cassette restée au soleil), bubble d'orgue, ritournelle de cloches discrète dont la dernière note dérape.
+  function shop() {
+    const n = [], L = 'groove', s16 = .25;
+    const chords = [[64, 67, 71], [64, 69, 72], [62, 66, 69], [64, 67, 71]], roots = [40, 45, 38, 40];   // Em Am D Em
+    const bass = [[0, 0, 6], [7, 0, 2], [10, 7, 3], [14, 5, 2]];
+    const bells = [[[0, 79, 4], [4, 81, 2], [6, 83, 6]], [[0, 81, 4], [4, 79, 4], [8, 76, 8]], [[0, 74, 4], [4, 76, 2], [6, 79, 6]], [[0, 83, 4], [4, 81, 2], [6, 79, 2], [8, 78, 8, .955]]];
+    const wobble = [-22, 14, -8, 25, -15, 6, 19, -27, 10, -4, -19, 23];   // désaccords fixes, en cents
+    let w = 0;
+    for (let bar = 0; bar < 4; bar++) {
+      const ch = chords[bar];
+      hits(n, bar, 'kick', L, [2], .9); hits(n, bar, 'snare', L, [2], .6);
+      hits(n, bar, 'hat', L, [0, .5, 1, 1.5, 2, 2.5, 3, 3.5], (b) => (b % 1 ? .7 : .45));
+      for (const [i, iv, d] of bass) n.push({ beat: at(bar, i * s16 + .02), dur: d * s16, inst: 'bass', midi: roots[bar] + iv, vel: 1.8, layer: L });
+      for (const i of [4, 12]) for (const m of ch) n.push({ beat: at(bar, i * s16), dur: s16 * 1.2, inst: 'skank', midi: m, layer: L, detune: wobble[w++ % wobble.length] });
+      for (const i of [2, 6, 10, 14]) n.push({ beat: at(bar, i * s16), dur: s16 * .8, inst: 'bubble', midi: ch[0] - 12, layer: L });
+      for (const i of [3, 7, 11, 15]) n.push({ beat: at(bar, i * s16), dur: s16 * .6, inst: 'bubble', midi: ch[2] - 12, vel: .7, layer: L });
+      for (const [i, m, d, bend] of bells[bar]) n.push({ beat: at(bar, i * s16), dur: d * s16, inst: 'bell', midi: m, vel: .35, layer: L, ...(bend ? { bend } : {}) });
+    }
+    return { bpm: 72, bars: 4, beatsPerBar: 4, pcs: [4, 6, 7, 9, 11, 0, 2], notes: sorted(n) };
+  }
+
   const gameVariants = VARIANTS.map((_, v) => game(v));
-  FP.songs = { title: title(), game: gameVariants[0], gameVariants, jingles: jingles() };
+  FP.songs = { title: title(), game: gameVariants[0], gameVariants, shop: shop(), jingles: jingles() };
   gameVariants.forEach((s, v) => { FP.songs['game' + v] = s; });
 })();

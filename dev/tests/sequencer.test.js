@@ -4,7 +4,7 @@ function audioSpy() {
   const calls = [];
   return { t: 0, calls, now() { return this.t; },
     note(...a) { calls.push(['note', ...a]); }, drum(...a) { calls.push(['drum', ...a]); }, burst(...a) { calls.push(['burst', ...a]); },
-    setGain(...a) { calls.push(['gain', ...a]); }, setFilter(...a) { calls.push(['filter', ...a]); }, drone() {}, suspend() {}, resume() {} };
+    setGain(...a) { calls.push(['gain', ...a]); }, setFilter(...a) { calls.push(['filter', ...a]); }, setTreble(...a) { calls.push(['treble', ...a]); }, drone() {}, suspend() {}, resume() {} };
 }
 const loop4 = { bpm: 120, bars: 1, beatsPerBar: 4, pcs: [4], notes: [
   { beat: 0, dur: 1, inst: 'bass', midi: 40, layer: 'groove' }, { beat: 2.5, dur: .5, inst: 'bass', midi: 52, layer: 'groove' } ] };
@@ -56,4 +56,30 @@ FP.test('sequencer: en changeant de morceau, le nouveau démarre après ce que l
   for (let i = 37; i <= 60; i++) { spy.t = i * .025; p.update(spy.t); }
   const fresh = spy.calls.slice(mark).filter(sounding).map(at);
   FP.assert(fresh.length > 0 && Math.min(...fresh) >= lastOld + .05, 'nouveau ' + Math.min(...fresh).toFixed(3) + ' / ancien ' + lastOld.toFixed(3));
+});
+// Musique de la boutique (v4.6.0) : reggae pollué, sono de supermarché.
+FP.test('songs: le reggae de la boutique reste en mi mineur, mesures complètes', () => {
+  const s = FP.songs.shop;
+  FP.assertEqual(s.bpm, 72); FP.assertEqual(s.bars, 4);
+  for (const n of s.notes) {
+    if (n.midi !== undefined) FP.assert(s.pcs.includes(n.midi % 12), 'hors gamme : ' + n.midi);
+    FP.assert(n.beat >= 0 && n.beat < s.bars * 4, 'hors boucle : ' + n.beat);
+    FP.assert(n.inst in FP.synth.INSTRUMENTS || FP.synth.DRUMS.includes(n.inst), n.inst);
+  }
+  FP.assert(s.notes.some(n => n.detune), 'skank désaccordé');
+});
+FP.test('music: le bon de commande joue le reggae, aigus poussés, sans filtre de veille', () => {
+  const s = FP.state.createRun(1, { W: 440, H: 783 }); s.mode = 'shop';
+  FP.assertEqual(FP.music.songFor(s).song, 'shop');
+  FP.assertEqual(FP.music.trebleFor(s), 7);
+  s.mode = 'ready'; const asleep = FP.music.filterFor(s); s.mode = 'shop';
+  FP.assert(FP.music.filterFor(s) > asleep);
+  s.mode = 'playing'; FP.assertEqual(FP.music.trebleFor(s), 0);
+});
+FP.test('sequencer: le désaccord d’une note part avec elle', () => {
+  const spy = audioSpy(), p = FP.sequencer.createPlayer(spy);
+  FP.songs.__d = { bpm: 120, bars: 1, beatsPerBar: 4, pcs: [4], notes: [{ beat: 0, dur: .5, inst: 'clav', midi: 64, layer: 'groove', detune: -18 }] };
+  p.play('__d', { fade: 0, gain: 1 }); p.update(0);
+  const n = spy.calls.find(c => c[0] === 'note'); FP.assertEqual(n[6].detune, -18);
+  delete FP.songs.__d;
 });
