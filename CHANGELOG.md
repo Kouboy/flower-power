@@ -2,6 +2,12 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.4.1 — Plein écran sur téléphone
+
+- le plein écran est demandé au lever du doigt sur le titre (au doigt, les navigateurs Android ignoraient la demande faite au toucher) ;
+- sur téléphone, le jeu remplit tout l'écran, du 9:16 au 9:22 (un peu plus de terrain en hauteur) au lieu de laisser des bandes ; tablette et ordinateur gardent le cadre 9:16 ;
+- banc : 313 tests.
+
 ## v4.4.0 — Visages mutants
 
 - chaque pousse a son personnage : 16 têtes débiles et mutantes (hippie défoncé, dents de lapin, cyclope, binoclard, langue tirée, mutant à antennes, punk à crête, œil qui pendouille, yeux dépareillés, sourire à une dent, gros nez patate, gourou moustachu, champi sur le crâne, coquille sur la tête, gobe-mouche, lunettes Groucho), tirés sans doublon tant que les 16 ne sont pas passés ;
