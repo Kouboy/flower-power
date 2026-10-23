@@ -1,0 +1,75 @@
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  .cards { display: grid; grid-template-columns: repeat(2, 300px); gap: 30px; }
+  .phone { width: 260px; height: 520px; margin: 0 auto; border-radius: 16px; border: 3px solid #222; overflow: hidden; position: relative; font-family: 'Press Start 2P', monospace;
+    background: linear-gradient(#3a2a1e 0%, #241a12 60%, #3a2c1e 100%); }
+  .phone::before { content: ''; position: absolute; left: 124px; top: 230px; width: 6px; height: 290px; background: #4f7a2a; box-shadow: 0 0 0 2px #141c0c; }
+  .phone::after { content: ''; position: absolute; inset: 0; background: rgba(10, 6, 4, .45); }
+  .paper { position: absolute; z-index: 2; left: 16px; right: 16px; top: 54px; padding: 14px 12px 12px; background: #e6dcc0; color: #2a2016; transform: rotate(-1.5deg);
+    box-shadow: 4px 6px 0 rgba(0,0,0,.45); background-image: radial-gradient(#cbbf9e 1px, transparent 1px), radial-gradient(#d8ccab 1px, transparent 1px); background-size: 7px 7px, 11px 11px; background-position: 0 0, 3px 4px; }
+  .paper .h { font-size: 9px; text-align: center; line-height: 1.6; }
+  .paper .h small { display: block; font-size: 6px; color: #6a5a40; }
+  .paper hr { border: 0; border-top: 2px dashed #8a7a5a; margin: 8px 0; }
+  .line { display: flex; align-items: center; gap: 6px; font-size: 7px; margin: 9px 0; position: relative; }
+  .box { width: 12px; height: 12px; border: 2px solid #2a2016; flex: none; position: relative; background: #f2ead6; }
+  .box.on::after { content: ''; position: absolute; left: 2px; top: -3px; width: 4px; height: 9px; border: solid #3a8a2a; border-width: 0 3px 3px 0; transform: rotate(40deg); }
+  .line .n { flex: 1; line-height: 1.5; }
+  .line .n small { display: block; font-size: 5px; color: #6a5a40; }
+  .line .p { white-space: nowrap; }
+  .line .p s { color: #8a7a5a; font-size: 5px; display: block; text-align: right; }
+  .promo { position: absolute; right: 44px; top: -7px; transform: rotate(-10deg); color: #d0306a; border: 2px solid #d0306a; font-size: 5px; padding: 2px 3px; }
+  .tot { font-size: 7px; display: flex; justify-content: space-between; margin: 5px 0; }
+  .tot.co2 { color: #6a5a40; font-size: 6px; }
+  .tot.big { font-size: 8px; }
+  .row { display: flex; gap: 8px; margin-top: 10px; }
+  .b1, .b2 { flex: 1; text-align: center; font-size: 7px; padding: 9px 4px; border: 2px solid #2a2016; }
+  .b1 { background: #4f9a2c; color: #fff6c8; box-shadow: 0 3px #2e5a1a; }
+  .b2 { background: transparent; color: #2a2016; }
+  .stamp { position: absolute; right: 10px; bottom: 60px; transform: rotate(-14deg); border: 3px double #3a8a2a; color: #3a8a2a; font-size: 6px; padding: 4px; opacity: .85; }
+  .sig { font-size: 5px; color: #6a5a40; margin-top: 8px; }
+  .score { position: absolute; z-index: 2; right: 10px; bottom: 10px; color: #cfff78; font-size: 10px; text-shadow: 2px 2px #140c08; }
+  .seeds { position: absolute; z-index: 2; left: 10px; bottom: 10px; color: #b8915c; font-size: 10px; }
+</style>
+
+<h2>Le bon de commande en papier recyclé</h2>
+<p class="subtitle">Il se pose de travers par-dessus le jeu assombri (on voit encore la pousse et le HUD). On coche, le total se calcule, puis COMMANDER. La ligne de livraison donne un bilan carbone absurde, qui grimpe avec le nombre d'articles, toujours « compensé ». À gauche : rien de coché ; à droite : deux articles cochés.</p>
+
+<div class="cards">
+  <div class="card" data-choice="vide" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="phone">
+      <div class="paper">
+        <div class="h">BON DE COMMANDE<small>ÉCO-BOUTIQUE · N° 000042</small></div>
+        <hr>
+        <div class="line"><span class="box"></span><span class="n">GRAINE BIO™<small>une graine de plus</small></span><span class="p">Ɇ2 000</span></div>
+        <div class="line"><span class="promo">-50%</span><span class="box"></span><span class="n">AIMANT À JETONS<small>ramassage ×2</small></span><span class="p"><s>Ɇ500</s>Ɇ250</span></div>
+        <div class="line"><span class="box"></span><span class="n">BIÈRE ANTI-LIMACES<small>elles trinquent ailleurs</small></span><span class="p">Ɇ600</span></div>
+        <hr>
+        <div class="tot co2"><span>LIVRAISON</span><span>0 KG CO₂</span></div>
+        <div class="tot big"><span>TOTAL</span><span>Ɇ0</span></div>
+        <div class="row"><span class="b1">COMMANDER</span><span class="b2">NON MERCI</span></div>
+        <div class="sig">IMPRIMÉ SUR PAPIER 100 % RECYCLÉ*  *À 3 %</div>
+      </div>
+      <div class="seeds">▮▮▯</div><div class="score">Ɇ12 450</div>
+    </div></div>
+    <div class="card-body"><h3>Bon vierge</h3><p>À l'ouverture : rien de coché, total à zéro. « NON MERCI » (ou COMMANDER sans rien) passe à la pousse suivante.</p></div>
+  </div>
+  <div class="card" data-choice="coche" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="phone">
+      <div class="paper">
+        <div class="h">BON DE COMMANDE<small>ÉCO-BOUTIQUE · N° 000042</small></div>
+        <hr>
+        <div class="line"><span class="box on"></span><span class="n">GRAINE BIO™<small>une graine de plus</small></span><span class="p">Ɇ2 000</span></div>
+        <div class="line"><span class="promo">-50%</span><span class="box on"></span><span class="n">AIMANT À JETONS<small>ramassage ×2</small></span><span class="p"><s>Ɇ500</s>Ɇ250</span></div>
+        <div class="line"><span class="box"></span><span class="n">BIÈRE ANTI-LIMACES<small>elles trinquent ailleurs</small></span><span class="p">Ɇ600</span></div>
+        <hr>
+        <div class="tot co2"><span>LIVRAISON EXPRESS (DRONE)</span><span>14,7 KG CO₂</span></div>
+        <div class="tot co2"><span></span><span>(COMPENSÉS ✓)</span></div>
+        <div class="tot big"><span>TOTAL</span><span>Ɇ2 250</span></div>
+        <div class="row"><span class="b1">COMMANDER</span><span class="b2">NON MERCI</span></div>
+        <div class="sig">IMPRIMÉ SUR PAPIER 100 % RECYCLÉ*  *À 3 %</div>
+      </div>
+      <div class="seeds">▮▮▯</div><div class="score">Ɇ12 450</div>
+    </div></div>
+    <div class="card-body"><h3>Deux articles cochés</h3><p>Le total se calcule ; la livraison annonce un bilan carbone absurde (drone, porte-conteneurs…) qui grimpe à chaque case. COMMANDER : tampon « VALIDÉ », le score baisse du total, le papier s'envole.</p></div>
+  </div>
+</div>
