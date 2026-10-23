@@ -3,7 +3,7 @@
 // Écrit   : state.shop, state.shopVisits, state.mode ('shop'), state.events (shopOpen, shopTick, shopOrder) ; à la commande :
 //           state.score.eco, state.plant.reserves, state.boosts ; Lobbying regénère le niveau (FP.level.generate, FP.plant.prepare).
 // Expose  : FP.shop.open(state, { after }), FP.shop.total(state), FP.shop.canCheck(state, i), FP.shop.toggle(state, i),
-//           FP.shop.co2(state), FP.shop.order(state), FP.shop.decline(state). after : 'death' | 'bloom' | 'last'
+//           FP.shop.co2(state), FP.shop.order(state), FP.shop.decline(state), FP.shop.update(state). after : 'death' | 'bloom' | 'last'
 //           (dernière chance : la Graine Bio™ est garantie). Les effets (state.boosts) valent pour la pousse suivante :
 //           FP.plant.launch applique membrane et spore, les autres systèmes lisent leur drapeau ; la fin de pousse les efface.
 // Tirage propre (graine ^ salt ^ passage) : state.rng n'est jamais consommé.
@@ -69,5 +69,15 @@
     sh.phase = 'declined'; sh.t0 = state.time;
   }
 
-  FP.shop = { open, total, canCheck, toggle, co2, order, decline };
+  // Phases du bon : apparition → attente des coches → (tampon puis envol) ou sortie, puis le déroulé reprend la main.
+  function update(state) {
+    const sh = state.shop, c = FP.config.shop;
+    if (state.mode !== 'shop' || !sh) return;
+    const age = state.time - sh.t0;
+    if (sh.phase === 'in' && age >= c.inTime) sh.phase = 'idle';
+    const done = (sh.phase === 'ordered' && age >= c.stampTime + c.outTime) || (sh.phase === 'declined' && age >= c.inTime);
+    if (done) { state.shop = null; FP.flow.afterShop(state, sh.after); }
+  }
+
+  FP.shop = { open, total, canCheck, toggle, co2, order, decline, update };
 })();

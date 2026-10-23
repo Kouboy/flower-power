@@ -1,4 +1,6 @@
 const flowRun = () => { const s = FP.state.createRun(11, { W: 440, H: 783 }); FP.level.startRun(s); FP.plant.launch(s); s.events.length = 0; return s; };
+// Boutique (v4.6.0) : entre deux pousses, on refuse le bon de commande pour retrouver l'enchaînement d'avant.
+const skipShop = (s) => { if (s.mode !== 'shop') return; s.shop.phase = 'idle'; FP.shop.decline(s); s.time += 1; FP.shop.update(s, 1); };
 const tick = (s, n, dt = 1 / 60) => { for (let i = 0; i < n; i++) FP.loop.step(s, dt); };
 const serverAt = (s) => { const o = FP.catalog.makeSolid({ kind: 'server', x: 220, y: 900, a: 0, flip: 1 }); s.world.solids.push(o); return o; };
 FP.test('flow: contact → mort puis nouvelle pousse sur un nouveau niveau', () => {
@@ -7,14 +9,15 @@ FP.test('flow: contact → mort puis nouvelle pousse sur un nouveau niveau', () 
   FP.collision.update(s); FP.flow.update(s, 0);
   FP.assertEqual(s.mode, 'dying'); FP.assertEqual(s.plant.reserves, 2);
   FP.assert(s.events.some(e => e.type === 'death'));
-  FP.flow.update(s, .9);
+  FP.flow.update(s, .9); FP.assertEqual(s.mode, 'shop'); skipShop(s);
   FP.assertEqual(s.mode, 'playing'); FP.assertEqual(s.plant.stemCount, 2);
   FP.assert(JSON.stringify(s.world.solids.map(o => [o.x, o.y])) !== before);
 });
 FP.test('flow: plus de graines → over', () => {
   const s = flowRun(); s.plant.reserves = 1;
   const o = serverAt(s); s.plant.tip = { x: o.x, y: o.y };
-  FP.collision.update(s); FP.flow.update(s, 0);
+  FP.collision.update(s); FP.flow.update(s, 0); FP.flow.update(s, .9);
+  FP.assert(s.shop.lastChance); skipShop(s);
   FP.assertEqual(s.mode, 'over');
 });
 FP.test('flow: surface → éclosion puis ready au niveau suivant', () => {
@@ -23,6 +26,7 @@ FP.test('flow: surface → éclosion puis ready au niveau suivant', () => {
   FP.assertEqual(s.mode, 'bloom'); FP.assertEqual(s.score.flowers, 1); FP.assertEqual(s.level, 1);
   FP.assertEqual(s.plant.oldTrails.length, 1);
   for (let i = 0; i < 180; i++) FP.flow.update(s, 1 / 60);   // éclosion 1,55 s + fondus .46 + .48 s
+  FP.assertEqual(s.mode, 'shop'); skipShop(s);
   FP.assertEqual(s.mode, 'ready');
 });
 FP.test('flow: ready exige un nouvel appui', () => {
@@ -33,7 +37,7 @@ FP.test('flow: ready exige un nouvel appui', () => {
 });
 FP.test('flow: une partie complète tourne sans exception', () => {
   const s = flowRun(); tick(s, 60 * 40);
-  FP.assert(['playing', 'dying', 'bloom', 'ready', 'over'].includes(s.mode));
+  FP.assert(['playing', 'dying', 'bloom', 'shop', 'ready', 'over'].includes(s.mode));
 });
 const toxicAtTip = (s) => { const o = { x: s.plant.tip.x, y: s.plant.tip.y, rx: 60, ry: 60, a: 0 }; s.world.toxics = [o]; s.world.leaks = []; return o; };
 FP.test('flow: rester dans un toxique brûle la pointe après ≈ 75 px de trajet', () => {
@@ -98,6 +102,7 @@ FP.test('flow: le parterre survit au niveau suivant, pas à un nouveau run', () 
   const s = flowRun(); s.plant.tip = { x: 220, y: s.world.surfaceY - 1 };
   FP.collision.update(s); FP.flow.update(s, 0);
   for (let i = 0; i < 200; i++) FP.flow.update(s, 1 / 60);
+  skipShop(s);
   FP.assertEqual(s.mode, 'ready'); FP.assertEqual(s.garden.flowers.length, 1);
   FP.assertEqual(FP.state.createRun(1, { W: 440, H: 783 }).garden.flowers.length, 0);
 });
@@ -118,7 +123,7 @@ FP.test('flow: fondu sortant puis nouveau niveau puis fondu entrant', () => {
   advance(s, .3);
   FP.assertEqual(s.flow.stage, 'fadeIn'); FP.assert(s.flow.fade > .5);
   FP.assert(JSON.stringify(s.world.solids.map(o => [o.x, o.y])) !== before);
-  advance(s, .5);
+  advance(s, .5); skipShop(s);
   FP.assertEqual(s.mode, 'ready'); FP.assertEqual(s.flow.fade, 0);
 });
 FP.test('flow: le niveau n’est régénéré qu’une fois par éclosion', () => {
@@ -130,13 +135,13 @@ FP.test('flow: le niveau n’est régénéré qu’une fois par éclosion', () =
 FP.test('flow: la raison de la dernière mort est gardée pour l’écran de fin', () => {
   const s = flowRun(); s.plant.reserves = 1;
   const o = FP.catalog.makeSolid({ kind: 'server', x: 220, y: 900, a: 0, flip: 1 }); s.world.solids.push(o); s.plant.tip = { x: 220, y: 900 };
-  FP.collision.update(s); FP.flow.update(s, 0);
+  FP.collision.update(s); FP.flow.update(s, 0); FP.flow.update(s, .9); skipShop(s);
   FP.assertEqual(s.mode, 'over'); FP.assertEqual(s.flow.overReason, 'rupture : rack serveur');
 });
 FP.test('flow: entrée en ready → événement ready', () => {
   const s = flowRun(); s.plant.tip = { x: 220, y: s.world.surfaceY - 1 }; FP.collision.update(s); FP.flow.update(s, 0);
   const seen = [];
-  for (let i = 0; i < 200 && s.mode !== 'ready'; i++) { s.events.length = 0; FP.flow.update(s, 1 / 60); seen.push(...s.events); }
+  for (let i = 0; i < 200 && s.mode !== 'ready'; i++) { s.events.length = 0; if (s.mode === 'shop') skipShop(s); else FP.flow.update(s, 1 / 60); seen.push(...s.events); }
   FP.assertEqual(s.mode, 'ready'); FP.assert(seen.some(e => e.type === 'ready'));
 });
 FP.test('flow: redimensionner pendant le fondu ne bloque pas la transition', () => {
@@ -144,7 +149,7 @@ FP.test('flow: redimensionner pendant le fondu ne bloque pas la transition', () 
   let resized = false;
   for (let i = 0; i < 300 && s.mode !== 'ready'; i++) {
     if (!resized && s.flow.stage === 'fadeOut') { FP.state.applyView(s, { W: 440, H: 600 }); resized = true; }
-    FP.flow.update(s, 1 / 60);
+    if (s.mode === 'shop') skipShop(s); else FP.flow.update(s, 1 / 60);
   }
   FP.assert(resized, 'le fondu a eu lieu'); FP.assertEqual(s.mode, 'ready'); FP.assertEqual(s.world.viewH, 600);
 });

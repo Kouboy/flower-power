@@ -14,7 +14,8 @@
   // Les systèmes tournent dans tous les modes sauf 'splash' et 'menu' : chacun décide selon state.mode.
   // powerups après scoring : ramassage et bouclier interceptent un choc avant que flow ne décide d'une mort.
   // coinPlay (v4.5.0) après graze, avant scoring : une pièce relance le délai du combo avant qu'il ne s'écoule.
-  const UPDATE_ORDER = ['input', 'plant', 'hazards', 'collision', 'graze', 'coinPlay', 'scoring', 'powerups', 'flow', 'camera'];
+  // shop (v4.6.0) avant flow : à la fin du bon de commande, le déroulé reprend dans la même frame.
+  const UPDATE_ORDER = ['input', 'plant', 'hazards', 'collision', 'graze', 'coinPlay', 'scoring', 'powerups', 'shop', 'flow', 'camera'];
 
   // Messages déjà signalés : une erreur qui se répète à chaque frame ne s'affiche qu'une fois (50 au plus).
   const reported = new Set();

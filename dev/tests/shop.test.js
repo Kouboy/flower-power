@@ -107,3 +107,34 @@ FP.test('shop: refuser n’achète rien', () => {
   const s = shopRun(), e = s.score.eco; FP.shop.open(s, { after: 'death' }); s.shop.phase = 'idle'; FP.shop.toggle(s, 0); FP.shop.decline(s);
   FP.assertEqual(s.score.eco, e); FP.assertEqual(s.shop.phase, 'declined');
 });
+// Déroulé : la boutique s'intercale entre deux pousses.
+const crash = (s) => { s.query = { ...s.query, solid: { kind: 'cone' }, leak: 0, toxic: 0 }; FP.flow.update(s, 0); s.query = { ...s.query, solid: null }; };
+const until = (s, mode, max = 900) => { for (let i = 0; i < max && s.mode !== mode; i++) { s.time += 1 / 60; FP.shop.update(s, 1 / 60); FP.flow.update(s, 1 / 60); } return s.mode; };
+const settle = (s) => { for (let i = 0; i < 60 && s.shop; i++) { s.time += 1 / 60; FP.shop.update(s, 1 / 60); } };
+FP.test('flow: mort → bon de commande → nouvelle pousse', () => {
+  const s = shopRun(); s.plant.reserves = 3; crash(s);
+  FP.assertEqual(until(s, 'shop'), 'shop'); FP.assertEqual(s.shop.after, 'death');
+  settle(s); FP.assert(s.shop === null || s.shop.phase === 'idle');
+  FP.shop.decline(s); settle(s); FP.assertEqual(s.mode, 'playing');
+});
+FP.test('flow: éclosion → bon de commande → prête', () => {
+  const s = shopRun(); s.plant.tip = { x: 220, y: s.world.surfaceY - 1 }; FP.collision.update(s); FP.flow.update(s, 0);
+  FP.assertEqual(until(s, 'shop'), 'shop'); FP.assertEqual(s.shop.after, 'bloom');
+  settle(s); FP.shop.decline(s); settle(s); FP.assertEqual(s.mode, 'ready');
+});
+FP.test('flow: dernière mort refusée → certificat avec la cause d’origine', () => {
+  const s = shopRun(); s.plant.reserves = 1; crash(s);
+  FP.assertEqual(until(s, 'shop'), 'shop'); FP.assert(s.shop.lastChance);
+  settle(s); FP.shop.decline(s); settle(s);
+  FP.assertEqual(s.mode, 'over'); FP.assertEqual(s.flow.overReason, FP.config.text.death.cone || FP.config.text.deathDefault);
+});
+FP.test('flow: dernière mort + graine achetée → la partie continue', () => {
+  const s = shopRun(); s.plant.reserves = 1; s.score.eco = 9000; crash(s); until(s, 'shop'); settle(s);
+  const i = s.shop.items.findIndex(it => it.id === 'seed'); FP.shop.toggle(s, i); FP.shop.order(s); settle(s);
+  FP.assertEqual(s.mode, 'playing'); FP.assertEqual(s.plant.reserves, 1);
+});
+FP.test('shop: un toucher par réflexe à l’ouverture ne commande rien', () => {
+  const s = shopRun(), e = s.score.eco; FP.shop.open(s, { after: 'death' }); s.shop.items[0].checked = true;
+  FP.shop.order(s); FP.shop.decline(s);
+  FP.assertEqual(s.shop.phase, 'in'); FP.assertEqual(s.score.eco, e);
+});
