@@ -1,0 +1,85 @@
+<style>
+  .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; max-width: 1060px; }
+  .card { cursor: pointer; }
+  .tok { display: flex; gap: 6px; align-items: center; justify-content: center; background: #2a1e14; border-radius: 6px; padding: 10px 4px; }
+  .tok canvas { image-rendering: pixelated; }
+  .row { margin-top: 8px; background: #2a1e14; border-radius: 6px; }
+  .row canvas { image-rendering: pixelated; width: 100%; display: block; }
+  button.play { margin: 18px 0 6px; padding: 8px 14px; font-size: 14px; cursor: pointer; }
+</style>
+
+<h2>Les jetons ÉcoCrédits™ « un peu dégueu »</h2>
+<p class="subtitle">Jeton de 11 × 11 pixels d'art (22 px à l'écran). Pour chacun : la face agrandie ×8, les 4 images de rotation, puis un chapelet en taille réelle (×2) sur la terre. Le bouton joue le son proposé : un « tink » FM qui monte d'une note à chaque jeton (mi mineur pentatonique), puis l'accord « PARFAIT ! » du chapelet complet.</p>
+<button class="play" onclick="playChain()">▶ Écouter un chapelet (8 jetons + PARFAIT)</button>
+
+<div class="cards" id="cards"></div>
+
+<script>
+(function () {
+  const INK = '#140c08';
+  const hs = (r, dy) => { let h = 0; while ((h + 1) * (h + 1) + dy * dy <= r * r + r) h++; return h; };
+  const disc = (g, cx, cy, r, c) => { g.fillStyle = c; for (let dy = -r; dy <= r; dy++) { if (dy * dy > r * r + r) continue; const h = hs(r, dy); g.fillRect(cx - h, cy + dy, 2 * h + 1, 1); } };
+  const px = (g, pts, c) => { g.fillStyle = c; for (const [x, y] of pts) g.fillRect(x, y, 1, 1); };
+  const rect = (g, x, y, w, h, c) => { g.fillStyle = c; g.fillRect(x, y, w, h); };
+  // Petit Ɇ 4 × 5 (la barre dépasse en haut à droite), posé en (x, y).
+  const E = ['####', '#.#.', '###.', '##..', '###.'];
+  const glyph = (g, x, y, c) => { E.forEach((row, j) => [...row].forEach((ch, i) => { if (ch === '#') rect(g, x + i, y + j, 1, 1, c); })); };
+
+  // Chaque jeton se dessine dans un carré 11 × 11, centre (5, 5).
+  const TOKENS = [
+    { id: 'a', name: 'A · La pièce rouillée', text: 'Cuivre oxydé, taches de vert-de-gris, Ɇ gravé à moitié effacé, une coulure de boue. La vieille monnaie du greenwashing.',
+      draw(g) { disc(g, 5, 5, 5, INK); disc(g, 5, 5, 4, '#b8692e'); disc(g, 4, 4, 2, '#d88a48'); px(g, [[2, 3], [3, 2]], '#f0b070');
+        px(g, [[7, 3], [8, 4], [7, 7], [3, 8], [8, 6]], '#5fa88a'); px(g, [[8, 5], [2, 6]], '#3f7a64'); glyph(g, 3, 3, '#6a3414'); rect(g, 6, 9, 1, 2, '#4a3a20'); } },
+    { id: 'b', name: 'B · La capsule cabossée', text: 'Une capsule de soda ramassée par terre, dents tordues, Ɇ peint au pochoir vert, une goutte de soda qui pend.',
+      draw(g) { disc(g, 5, 5, 5, INK); disc(g, 5, 5, 4, '#c8ccd0'); px(g, [[1, 3], [9, 3], [1, 7], [9, 7], [3, 1], [7, 1], [3, 9], [7, 9]], INK); disc(g, 5, 5, 3, '#9aa0a8');
+        px(g, [[3, 2], [2, 3]], '#ffffff'); glyph(g, 3, 3, '#5ec43a'); px(g, [[7, 7]], '#7a7f86'); rect(g, 8, 9, 1, 2, '#c87a2a'); } },
+    { id: 'c', name: 'C · La pièce repeinte', text: 'Une pièce d’or grossièrement repeinte en vert : la peinture s’écaille et l’or réapparaît. Le greenwashing en un objet.',
+      draw(g) { disc(g, 5, 5, 5, INK); disc(g, 5, 5, 4, '#4f9a2c'); px(g, [[2, 6], [3, 7], [7, 2], [8, 3], [8, 4], [6, 8]], '#ffd166'); px(g, [[3, 6], [7, 3]], '#c89a30');
+        px(g, [[2, 3], [3, 2]], '#8fd060'); glyph(g, 3, 3, '#cfff78'); px(g, [[4, 8]], '#2e5a1a'); } },
+    { id: 'd', name: 'D · Le jeton plastique fondu', text: 'Un jeton de caddie en plastique vert fluo, à moitié fondu et déformé, trou au milieu, Ɇ en relief.',
+      draw(g) { rect(g, 1, 2, 9, 7, INK); rect(g, 2, 1, 7, 9, INK); rect(g, 3, 9, 4, 2, INK); rect(g, 2, 2, 7, 7, '#9ae038'); rect(g, 3, 8, 3, 2, '#9ae038'); rect(g, 4, 10, 1, 1, '#9ae038');
+        px(g, [[3, 2], [2, 3]], '#d8ff90'); px(g, [[8, 7], [7, 8]], '#5e9a1e'); glyph(g, 3, 3, '#4e8a16'); px(g, [[7, 6]], INK); } }
+  ];
+
+  function face(t) { const c = document.createElement('canvas'); c.width = 11; c.height = 11; t.draw(c.getContext('2d')); return c; }
+  // Rotation : la face écrasée en largeur (1, .6, .2, .6) ; à .2, la tranche.
+  function frame(src, k) {
+    const c = document.createElement('canvas'); c.width = 11; c.height = 11; const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
+    const w = Math.max(2, Math.round(11 * k)); g.drawImage(src, Math.round((11 - w) / 2), 0, w, 11); return c;
+  }
+  const cards = document.getElementById('cards');
+  for (const t of TOKENS) {
+    const card = document.createElement('div'); card.className = 'card'; card.dataset.choice = t.id; card.setAttribute('onclick', 'toggleSelect(this)');
+    const src = face(t);
+    const tok = document.createElement('div'); tok.className = 'tok';
+    const big = document.createElement('canvas'); big.width = 11; big.height = 11; big.style.width = '88px'; big.style.height = '88px'; big.getContext('2d').drawImage(src, 0, 0); tok.appendChild(big);
+    for (const k of [1, .6, .2, .6]) { const f = frame(src, k); f.style.width = '33px'; f.style.height = '33px'; tok.appendChild(f); }
+    const row = document.createElement('div'); row.className = 'row';
+    const rc = document.createElement('canvas'); rc.width = 130; rc.height = 40; const g = rc.getContext('2d'); g.imageSmoothingEnabled = false;
+    g.fillStyle = '#2a1e14'; g.fillRect(0, 0, 130, 40);
+    for (let i = 0; i < 40; i++) { g.fillStyle = i % 3 ? '#33251a' : '#1e150e'; g.fillRect((i * 37) % 130, (i * 23) % 40, 2, 1); }
+    for (let i = 0; i < 8; i++) { const k = [1, .6, .2, .6][(i + Math.floor(Date.now() / 1000)) % 4]; g.drawImage(frame(src, [1, .6, .2, .6][i % 4]), 6 + i * 15, 14 + Math.round(Math.sin(i * .8) * 9), 11, 11); }
+    rc.style.height = '80px'; rc.style.width = '260px'; row.appendChild(rc);
+    const body = document.createElement('div'); body.className = 'card-body'; body.innerHTML = '<h3>' + t.name + '</h3><p>' + t.text + '</p>';
+    card.appendChild(tok); card.appendChild(row); card.appendChild(body); cards.appendChild(card);
+  }
+
+  // Son : un « tink » FM (porteuse sinus, modulante ×3,5 qui s'éteint vite), une note de plus par jeton ; accord final.
+  let ac = null;
+  function tink(t, f, gain = .18, dur = .16) {
+    const car = ac.createOscillator(), mod = ac.createOscillator(), mg = ac.createGain(), out = ac.createGain();
+    car.frequency.value = f; mod.frequency.value = f * 3.5; mod.connect(mg); mg.connect(car.frequency); car.connect(out); out.connect(ac.destination);
+    mg.gain.setValueAtTime(f * 2.2, t); mg.gain.exponentialRampToValueAtTime(1, t + dur * .6);
+    out.gain.setValueAtTime(0, t); out.gain.linearRampToValueAtTime(gain, t + .004); out.gain.exponentialRampToValueAtTime(.0005, t + dur);
+    car.start(t); mod.start(t); car.stop(t + dur + .02); mod.stop(t + dur + .02);
+  }
+  window.playChain = function () {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    const t0 = ac.currentTime + .05, notes = [76, 79, 81, 83, 86, 88, 91, 93];   // mi5 sol5 la5 si5 ré6 mi6 sol6 la6
+    const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
+    notes.forEach((m, i) => tink(t0 + i * .12, hz(m)));
+    const tp = t0 + notes.length * .12 + .08;
+    for (const m of [76, 83, 88, 91]) tink(tp, hz(m), .1, .7);   // PARFAIT ! : accord mi qui sonne
+  };
+})();
+</script>
