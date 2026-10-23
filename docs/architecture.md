@@ -21,6 +21,7 @@ src/
 ├── world/
 │   ├── catalog.js    ✅ JSON authorés → solides (taille, collision, miroir, footprint)
 │   ├── level.js      ✅ génération : chemin sûr, solides (SAT), T-Rex signature, nappes toxiques, limaces
+│   ├── coins.js      ✅ circuits de pièces (v4.5.0) : un chapelet facile et un appât par hauteur d'écran, tirage propre
 │   ├── collision.js  ✅ requête de pointe : solide, intensité toxique, contact lixiviat, frôlements en cours, danger
 │   └── hazards.js    ✅ limaces en mouvement (cx, cy, cr, hitFlash), intensité des nappes
 ├── play/
@@ -28,6 +29,7 @@ src/
 │   ├── flow.js       ✅ morts (solide, lixiviat, brûlure toxique), exposition, éclosion, transitions (plus de messages texte : l'interface se déduit de l'état)
 │   ├── camera.js     ✅ défilement, cadrage ×1,18, zoom de frôlement
 │   ├── graze.js      ✅ frôlement : suivi par objet, paiement à la sortie, annulation au contact, mesures du flyover
+│   ├── coins.js      ✅ ramassage des pièces (FP.coinPlay) : pièce au combo en cours, bonus du chapelet complet
 │   ├── powerups.js   ✅ flyover → pollen / goutte / spore, exclusivité, ramassage, bouclier organique
 │   └── scoring.js    ✅ ÉcoCrédits™, combo, records persistants
 ├── render/
@@ -38,6 +40,7 @@ src/
 │   ├── sky.js        ✅ ciel de crépuscule pollué : bandes tramées, soleil voilé, usines, smog qui dérive
 │   ├── soil.js       ✅ pelouse et trois strates tramées (humus, argile, pierre), détails clairsemés, en cache
 │   ├── obstacles.js  ✅ sprites ramenés sur la grille (8 niveaux par canal, contour), ancrage tramé
+│   ├── coins.js      ✅ jetons ÉcoCrédits™ rouillés qui tournent (FP.coinsRender), éclats au ramassage
 │   ├── hazards.js    ✅ nappes tramées (base + pellicule), limaces et sillons, anneau d'exposition
 │   ├── powerups.js   ✅ récompenses (naissance, glyphes pixel), membrane du bouclier
 │   ├── faces.js      ✅ briques de visage communes : gros yeux, grandes bouches, une forme par humeur (FP.faces)
@@ -60,6 +63,7 @@ src/
 │   ├── font.js       ✅ police bitmap 5×7 (FP.font : has, measure, wrap, draw), glyphes rendus en cache
 │   ├── hud.js        ✅ HUD des coins du bas (FP.hud.items, pur) : graines, ÉcoCrédits™, pollen et combo actifs, « TOUCHER POUR POUSSER »
 │   ├── shout.js      ✅ cri de mort (FP.shout.textFor), aide de première pousse (FP.shout.helpFor)
+│   ├── cheer.js      ✅ cri du chapelet complet (« KARMA ! », « GREEN ! », « 0 DÉCHET ! ») et son montant
 │   ├── logo.js       ✅ logo groovy radioactif (FP.logo.layout, pur) : lettres tramées, anneaux, coulures, trèfle
 │   ├── title.js      ✅ écran titre
 │   ├── certificate.js ✅ certificat de fin (FP.certificate.lines, canRestart, purs)
@@ -90,7 +94,7 @@ L'état de la partie en cours est `FP.state.current`, créé par `FP.state.creat
   input:  { x, screenX, y, down, active, pressed },
   camera: { y, manual, near, zoom, shake },
   plant:  { seed, tip, dir, guide, trail, oldTrails, stemAge, stemCount, reserves, corruption, toxicTimer, recentToxic, scrapeTimer, cast, castRng, character },
-  world:  { width, height, viewH, surfaceY, skyVariant, lawnVariant, safePath, safeRadius, solids, toxics, leaks, bonuses },
+  world:  { width, height, viewH, surfaceY, skyVariant, lawnVariant, safePath, safeRadius, solids, toxics, leaks, bonuses, coins, chains },
   query:  { solid, danger, near, toxic, leak, leakHit, grazes },
   flow:   { timer, stage, fade, overReason, blossom },
   garden: { flowers },
@@ -113,7 +117,7 @@ Un niveau est généré par `FP.level.startRun(state)` (tirage du T-Rex signatur
 `FP.loop.step(state, dt)` :
 
 1. `dt` plafonné à `config.loop.maxDt` (dt invalide → `fallbackDt`) ; `state.time += dt` ;
-2. dans tous les modes sauf `splash` et `menu`, `FP[nom].update(state, dt)` pour `input → plant → hazards → collision → graze → scoring → powerups → flow → camera` (un système pas encore porté est sauté ; chacun décide selon `state.mode`). **Tout système expose `update(state, dt)`** : par exemple la requête de pointe vit dans `FP.collision.update` ;
+2. dans tous les modes sauf `splash` et `menu`, `FP[nom].update(state, dt)` pour `input → plant → hazards → collision → graze → coinPlay → scoring → powerups → flow → camera` (un système pas encore porté est sauté ; chacun décide selon `state.mode`). **Tout système expose `update(state, dt)`** : par exemple la requête de pointe vit dans `FP.collision.update` ;
 3. `FP.audio.consume(state.events, state, dt)` ;
 4. `FP.render.frame(state)` ;
 5. `state.events` est vidé.
@@ -164,6 +168,7 @@ Spec : `docs/superpowers/specs/2026-10-22-interface-pixel-design.md` ; maquettes
 
 - `collision` liste les frôlements de la frame (`query.grazes`) ; `graze` tient un frôlement par objet dans `state.graze.active` (Map). Rien n'est payé avant .22 s ; à la sortie, `FP.scoring.award` paie (arrondi à 25) ; un contact ou la fin de la partie annule tout sans payer.
 - `scoring` gère le combo (`state.score.combo/comboTimer`, fenêtre 2 s, ×8 max) et les records.
+- **Pièces (v4.5.0).** `world/coins.js` pose les chapelets à la fin de `FP.level.generate` avec son propre générateur (graine ^ salt ^ niveau) : `state.rng` n'est pas touché, les niveaux restent ceux d'avant. `coinPlay` (après `graze`, avant `scoring`) ramasse à 14 px : une pièce paie 25 Ɇ au multiplicateur du combo en cours et en relance le délai sans le faire monter (`FP.scoring.awardCoin`, gain discret sans nombre flottant) ; le chapelet complet paie 150 (facile) ou 400 (appât) par `FP.scoring.award` (+1 cran) et émet `chainDone` ; une pièce laissée à plus de 40 px sous la pointe rate son chapelet.
 - Exception documentée : `FP.scoring.records` (meilleurs fleurs et ÉcoCrédits™) vit hors de `FP.state`, car il persiste entre les runs ; chargé au démarrage, sauvegardé dès qu'il est battu, dans la clé `flower_power_v4_best`.
 - `render/effects.js` transforme les événements `eco` en chiffres flottants rangés dans `state.fx.effects` (réservé au rendu).
 
