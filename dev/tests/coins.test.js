@@ -93,3 +93,18 @@ FP.test('coins: deux chapelets ne se chevauchent jamais', () => {
       if (cs[i].chain !== cs[j].chain) FP.assert(Math.hypot(cs[i].x - cs[j].x, cs[i].y - cs[j].y) > 2 * k.radius + 1, W + ' n' + level + ' g' + seed);
   }
 });
+// Répartition (v4.6.2) : rien juste au-dessus de la graine, densité homogène du haut au bas du niveau.
+const startLine = (w) => w.height - FP.config.plant.seedOffset - FP.config.coins.startClear;
+FP.test('coins: aucun jeton dans la zone de départ', () => {
+  for (let seed = 1; seed <= 20; seed++) { const w = coinRun(seed).world; FP.assert(w.coins.every(c => c.y < startLine(w)), 'graine ' + seed); }
+});
+FP.test('coins: densité homogène du haut au bas du niveau', () => {
+  for (const [W, H] of [[440, 783], [412, 915]]) {
+    const thirds = [0, 0, 0];
+    for (let seed = 1; seed <= 40; seed++) {
+      const s = FP.state.createRun(seed, { W, H }); FP.level.generate(s); const w = s.world, top = w.surfaceY + FP.config.coins.sliceMargin, span = startLine(w) - top;
+      for (const c of w.coins) thirds[Math.min(2, Math.max(0, Math.floor((c.y - top) / span * 3)))]++;
+    }
+    FP.assert(Math.min(...thirds) >= .6 * Math.max(...thirds), W + '×' + H + ' : ' + thirds.join(' / '));
+  }
+});

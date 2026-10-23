@@ -33,8 +33,8 @@
     grazeStart: (n, z, d, i) => { n('pluck', 71, 0, .06, i); z(0, .07, .05 * i, 2100, 'bandpass'); },
     eco: (n, z, d, combo) => { const m = 76 + Math.min(5, Math.max(0, Math.round(combo) - 1)); n('bell', m, 0, .12, 1); n('bell', m + 7, .05, .14, .8); z(0, .04, .02, 2600, 'highpass'); },
     // Pièce (v4.5.0) : « tink » qui monte d'une note par pièce du chapelet (mi mineur pentatonique), puis l'accord du chapelet complet.
-    coin: (n, z, d, rank) => { n('bell', COIN_NOTES[Math.min(COIN_NOTES.length - 1, Math.max(0, Math.round(rank)))], 0, .1, .9); },
-    chain: (n) => { for (const m of [76, 83, 88, 91]) n('bell', m, 0, .7, .6); n('brass', 64, .02, .4, .5); },
+    coin: (n, z, d, rank) => { n('bell', COIN_NOTES[Math.min(COIN_NOTES.length - 1, Math.max(0, Math.round(rank)))], 0, .1, .36); },
+    chain: (n) => { for (const m of [76, 83, 88, 91]) n('bell', m, 0, .7, .42); n('brass', 64, .02, .4, .35); },
     // Bon de commande (v4.6.0), en FM pur : papier froissé (apparition, départ), gratouillis de crayon, tiroir-caisse.
     crumple: (n) => crumple(n, 14, .35),
     crumpleOut: (n) => crumple(n, 8, .22),

@@ -8,7 +8,7 @@
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
-  const MUSIC_GAIN = .5, TITLE_FADE = 1, OUT_FADE = .5;
+  const MUSIC_GAIN = .8, TITLE_FADE = 1, OUT_FADE = .5;
   const DEATH_DUCK = Math.pow(10, -9 / 20), DEATH_TIME = 1, BLOSSOM_TIME = 1.2, OPEN = 20000, ASLEEP = 900;
   const IN_GAME = { playing: true, dying: true, bloom: true, ready: true, shop: true };
   const STANDBY = { ready: true, shop: true };   // une seule couche : veille avant de pousser, reggae de la boutique (sa seule couche)
