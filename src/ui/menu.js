@@ -37,8 +37,10 @@
   }
 
   // Premier appui : le son est débloqué par audio.js (même geste) ; le titre se réveille, la partie ne démarre pas encore.
+  // Le plein écran attend le lever du doigt : au doigt, seul pointerup compte comme geste pour le navigateur.
+  let fullscreenPending = false;
   function wake(s, pointerType) {
-    if (FP.title.wantsFullscreen(pointerType)) goFullscreen();
+    fullscreenPending = FP.title.wantsFullscreen(pointerType);
     FP.title.wake(s);
     FP.audio.sfx('wake');   // après unlock (même geste) : le son est débloqué
   }
@@ -65,6 +67,8 @@
     e.preventDefault();
     if (mayStart(s)) startRun();
   });
+
+  window.addEventListener('pointerup', () => { if (fullscreenPending) { fullscreenPending = false; goFullscreen(); } });
 
   // Clavier (v3) : Espace ou Entrée démarre depuis le titre ou la fin de partie, sinon vaut un appui.
   window.addEventListener('keydown', (e) => {

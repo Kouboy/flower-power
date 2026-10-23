@@ -3,4 +3,6 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0b0907;color:var(--ui);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;touch-action:none;}
 #wrap{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(circle at 50% 0%, #7fb8e8 0%, #162133 42%, #070707 100%);}
-canvas{width:min(100vw,56.25vh);height:min(100vh,177.777vw);aspect-ratio:9/16;display:block;touch-action:none;box-shadow:0 0 0 1px rgba(255,229,154,.14),0 24px 80px rgba(0,0,0,.55);background:#132033;}
+/* Téléphone : tout l'écran, du 9:16 au 9:22 (plus de terrain en hauteur) ; plus large (tablette, PC) : cadre 9:16. */
+canvas{width:min(100vw,56.25vh);height:min(100vh,244.444vw);display:block;touch-action:none;box-shadow:0 0 0 1px rgba(255,229,154,.14),0 24px 80px rgba(0,0,0,.55);background:#132033;}
+@supports (height:100dvh){canvas{width:min(100vw,56.25dvh);height:min(100dvh,244.444vw);}}   /* hauteur réellement visible (barre du navigateur) */
