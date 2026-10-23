@@ -2,6 +2,11 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.4.2 — Graines lisibles
+
+- les graines restantes (vies) du HUD sont deux fois plus grandes, lisibles sur téléphone ; le pollen remonte d'autant ;
+- banc : 314 tests.
+
 ## v4.4.1 — Plein écran sur téléphone
 
 - le plein écran est demandé au lever du doigt sur le titre (au doigt, les navigateurs Android ignoraient la demande faite au toucher) ;
