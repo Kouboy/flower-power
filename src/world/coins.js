@@ -2,28 +2,16 @@
 // Lit     : state.seed, state.level, state.world.{width,height,viewH,surfaceY,safeRadius,safePath,solids,toxics,leaks},
 //           FP.config.coins, FP.createRng, FP.level.pathXAt, FP.collision.{distanceTo,grazeBand}.
 // Écrit   : state.world.coins ({ x, y, chain, rank, taken }) et state.world.chains ({ kind, anchor, total, got, missed, done }).
-// Expose  : FP.coins.place(state), FP.coins.slices(world), FP.coins.shape(name, n, spacing, rng) (purs, testés).
+// Expose  : FP.coins.place(state), FP.coins.slices(world) (purs, testés).
 // Tirage propre (graine ^ salt ^ niveau) : state.rng n'est jamais consommé, les niveaux restent ceux d'avant.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
-  const SHAPES = ['line', 'arc', 'zigzag'];
 
   // Tranches d'une hauteur d'écran, de la surface (marge comprise) jusqu'au-dessus de la graine.
   function slices(world) {
     const m = FP.config.coins.sliceMargin, top = world.surfaceY + m, bottom = world.height - m, out = [];
     for (let y = top; y < bottom; y += world.viewH) out.push({ top: y, bottom: Math.min(bottom, y + world.viewH) });
-    return out;
-  }
-
-  // Motif relatif : n points espacés de `spacing`, du premier (en bas, rang 0) au dernier (en haut, y décroissant).
-  function shape(name, n, spacing, rng) {
-    const amp = spacing * (.5 + rng.next() * .5), side = rng.next() < .5 ? -1 : 1, out = [];
-    for (let i = 0; i < n; i++) {
-      const k = n > 1 ? i / (n - 1) : 0;
-      const x = name === 'arc' ? side * amp * Math.sin(Math.PI * k) : (name === 'zigzag' ? side * amp * .5 * (i % 2 ? 1 : -1) : 0);
-      out.push({ x, y: -i * spacing });
-    }
     return out;
   }
 
@@ -51,18 +39,19 @@
     return best.length >= FP.config.coins.minChain ? best : [];
   }
 
-  // Chapelet facile : le motif suit le chemin sûr ; chaque pièce s'écarte du chemin d'au plus sway × safeRadius,
-  // et deux pièces voisines sont à `spacing` l'une de l'autre (on remonte le chemin pas à pas).
+  // Traînée facile : elle ondule autour du chemin sûr (une ou deux vagues d'amplitude wave), décalée de offset ;
+  // deux pièces voisines sont à `spacing` l'une de l'autre (on remonte le chemin pas à pas).
   function easyPoints(world, rng, slice, offset = 0) {
     const k = FP.config.coins, n = k.easy.min + Math.floor(rng.next() * (k.easy.max - k.easy.min + 1));
-    const motif = shape(SHAPES[Math.floor(rng.next() * SHAPES.length)], n, k.spacing, rng);
-    const lim = world.safeRadius * k.sway, lat = (i) => offset + Math.max(-lim, Math.min(lim, motif[i].x));
+    const amp = k.wave[0] + rng.next() * (k.wave[1] - k.wave[0]), waves = k.waves[0] + rng.next() * (k.waves[1] - k.waves[0]);
+    const span = (n - 1) * k.spacing * .8;   // hauteur parcourue, à peu près : l'ondulation avance avec la montée, sans à-coup
+    const phase = rng.next() * Math.PI * 2, lat = (dy) => offset + amp * Math.sin(phase + Math.PI * 2 * waves * dy / span);
     let y = slice.bottom - rng.next() * Math.max(0, slice.bottom - slice.top - n * k.spacing);
-    const pts = [{ x: FP.level.pathXAt(world, y) + lat(0), y }];
+    const y0 = y, pts = [{ x: FP.level.pathXAt(world, y) + lat(0), y }];
     for (let i = 1; i < n; i++) {
       const prev = pts[i - 1];
       let ny = prev.y, x = prev.x;
-      while (Math.hypot(x - prev.x, ny - prev.y) < k.spacing && ny > slice.top - k.spacing * n) { ny -= .25; x = FP.level.pathXAt(world, ny) + lat(i); }
+      while (Math.hypot(x - prev.x, ny - prev.y) < k.spacing && ny > slice.top - k.spacing * n) { ny -= .25; x = FP.level.pathXAt(world, ny) + lat(y0 - ny); }
       pts.push({ x, y: ny });
     }
     return pts;
@@ -135,9 +124,9 @@
       const pts = longestRun(world, build());
       if (pts.length) return { anchor, pts };
     }
-    // Décalé d'au moins un espacement au-delà de l'oscillation du facile : les deux chapelets restent distincts.
-    const side = rng.next() < .5 ? -1 : 1, lim = world.safeRadius * FP.config.coins.sway;
-    return { anchor: 'path', pts: longestRun(world, easyPoints(world, rng, slice, side * (2 * lim + FP.config.coins.spacing))) };
+    // Décalé d'au moins un espacement au-delà des deux ondulations : les deux traînées restent distinctes.
+    const side = rng.next() < .5 ? -1 : 1, k = FP.config.coins;
+    return { anchor: 'path', pts: longestRun(world, easyPoints(world, rng, slice, side * (2 * k.wave[1] + k.spacing))) };
   }
 
   function addChain(world, kind, anchor, pts) {
@@ -158,5 +147,5 @@
     }
   }
 
-  FP.coins = { place, slices, shape };
+  FP.coins = { place, slices };
 })();
