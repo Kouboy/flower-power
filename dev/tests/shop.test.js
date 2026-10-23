@@ -161,3 +161,11 @@ FP.test('music: pendant le bon, la musique reste en veille comme avant de pousse
   const s = shopRun(); s.mode = 'ready'; const a = JSON.stringify(FP.music.layersFor(s)); s.mode = 'shop';
   FP.assertEqual(JSON.stringify(FP.music.layersFor(s)), a);
 });
+FP.test('shop: le bon qui s’en va fait un bruit de papier (refus et commande)', () => {
+  const s = shopRun(); opened(s); s.events.length = 0; FP.shop.decline(s);
+  FP.assert(s.events.some(e => e.type === 'shopClose'), 'refus');
+  const t = shopRun(); opened(t); FP.shop.toggle(t, 0); FP.shop.order(t); t.events.length = 0;
+  t.time += FP.config.shop.stampTime * .5; FP.shop.update(t, 0); FP.assert(!t.events.some(e => e.type === 'shopClose'), 'pas avant le tiroir-caisse');
+  t.time += FP.config.shop.stampTime; FP.shop.update(t, 0); FP.assertEqual(t.events.filter(e => e.type === 'shopClose').length, 1);
+  t.time += .01; FP.shop.update(t, 0); FP.assertEqual(t.events.filter(e => e.type === 'shopClose').length, 1);
+});

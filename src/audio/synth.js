@@ -26,6 +26,14 @@
     // Reggae de la boutique (v4.6.0) : skank de clavinet avec écho, bubble d'orgue sec et court.
     skank: { ratio: 3, index: 2.2, indexEnd: .3, indexTime: .05, gain: .03, sustain: .2, decay: .03, release: .03, wet: .35 },
     bubble: { ratio: 1, index: 1.1, indexEnd: .8, attack: .01, gain: .05, sustain: .55, decay: .06, release: .05 },
+    // Effets de la boutique (v4.6.0), en FM pur : grains inharmoniques à indice énorme qui s'effondre (crayon, papier),
+    // bip de caisse, « clonk » du tiroir, pièces qui tintent.
+    grainA: { ratio: 1.41, index: 9, indexEnd: .5, indexTime: .03, gain: .035, attack: .002, sustain: .3, decay: .015, release: .01 },
+    grainB: { ratio: 2.71, index: 9, indexEnd: .5, indexTime: .03, gain: .035, attack: .002, sustain: .3, decay: .015, release: .01 },
+    grainC: { ratio: 3.31, index: 9, indexEnd: .5, indexTime: .03, gain: .035, attack: .002, sustain: .3, decay: .015, release: .01 },
+    beep: { ratio: 1, index: .6, indexEnd: .6, gain: .05, attack: .002, sustain: .9, release: .01 },
+    clonk: { ratio: 1.41, index: 4, indexEnd: .3, indexTime: .08, gain: .22, sustain: .2, decay: .05, release: .05 },
+    tinkle: { ratio: 2.76, index: 2.5, indexEnd: .2, gain: .02, sustain: .2, decay: .03, release: .05 },
     pluck: { ratio: 2, index: 3, indexEnd: .2, indexTime: .08, gain: .07, sustain: .1, decay: .08, release: .1 }
   };
   const DRUMS = ['kick', 'snare', 'hat', 'openhat', 'tamb'];

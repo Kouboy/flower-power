@@ -1,0 +1,81 @@
+<style>
+  .demo { display: flex; gap: 12px; align-items: center; margin-top: 10px; }
+  .demo button { font: 600 15px system-ui; padding: 9px 18px; border-radius: 8px; border: 1px solid #888; background: #fff; cursor: pointer; }
+  .demo button.on { background: #2a3a1c; color: #fff; }
+  .demo .bar { flex: 1; height: 6px; background: #ddd; border-radius: 3px; overflow: hidden; }
+  .demo .bar i { display: block; height: 100%; width: 0; background: #7ed636; }
+</style>
+
+<h2>Effets sonores de la boutique, en FM pur</h2>
+<p class="subtitle">Joués en direct par le même petit synthé FM (aucun bruit blanc : que des opérateurs). Clique pour écouter ; chaque clic rejoue avec de petites variations, comme en jeu.</p>
+
+<div class="cards">
+  <div class="card"><div class="card-body"><h3>Gratouillis de crayon</h3><p>Quand on coche une case : deux traits de grains aigus et inharmoniques (petit trait vers le bas, long trait vers le haut).</p>
+    <div class="demo"><button onclick="event.stopPropagation(); once(pencil)">Écouter</button></div></div></div>
+  <div class="card"><div class="card-body"><h3>Tiroir-caisse</h3><p>Quand on commande : double bip électronique, « ding » de caisse, « clonk » du tiroir et pièces qui tintent.</p>
+    <div class="demo"><button onclick="event.stopPropagation(); once(register)">Écouter</button></div></div></div>
+  <div class="card"><div class="card-body"><h3>Papier froissé — apparition</h3><p>Le bon arrive : grappe de craquements FM serrés, ~0,35 s.</p>
+    <div class="demo"><button onclick="event.stopPropagation(); once(t => crumple(t, 14, .35))">Écouter</button></div></div></div>
+  <div class="card"><div class="card-body"><h3>Papier froissé — disparition</h3><p>Le bon s'envole ou repart : plus bref, ~0,22 s.</p>
+    <div class="demo"><button onclick="event.stopPropagation(); once(t => crumple(t, 8, .22))">Écouter</button></div></div></div>
+  <div class="card"><div class="card-body"><h3>Tout l'enchaînement</h3><p>Apparition, deux coches, commande, disparition.</p>
+    <div class="demo"><button onclick="event.stopPropagation(); once(t => { crumple(t, 14, .35); pencil(t + .8); pencil(t + 1.5); register(t + 2.3); crumple(t + 3.2, 8, .22); })">Écouter</button></div></div></div>
+</div>
+<script>
+let ac = null, master = null, send = null, current = null, timer = null, raf = null;
+const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
+
+// Un circuit de sortie neuf à chaque lecture : volume, compresseur, écho.
+function setup() {
+  if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+  master = ac.createGain(); master.gain.value = .55;
+  const comp = ac.createDynamicsCompressor(); master.connect(comp); comp.connect(ac.destination);
+  // Écho : retard + rétroaction filtrée (le côté « spooky »).
+  send = ac.createGain(); send.gain.value = 1;
+  const d = ac.createDelay(1.5), fb = ac.createGain(), lp = ac.createBiquadFilter(), wet = ac.createGain();
+  d.delayTime.value = .33; fb.gain.value = .38; lp.type = 'lowpass'; lp.frequency.value = 2400; wet.gain.value = .32;
+  send.connect(d); d.connect(lp); lp.connect(fb); fb.connect(d); lp.connect(wet); wet.connect(master);
+}
+
+// Voix FM à 2 opérateurs : le modulateur (fréquence × ratio) fait vibrer la fréquence de la porteuse ; l'indice
+// (profondeur) qui décroît donne l'attaque métallique typique de la YM2612.
+function fm(t, midi, dur, o) {
+  const f = mtof(midi) * (o.detune ? Math.pow(2, o.detune / 1200) : 1);
+  const car = ac.createOscillator(), mod = ac.createOscillator(), mg = ac.createGain(), env = ac.createGain();
+  car.type = o.wave || 'sine'; mod.type = 'sine';
+  car.frequency.setValueAtTime(f, t); mod.frequency.setValueAtTime(f * (o.ratio || 1), t);
+  if (o.bend) { car.frequency.setValueAtTime(f, t + (o.bendAt || 0)); car.frequency.exponentialRampToValueAtTime(f * o.bend, t + dur); mod.frequency.exponentialRampToValueAtTime(f * (o.ratio || 1) * o.bend, t + dur); }
+  const i0 = (o.index || 1) * f, i1 = (o.indexEnd !== undefined ? o.indexEnd : (o.index || 1) * .3) * f;
+  mg.gain.setValueAtTime(i0, t); mg.gain.exponentialRampToValueAtTime(Math.max(.01, i1), t + (o.indexTime || dur));
+  const a = o.attack || .005, r = o.release || .08, g = o.gain || .1;
+  env.gain.setValueAtTime(0.0001, t); env.gain.exponentialRampToValueAtTime(g, t + a);
+  env.gain.setTargetAtTime(g * (o.sustain !== undefined ? o.sustain : .6), t + a, (o.decay || .15));
+  env.gain.setTargetAtTime(0.0001, t + dur, r / 3);
+  if (o.vibrato) { const l = ac.createOscillator(), lg = ac.createGain(); l.frequency.value = o.vibrato[0]; lg.gain.value = f * o.vibrato[1]; l.connect(lg); lg.connect(car.frequency); l.start(t); l.stop(t + dur + r + .1); }
+  if (o.trem) { const l = ac.createOscillator(), lg = ac.createGain(), tg = ac.createGain(); l.frequency.value = o.trem; lg.gain.value = .45; tg.gain.value = .55; l.connect(lg); lg.connect(tg.gain); env.connect(tg); tg.connect(master); if (o.wet) tg.connect(send); l.start(t); l.stop(t + dur + r + .1); }
+  else { env.connect(master); if (o.wet) { const w = ac.createGain(); w.gain.value = o.wet; env.connect(w); w.connect(send); } }
+  mod.connect(mg); mg.connect(car.frequency); car.connect(env);
+  car.start(t); mod.start(t); car.stop(t + dur + r + .1); mod.stop(t + dur + r + .1);
+}
+const rnd = (a, b) => a + Math.random() * (b - a);
+// Grain FM : porteuse aiguë, modulante inharmonique, indice énorme qui s'effondre → un « crr » sec, sans bruit blanc.
+function grain(t, midi, dur, gain, ratio) { fm(t, midi, dur, { ratio, index: 9, indexEnd: .5, indexTime: dur, gain, attack: .002, sustain: .3, decay: dur * .5, release: .01 }); }
+// Coche au crayon : petit trait vers le bas (graves), long trait vers le haut (la note monte).
+function pencil(t) {
+  for (let i = 0; i < 4; i++) grain(t + i * .014, 94 + rnd(-2, 2), rnd(.012, .02), .028, rnd(1.3, 1.5));
+  for (let i = 0; i < 9; i++) grain(t + .075 + i * .016, 96 + i * .5 + rnd(-2, 2), rnd(.012, .022), .03 * (1 - i / 14), rnd(2.6, 2.8));
+}
+// Tiroir-caisse : bip bip électronique, ding, clonk du tiroir, pièces.
+function register(t) {
+  for (const k of [0, .09]) fm(t + k, 96, .06, { ratio: 1, index: .6, indexEnd: .6, gain: .05, attack: .002, sustain: .9, release: .01 });
+  fm(t + .2, 88, .6, { ratio: 3.5, index: 3.5, indexEnd: .2, indexTime: .5, gain: .07, sustain: .25, decay: .25, release: .4, wet: .3 });
+  fm(t + .2, 95, .5, { ratio: 3.5, index: 3, indexEnd: .2, indexTime: .4, gain: .04, sustain: .2, decay: .2, release: .3 });
+  fm(t + .23, 33, .14, { ratio: 1.41, index: 4, indexEnd: .3, indexTime: .08, gain: .22, sustain: .2, decay: .05, release: .05 });   // clonk
+  for (let i = 0; i < 4; i++) fm(t + .3 + i * rnd(.035, .06), 100 + rnd(-3, 3), .05, { ratio: 2.76, index: 2.5, indexEnd: .2, gain: .02, sustain: .2, decay: .03, release: .05 });
+}
+// Papier froissé : n craquements FM de hauteurs et de ratios variés, serrés au début, qui s'espacent.
+function crumple(t, n, len) {
+  for (let i = 0; i < n; i++) { const k = i / n; grain(t + len * k * k * 1.1 + rnd(0, .012), rnd(78, 100), rnd(.015, .045), .035 * (1 - k * .6), rnd(1.1, 3.4)); }
+}
+function once(fn) { setup(); ac.resume(); fn(ac.currentTime + .05); }
+</script>

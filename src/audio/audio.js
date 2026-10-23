@@ -66,9 +66,10 @@
       case 'eco': return e.kind === 'coin' || e.kind === 'chain' ? undefined : FP.sfx.play(b, 'eco', e.combo || 1);   // pièce et chapelet ont leurs sons
       case 'coin': return FP.sfx.play(b, 'coin', e.rank || 0);
       case 'chainDone': return FP.sfx.play(b, 'chain');
-      case 'shopOpen': return FP.sfx.play(b, 'paper');
-      case 'shopTick': return FP.sfx.play(b, 'tick');
-      case 'shopOrder': return FP.sfx.play(b, 'stamp');
+      case 'shopOpen': return FP.sfx.play(b, 'crumple');
+      case 'shopTick': return FP.sfx.play(b, 'pencil');
+      case 'shopOrder': return FP.sfx.play(b, 'register');
+      case 'shopClose': return FP.sfx.play(b, 'crumpleOut');
       case 'grazeStart': return FP.sfx.play(b, 'grazeStart', clamp(e.intensity || .6, .2, 1.6));
       case 'pickup': return FP.sfx.play(b, e.kind === 'water' ? 'water' : 'bud');
       case 'shieldBreak': return FP.sfx.play(b, 'shieldBreak');
