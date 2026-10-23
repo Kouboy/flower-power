@@ -183,6 +183,18 @@
       minChain: 4, spinFps: 6, sway: .6, edge: 4
     },
 
+    // Boutique de fin de pousse (v4.6.0) : 3 articles tirés (un à −50 %), achetés au score ; effets sur la pousse suivante.
+    // co2 : masse satirique ajoutée à la « livraison » (kg), sans effet en jeu. Tirage propre (graine ^ salt ^ passage).
+    shop: {
+      salt: 0x5f3759df, promo: .5, lobbyingK: .6, inTime: .25, stampTime: .35, outTime: .3,
+      items: [
+        { id: 'seed', price: 2500, co2: 8.6 }, { id: 'membrane', price: 700, co2: 3.1 }, { id: 'magnet', price: 500, co2: 4.9 },
+        { id: 'premium', price: 600, co2: 2.4 }, { id: 'compost', price: 600, co2: 6.2 }, { id: 'spore', price: 800, co2: 5.5 },
+        { id: 'filter', price: 700, co2: 7.3 }, { id: 'beer', price: 600, co2: 3.8 }, { id: 'lobbying', price: 900, co2: 9.8 }
+      ],
+      transports: ['DRONE', 'PORTE-CONTENEURS', 'JET PRIVÉ', 'SUV ÉLECTRIQUE']
+    },
+
     // Casting des pousses (v4.4.0) : un personnage par pousse, tiré sans remise ; dessins dans render/cast*.js.
     cast: {
       ids: ['hippie', 'lapin', 'cyclope', 'binoclard', 'langue', 'antennes', 'punk', 'pendouille',
@@ -212,6 +224,16 @@
       ready: 'TOUCHER POUR POUSSER',
       pressStart: 'PRESS TO START',   // écran d'accueil figé, clin d'œil Mega Drive
       chain: ['KARMA !', 'GREEN !', '0 DÉCHET !'],   // cri du chapelet complet (v4.5.0), tiré au hasard
+      // Bon de commande (v4.6.0).
+      shop: {
+        title: 'BON DE COMMANDE', from: 'ÉCO-BOUTIQUE · N° ', last: 'DERNIÈRE CHANCE !', order: 'COMMANDER', decline: 'NON MERCI',
+        giveUp: 'ABANDONNER', delivery: 'LIVRAISON', offset: '(COMPENSÉS)', total: 'TOTAL', stamp: 'VALIDÉ',
+        fine: 'PAPIER 100 % RECYCLÉ* *À 3 %',
+        names: { seed: 'GRAINE BIO™', membrane: 'MEMBRANE ORGANIQUE', magnet: 'AIMANT À JETONS', premium: 'JETONS PREMIUM',
+          compost: 'COMPOST LENT', spore: 'SPORE DE DÉPART', filter: 'FILTRE À CHARBON', beer: 'BIÈRE ANTI-LIMACES', lobbying: 'LOBBYING' },
+        lines: { seed: 'une graine de plus', membrane: 'encaisse un choc', magnet: 'ramassage ×2', premium: 'chaque jeton vaut double',
+          compost: 'pousse ×0,8', spore: 'ça déblaie', filter: 'les nappes ne brûlent plus', beer: 'elles trinquent ailleurs', lobbying: '-40 % de déchets' }
+      },
       // Interface pixel (v4.2.0) : cris de mort hors obstacles, aide de première pousse, relance, pied du titre, certificat.
       shout: { leak: 'LIXIVIAT\u00a0!', toxic: 'BRÛLÉE\u00a0!' },   // espace insécable avant « ! »
       help: { hold: 'MAINTIENS POUR POUSSER', guide: 'GUIDE LA POINTE' },
