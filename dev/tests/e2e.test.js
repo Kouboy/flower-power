@@ -44,7 +44,7 @@ FP.test('e2e: suivre un chapelet facile paie chaque pièce puis le bonus', () =>
   FP.assertEqual(s.score.eco, coins.length * FP.config.coins.value + FP.config.coins.chainBonus.easy);
 });
 FP.test('e2e: mourir, cocher membrane et aimant, commander → la pousse suivante en profite', () => {
-  const s = FP.state.createRun(4, { W: 440, H: 783 }); FP.level.startRun(s); FP.plant.launch(s); s.events.length = 0; s.score.eco = 4000;
+  const s = FP.state.createRun(4, { W: 440, H: 783 }); FP.level.startRun(s); FP.plant.launch(s); s.events.length = 0; s.score.eco = 4000; s.plant.stemCount = 3;
   s.query = { ...s.query, solid: { kind: 'cone' }, leak: 0, toxic: 0 }; FP.flow.update(s, 0); s.query = { ...s.query, solid: null };
   for (let i = 0; i < 200 && s.mode !== 'shop'; i++) { s.time += 1 / 60; FP.flow.update(s, 1 / 60); }
   FP.assertEqual(s.mode, 'shop');

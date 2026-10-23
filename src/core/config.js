@@ -186,7 +186,8 @@
     // Boutique de fin de pousse (v4.6.0) : 3 articles tirés (un à −50 %), achetés au score ; effets sur la pousse suivante.
     // co2 : masse satirique ajoutée à la « livraison » (kg), sans effet en jeu. Tirage propre (graine ^ salt ^ passage).
     shop: {
-      salt: 0x5f3759df, promo: .5, lobbyingK: .6, compostK: .8, beerK: .3, magnetK: 2, premiumK: 2, inTime: .25, stampTime: .35, outTime: .3,
+      salt: 0x5f3759df, every: 3, promo: .5,   // every : le bon s'ouvre toutes les 3 pousses (et toujours en dernière chance)
+      lobbyingK: .6, compostK: .8, beerK: .3, magnetK: 2, premiumK: 2, inTime: .25, stampTime: .35, outTime: .3,
       items: [
         { id: 'seed', price: 2500, co2: 8.6 }, { id: 'membrane', price: 700, co2: 3.1 }, { id: 'magnet', price: 500, co2: 4.9 },
         { id: 'premium', price: 600, co2: 2.4 }, { id: 'compost', price: 600, co2: 6.2 }, { id: 'spore', price: 800, co2: 5.5 },
