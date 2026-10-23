@@ -227,12 +227,12 @@
       // Bon de commande (v4.6.0).
       shop: {
         title: 'BON DE COMMANDE', from: 'ÉCO-BOUTIQUE · N° ', last: 'DERNIÈRE CHANCE !', order: 'COMMANDER', decline: 'NON MERCI',
-        giveUp: 'ABANDONNER', delivery: 'LIVRAISON', offset: '(COMPENSÉS)', total: 'TOTAL', stamp: 'VALIDÉ',
-        fine: 'PAPIER 100 % RECYCLÉ* *À 3 %',
+        giveUp: 'ABANDONNER', by: 'PAR ', offset: '(COMPENSÉS)', total: 'TOTAL', stamp: 'VALIDÉ',
+        fine: 'PAPIER 100 % RECYCLÉ*', fine2: '*À 3 %',
         names: { seed: 'GRAINE BIO™', membrane: 'MEMBRANE ORGANIQUE', magnet: 'AIMANT À JETONS', premium: 'JETONS PREMIUM',
           compost: 'COMPOST LENT', spore: 'SPORE DE DÉPART', filter: 'FILTRE À CHARBON', beer: 'BIÈRE ANTI-LIMACES', lobbying: 'LOBBYING' },
-        lines: { seed: 'une graine de plus', membrane: 'encaisse un choc', magnet: 'ramassage ×2', premium: 'chaque jeton vaut double',
-          compost: 'pousse ×0,8', spore: 'ça déblaie', filter: 'les nappes ne brûlent plus', beer: 'elles trinquent ailleurs', lobbying: '-40 % de déchets' }
+        lines: { seed: 'une de plus', membrane: 'un choc offert', magnet: 'ramassage ×2', premium: 'jetons ×2',
+          compost: 'pousse ×0,8', spore: 'ça déblaie', filter: 'nappes inertes', beer: 'elles trinquent', lobbying: '-40 % déchets' }
       },
       // Interface pixel (v4.2.0) : cris de mort hors obstacles, aide de première pousse, relance, pied du titre, certificat.
       shout: { leak: 'LIXIVIAT\u00a0!', toxic: 'BRÛLÉE\u00a0!' },   // espace insécable avant « ! »
