@@ -10,7 +10,8 @@
   const FP = window.FP = window.FP || {};
   const MUSIC_GAIN = .5, TITLE_FADE = 1, OUT_FADE = .5;
   const DEATH_DUCK = Math.pow(10, -9 / 20), DEATH_TIME = 1, BLOSSOM_TIME = 1.2, OPEN = 20000, ASLEEP = 900;
-  const IN_GAME = { playing: true, dying: true, bloom: true, ready: true };
+  const IN_GAME = { playing: true, dying: true, bloom: true, ready: true, shop: true };
+  const STANDBY = { ready: true, shop: true };   // veille : avant de pousser et pendant le bon de commande
 
   function songFor(state) {
     if (!state || state.mode === 'splash') return { song: null, gain: 0 };   // le son n'est pas encore débloqué
@@ -31,14 +32,14 @@
   function layersFor(state) {
     const off = { groove: 0, clav: 0, perc: 0, organ: 0, sitar: 0, ghost: 0 };
     if (!IN_GAME[state.mode]) return off;
-    if (state.mode === 'ready') return { ...off, groove: 1 };   // veille : basse et batterie seules (filtrées)
+    if (STANDBY[state.mode]) return { ...off, groove: 1 };   // veille : basse et batterie seules (filtrées)
     const p = state.plant, w = state.world, tip = p.tip;
     const depth = tip ? (tip.y - w.surfaceY) / Math.max(1, w.height - w.surfaceY) : 1;
     return { groove: 1, clav: 1, perc: grazeLevel(state), organ: p.corruption > 0 || p.toxicTimer > 0 ? 1 : 0, sitar: depth < 1 / 3 ? 1 : 0, ghost: 1 };
   }
 
   const tempoFor = (state) => Math.min(125, 100 + 3.5 * state.score.flowers);
-  const filterFor = (state) => (state.mode === 'ready' ? ASLEEP : OPEN);
+  const filterFor = (state) => (STANDBY[state.mode] ? ASLEEP : OPEN);
   const grazeDuck = (intensity) => Math.pow(10, -6 * intensity / 20);
 
   // État par moteur : lecteur, baisse en cours (une seule à la fois), dernières valeurs envoyées.

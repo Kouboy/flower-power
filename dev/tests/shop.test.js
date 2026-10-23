@@ -138,3 +138,26 @@ FP.test('shop: un toucher par réflexe à l’ouverture ne commande rien', () =>
   FP.shop.order(s); FP.shop.decline(s);
   FP.assertEqual(s.shop.phase, 'in'); FP.assertEqual(s.score.eco, e);
 });
+// Relecture finale : dernière chance, caméra et musique pendant le bon.
+FP.test('shop: lobbying acheté en dernière chance est bien livré', () => {
+  const s = shopRun(5); s.level = 6; s.plant.reserves = 1; s.score.eco = 9000; crash(s); until(s, 'shop'); settle(s);
+  s.shop.items = [{ id: 'seed', price: 2500, base: 2500, promo: false, checked: false }, { id: 'lobbying', price: 900, base: 900, promo: false, checked: false },
+    { id: 'beer', price: 600, base: 600, promo: false, checked: false }];
+  FP.shop.toggle(s, 0); FP.shop.toggle(s, 1); FP.shop.order(s);
+  const solids = s.world.solids.length; settle(s);
+  FP.assertEqual(s.mode, 'playing'); FP.assertEqual(s.world.solids.length, solids);
+});
+FP.test('shop: en dernière chance, seule la graine se coche d’abord', () => {
+  const s = shopRun(); s.score.eco = 9000; opened(s, 'last');
+  const seed = s.shop.items.findIndex(i => i.id === 'seed'), other = [0, 1, 2].find(i => i !== seed);
+  FP.assert(!FP.shop.canCheck(s, other)); FP.shop.toggle(s, other); FP.assert(!s.shop.items[other].checked);
+  FP.shop.toggle(s, seed); FP.assert(FP.shop.canCheck(s, other)); FP.shop.toggle(s, other); FP.assert(s.shop.items[other].checked);
+  FP.shop.toggle(s, seed); FP.assert(!s.shop.items[other].checked, 'décocher la graine décoche le reste');
+});
+FP.test('camera: pas de saut de zoom à l’ouverture du bon', () => {
+  const s = shopRun(); s.mode = 'ready'; const z = FP.camera.totalZoom(s); s.mode = 'shop'; FP.assertEqual(FP.camera.totalZoom(s), z);
+});
+FP.test('music: pendant le bon, la musique reste en veille comme avant de pousser', () => {
+  const s = shopRun(); s.mode = 'ready'; const a = JSON.stringify(FP.music.layersFor(s)); s.mode = 'shop';
+  FP.assertEqual(JSON.stringify(FP.music.layersFor(s)), a);
+});

@@ -144,7 +144,7 @@
     if (after === 'bloom') { state.mode = 'ready'; state.events.push({ type: 'ready' }); return; }
     if (after === 'last') {
       if (state.plant.reserves <= 0) { state.mode = 'over'; return; }
-      FP.level.generate(state);
+      if (!state.boosts.lobbying) FP.level.generate(state);   // Lobbying a déjà regénéré le niveau
     }
     FP.plant.launch(state);
   }

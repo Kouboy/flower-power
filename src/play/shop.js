@@ -30,12 +30,20 @@
 
   const total = (state) => state.shop.items.reduce((t, it) => t + (it.checked ? it.price : 0), 0);
   // Cochable : déjà coché (on peut décocher), ou payable avec ce qui reste du score une fois le total retiré.
-  const canCheck = (state, i) => { const it = state.shop.items[i]; return it.checked || it.price <= state.score.eco - total(state); };
+  // Dernière chance : sans la graine, la partie s'arrête ; les autres articles ne se cochent qu'avec elle.
+  const seedChecked = (sh) => sh.items.some(it => it.id === 'seed' && it.checked);
+  function canCheck(state, i) {
+    const sh = state.shop, it = sh.items[i];
+    if (it.checked) return true;
+    if (sh.lastChance && it.id !== 'seed' && !seedChecked(sh)) return false;
+    return it.price <= state.score.eco - total(state);
+  }
 
   function toggle(state, i) {
     const sh = state.shop;
     if (!sh || sh.phase !== 'idle' || !sh.items[i] || !canCheck(state, i)) return;
     sh.items[i].checked = !sh.items[i].checked;
+    if (sh.lastChance && sh.items[i].id === 'seed' && !sh.items[i].checked) for (const it of sh.items) it.checked = false;   // plus de graine, plus de commande
     state.events.push({ type: 'shopTick' });
   }
 
@@ -57,7 +65,7 @@
     const bought = sh.items.filter(it => it.checked).map(it => it.id);
     if (!bought.length) { decline(state); return; }
     state.score.eco = Math.max(0, state.score.eco - total(state));
-    if (bought.includes('lobbying')) { FP.level.generate(state, { lobbying: true }); FP.plant.prepare(state); }
+    if (bought.includes('lobbying')) { FP.level.generate(state, { lobbying: true }); FP.plant.prepare(state); state.boosts.lobbying = true; }   // niveau déjà regénéré
     for (const id of bought) if (id !== 'lobbying') applyItem(state, id);
     sh.phase = 'ordered'; sh.t0 = state.time;
     state.events.push({ type: 'shopOrder', items: bought });
