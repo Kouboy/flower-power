@@ -2,6 +2,14 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.5.0 — Circuits de pièces
+
+- des chapelets de jetons ÉcoCrédits™ rouillés à travers le terrain : à chaque hauteur d'écran, un chapelet facile sur le chemin sûr et un appât près d'un danger (le long d'un déchet, entre deux, au bord d'une nappe, en travers d'une limace) ;
+- chaque jeton rapporte 25 Ɇ au multiplicateur du combo en cours et l'entretient ; un chapelet complet rapporte 150 Ɇ (facile) ou 400 Ɇ (appât), fait monter le combo et se fête d'un « KARMA ! », « GREEN ! » ou « 0 DÉCHET ! » ;
+- « tink » FM qui monte d'une note à chaque jeton, accord au chapelet complet, éclat cuivré au ramassage ;
+- les niveaux eux-mêmes ne changent pas (les pièces ont leur propre tirage) ;
+- banc : 346 tests.
+
 ## v4.4.2 — Graines lisibles
 
 - les graines restantes (vies) du HUD sont deux fois plus grandes, lisibles sur téléphone ; le pollen remonte d'autant ;

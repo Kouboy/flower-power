@@ -1,7 +1,7 @@
 // render/palette.js — palettes nommées du rendu pixel (d'après docs/art/reference-crepuscule.png).
 // Lit     : rien.
 // Écrit   : rien.
-// Expose  : FP.palette.{sky, strata, strataBounds, strataTone(d, k), lawn, stem, seed, hero, cast, flowers, toxic, slug, danger, decor()}.
+// Expose  : FP.palette.{sky, strata, strataBounds, strataTone(d, k), lawn, stem, seed, hero, cast, coin, flowers, toxic, slug, danger, decor()}.
 // Les teintes de `danger` (violet chimique) signalent les dangers : interdites au décor, distinctes de la pousse.
 (function () {
   'use strict';
@@ -52,6 +52,9 @@
     shell: '#b8915c', shellLight: '#dcc08a', shellDark: '#8e6b44', fly: '#2a2a2a', pink: '#f0a0a0', tongueDark: '#b84050'
   };
 
+  // Jeton ÉcoCrédits™ rouillé (v4.5.0, render/coins.js) : cuivre oxydé, vert-de-gris, Ɇ gravé, coulure de boue.
+  const coin = { ink: '#140c08', copper: '#b8692e', light: '#d88a48', shine: '#f0b070', rust: '#8a4a20', verdigris: '#5fa88a', verdigrisDark: '#3f7a64', engrave: '#6a3414', mud: '#4a3a20' };
+
   // Fleurs : une palette par palette de jeu (config.garden.palettes, même ordre) — pétales clair / moyen / ombre,
   // cœur clair (il porte le visage du héros).
   const flowers = [
@@ -76,5 +79,5 @@
 
   const decor = () => [...sky.flat(), ...strata.humus, ...strata.clay, ...strata.stone, ...lawn.flat()];
 
-  FP.palette = { sky, strata, strataBounds, strataTone, lawn, stem, seed, hero, cast, flowers, toxic, slug, danger, decor };
+  FP.palette = { sky, strata, strataBounds, strataTone, lawn, stem, seed, hero, cast, coin, flowers, toxic, slug, danger, decor };
 })();

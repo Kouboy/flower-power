@@ -1,5 +1,5 @@
 // ui/ui.js — aiguillage de l'interface : efface la toile d'interface et dessine l'écran du mode courant.
-// Lit     : state.mode, FP.view.ui, FP.plantRender.drawFinger, FP.hud, FP.shout, FP.title, FP.certificate.
+// Lit     : state.mode, FP.view.ui, FP.plantRender.drawFinger, FP.hud, FP.shout, FP.cheer, FP.title, FP.certificate.
 // Écrit   : rien (la toile d'interface uniquement).
 // Expose  : FP.ui.draw(g, state) (repère d'interface : pixels d'art, sans caméra ni zoom).
 (function () {
@@ -12,7 +12,7 @@
     if (m === 'splash' || m === 'menu') FP.title.draw(g, state);
     if (m === 'over') FP.certificate.draw(g, state);
     if (m === 'playing') FP.plantRender.drawFinger(g, state);
-    if (m === 'playing' || m === 'dying' || m === 'bloom' || m === 'ready') { FP.hud.draw(g, state); FP.shout.draw(g, state); }
+    if (m === 'playing' || m === 'dying' || m === 'bloom' || m === 'ready') { FP.hud.draw(g, state); FP.shout.draw(g, state); FP.cheer.draw(g, state); }
   }
 
   FP.ui = { draw };

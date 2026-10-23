@@ -30,3 +30,16 @@ FP.test('e2e: un flyover complet fait naître une récompense', () => {
   s.plant.tip = { x: o.x + 120, y: 700 }; e2eStep(s, 1 / 60); seen.push(...s.events);
   FP.assert(seen.some(e => e.type === 'bonusSpawn'), JSON.stringify(seen.filter(e => e.type === 'flyover')));
 });
+FP.test('e2e: suivre un chapelet facile paie chaque pièce puis le bonus', () => {
+  const s = FP.state.createRun(8, { W: 440, H: 783 }); FP.level.startRun(s); FP.plant.launch(s); s.events.length = 0;
+  const w = s.world, i = w.chains.findIndex(c => c.kind === 'easy'), coins = w.coins.filter(c => c.chain === i).sort((a, b) => a.rank - b.rank);
+  const seen = [];
+  for (const c of coins) {
+    s.plant.tip = { x: c.x, y: c.y }; s.time += 1 / 60;
+    FP.collision.update(s); FP.coinPlay.update(s); FP.scoring.update(s, 1 / 60);
+    seen.push(...s.events.filter(e => e.type === 'coin' || e.type === 'chainDone').map(e => e.type === 'coin' ? e.rank : 'done'));
+    s.events.length = 0;
+  }
+  FP.assertEqual(seen.join(), [...coins.map((c, r) => r), 'done'].join());
+  FP.assertEqual(s.score.eco, coins.length * FP.config.coins.value + FP.config.coins.chainBonus.easy);
+});

@@ -20,11 +20,15 @@
   }
 
   // Recettes : (note, bruit, batterie, t, intensité). note(inst, midi, délai, durée, vel, bend?) ; bruit(délai, durée, gain, Hz, type, q?).
+  const COIN_NOTES = [76, 79, 81, 83, 86, 88, 91, 93];   // mi5 sol5 la5 si5 ré6 mi6 sol6 la6
   const RECIPES = {
     start: (n, z) => { n('brass', 52, 0, .35, 1.3); n('brass', 59, .04, .35, 1.2); n('brass', 64, .08, .4, 1.2); n('bell', 76, .12, .5, 1); z(0, .25, .06, 3000, 'highpass'); },
     growStart: (n, z) => { n('pluck', 40, 0, .08, 1.3); n('pluck', 47, .03, .08, 1); z(0, .1, .08, 400, 'lowpass'); },
     grazeStart: (n, z, d, i) => { n('pluck', 71, 0, .06, i); z(0, .07, .05 * i, 2100, 'bandpass'); },
     eco: (n, z, d, combo) => { const m = 76 + Math.min(5, Math.max(0, Math.round(combo) - 1)); n('bell', m, 0, .12, 1); n('bell', m + 7, .05, .14, .8); z(0, .04, .02, 2600, 'highpass'); },
+    // Pièce (v4.5.0) : « tink » qui monte d'une note par pièce du chapelet (mi mineur pentatonique), puis l'accord du chapelet complet.
+    coin: (n, z, d, rank) => { n('bell', COIN_NOTES[Math.min(COIN_NOTES.length - 1, Math.max(0, Math.round(rank)))], 0, .1, .9); },
+    chain: (n) => { for (const m of [76, 83, 88, 91]) n('bell', m, 0, .7, .6); n('brass', 64, .02, .4, .5); },
     water: (n) => { n('bell', 64, 0, .08, 1, 1.3); n('bell', 71, .07, .08, .9); n('bell', 76, .14, .12, .8); },
     bud: (n) => { n('bell', 76, 0, .1, 1); n('bell', 83, .07, .14, .9); },
     bomb: (n, z, d) => { d('kick', 0, 1.5); z(0, .35, .1, 400, 'lowpass'); n('pluck', 64, .12, .06, .5); n('pluck', 71, .18, .06, .5); n('pluck', 76, .24, .06, .4); },

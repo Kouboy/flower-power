@@ -4,7 +4,7 @@
 // 3. L'interface (doigt, HUD, cri, titre, certificat) est dessinée dans la toile FP.view.ui, agrandie sans secousse ni zoom.
 // 4. Les outils de réglage et le fondu, à pleine résolution, par-dessus tout.
 // Lit     : FP.config.camera.{zoomEpsilon,focalY}, state.world, state.camera.y, state.plant.{tip,seed}, FP.view, FP.camera.totalZoom, FP.input.focalX,
-//           FP.view.art, FP.px.SCALE, state.flow.fade, FP.sky, FP.soil, FP.hazardsRender, FP.obstacles, FP.powerupsRender, FP.plantRender, FP.flowersRender,
+//           FP.view.art, FP.px.SCALE, state.flow.fade, FP.sky, FP.soil, FP.hazardsRender, FP.obstacles, FP.coinsRender, FP.powerupsRender, FP.plantRender, FP.flowersRender,
 //           FP.effects, FP.particles, FP.drillFx, FP.ui ; state.camera.shake (secousse) ; FP.perf, FP.flydebug (outils de réglage).
 // Écrit   : rien lui-même (le canvas) ; effects et particles, qu'il appelle, tiennent state.fx.
 // Expose  : FP.render.frame(state).
@@ -36,6 +36,7 @@
     FP.hazardsRender.drawBase(g, state);
     FP.hazardsRender.drawLeaks(g, state);
     FP.obstacles.draw(g, world, camY);
+    FP.coinsRender.draw(g, state);    // pièces : devant les déchets, sous la tige
     if (perf) t = perf.mark('hazards', t);
     FP.powerupsRender.drawBonuses(g, state);
     if (perf) t = perf.mark('bonuses', t);

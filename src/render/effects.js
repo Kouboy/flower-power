@@ -18,7 +18,7 @@
   function collect(state) {
     const t0 = state.time, fx = state.fx.effects;
     for (const e of state.events) {
-      if (e.type === 'eco') {
+      if (e.type === 'eco' && !e.quiet) {   // un gain discret (pièce) n'a pas de nombre flottant
         // Un côté sur deux : les gains s'affichent en haut à gauche puis en haut à droite de la tête (gain de spore : un peu plus long).
         state.fx.ecoSide = state.fx.ecoSide === 1 ? -1 : 1;
         fx.push({ type: 'eco', x: e.x, y: e.y, side: state.fx.ecoSide, amount: e.amount, combo: e.combo, t0, life: e.flat ? 1.28 : 1.22 });

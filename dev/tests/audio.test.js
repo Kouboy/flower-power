@@ -71,3 +71,15 @@ FP.test('audio: réglage illisible en stockage → tout', () => {
   FP._testStore.setItem('flower_power_v4_sound', '{"setting":"fort"}');
   FP.assertEqual(FP.audio.loadSetting(), 'all');
 });
+// Pièces (v4.5.0) : le « tink » monte avec le rang ; le gain d'une pièce ne fait pas sonner le kling du score.
+FP.test('audio: une pièce sonne plus aigu au rang 3 qu’au rang 0', () => {
+  const pitch = (rank) => { let m = 0; withBackend(b => { FP.audio.consume([{ type: 'coin', rank }], auRun(), 0); m = Math.max(...sounding(b).filter(c => c[0] === 'note').map(c => c[2])); }); return m; };
+  FP.assert(pitch(3) > pitch(0), pitch(0) + ' → ' + pitch(3));
+});
+FP.test('audio: un gain de pièce ne sonne pas, un chapelet complet sonne', () => {
+  withBackend(b => { FP.audio.consume([{ type: 'eco', amount: 25, combo: 1, kind: 'coin', quiet: true }], auRun(), 0); FP.assertEqual(sounding(b).length, 0); });
+  withBackend(b => { FP.audio.consume([{ type: 'chainDone', amount: 400, word: 'GREEN !' }], auRun(), 0); FP.assert(sounding(b).filter(c => c[0] === 'note').length >= 3); });
+});
+FP.test('audio: le bonus de chapelet ne double pas l’accord avec le kling du score', () => {
+  withBackend(b => { FP.audio.consume([{ type: 'eco', amount: 400, combo: 2, kind: 'chain' }], auRun(), 0); FP.assertEqual(sounding(b).length, 0); });
+});

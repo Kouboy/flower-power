@@ -28,7 +28,8 @@
   function fromEvents(state) {
     for (const e of state.events) {
       switch (e.type) {
-        case 'eco': burst(state, e.x, e.y, 'eco', e.flat ? 16 + Math.min(36, Math.floor(e.amount / 700)) : 10 + Math.min(22, e.combo * 3)); break;
+        case 'eco': if (e.quiet) break;   // gain discret (pièce) : son propre éclat cuivré (render/coins.js)
+          burst(state, e.x, e.y, 'eco', e.flat ? 16 + Math.min(36, Math.floor(e.amount / 700)) : 10 + Math.min(22, e.combo * 3)); break;
         case 'bomb': burst(state, e.x, e.y, 'bomb', 96); break;
         case 'shieldBreak': burst(state, e.x, e.y, 'shield', 46); break;
         case 'pickup': burst(state, e.x, e.y, e.kind === 'water' ? 'water' : 'bud', e.kind === 'water' ? 34 : 36); break;
