@@ -175,6 +175,14 @@
     shield: { grace: .48, back: 26, edge: 14, shake: .16 },
 
     // Parterre (v3 : bloom, flowerPalette) : 1 + pollen fleurs par éclosion, qui restent tout le run.
+    // Circuits de pièces (v4.5.0) : par tranche d'une hauteur d'écran, un chapelet facile (chemin sûr) et un appât (près
+    // d'un danger). Tirage propre (graine ^ salt ^ niveau) : jamais state.rng. Pièces de 25 Ɇ, bonus au chapelet complet.
+    coins: {
+      salt: 0x2c1b3c6d, sliceMargin: 70, easy: { min: 5, max: 7 }, bait: { min: 6, max: 9 }, spacing: 18,
+      pickup: 14, radius: 5, missBelow: 40, value: 25, chainBonus: { easy: 150, bait: 400 }, toxicBite: 1 / 3,
+      minChain: 4, spinFps: 6, sway: .6, edge: 4
+    },
+
     // Casting des pousses (v4.4.0) : un personnage par pousse, tiré sans remise ; dessins dans render/cast*.js.
     cast: {
       ids: ['hippie', 'lapin', 'cyclope', 'binoclard', 'langue', 'antennes', 'punk', 'pendouille',
@@ -203,6 +211,7 @@
     text: {
       ready: 'TOUCHER POUR POUSSER',
       pressStart: 'PRESS TO START',   // écran d'accueil figé, clin d'œil Mega Drive
+      chain: ['KARMA !', 'GREEN !', '0 DÉCHET !'],   // cri du chapelet complet (v4.5.0), tiré au hasard
       // Interface pixel (v4.2.0) : cris de mort hors obstacles, aide de première pousse, relance, pied du titre, certificat.
       shout: { leak: 'LIXIVIAT\u00a0!', toxic: 'BRÛLÉE\u00a0!' },   // espace insécable avant « ! »
       help: { hold: 'MAINTIENS POUR POUSSER', guide: 'GUIDE LA POINTE' },

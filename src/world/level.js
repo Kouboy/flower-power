@@ -1,7 +1,8 @@
 // world/level.js — génération d'un niveau à partir de la graine du run.
 // Lit     : state.rng, state.level, state.world.{width,height,viewH,surfaceY}, state.signature,
 //           FP.config.{level,spawnTables,signature}, FP.catalog, FP.geom.
-// Écrit   : state.world.{skyVariant,lawnVariant,safePath,safeRadius,solids,toxics,leaks,bonuses}, state.signature.
+// Écrit   : state.world.{skyVariant,lawnVariant,safePath,safeRadius,solids,toxics,leaks,bonuses}, state.signature ;
+//           puis FP.coins.place écrit state.world.{coins,chains}.
 // Expose  : FP.level.startRun(state), FP.level.generate(state),
 //           FP.level.distToSafePath(world,x,y), FP.level.pathXAt(world,y), FP.level.depthK(world,y), FP.level.depthBand(world,y).
 // Porté de la v3.43.16 (generateSoil, generateSafePath, objectFits…) sans les familles vectorielles ni les portes.
@@ -301,6 +302,7 @@
     placeSolids(state, grid);
     placeToxics(state, grid);
     placeLeaks(state, grid);
+    FP.coins.place(state);   // chapelets de pièces, tirage propre (world/coins.js)
   }
 
   // Début de run : tirage du T-Rex signature, puis premier niveau.
