@@ -2,6 +2,14 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.6.0 — Boutique de fin de pousse
+
+- entre deux pousses, un bon de commande en papier recyclé (100 % recyclé*, *à 3 %) propose 3 articles tirés au sort, dont un à −50 % ; on coche, on COMMANDE, et le prix est retiré du score ;
+- 9 articles pour la pousse suivante : Graine Bio™ (une graine de plus), Membrane organique (bouclier), Aimant à jetons, Jetons premium, Compost lent, Spore de départ, Filtre à charbon, Bière anti-limaces, Lobbying (moins de déchets) ;
+- dernière chance : après la mort de la dernière graine, la Graine Bio™ est toujours proposée — on peut vider son score pour continuer ;
+- livraison au bilan carbone soigneusement compensé ; tampon « VALIDÉ », froissement de papier et « tic » de crayon ;
+- banc : 377 tests.
+
 ## v4.5.0 — Circuits de pièces
 
 - des chapelets de jetons ÉcoCrédits™ rouillés à travers le terrain : à chaque hauteur d'écran, un chapelet facile sur le chemin sûr et un appât près d'un danger (le long d'un déchet, entre deux, au bord d'une nappe, en travers d'une limace) ;
