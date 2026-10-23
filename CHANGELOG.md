@@ -8,7 +8,7 @@ Une entrée par version (voir `AGENTS.md`).
 - 9 articles pour la pousse suivante : Graine Bio™ (une graine de plus), Membrane organique (bouclier), Aimant à jetons, Jetons premium, Compost lent, Spore de départ, Filtre à charbon, Bière anti-limaces, Lobbying (moins de déchets) ;
 - dernière chance : après la mort de la dernière graine, la Graine Bio™ est toujours proposée — on peut vider son score pour continuer ;
 - livraison au bilan carbone soigneusement compensé ; tampon « VALIDÉ », froissement de papier et « tic » de crayon ;
-- banc : 377 tests.
+- banc : 381 tests.
 
 ## v4.5.0 — Circuits de pièces
 
