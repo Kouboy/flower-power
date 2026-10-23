@@ -87,7 +87,11 @@
       }
     } else if (f.stage === 'fadeIn') {
       f.fade = clamp(f.timer / cfg.fadeInTime, 0, 1);
-      if (f.timer <= 0) { f.fade = 0; f.stage = 'show'; FP.shop.open(state, { after: 'bloom' }); }   // bon de commande, puis « prête »
+      if (f.timer <= 0) {
+        f.fade = 0; f.stage = 'show';
+        if (shopDue(state)) FP.shop.open(state, { after: 'bloom' });   // bon de commande, puis « prête »
+        else afterShop(state, 'bloom');
+      }
     }
   }
 
@@ -126,7 +130,7 @@
         f.timer -= dt;
         if (f.timer <= 0) {
           if (p.reserves <= 0) FP.shop.open(state, { after: 'last' });   // dernière chance : la Graine Bio™ est garantie
-          else { FP.level.generate(state); FP.plant.prepare(state); FP.shop.open(state, { after: 'death' }); }
+          else { FP.level.generate(state); FP.plant.prepare(state); if (shopDue(state)) FP.shop.open(state, { after: 'death' }); else FP.plant.launch(state); }
         }
         break;
       case 'bloom':
@@ -138,6 +142,9 @@
         break;
     }
   }
+
+  // Le bon de commande s'ouvre toutes les FP.config.shop.every pousses (la dernière chance, elle, toujours).
+  const shopDue = (state) => state.plant.stemCount % FP.config.shop.every === 0;
 
   // Fin du bon de commande : on reprend là où la pousse s'était arrêtée.
   function afterShop(state, after) {

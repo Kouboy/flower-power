@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '4.6.0',
+    version: '4.6.1',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -178,15 +178,17 @@
     // Circuits de pièces (v4.5.0) : par tranche d'une hauteur d'écran, un chapelet facile (chemin sûr) et un appât (près
     // d'un danger). Tirage propre (graine ^ salt ^ niveau) : jamais state.rng. Pièces de 25 Ɇ, bonus au chapelet complet.
     coins: {
-      salt: 0x2c1b3c6d, sliceMargin: 70, easy: { min: 5, max: 7 }, bait: { min: 6, max: 9 }, spacing: 18,
+      salt: 0x2c1b3c6d, sliceMargin: 70, easy: { min: 10, max: 14 }, bait: { min: 10, max: 14 }, spacing: 30,
+      wave: [35, 60], waves: [1, 2],   // traînée facile : ondulation autour du chemin sûr (amplitude en px, nombre de vagues)
       pickup: 14, radius: 5, missBelow: 40, value: 25, chainBonus: { easy: 150, bait: 400 }, toxicBite: 1 / 3,
-      minChain: 4, spinFps: 6, sway: .6, edge: 4
+      minChain: 4, spinFps: 6, edge: 4
     },
 
     // Boutique de fin de pousse (v4.6.0) : 3 articles tirés (un à −50 %), achetés au score ; effets sur la pousse suivante.
     // co2 : masse satirique ajoutée à la « livraison » (kg), sans effet en jeu. Tirage propre (graine ^ salt ^ passage).
     shop: {
-      salt: 0x5f3759df, promo: .5, lobbyingK: .6, compostK: .8, beerK: .3, magnetK: 2, premiumK: 2, inTime: .25, stampTime: .35, outTime: .3,
+      salt: 0x5f3759df, every: 3, promo: .5,   // every : le bon s'ouvre toutes les 3 pousses (et toujours en dernière chance)
+      lobbyingK: .6, compostK: .8, beerK: .3, magnetK: 2, premiumK: 2, inTime: .25, stampTime: .35, outTime: .3,
       items: [
         { id: 'seed', price: 2500, co2: 8.6 }, { id: 'membrane', price: 700, co2: 3.1 }, { id: 'magnet', price: 500, co2: 4.9 },
         { id: 'premium', price: 600, co2: 2.4 }, { id: 'compost', price: 600, co2: 6.2 }, { id: 'spore', price: 800, co2: 5.5 },

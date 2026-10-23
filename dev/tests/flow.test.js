@@ -9,7 +9,7 @@ FP.test('flow: contact → mort puis nouvelle pousse sur un nouveau niveau', () 
   FP.collision.update(s); FP.flow.update(s, 0);
   FP.assertEqual(s.mode, 'dying'); FP.assertEqual(s.plant.reserves, 2);
   FP.assert(s.events.some(e => e.type === 'death'));
-  FP.flow.update(s, .9); FP.assertEqual(s.mode, 'shop'); skipShop(s);
+  FP.flow.update(s, .9);   // 1re pousse : pas de bon de commande (toutes les 3 pousses)
   FP.assertEqual(s.mode, 'playing'); FP.assertEqual(s.plant.stemCount, 2);
   FP.assert(JSON.stringify(s.world.solids.map(o => [o.x, o.y])) !== before);
 });
@@ -26,7 +26,6 @@ FP.test('flow: surface → éclosion puis ready au niveau suivant', () => {
   FP.assertEqual(s.mode, 'bloom'); FP.assertEqual(s.score.flowers, 1); FP.assertEqual(s.level, 1);
   FP.assertEqual(s.plant.oldTrails.length, 1);
   for (let i = 0; i < 180; i++) FP.flow.update(s, 1 / 60);   // éclosion 1,55 s + fondus .46 + .48 s
-  FP.assertEqual(s.mode, 'shop'); skipShop(s);
   FP.assertEqual(s.mode, 'ready');
 });
 FP.test('flow: ready exige un nouvel appui', () => {

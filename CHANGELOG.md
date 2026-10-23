@@ -2,6 +2,12 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.6.1 — Boutique moins fréquente, traînées sinueuses
+
+- le bon de commande ne s'ouvre plus qu'une pousse sur trois (la boutique de dernière chance, elle, toujours) ;
+- traînées de jetons plus longues (10 à 14), plus espacées (30 px) ; la traînée facile ondule autour du chemin sûr en une ou deux vagues ;
+- banc : 390 tests.
+
 ## v4.6.0 — Boutique de fin de pousse
 
 - entre deux pousses, un bon de commande en papier recyclé (100 % recyclé*, *à 3 %) propose 3 articles tirés au sort, dont un à −50 % ; on coche, on COMMANDE, et le prix est retiré du score ;

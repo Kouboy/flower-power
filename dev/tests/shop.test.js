@@ -111,16 +111,27 @@ FP.test('shop: refuser n’achète rien', () => {
 const crash = (s) => { s.query = { ...s.query, solid: { kind: 'cone' }, leak: 0, toxic: 0 }; FP.flow.update(s, 0); s.query = { ...s.query, solid: null }; };
 const until = (s, mode, max = 900) => { for (let i = 0; i < max && s.mode !== mode; i++) { s.time += 1 / 60; FP.shop.update(s, 1 / 60); FP.flow.update(s, 1 / 60); } return s.mode; };
 const settle = (s) => { for (let i = 0; i < 60 && s.shop; i++) { s.time += 1 / 60; FP.shop.update(s, 1 / 60); } };
+FP.test('flow: la 3e pousse finie ouvre le bon ; les autres enchaînent directement', () => {
+  const s = shopRun(); s.plant.reserves = 3; crash(s);   // 1re pousse
+  FP.assertEqual(until(s, 'playing'), 'playing'); FP.assert(!s.shop);
+  crash(s); FP.assertEqual(until(s, 'playing'), 'playing');   // 2e
+  s.plant.reserves = 3; s.plant.tip = { x: 220, y: s.world.surfaceY - 1 }; FP.collision.update(s); FP.flow.update(s, 0);   // 3e : éclosion
+  FP.assertEqual(until(s, 'shop'), 'shop');
+});
 FP.test('flow: mort → bon de commande → nouvelle pousse', () => {
-  const s = shopRun(); s.plant.reserves = 3; crash(s);
+  const s = shopRun(); s.plant.reserves = 3; s.plant.stemCount = 3; crash(s);
   FP.assertEqual(until(s, 'shop'), 'shop'); FP.assertEqual(s.shop.after, 'death');
   settle(s); FP.assert(s.shop === null || s.shop.phase === 'idle');
   FP.shop.decline(s); settle(s); FP.assertEqual(s.mode, 'playing');
 });
 FP.test('flow: éclosion → bon de commande → prête', () => {
-  const s = shopRun(); s.plant.tip = { x: 220, y: s.world.surfaceY - 1 }; FP.collision.update(s); FP.flow.update(s, 0);
+  const s = shopRun(); s.plant.stemCount = 3; s.plant.tip = { x: 220, y: s.world.surfaceY - 1 }; FP.collision.update(s); FP.flow.update(s, 0);
   FP.assertEqual(until(s, 'shop'), 'shop'); FP.assertEqual(s.shop.after, 'bloom');
   settle(s); FP.shop.decline(s); settle(s); FP.assertEqual(s.mode, 'ready');
+});
+FP.test('flow: la dernière mort ouvre toujours le bon de dernière chance', () => {
+  const s = shopRun(); s.plant.reserves = 1; s.plant.stemCount = 1; crash(s);
+  FP.assertEqual(until(s, 'shop'), 'shop'); FP.assert(s.shop.lastChance);
 });
 FP.test('flow: dernière mort refusée → certificat avec la cause d’origine', () => {
   const s = shopRun(); s.plant.reserves = 1; crash(s);

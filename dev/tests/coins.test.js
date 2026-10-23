@@ -7,11 +7,28 @@ FP.test('coins: chaque tranche a un chapelet facile', () => {
     FP.assert(w.chains.filter(c => c.kind === 'easy').length >= FP.coins.slices(w).length, 'graine ' + seed);
   }
 });
-FP.test('coins: les faciles suivent le chemin sûr', () => {
+FP.test('coins: les faciles ondulent autour du chemin sûr', () => {
+  const amp = FP.config.coins.wave[1];
   for (let seed = 1; seed <= 20; seed++) {
     const w = coinRun(seed).world;
-    w.chains.forEach((ch, i) => { if (ch.kind === 'easy') for (const c of chainCoins(w, i)) FP.assert(FP.level.distToSafePath(w, c.x, c.y) <= w.safeRadius + .01, 'graine ' + seed); });
+    w.chains.forEach((ch, i) => { if (ch.kind === 'easy') for (const c of chainCoins(w, i)) FP.assert(Math.abs(c.x - FP.level.pathXAt(w, c.y)) <= amp + .01, 'graine ' + seed); });
   }
+});
+// Traînées longues et sinueuses (v4.6.1) : la plupart font 10 pièces ou plus et passent des deux côtés du chemin.
+FP.test('coins: des traînées faciles longues', () => {
+  let n = 0, long = 0;
+  for (let seed = 1; seed <= 30; seed++) for (const ch of coinRun(seed).world.chains) if (ch.kind === 'easy') { n++; if (ch.total >= 10) long++; }
+  FP.assert(long / n >= .6, long + ' / ' + n);
+});
+FP.test('coins: les traînées faciles ondulent des deux côtés du chemin', () => {
+  let n = 0, both = 0;
+  for (let seed = 1; seed <= 30; seed++) {
+    const w = coinRun(seed).world;
+    w.chains.forEach((ch, i) => { if (ch.kind !== 'easy' || ch.total < 8) return; n++;
+      const off = chainCoins(w, i).map(c => c.x - FP.level.pathXAt(w, c.y));
+      if (off.some(d => d > 8) && off.some(d => d < -8)) both++; });
+  }
+  FP.assert(n > 0 && both / n >= .7, both + ' / ' + n);
 });
 FP.test('coins: aucune pièce dans un obstacle ni hors du monde', () => {
   const k = FP.config.coins;
@@ -24,13 +41,13 @@ FP.test('coins: aucune pièce dans un obstacle ni hors du monde', () => {
     }
   }
 });
-FP.test('coins: chapelets de 4 pièces au moins, espacées de 18', () => {
+FP.test('coins: chapelets de 4 pièces au moins, espacées comme réglé', () => {
   for (let seed = 1; seed <= 20; seed++) {
     const w = coinRun(seed).world;
     w.chains.forEach((ch, i) => {
       const cs = chainCoins(w, i);
       FP.assert(ch.total === cs.length && cs.length >= FP.config.coins.minChain, 'chapelet ' + cs.length);
-      for (let j = 1; j < cs.length; j++) { const d = Math.hypot(cs[j].x - cs[j - 1].x, cs[j].y - cs[j - 1].y); FP.assert(d >= 17 && d <= 19 || cs[j].rank - cs[j - 1].rank > 1, 'écart ' + d); }
+      for (let j = 1; j < cs.length; j++) { const d = Math.hypot(cs[j].x - cs[j - 1].x, cs[j].y - cs[j - 1].y); const sp = FP.config.coins.spacing; FP.assert(d >= sp - 1 && d <= sp + 1 || cs[j].rank - cs[j - 1].rank > 1, 'écart ' + d); }
     });
   }
 });
