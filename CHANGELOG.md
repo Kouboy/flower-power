@@ -8,7 +8,7 @@ Une entrée par version (voir `AGENTS.md`).
 - chaque jeton rapporte 25 Ɇ au multiplicateur du combo en cours et l'entretient ; un chapelet complet rapporte 150 Ɇ (facile) ou 400 Ɇ (appât), fait monter le combo et se fête d'un « KARMA ! », « GREEN ! » ou « 0 DÉCHET ! » ;
 - « tink » FM qui monte d'une note à chaque jeton, accord au chapelet complet, éclat cuivré au ramassage ;
 - les niveaux eux-mêmes ne changent pas (les pièces ont leur propre tirage) ;
-- banc : 342 tests.
+- banc : 346 tests.
 
 ## v4.4.2 — Graines lisibles
 
