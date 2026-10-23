@@ -3,12 +3,12 @@
 // Lit     : state.mode, state.time, state.plant.reserves, state.score.{eco,flowerBonus,combo}, FP.config.{plant.seeds,text.ready},
 //           FP.palette.seed, FP.font, FP.view.ui.
 // Écrit   : state.fx.ui.hud uniquement (animations : score affiché, graines perdues, rebonds).
-// Expose  : FP.hud.items(state), FP.hud.layout(h) (purs, testés), FP.hud.draw(g, state) (toile d'interface), FP.hud.MARGIN.
+// Expose  : FP.hud.items(state), FP.hud.layout(h) (purs, testés), FP.hud.draw(g, state) (toile d'interface), FP.hud.{MARGIN, SEED_SCALE, SEED_STEP}.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
   const MARGIN = 4;                 // pixels d'art depuis les bords
-  const SEED_STEP = 8, LOST_TIME = .4, CRACK_TIME = .25;
+  const SEED_SCALE = 2, SEED_STEP = 16, LOST_TIME = .4, CRACK_TIME = .25;   // graines ×2 : lisibles sur téléphone
   const EMPTY = '#3a2a1e', SPROUT = '#7fb04a';
 
   // Ce que le HUD affiche : pas de fleurs (le parterre en tient lieu), pas d'élan.
@@ -23,8 +23,8 @@
 
   // Rangées du HUD pour une toile de hauteur h ; textY : l'aide et « TOUCHER POUR POUSSER », au-dessus du combo.
   function layout(h) {
-    const seedY = h - MARGIN - 7, scoreY = h - MARGIN - FP.font.HEIGHT * 2, comboY = scoreY - 11;
-    return { seedY, scoreY, comboY, pollenY: seedY - 12, textY: comboY - 13 };
+    const seedY = h - MARGIN - 7 * SEED_SCALE, scoreY = h - MARGIN - FP.font.HEIGHT * 2, comboY = scoreY - 11;
+    return { seedY, scoreY, comboY, pollenY: seedY - 13, textY: comboY - 13 };
   }
 
   function memo(state, it) {
@@ -33,16 +33,15 @@
   }
 
   // Graine : ovale brun avec reflet et pousse ; vide et sombre une fois perdue ; fendue juste après la perte.
+  // Dessinée sur une grille 6 × 8 agrandie SEED_SCALE fois depuis (x, y).
   function seed(g, x, y, full, crack) {
-    const p = FP.palette.seed;
-    g.fillStyle = FP.font.INK;
-    g.fillRect(x + 1, y, 4, 1); g.fillRect(x, y + 1, 6, 5); g.fillRect(x + 1, y + 6, 4, 1);
-    g.fillStyle = full ? p.body : EMPTY; g.fillRect(x + 1, y + 1, 4, 5);
+    const p = FP.palette.seed, k = SEED_SCALE;
+    const r = (col, dx, dy, w, h) => { g.fillStyle = col; g.fillRect(x + dx * k, y + dy * k, w * k, h * k); };
+    r(FP.font.INK, 1, 0, 4, 1); r(FP.font.INK, 0, 1, 6, 5); r(FP.font.INK, 1, 6, 4, 1);
+    r(full ? p.body : EMPTY, 1, 1, 4, 5);
     if (!full) return;
-    g.fillStyle = p.shade; g.fillRect(x + 3, y + 2, 2, 4);
-    g.fillStyle = p.light; g.fillRect(x + 2, y + 2, 1, 2);
-    g.fillStyle = SPROUT; g.fillRect(x + 2, y - 1, 2, 1);
-    if (crack) { g.fillStyle = FP.font.INK; g.fillRect(x + 2, y + 1, 1, 2); g.fillRect(x + 3, y + 3, 1, 3); }
+    r(p.shade, 3, 2, 2, 4); r(p.light, 2, 2, 1, 2); r(SPROUT, 2, -1, 2, 1);
+    if (crack) { r(FP.font.INK, 2, 1, 1, 2); r(FP.font.INK, 3, 3, 1, 3); }
   }
 
   function flower(g, x, y) {
@@ -86,5 +85,5 @@
     if (it.ready && Math.floor(t * 2) % 2 === 0) font.draw(g, FP.config.text.ready, w / 2, L.textY, { align: 'center' });
   }
 
-  FP.hud = { items, layout, draw, MARGIN };
+  FP.hud = { items, layout, draw, MARGIN, SEED_SCALE, SEED_STEP };
 })();

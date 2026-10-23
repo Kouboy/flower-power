@@ -13,10 +13,16 @@ FP.test('hud: graines = réserves, sur le total de départ', () => {
   const it = FP.hud.items(s);
   FP.assertEqual(it.seeds, 2); FP.assertEqual(it.seedsMax, 3);
 });
-FP.test('hud: un score énorme ×2 ne chevauche pas les graines sur l’écran le plus étroit', () => {
-  const artW = FP.config.view.minW / FP.px.SCALE, seedsW = FP.config.plant.seeds * 8;
-  const scoreW = FP.font.measure('Ɇ' + (9999999).toLocaleString('fr-FR'), { scale: 2 }) + 2;
-  FP.assert(FP.hud.MARGIN + seedsW + 4 + scoreW + FP.hud.MARGIN <= artW, String(scoreW));
+// Graines ×2 (v4.4.2) : lisibles sur téléphone ; le score ne les chevauche pas.
+const seedsW = () => (FP.config.plant.seeds - 1) * FP.hud.SEED_STEP + 6 * FP.hud.SEED_SCALE;
+const fitsBeside = (cssW, score) => FP.hud.MARGIN + seedsW() + 4 + FP.font.measure('Ɇ' + score.toLocaleString('fr-FR'), { scale: 2 }) + 2 + FP.hud.MARGIN <= cssW / FP.px.SCALE;
+FP.test('hud: graines deux fois plus grandes, posées sur la marge du bas', () => {
+  FP.assertEqual(FP.hud.SEED_SCALE, 2);
+  FP.assertEqual(FP.hud.layout(400).seedY + 7 * FP.hud.SEED_SCALE, 400 - FP.hud.MARGIN);
+});
+FP.test('hud: le score ne chevauche pas les graines (7 chiffres au téléphone, 6 sur l’écran le plus étroit)', () => {
+  FP.assert(fitsBeside(360, 9999999), 'téléphone 360 px');
+  FP.assert(fitsBeside(FP.config.view.minW, 999999), 'écran minimal');
 });
 FP.test('hud: plus de nombre de fleurs ni d’élan', () => {
   const it = FP.hud.items(hudRun());
