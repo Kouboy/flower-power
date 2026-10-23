@@ -2,7 +2,7 @@
 // Lit     : state.score, FP.config.{scoring,storageKey}, FP.storage.
 // Écrit   : state.score.{eco,combo,comboTimer}, state.camera.shake, state.events (eco) ;
 //           FP.scoring.records (persistant entre les runs, hors de FP.state) et le stockage local.
-// Expose  : FP.scoring.award(state, x, y, base, kind), FP.scoring.awardFlat(state, x, y, amount), FP.scoring.update(state, dt),
+// Expose  : FP.scoring.award(state, x, y, base, kind), FP.scoring.awardCoin(state, x, y, base), FP.scoring.awardFlat(state, x, y, amount), FP.scoring.update(state, dt),
 //           FP.scoring.records, FP.scoring.load(backend?), FP.scoring.save(backend?).
 // Porté de la v3.43.16 (addEcoCredits, best/bestEco).
 (function () {
@@ -32,6 +32,16 @@
     state.camera.shake = Math.max(state.camera.shake, c.shakeBase + Math.min(c.shakeMax, s.combo * c.shakePerCombo));
   }
 
+  // Pièce (v4.5.0) : payée au multiplicateur du combo en cours, qu'elle entretient (délai relancé) sans le faire monter ;
+  // sans combo en cours, elle vaut sa base et n'en lance pas. Gain discret : pas de nombre flottant (render/effects.js).
+  function awardCoin(state, x, y, base) {
+    const c = FP.config.scoring, s = state.score, live = s.comboTimer > 0 && s.combo > 0;
+    const amount = Math.max(c.minAmount, Math.round(base * (live ? 1 + (s.combo - 1) * c.comboGain : 1) / c.step) * c.step);
+    if (live) s.comboTimer = c.comboWindow;
+    s.eco += amount;
+    state.events.push({ type: 'eco', x, y, amount, combo: live ? s.combo : 1, kind: 'coin', quiet: true });
+  }
+
   // Gain fixe (spore) : arrondi à 25, sans toucher au combo.
   function awardFlat(state, x, y, amount) {
     const c = FP.config.scoring;
@@ -54,6 +64,6 @@
     }
   }
 
-  FP.scoring = { award, awardFlat, update, load, save, records: EMPTY() };
+  FP.scoring = { award, awardCoin, awardFlat, update, load, save, records: EMPTY() };
   FP.scoring.records = load();
 })();
