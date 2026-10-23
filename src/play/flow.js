@@ -1,5 +1,5 @@
 // play/flow.js — déroulé de partie : mort, éclosion, transitions, fin de partie.
-// Lit     : state.mode, state.query, state.plant, state.input.pressed, state.events, state.rng, state.world.{surfaceY,width},
+// Lit     : state.mode, state.query, state.plant, state.input.pressed, state.events, state.rng, state.boosts.filter, state.world.{surfaceY,width},
 //           FP.config.{flow,text,toxic,garden,soil}.
 // Écrit   : state.mode, state.flow, state.garden.flowers (création, croissance), state.plant.{reserves,oldTrails,corruption,toxicTimer,recentToxic}, state.score.flowers,
 //           state.level, state.camera.shake, state.events (death, bloom, blossom, toxicEnter, ready) ; appelle FP.level.generate et FP.plant.prepare/launch.
@@ -42,6 +42,7 @@
   // Chaque pollen ramassé ajoute une fleur (et fait avancer d'autant de niveaux, comme en v3).
   function bloom(state) {
     const cfg = FP.config.flow, p = state.plant, count = 1 + state.score.flowerBonus;
+    state.boosts = {};   // fin de pousse : les achats de la boutique s'arrêtent là
     plantFlowers(state, count);
     state.score.flowers += count;
     state.level += count;
@@ -60,6 +61,7 @@
   // cause : 'solid' | 'leak' | 'toxic' ; kind : famille de l'obstacle (cause solid uniquement).
   function die(state, cause, kind, reason) {
     const cfg = FP.config.flow, p = state.plant;
+    state.boosts = {};   // fin de pousse : les achats de la boutique s'arrêtent là
     p.reserves -= 1;
     state.events.push({ type: 'death', cause, kind, x: p.tip.x, y: p.tip.y });
     state.camera.shake = Math.max(state.camera.shake, cfg.deathShake);   // .28 pour toute mort, comme en v3
@@ -102,7 +104,7 @@
         p.recentToxic = t.messageCooldown;
         state.events.push({ type: 'toxicEnter', x: p.tip.x, y: p.tip.y });
       }
-      if (p.toxicTimer > t.burnAt) die(state, 'toxic', null, FP.config.text.deathToxic);
+      if (p.toxicTimer > t.burnAt && !state.boosts.filter) die(state, 'toxic', null, FP.config.text.deathToxic);   // Filtre à charbon (boutique)
     } else {
       p.toxicTimer = Math.max(0, p.toxicTimer - dt * t.recoveryRate);
     }

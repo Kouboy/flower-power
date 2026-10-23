@@ -44,3 +44,66 @@ FP.test('shop: pas de coche pendant l’apparition', () => {
   const s = shopRun(); FP.shop.open(s, { after: 'death' });
   FP.assertEqual(s.shop.phase, 'in'); FP.shop.toggle(s, 0); FP.assert(!s.shop.items[0].checked);
 });
+// Commande : on force le contenu du bon, puis la pousse suivante est lancée.
+const buy = (s, ids, price = 100) => {
+  FP.shop.open(s, { after: 'death' }); s.shop.phase = 'idle';
+  s.shop.items = ids.map(id => ({ id, price, base: price, promo: false, checked: true }));
+  FP.shop.order(s);
+};
+const nextStem = (s, ids) => { FP.plant.prepare(s); buy(s, ids); FP.plant.launch(s); s.events.length = 0; return s; };
+FP.test('shop: la graine ajoute une graine', () => { const s = shopRun(), r = s.plant.reserves; nextStem(s, ['seed']); FP.assertEqual(s.plant.reserves, r + 1); });
+FP.test('shop: la membrane donne le bouclier', () => FP.assert(nextStem(shopRun(), ['membrane']).power.shield));
+FP.test('shop: l’aimant double le rayon de ramassage', () => {
+  const s = nextStem(shopRun(), ['magnet']); s.world.coins = []; s.world.chains = [];
+  s.world.chains.push({ kind: 'easy', anchor: 'path', total: 4, got: 0, missed: false, done: false });
+  s.world.coins.push({ x: s.plant.tip.x + 20, y: s.plant.tip.y, chain: 0, rank: 0, taken: false });
+  FP.coinPlay.update(s); FP.assert(s.world.coins[0].taken);
+});
+FP.test('shop: premium double la valeur d’une pièce', () => {
+  const s = nextStem(shopRun(), ['premium']), e0 = s.score.eco; s.world.coins = []; s.world.chains = [];
+  s.world.chains.push({ kind: 'easy', anchor: 'path', total: 4, got: 0, missed: false, done: false });
+  s.world.coins.push({ x: s.plant.tip.x, y: s.plant.tip.y, chain: 0, rank: 0, taken: false });
+  FP.coinPlay.update(s); FP.assertEqual(s.score.eco - e0, 2 * FP.config.coins.value);
+});
+FP.test('shop: le compost ralentit la pousse', () => {
+  const s = nextStem(shopRun(), ['compost']), slow = FP.plant.speed(s); s.boosts.compost = false;
+  FP.assert(Math.abs(slow / FP.plant.speed(s) - .8) < 1e-9);
+});
+FP.test('shop: la bière ralentit les limaces', () => {
+  const s = nextStem(shopRun(), ['beer']);
+  s.world.leaks = [{ x: 200, y: 600, len: 80, angle: 1.5, phase: 0, rate: 1, r: 8, hitFlash: 0, s: 0, cx: 200, cy: 600, cr: 8 }];
+  FP.hazards.update(s, .1); const slow = s.world.leaks[0].s;
+  s.boosts.beer = false; s.world.leaks[0].s = 0; FP.hazards.update(s, .1);
+  FP.assert(Math.abs(slow / s.world.leaks[0].s - .3) < 1e-9, slow + ' / ' + s.world.leaks[0].s);
+});
+FP.test('shop: le filtre empêche la brûlure des nappes', () => {
+  const burn = (ids) => { const s = nextStem(shopRun(), ids); s.plant.toxicTimer = FP.config.toxic.burnAt + .1;
+    s.query = { ...s.query, solid: null, leak: 0, toxic: 1 }; FP.flow.update(s, .016); return s.mode; };
+  FP.assertEqual(burn(['filter']), 'playing'); FP.assert(burn(['membrane']) !== 'playing');
+});
+FP.test('shop: la spore déblaie la graine au lancement', () => {
+  const s = shopRun(); FP.plant.prepare(s); buy(s, ['spore']); s.events.length = 0; FP.plant.launch(s);
+  FP.assert(s.events.some(e => e.type === 'bomb'));
+});
+FP.test('shop: lobbying regénère le niveau avec moins d’obstacles', () => {
+  for (let seed = 1; seed <= 6; seed++) {
+    const a = shopRun(seed), b = shopRun(seed); a.level = b.level = 6;
+    FP.level.generate(b); buy(a, ['lobbying']);
+    FP.assert(a.world.solids.length < b.world.solids.length, 'graine ' + seed + ' : ' + a.world.solids.length + ' / ' + b.world.solids.length);
+  }
+});
+FP.test('shop: lobbying et membrane ensemble gardent le bouclier', () => FP.assert(nextStem(shopRun(), ['lobbying', 'membrane']).power.shield));
+FP.test('shop: la commande débite le score, jamais sous zéro', () => {
+  const s = shopRun(); s.score.eco = 1000; buy(s, ['magnet', 'beer'], 400); FP.assertEqual(s.score.eco, 200);
+  const t = shopRun(); t.score.eco = 300; buy(t, ['magnet'], 500); FP.assertEqual(t.score.eco, 0);
+});
+FP.test('shop: les effets ne survivent pas à la pousse d’après, la graine si', () => {
+  const s = nextStem(shopRun(), ['membrane', 'magnet', 'seed']), r = s.plant.reserves;
+  s.plant.tip = { x: 220, y: s.world.surfaceY - 1 }; FP.collision.update(s); FP.flow.update(s, 0);   // éclosion : fin de la pousse
+  FP.plant.prepare(s); FP.plant.launch(s);
+  FP.assert(!s.power.shield && !s.boosts.magnet); FP.assertEqual(s.plant.reserves, r);
+});
+FP.test('shop: refuser n’achète rien', () => {
+  const s = shopRun(), e = s.score.eco; FP.shop.open(s, { after: 'death' }); s.shop.phase = 'idle'; FP.shop.toggle(s, 0); FP.shop.decline(s);
+  FP.assertEqual(s.score.eco, e); FP.assertEqual(s.shop.phase, 'declined');
+});

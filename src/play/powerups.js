@@ -8,7 +8,7 @@
 //           un tirage state.rng par récompense (phase) ; gains via FP.scoring.awardFlat.
 // Bouclier : intercepte les chocs dans update (shatterOrganicShield v3).
 // Expose  : FP.powerups.assess(state, obj, record), FP.powerups.rewardType(a), FP.powerups.onFlyover(state, obj, record),
-//           FP.powerups.update(state, dt).
+//           FP.powerups.update(state, dt), FP.powerups.detonate(state, x, y) (déflagration de spore ; Spore de départ de la boutique).
 // Porté de la v3.43.16 (assessFlyover, flyoverRewardType, spawnFlyoverBonus, findFlyoverBonusSpawn, bonusSpawnClear,
 // gameplayPowerUpActive, collectBonus, detonateBomb, cycle de vie des bonus dans update()).
 (function () {
@@ -209,5 +209,5 @@
     if (playing) shield(state);
   }
 
-  FP.powerups = { assess, rewardType, onFlyover, update };
+  FP.powerups = { assess, rewardType, onFlyover, update, detonate };
 })();

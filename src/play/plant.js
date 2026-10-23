@@ -1,5 +1,5 @@
 // play/plant.js — croissance et pilotage de la pousse.
-// Lit     : state.input, state.time, state.rng, FP.config.cast, state.score.flowers, state.world.{width,height,viewH}, state.plant.corruption, FP.config.plant.
+// Lit     : state.input, state.time, state.rng, state.boosts (boutique), FP.config.{cast,shop}, state.score.flowers, state.world.{width,height,viewH}, state.plant.corruption, FP.config.plant.
 // Écrit   : state.plant, state.mode (lancement), state.camera.{y,shake}, state.events (stemStart, growthTick) ;
 //           remise à zéro par pousse de state.power.{shield,shieldGrace} et state.score.flowerBonus.
 // Expose  : FP.plant.prepare(state), FP.plant.launch(state), FP.plant.speed(state), FP.plant.update(state, dt).
@@ -41,6 +41,9 @@
     p.guide = { x: p.tip.x, y: p.tip.y - cfg.idleLookAhead };
     p.stemCount += 1;
     p.character = nextCharacter(p);
+    // Achats de la boutique (v4.6.0) : appliqués après prepare, qui remet le bouclier à zéro.
+    if (state.boosts.membrane) state.power.shield = true;
+    if (state.boosts.spore) { state.boosts.spore = false; FP.powerups.detonate(state, p.seed.x, p.seed.y); }
     state.mode = 'playing';
     state.events.push({ type: 'stemStart', n: p.stemCount });
   }
@@ -51,7 +54,8 @@
     const globalRamp = Math.max(0, p.stemCount - 1) * s.perStem + state.score.flowers * s.perFlower;
     const liveRamp = Math.min(s.liveMax, p.stemAge * s.livePerSec);
     const base = Math.min(s.max, s.base + globalRamp + liveRamp) * s.framing * (p.corruption > 0 ? FP.config.plant.corrupted.speed : 1);
-    return state.input.down ? base * s.controlled : base;
+    const slow = state.boosts.compost ? FP.config.shop.compostK : 1;   // Compost lent (boutique)
+    return (state.input.down ? base * s.controlled : base) * slow;
   }
 
   // La pointe qui creuse : un seul battement pour le grattement (audio) et les débris (rendu), comme en v3.

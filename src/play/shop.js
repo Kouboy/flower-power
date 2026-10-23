@@ -1,8 +1,11 @@
 // play/shop.js — boutique de fin de pousse (v4.6.0) : bon de commande de 3 articles (un à −50 %), achetés au score.
 // Lit     : state.seed, state.score.eco, state.time, state.mode, FP.config.shop, FP.createRng.
-// Écrit   : state.shop, state.shopVisits, state.mode ('shop'), state.events (shopOpen, shopTick).
+// Écrit   : state.shop, state.shopVisits, state.mode ('shop'), state.events (shopOpen, shopTick, shopOrder) ; à la commande :
+//           state.score.eco, state.plant.reserves, state.boosts ; Lobbying regénère le niveau (FP.level.generate, FP.plant.prepare).
 // Expose  : FP.shop.open(state, { after }), FP.shop.total(state), FP.shop.canCheck(state, i), FP.shop.toggle(state, i),
-//           FP.shop.co2(state). after : 'death' | 'bloom' | 'last' (dernière chance : la Graine Bio™ est garantie).
+//           FP.shop.co2(state), FP.shop.order(state), FP.shop.decline(state). after : 'death' | 'bloom' | 'last'
+//           (dernière chance : la Graine Bio™ est garantie). Les effets (state.boosts) valent pour la pousse suivante :
+//           FP.plant.launch applique membrane et spore, les autres systèmes lisent leur drapeau ; la fin de pousse les efface.
 // Tirage propre (graine ^ salt ^ passage) : state.rng n'est jamais consommé.
 (function () {
   'use strict';
@@ -41,5 +44,30 @@
     return Math.round(state.shop.items.reduce((t, it) => t + (it.checked ? mass(it.id) : 0), 0) * 10) / 10;
   }
 
-  FP.shop = { open, total, canCheck, toggle, co2 };
+  // Effet d'un article : la graine tout de suite, le reste en drapeau pour la pousse suivante.
+  function applyItem(state, id) {
+    if (id === 'seed') state.plant.reserves += 1;
+    else state.boosts[id] = true;
+  }
+
+  // Commande : rien de coché → comme un refus. Lobbying d'abord (le niveau est regénéré), puis les autres articles.
+  function order(state) {
+    const sh = state.shop;
+    if (!sh || sh.phase !== 'idle') return;
+    const bought = sh.items.filter(it => it.checked).map(it => it.id);
+    if (!bought.length) { decline(state); return; }
+    state.score.eco = Math.max(0, state.score.eco - total(state));
+    if (bought.includes('lobbying')) { FP.level.generate(state, { lobbying: true }); FP.plant.prepare(state); }
+    for (const id of bought) if (id !== 'lobbying') applyItem(state, id);
+    sh.phase = 'ordered'; sh.t0 = state.time;
+    state.events.push({ type: 'shopOrder', items: bought });
+  }
+
+  function decline(state) {
+    const sh = state.shop;
+    if (!sh || sh.phase !== 'idle') return;
+    sh.phase = 'declined'; sh.t0 = state.time;
+  }
+
+  FP.shop = { open, total, canCheck, toggle, co2, order, decline };
 })();
