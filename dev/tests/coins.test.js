@@ -40,3 +40,30 @@ FP.test('coins: state.rng intact', () => {
   FP.coins.place = () => {};
   try { const b = coinRun(5); FP.assertEqual(a.rng.next(), b.rng.next()); } finally { FP.coins.place = keep; }
 });
+// Appâts : près d'un danger de la tranche (longer, passer entre, mordre une nappe, croiser une limace).
+const ellipseK = (t, x, y) => { const dx = x - t.x, dy = y - t.y, ca = Math.cos(-t.a), sa = Math.sin(-t.a); const u = dx * ca - dy * sa, v = dx * sa + dy * ca; return Math.hypot(u / t.rx, v / t.ry); };
+FP.test('coins: chaque tranche a un appât', () => {
+  for (let seed = 1; seed <= 20; seed++) {
+    const w = coinRun(seed).world;
+    FP.assert(w.chains.filter(c => c.kind === 'bait').length >= FP.coins.slices(w).length, 'graine ' + seed);
+  }
+});
+FP.test('coins: les appâts graze restent dans la bande de frôlement', () => {
+  let seen = 0;
+  for (let seed = 1; seed <= 30; seed++) {
+    const w = coinRun(seed, 4).world;
+    w.chains.forEach((ch, i) => { if (ch.anchor === 'graze') for (const c of chainCoins(w, i)) { seen++; FP.assert(w.solids.some(o => { const d = FP.collision.distanceTo(o, c.x, c.y); return d > 0 && d <= FP.collision.grazeBand(o); }), 'graine ' + seed); } });
+  }
+  FP.assert(seen > 0, 'aucun appât graze');
+});
+FP.test('coins: un appât toxic mord au plus un tiers de la nappe', () => {
+  for (let seed = 1; seed <= 30; seed++) {
+    const w = coinRun(seed, 4).world;
+    for (const c of w.coins) for (const t of w.toxics) FP.assert(ellipseK(t, c.x, c.y) >= 1 - FP.config.coins.toxicBite - .01, 'graine ' + seed + ' : ' + ellipseK(t, c.x, c.y).toFixed(2));
+  }
+});
+FP.test('coins: au moins trois sortes d’appâts sur 30 graines', () => {
+  const kinds = new Set();
+  for (let seed = 1; seed <= 30; seed++) for (const ch of coinRun(seed, 4).world.chains) if (ch.kind === 'bait') kinds.add(ch.anchor);
+  FP.assert(kinds.size >= 3, [...kinds].join());
+});
