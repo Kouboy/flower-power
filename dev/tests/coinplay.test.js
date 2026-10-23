@@ -67,3 +67,13 @@ FP.test('effects: un gain discret (pièce) ne crée pas de nombre flottant', () 
   FP.effects.draw(fakeCtx(), s);
   FP.assertEqual(s.fx.effects.filter(e => e.type === 'eco').length, 0);
 });
+FP.test('particles: un gain discret (pièce) ne lance pas de gerbe', () => {
+  const s = cpRun(); s.events.push({ type: 'eco', x: 1, y: 1, amount: 25, combo: 4, kind: 'coin', quiet: true });
+  FP.particles.draw(fakeCtx(), s);
+  FP.assertEqual(s.fx.particles.length, 0);
+});
+FP.test('cheer: le cri suit la pointe', () => {
+  const s = cpRun(); s.camera.y = 100; s.plant.tip = { x: 200, y: 600 };
+  const a = FP.cheer.anchor(s); s.plant.tip = { x: 240, y: 500 }; const b = FP.cheer.anchor(s);
+  FP.assertEqual(a.x, 100); FP.assertEqual(a.y, 250); FP.assertEqual(b.x, 120); FP.assertEqual(b.y, 200);
+});

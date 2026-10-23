@@ -80,3 +80,6 @@ FP.test('audio: un gain de pièce ne sonne pas, un chapelet complet sonne', () =
   withBackend(b => { FP.audio.consume([{ type: 'eco', amount: 25, combo: 1, kind: 'coin', quiet: true }], auRun(), 0); FP.assertEqual(sounding(b).length, 0); });
   withBackend(b => { FP.audio.consume([{ type: 'chainDone', amount: 400, word: 'GREEN !' }], auRun(), 0); FP.assert(sounding(b).filter(c => c[0] === 'note').length >= 3); });
 });
+FP.test('audio: le bonus de chapelet ne double pas l’accord avec le kling du score', () => {
+  withBackend(b => { FP.audio.consume([{ type: 'eco', amount: 400, combo: 2, kind: 'chain' }], auRun(), 0); FP.assertEqual(sounding(b).length, 0); });
+});

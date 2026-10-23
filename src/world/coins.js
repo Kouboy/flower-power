@@ -33,12 +33,15 @@
     return Math.hypot((dx * ca - dy * sa) / t.rx, (dx * sa + dy * ca) / t.ry);
   }
 
-  // Une pièce est posable : dans le monde (marge), sous la surface, hors de tout obstacle, au plus au premier tiers d'une nappe.
+  // Une pièce est posable : dans le monde (marge), sous la surface, hors de tout obstacle, au plus au premier tiers d'une nappe,
+  // et sans toucher une pièce d'un chapelet déjà posé.
   function fits(world, x, y) {
     const k = FP.config.coins;
     if (x < k.radius + k.edge || x > world.width - k.radius - k.edge || y <= world.surfaceY + k.sliceMargin || y >= world.height) return false;
-    return world.solids.every(o => FP.collision.distanceTo(o, x, y) >= k.radius + 2) &&
-      world.toxics.every(t => ellipseK(t, x, y) >= 1 - k.toxicBite);
+    // Rejet rapide en hauteur (même résultat) : un obstacle ou une nappe trop haut ou trop bas ne peut pas toucher la pièce.
+    return world.solids.every(o => Math.abs(o.y - y) > o.broadR + k.radius + 2 || FP.collision.distanceTo(o, x, y) >= k.radius + 2) &&
+      world.toxics.every(t => Math.abs(t.y - y) > Math.max(t.rx, t.ry) || ellipseK(t, x, y) >= 1 - k.toxicBite) &&
+      world.coins.every(c => Math.hypot(c.x - x, c.y - y) > 2 * k.radius + 2);
   }
 
   // Plus longue suite de points consécutifs posables ; trop courte → rien (le chapelet est abandonné).
@@ -132,8 +135,9 @@
       const pts = longestRun(world, build());
       if (pts.length) return { anchor, pts };
     }
-    const side = rng.next() < .5 ? -1 : 1;
-    return { anchor: 'path', pts: longestRun(world, easyPoints(world, rng, slice, side * world.safeRadius * 1.5)) };
+    // Décalé d'au moins un espacement au-delà de l'oscillation du facile : les deux chapelets restent distincts.
+    const side = rng.next() < .5 ? -1 : 1, lim = world.safeRadius * FP.config.coins.sway;
+    return { anchor: 'path', pts: longestRun(world, easyPoints(world, rng, slice, side * (2 * lim + FP.config.coins.spacing))) };
   }
 
   function addChain(world, kind, anchor, pts) {

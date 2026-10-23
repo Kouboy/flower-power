@@ -63,7 +63,7 @@
       case 'stemStart': return FP.sfx.play(b, 'growStart');
       case 'bloom': return FP.sfx.play(b, 'crack');
       case 'blossom': return FP.sfx.jingle(b, 'blossom');
-      case 'eco': return e.kind === 'coin' ? undefined : FP.sfx.play(b, 'eco', e.combo || 1);   // la pièce a son propre « tink »
+      case 'eco': return e.kind === 'coin' || e.kind === 'chain' ? undefined : FP.sfx.play(b, 'eco', e.combo || 1);   // pièce et chapelet ont leurs sons
       case 'coin': return FP.sfx.play(b, 'coin', e.rank || 0);
       case 'chainDone': return FP.sfx.play(b, 'chain');
       case 'grazeStart': return FP.sfx.play(b, 'grazeStart', clamp(e.intensity || .6, .2, 1.6));
