@@ -29,6 +29,9 @@
     // Pièce (v4.5.0) : « tink » qui monte d'une note par pièce du chapelet (mi mineur pentatonique), puis l'accord du chapelet complet.
     coin: (n, z, d, rank) => { n('bell', COIN_NOTES[Math.min(COIN_NOTES.length - 1, Math.max(0, Math.round(rank)))], 0, .1, .9); },
     chain: (n) => { for (const m of [76, 83, 88, 91]) n('bell', m, 0, .7, .6); n('brass', 64, .02, .4, .5); },
+    // Bon de commande (v4.6.0) : froissement de papier recyclé, « tic » de crayon (le tampon existe déjà : stamp).
+    paper: (n, z) => { z(0, .18, .07, 3200, 'bandpass', 1.2); z(.07, .12, .05, 1800, 'bandpass', 1.5); },
+    tick: (n, z) => { z(0, .02, .05, 5200, 'bandpass', 3); n('pluck', 84, 0, .02, .35); },
     water: (n) => { n('bell', 64, 0, .08, 1, 1.3); n('bell', 71, .07, .08, .9); n('bell', 76, .14, .12, .8); },
     bud: (n) => { n('bell', 76, 0, .1, 1); n('bell', 83, .07, .14, .9); },
     bomb: (n, z, d) => { d('kick', 0, 1.5); z(0, .35, .1, 400, 'lowpass'); n('pluck', 64, .12, .06, .5); n('pluck', 71, .18, .06, .5); n('pluck', 76, .24, .06, .4); },
