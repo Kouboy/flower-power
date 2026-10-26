@@ -44,13 +44,14 @@
   function bloom(state) {
     const cfg = FP.config.flow, p = state.plant, count = 1 + state.score.flowerBonus;
     state.boosts = {};   // fin de pousse : les achats de la boutique s'arrêtent là
+    const main = state.garden.flowers.length;   // la fleur principale de l'éclosion (le halo s'ouvre sur son cœur)
     plantFlowers(state, count);
     state.score.flowers += count;
     state.level += count;
     p.oldTrails.push(simplifyTrail(p.trail, cfg.trailSimplifyPx));
     if (p.oldTrails.length > cfg.oldTrailsMax) p.oldTrails.shift();
     // bloom : la motte se fend (terre projetée) ; blossom, hatchDelay plus tard : la fleur sort (anneau doré, pétales).
-    const burst = { x: p.tip.x, y: state.world.surfaceY + FP.config.soil.surfaceOffset - 9, count, bonus: state.score.flowerBonus };
+    const burst = { x: p.tip.x, y: state.world.surfaceY + FP.config.soil.surfaceOffset - 9, count, bonus: state.score.flowerBonus, flower: main };
     state.events.push({ type: 'bloom', ...burst });
     state.flow.blossom = burst;
     state.camera.shake = Math.max(state.camera.shake, cfg.hatchShake);
@@ -130,7 +131,7 @@
         f.timer -= dt;
         if (f.timer <= 0) {
           if (p.reserves <= 0) FP.shop.open(state, { after: 'last' });   // dernière chance : la Graine Bio™ est garantie
-          else { FP.level.generate(state); FP.plant.prepare(state); if (shopDue(state)) FP.shop.open(state, { after: 'death' }); else FP.plant.launch(state); }
+          else { FP.level.generate(state); FP.plant.prepare(state); if (shopDue(state)) FP.shop.open(state, { after: 'death' }); else toReady(state); }
         }
         break;
       case 'bloom':
@@ -138,7 +139,7 @@
         bloomStages(state, cfg);
         break;
       case 'ready':
-        if (state.input.pressed) FP.plant.launch(state);
+        germinate(state, dt, cfg);
         break;
     }
   }
@@ -148,12 +149,23 @@
 
   // Fin du bon de commande : on reprend là où la pousse s'était arrêtée.
   function afterShop(state, after) {
-    if (after === 'bloom') { state.mode = 'ready'; state.events.push({ type: 'ready' }); return; }
     if (after === 'last') {
       if (state.plant.reserves <= 0) { state.mode = 'over'; return; }
-      if (!state.boosts.lobbying) FP.level.generate(state);   // Lobbying a déjà regénéré le niveau
+      if (!state.boosts.lobbying) { FP.level.generate(state); FP.plant.prepare(state); }   // Lobbying a déjà regénéré le niveau
     }
-    FP.plant.launch(state);
+    toReady(state);
+  }
+
+  // Toute pousse attend sur sa graine qu'on la fasse germer (v4.7.0).
+  function toReady(state) { state.mode = 'ready'; state.plant.germ = 0; state.events.push({ type: 'ready' }); }
+
+  // Germination : maintenir remplit (germTime), lâcher vide (germBack) ; deux fissures à 1/3 et 2/3, puis la pousse part.
+  // Au clavier, on ne peut pas « maintenir » : un appui fait germer d'un coup.
+  function germinate(state, dt, cfg) {
+    const p = state.plant, before = p.germ || 0, i = state.input;
+    p.germ = i.key ? 1 : (i.down ? Math.min(1, before + dt / cfg.germTime) : Math.max(0, before - dt / cfg.germBack));
+    for (const th of [1 / 3, 2 / 3]) if (before < th && p.germ >= th) state.events.push({ type: 'germCrack', x: p.seed.x, y: p.seed.y });
+    if (p.germ >= 1) { state.events.push({ type: 'germPop', x: p.seed.x, y: p.seed.y }); FP.plant.launch(state); }
   }
 
   FP.flow = { update, simplifyTrail, afterShop };

@@ -27,7 +27,10 @@
       else if (e.type === 'shieldBreak') fx.push({ type: 'shieldBreak', x: e.x, y: e.y, t0, life: .62, r: 31, phase: rand(0, TAU) });
       else if (e.type === 'bomb') fx.push({ type: 'bomb', x: e.x, y: e.y, t0, life: .98, r: e.r });
       else if (e.type === 'death') fx.push({ type: 'hit', acid: e.cause !== 'solid', x: e.x, y: e.y, t0, life: .42, r: 28 });
-      else if (e.type === 'blossom') fx.push({ type: 'bloom', x: e.x, y: e.y, t0, life: 1.18, r: 68 + 13 * (e.bonus || 0) });
+      else if (e.type === 'blossom') {   // halo d'éclosion : sur le cœur de la fleur principale (sinon, à défaut, sur la pointe)
+        const f = e.flower !== undefined && state.garden.flowers[e.flower], c = f ? FP.flowersRender.headOf(f, state) : e;
+        fx.push({ type: 'bloom', x: c.x, y: c.y, t0, life: 1.18, r: 68 + 13 * (e.bonus || 0) });
+      }
     }
     state.fx.effects = state.fx.effects.filter(f => state.time - f.t0 < f.life);
   }

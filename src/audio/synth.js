@@ -1,7 +1,7 @@
 // audio/synth.js — moteur FM façon Mega Drive (YM2612) : voix à 2 opérateurs, batterie en bruit filtré, écho, bus de mixage.
 // Lit     : rien de l'état ; reçoit un AudioContext.
 // Écrit   : rien dans l'état (le graphe Web Audio uniquement).
-// Expose  : FP.synth.create(ac) → moteur { now, note, drum, burst, setGain, setFilter, setTreble, drone, suspend, resume, context } ;
+// Expose  : FP.synth.create(ac) → moteur { now, note, drum, burst, setGain, setFilter, setTreble, hum, drone, suspend, resume, context } ;
 //           FP.synth.INSTRUMENTS, FP.synth.DRUMS.
 // Seul fichier du jeu qui crée des nœuds Web Audio.
 (function () {
@@ -151,7 +151,28 @@
       drone.gain.gain.setTargetAtTime(Math.max(.0001, gain), n, .018);
     }
 
-    return { now: () => ac.currentTime, note, drum, burst, setGain, setFilter, setTreble, drone: setDrone,
+    // Grincement continu de la nappe toxique (v4.7.0) : FM inharmonique (×1,41), indice et gain pilotés ; hum(false[, net]) l'éteint.
+    let hum = null;
+    function setHum(on, freq, index, gain) {
+      const n = ac.currentTime;
+      if (!on) {
+        if (!hum) return;
+        const h = hum, fast = freq === true; hum = null;
+        h.gain.gain.cancelScheduledValues(n); h.gain.gain.setTargetAtTime(.0001, n, fast ? .015 : .08); h.osc.stop(n + (fast ? .08 : .35)); h.mod.stop(n + (fast ? .08 : .35));
+        return;
+      }
+      if (!hum) {
+        const osc = ac.createOscillator(), mod = ac.createOscillator(), mg = ac.createGain(), g = ac.createGain();
+        osc.frequency.setValueAtTime(freq, n); mod.frequency.setValueAtTime(freq * 1.41, n); mg.gain.setValueAtTime(freq * index, n);
+        mod.connect(mg); mg.connect(osc.frequency); g.gain.setValueAtTime(.0001, n);
+        osc.connect(g); g.connect(sfx); osc.start(n); mod.start(n);
+        hum = { osc, mod, mg, gain: g };
+      }
+      hum.osc.frequency.setTargetAtTime(freq, n, .05); hum.mod.frequency.setTargetAtTime(freq * 1.41, n, .05);
+      hum.mg.gain.setTargetAtTime(freq * index, n, .05); hum.gain.gain.setTargetAtTime(Math.max(.0001, gain), n, .05);
+    }
+
+    return { now: () => ac.currentTime, note, drum, burst, setGain, setFilter, setTreble, hum: setHum, drone: setDrone,
       suspend: () => ac.suspend && ac.suspend().catch(() => {}), resume: () => ac.resume && ac.resume().catch(() => {}), context: ac };
   }
 

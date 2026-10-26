@@ -5,7 +5,7 @@
 // Expose  : FP.audio.consume(events, state, dt), FP.audio.sfx(name, intensity?), FP.audio.unlock(),
 //           FP.audio.setting() / cycleSetting() / loadSetting() (réglage 'all' | 'sfx' | 'mute', mémorisé sous flower_power_v4_sound),
 //           FP.audio._backend (moteur ; remplaçable par un espion dans les tests, null tant que l'audio est muet).
-//           Installe sur window les écouteurs pointerdown / keydown qui débloquent le son.
+//           FP.audio.UNLOCK_EVENTS. Installe sur window les écouteurs (pointerdown, pointerup, keydown) qui débloquent le son.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
@@ -66,6 +66,8 @@
       case 'eco': return e.kind === 'coin' || e.kind === 'chain' ? undefined : FP.sfx.play(b, 'eco', e.combo || 1);   // pièce et chapelet ont leurs sons
       case 'coin': return FP.sfx.play(b, 'coin', e.rank || 0);
       case 'chainDone': return FP.sfx.play(b, 'chain');
+      case 'germCrack': return FP.sfx.play(b, 'germCrack');
+      case 'germPop': return FP.sfx.play(b, 'germPop');
       case 'shopOpen': return FP.sfx.play(b, 'crumple');
       case 'shopTick': return FP.sfx.play(b, 'pencil');
       case 'shopOrder': return FP.sfx.play(b, 'register');
@@ -87,15 +89,19 @@
     try {
       for (const e of events) play(b, e);
       FP.sfx.drone(b, state, events);
+      FP.sfx.hum(b, state, events);
       FP.music.update(state, events, b);
     } catch (e) { /* audio muet plutôt qu'une partie figée */ }
   }
 
-  FP.audio = { consume, sfx, unlock, setting: () => current, cycleSetting, loadSetting, _backend: null };
+  // Gestes qui débloquent le son. Au doigt, le navigateur ne compte que le lever (pointerup) : sans lui, le premier toucher
+  // laissait le moteur en pause et la musique du titre muette jusqu'au toucher suivant.
+  const UNLOCK_EVENTS = ['pointerdown', 'pointerup', 'keydown'];
+
+  FP.audio = { consume, sfx, unlock, setting: () => current, cycleSetting, loadSetting, UNLOCK_EVENTS, _backend: null };
   loadSetting();
 
   if (typeof window !== 'undefined' && window.addEventListener) {
-    window.addEventListener('pointerdown', unlock);
-    window.addEventListener('keydown', unlock);
+    for (const type of UNLOCK_EVENTS) window.addEventListener(type, unlock);
   }
 })();

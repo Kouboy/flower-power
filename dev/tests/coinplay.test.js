@@ -8,15 +8,15 @@ const cpRun = () => {
 const lay = (s, kind, n, x = 200, y0 = 600) => {
   const w = s.world, chain = w.chains.length;
   w.chains.push({ kind, anchor: 'path', total: n, got: 0, missed: false, done: false });
-  for (let i = 0; i < n; i++) w.coins.push({ x, y: y0 - i * 18, chain, rank: i, taken: false });
+  for (let i = 0; i < n; i++) w.coins.push({ x, y: y0 - i * 30, chain, rank: i, taken: false });
   return chain;
 };
 const clearCoins = (s) => { s.world.coins = []; s.world.chains = []; };
 const evts = (s, type) => s.events.filter(e => e.type === type);
-FP.test('coinPlay: prise à 14 px, pas à 15', () => {
-  const s = cpRun(); clearCoins(s); lay(s, 'easy', 4, 214, 600);
+FP.test('coinPlay: prise à 20 px, pas à 21 (plus large que les collisions)', () => {
+  const s = cpRun(); clearCoins(s); lay(s, 'easy', 4, 220, 600);
   FP.coinPlay.update(s); FP.assertEqual(evts(s, 'coin').length, 1);
-  const t = cpRun(); clearCoins(t); lay(t, 'easy', 4, 215, 600);
+  const t = cpRun(); clearCoins(t); lay(t, 'easy', 4, 221, 600);
   FP.coinPlay.update(t); FP.assertEqual(evts(t, 'coin').length, 0);
 });
 FP.test('coinPlay: une pièce sans combo vaut 25 et ne lance pas de combo', () => {
@@ -32,7 +32,7 @@ FP.test('scoring: awardCoin entretient le combo sans le monter', () => {
 });
 FP.test('coinPlay: chapelet appât complet → +400, combo +1, cri de la liste', () => {
   const s = cpRun(); clearCoins(s); lay(s, 'bait', 4);
-  for (let i = 0; i < 4; i++) { s.plant.tip = { x: 200, y: 600 - i * 18 }; FP.coinPlay.update(s); }
+  for (let i = 0; i < 4; i++) { s.plant.tip = { x: 200, y: 600 - i * 30 }; FP.coinPlay.update(s); }
   const done = evts(s, 'chainDone');
   FP.assertEqual(done.length, 1); FP.assertEqual(done[0].amount, 400); FP.assert(FP.config.text.chain.includes(done[0].word));
   FP.assertEqual(s.score.combo, 1); FP.assertEqual(s.score.eco, 4 * 25 + 400);
@@ -43,14 +43,14 @@ FP.test('coinPlay: deux pièces dans la même image → rangs 0 et 1, un seul ch
   s.world.coins[1].y = 596;   // deux pièces sous la pointe
   FP.coinPlay.update(s);
   FP.assertEqual(evts(s, 'coin').map(e => e.rank).join(), '0,1');
-  s.plant.tip = { x: 200, y: 564 }; FP.coinPlay.update(s); s.plant.tip = { x: 200, y: 546 }; FP.coinPlay.update(s);
+  s.plant.tip = { x: 200, y: 540 }; FP.coinPlay.update(s); s.plant.tip = { x: 200, y: 510 }; FP.coinPlay.update(s);
   FP.assertEqual(evts(s, 'chainDone').length, 1);
 });
 FP.test('coinPlay: une pièce laissée 41 px sous la pointe rate le chapelet', () => {
   const s = cpRun(); clearCoins(s); lay(s, 'bait', 5, 200, 600);
   s.plant.tip = { x: 200, y: 600 - 41 - 0 }; FP.coinPlay.update(s);   // rang 0 laissé à 41 px dessous, rang 1 à 23 px : pas pris
   FP.assert(s.world.chains[0].missed);
-  for (let i = 1; i < 5; i++) { s.plant.tip = { x: 200, y: 600 - i * 18 }; FP.coinPlay.update(s); }
+  for (let i = 1; i < 5; i++) { s.plant.tip = { x: 200, y: 600 - i * 30 }; FP.coinPlay.update(s); }
   FP.assertEqual(evts(s, 'chainDone').length, 0); FP.assertEqual(evts(s, 'coin').length, 4);
 });
 FP.test('coinPlay: rien hors du mode playing', () => {
@@ -76,4 +76,13 @@ FP.test('cheer: le cri suit la pointe', () => {
   const s = cpRun(); s.camera.y = 100; s.plant.tip = { x: 200, y: 600 };
   const a = FP.cheer.anchor(s); s.plant.tip = { x: 240, y: 500 }; const b = FP.cheer.anchor(s);
   FP.assertEqual(a.x, 100); FP.assertEqual(a.y, 250); FP.assertEqual(b.x, 120); FP.assertEqual(b.y, 200);
+});
+FP.test('effects: le halo d’éclosion s’ouvre au cœur de la fleur, pas sur la pointe', () => {
+  const s = cpRun(); s.plant.tip = { x: 220, y: s.world.surfaceY - 1 }; FP.collision.update(s); FP.flow.update(s, 0);
+  for (let i = 0; i < 40 && !s.events.some(e => e.type === 'blossom'); i++) { s.events.length = 0; FP.flow.update(s, 1 / 60); }
+  const e = s.events.find(e => e.type === 'blossom'); FP.assert(e, 'blossom');
+  FP.effects.draw(fakeCtx(), s);
+  const fx = s.fx.effects.find(f => f.type === 'bloom'), head = FP.flowersRender.headOf(s.garden.flowers[e.flower], s);
+  FP.assertEqual(Math.round(fx.x), Math.round(head.x)); FP.assertEqual(Math.round(fx.y), Math.round(head.y));
+  FP.assert(head.y < e.y - 20, 'au-dessus du sol : ' + head.y + ' / ' + e.y);
 });

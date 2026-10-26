@@ -4,7 +4,7 @@ function audioSpy() {
   const calls = [];
   return { t: 0, calls, now() { return this.t; },
     note(...a) { calls.push(['note', ...a]); }, drum(...a) { calls.push(['drum', ...a]); }, burst(...a) { calls.push(['burst', ...a]); },
-    setGain(...a) { calls.push(['gain', ...a]); }, setFilter(...a) { calls.push(['filter', ...a]); }, setTreble(...a) { calls.push(['treble', ...a]); }, drone() {}, suspend() {}, resume() {} };
+    setGain(...a) { calls.push(['gain', ...a]); }, setFilter(...a) { calls.push(['filter', ...a]); }, setTreble(...a) { calls.push(['treble', ...a]); }, hum(...a) { calls.push(['hum', ...a]); }, drone() {}, suspend() {}, resume() {} };
 }
 const loop4 = { bpm: 120, bars: 1, beatsPerBar: 4, pcs: [4], notes: [
   { beat: 0, dur: 1, inst: 'bass', midi: 40, layer: 'groove' }, { beat: 2.5, dur: .5, inst: 'bass', midi: 52, layer: 'groove' } ] };

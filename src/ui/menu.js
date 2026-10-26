@@ -60,7 +60,7 @@
     state.score.recordBefore = { ...FP.scoring.records };
     FP.level.startRun(state);
     state.events.push({ type: 'runStart' });
-    FP.plant.launch(state);
+    FP.plant.prepare(state); state.mode = 'ready'; state.events.push({ type: 'ready' });   // la 1re pousse germe aussi (v4.7.0)
     FP.state.current = state;
   }
 

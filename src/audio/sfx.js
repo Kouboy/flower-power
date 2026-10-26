@@ -2,7 +2,7 @@
 // bourdonnement continu du frôlement et grattement de la tige qui creuse.
 // Lit     : state.mode, state.graze.active, state.query.grazes, FP.songs.jingles, FP.sequencer.notesBetween, FP.synth.DRUMS.
 // Écrit   : rien dans l'état (le moteur audio uniquement ; anti-rafale rangé sur le moteur).
-// Expose  : FP.sfx.play(backend, name, intensity?), FP.sfx.jingle(backend, name), FP.sfx.drone(backend, state, events),
+// Expose  : FP.sfx.play(backend, name, intensity?), FP.sfx.jingle(backend, name), FP.sfx.drone(backend, state, events), FP.sfx.hum(backend, state, events) (nappe toxique),
 //           FP.sfx.scrape(backend, k), FP.sfx.NAMES.
 (function () {
   'use strict';
@@ -39,6 +39,9 @@
     coin: (n, z, d, rank) => { n('bell', coinNote(rank), 0, .1, .36); },
     chain: (n) => { for (const m of [76, 83, 88, 91]) n('bell', m, 0, .7, .42); n('brass', 64, .02, .4, .35); },
     // Bon de commande (v4.6.0), en FM pur : papier froissé (apparition, départ), gratouillis de crayon, tiroir-caisse.
+    // Germination (v4.7.0) : la graine craque (deux fois), puis la pousse part dans un « pop » qui monte.
+    germCrack: (n) => { n('grainA', 70, 0, .03, 1); n('clonk', 45, 0, .06, .4); },
+    germPop: (n) => { n('pluck', 64, 0, .12, .8, 1.5); n('bell', 79, .04, .15, .5); },
     crumple: (n) => crumple(n, 14, .35),
     crumpleOut: (n) => crumple(n, 8, .22),
     pencil: (n) => {
@@ -119,5 +122,15 @@
       (.024 + Math.min(.175, duration * .058)) * Math.pow(intensity, .66));
   }
 
-  FP.sfx = { play, jingle, drone, scrape, NAMES };
+  // Nappe toxique (v4.7.0) : le grincement monte en hauteur, en rugosité et en volume avec l'exposition (0 → brûlure) ;
+  // il s'éteint en sortant de la nappe, net à la mort.
+  function hum(b, state, events) {
+    if (!b.hum) return;
+    if (state.mode === 'playing' && state.query && state.query.toxic > 0) {
+      const k = clamp(state.plant.toxicTimer / FP.config.toxic.burnAt, 0, 1);
+      b.hum(true, 70 + 190 * k, 2 + 4 * k, .03 + .08 * k);
+    } else b.hum(false, events.some(e => HARD_STOP.has(e.type)));
+  }
+
+  FP.sfx = { play, jingle, drone, hum, scrape, NAMES };
 })();

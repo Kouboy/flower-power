@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '4.6.3',
+    version: '4.7.0',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -181,7 +181,8 @@
       salt: 0x2c1b3c6d, sliceMargin: 70, startClear: 180, easy: { min: 12, max: 16 }, bait: { min: 8, max: 12 }, spacing: 45,
       wave: [60, 110], waves: [1, 1.5],   // traînée facile : grande route sinueuse autour du chemin sûr (amplitude en px, nombre de vagues)
       // startClear : rien dans les 180 px au-dessus de la graine (la pousse vient de démarrer, elle ne peut pas aller chercher).
-      pickup: 14, radius: 5, missBelow: 40, value: 25, chainBonus: { easy: 150, bait: 400 }, toxicBite: 1 / 3,
+      pickup: 20, radius: 5,   // pickup : rayon de ramassage d'un jeton (plus généreux que les collisions)
+      missBelow: 40, value: 25, chainBonus: { easy: 150, bait: 400 }, toxicBite: 1 / 3,
       minChain: 4, spinFps: 9, edge: 4
     },
 
@@ -221,12 +222,13 @@
 
     // Déroulé de partie. hatchDelay : la motte se fend, puis la fleur sort (render/mound.js).
     flow: {
+      germTime: .6, germBack: .25,   // germination (v4.7.0) : maintenir .6 s fait sortir la pousse ; lâcher, le germe rentre en .25 s
       dyingTime: .85, bloomTime: 1.55, hatchDelay: .24, hatchShake: .1, fadeOutTime: .46, fadeInTime: .48, oldTrailsMax: 6, trailSimplifyPx: 11, deathShake: .28
     },
 
     // Textes affichés.
     text: {
-      ready: 'TOUCHER POUR POUSSER',
+      ready: 'MAINTENIR POUR POUSSER',
       pressStart: 'PRESS TO START',   // écran d'accueil figé, clin d'œil Mega Drive
       chain: ['KARMA !', 'GREEN !', '0 DÉCHET !'],   // cri du chapelet complet (v4.5.0), tiré au hasard
       // Bon de commande (v4.6.0).

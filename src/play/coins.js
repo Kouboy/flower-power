@@ -27,7 +27,7 @@
       if (Math.hypot(c.x - p.tip.x, c.y - p.tip.y) <= k.pickup) {
         c.taken = true; ch.got += 1;
         FP.scoring.awardCoin(state, c.x, c.y, value);
-        state.events.push({ type: 'coin', x: c.x, y: c.y, rank: ch.got - 1 });
+        state.events.push({ type: 'coin', x: c.x, y: c.y, rank: ch.got - 1, chain: c.chain });
         if (ch.got === ch.total && !ch.missed) {
           ch.done = true;
           const amount = k.chainBonus[ch.kind], words = FP.config.text.chain;

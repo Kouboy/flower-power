@@ -2,6 +2,15 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.7.0 — Germination, joystick au doigt
+
+- germination : chaque pousse attend sur sa graine (début de partie, après une éclosion, après une mort) ; maintenir le doigt ~0,6 s la fait trembler, se fissurer et sortir un germe, lâcher le fait rentrer ; deux craquements puis un « pop » au départ ; « MAINTENIR POUR POUSSER » ;
+- au doigt, joystick sur la largeur de l'écran : tiers gauche et droit = virage maximal, tiers central = direction proportionnelle ; la souris vise toujours le pointeur ;
+- la musique du titre démarre dès le premier toucher sur mobile (le son se débloque aussi au lever du doigt) ;
+- les nappes toxiques grincent de plus en plus fort jusqu'à la brûlure ;
+- foreuse un quart plus petite ; jetons ramassés à 20 px (au lieu de 14), avec un éclair et un anneau cuivré ; halo d'éclosion au cœur de la fleur ;
+- banc : 418 tests.
+
 ## v4.6.3 — Aimant grisant, jetons qui tournent mieux
 
 - l'Aimant à jetons aspire désormais les jetons à moins de 110 px : ils s'arrachent de leur place et filent vers la tête de plus en plus vite, avec une traînée cuivrée ; un halo cuivré pulse autour de la tête tant qu'il est actif ;
