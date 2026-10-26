@@ -2,7 +2,7 @@
 // bourdonnement continu du frôlement et grattement de la tige qui creuse.
 // Lit     : state.mode, state.graze.active, state.query.grazes, FP.songs.jingles, FP.sequencer.notesBetween, FP.synth.DRUMS.
 // Écrit   : rien dans l'état (le moteur audio uniquement ; anti-rafale rangé sur le moteur).
-// Expose  : FP.sfx.play(backend, name, intensity?), FP.sfx.jingle(backend, name), FP.sfx.drone(backend, state, events), FP.sfx.hum(backend, state, events) (nappe toxique),
+// Expose  : FP.sfx.play(backend, name, intensity?), FP.sfx.jingle(backend, name), FP.sfx.drone(backend, state, events), FP.sfx.hum(backend, state, events) (nappe toxique, effort de germination),
 //           FP.sfx.scrape(backend, k), FP.sfx.NAMES.
 (function () {
   'use strict';
@@ -37,7 +37,7 @@
     grazeStart: (n, z, d, i) => { n('pluck', 71, 0, .06, i); z(0, .07, .05 * i, 2100, 'bandpass'); },
     eco: (n, z, d, combo) => { const m = 76 + Math.min(5, Math.max(0, Math.round(combo) - 1)); n('bell', m, 0, .12, 1); n('bell', m + 7, .05, .14, .8); z(0, .04, .02, 2600, 'highpass'); },
     // Pièce (v4.5.0) : « tink » qui monte d'une note par pièce du chapelet (mi mineur pentatonique), puis l'accord du chapelet complet.
-    coin: (n, z, d, c) => { n('glass', coinNote(c.rank, c.chain), 0, .15, .3); },   // c = { rank, chain }
+    coin: (n, z, d, c) => { n('glass', coinNote(c.rank, c.chain), 0, .15, .18); },   // c = { rank, chain }
     chain: (n) => { for (const m of [76, 83, 88, 91]) n('bell', m, 0, .7, .42); n('brass', 64, .02, .4, .35); },
     // Bon de commande (v4.6.0), en FM pur : papier froissé (apparition, départ), gratouillis de crayon, tiroir-caisse.
     // Germination (v4.7.0) : la graine craque (deux fois), puis la pousse part dans un « pop » qui monte.
@@ -107,7 +107,7 @@
   }
 
   // Bourdonnement du frôlement (logique de la v3) : proximité = hauteur et brillance, durée = puissance ; coupé net sur un choc.
-  const HARD_STOP = new Set(['death', 'shieldBreak', 'bloom', 'runStart']);
+  const HARD_STOP = new Set(['death', 'shieldBreak', 'bloom', 'runStart', 'germPop']);
   function drone(b, state, events) {
     let intensity = 0, duration = 0;
     if (state.mode === 'playing') {
@@ -125,9 +125,15 @@
 
   // Nappe toxique (v4.7.0) : le grincement monte en hauteur, en rugosité et en volume avec l'exposition (0 → brûlure) ;
   // il s'éteint en sortant de la nappe, net à la mort.
+  // Germination (v4.7.3) : la même voix fait « forcer » la graine — un grondement grave qui monte avec la germination, avec un
+  // tremblement rapide et irrégulier (l'effort) ; lâcher le laisse retomber, le pop de départ le coupe net.
   function hum(b, state, events) {
     if (!b.hum) return;
-    if (state.mode === 'playing' && state.query && state.query.toxic > 0) {
+    const g = state.plant.germ || 0;
+    if (state.mode === 'ready' && state.input.down && g > 0 && !events.some(e => e.type === 'germPop')) {
+      const shake = 1 + .025 * Math.sin(state.time * 37) + .015 * Math.sin(state.time * 23.3);
+      b.hum(true, (55 + 90 * g) * shake, 3 + 3 * g, .04 + .07 * g);
+    } else if (state.mode === 'playing' && state.query && state.query.toxic > 0) {
       const k = clamp(state.plant.toxicTimer / FP.config.toxic.burnAt, 0, 1);
       b.hum(true, 70 + 190 * k, 2 + 4 * k, .03 + .08 * k);
     } else b.hum(false, events.some(e => HARD_STOP.has(e.type)));

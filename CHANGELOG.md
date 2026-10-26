@@ -2,6 +2,12 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.7.3 — La graine force
+
+- germination : un grondement FM grave monte et tremble tant qu'on maintient (la graine force), retombe si on lâche, et se coupe net au « pop » du départ ;
+- jetons encore plus discrets (~55 % de la v4.7.2) ;
+- banc : 419 tests.
+
 ## v4.7.2 — Jetons moins forts
 
 - le verre des jetons passe à ~40 % de son volume, avec un peu moins d'écho (il couvrait la musique en jeu) ;
