@@ -33,15 +33,16 @@ FP.test('e2e: un flyover complet fait naître une récompense', () => {
 FP.test('e2e: suivre un chapelet facile paie chaque pièce puis le bonus', () => {
   const s = FP.state.createRun(8, { W: 440, H: 783 }); FP.level.startRun(s); FP.plant.launch(s); s.events.length = 0;
   const w = s.world, i = w.chains.findIndex(c => c.kind === 'easy'), coins = w.coins.filter(c => c.chain === i).sort((a, b) => a.rank - b.rank);
-  const seen = [];
+  const seen = []; let others = 0;
   for (const c of coins) {
     s.plant.tip = { x: c.x, y: c.y }; s.time += 1 / 60;
     FP.collision.update(s); FP.coinPlay.update(s); FP.scoring.update(s, 1 / 60);
-    seen.push(...s.events.filter(e => e.type === 'coin' || e.type === 'chainDone').map(e => e.type === 'coin' ? e.rank : 'done'));
+    seen.push(...s.events.filter(e => (e.type === 'coin' && e.chain === i) || e.type === 'chainDone').map(e => e.type === 'coin' ? e.rank : 'done'));   // une pièce d'une autre traînée peut tomber à portée
+    others += s.events.filter(e => e.type === 'coin' && e.chain !== i).length;
     s.events.length = 0;
   }
   FP.assertEqual(seen.join(), [...coins.map((c, r) => r), 'done'].join());
-  FP.assertEqual(s.score.eco, coins.length * FP.config.coins.value + FP.config.coins.chainBonus.easy);
+  FP.assertEqual(s.score.eco, (coins.length + others) * FP.config.coins.value + FP.config.coins.chainBonus.easy);
 });
 FP.test('e2e: mourir, cocher membrane et aimant, commander → la pousse suivante en profite', () => {
   const s = FP.state.createRun(4, { W: 440, H: 783 }); FP.level.startRun(s); FP.plant.launch(s); s.events.length = 0; s.score.eco = 4000; s.plant.stemCount = 3;

@@ -181,7 +181,8 @@
       salt: 0x2c1b3c6d, sliceMargin: 70, startClear: 180, easy: { min: 12, max: 16 }, bait: { min: 8, max: 12 }, spacing: 45,
       wave: [60, 110], waves: [1, 1.5],   // traînée facile : grande route sinueuse autour du chemin sûr (amplitude en px, nombre de vagues)
       // startClear : rien dans les 180 px au-dessus de la graine (la pousse vient de démarrer, elle ne peut pas aller chercher).
-      pickup: 14, radius: 5, missBelow: 40, value: 25, chainBonus: { easy: 150, bait: 400 }, toxicBite: 1 / 3,
+      pickup: 20, radius: 5,   // pickup : rayon de ramassage d'un jeton (plus généreux que les collisions)
+      missBelow: 40, value: 25, chainBonus: { easy: 150, bait: 400 }, toxicBite: 1 / 3,
       minChain: 4, spinFps: 9, edge: 4
     },
 

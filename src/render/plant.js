@@ -129,7 +129,7 @@
 
   // --- Foreuse : la tête creuse comme une mèche (ROW ROW FIGHT THE POWER) ---------------------------------
 
-  const DRILL = { spinBase: 9, spinGain: 16, lenBase: 6, lenGain: 5, radius: 5, streak: .55 };   // rad/s, pixels d'art
+  const DRILL = { spinBase: 9, spinGain: 16, lenBase: 4.5, lenGain: 3.5, radius: 4, streak: .55 };   // rad/s, pixels d'art (v4.7.0 : un quart plus petite)
   const DRILL_TONES = ['#b8916a', '#7a5a3e'];   // terre claire remuée, bien visible sur toutes les strates
 
   // État de la foreuse (pur, testé) : rotation et longueur suivent la vitesse de la pousse ; seulement pendant la pousse.
@@ -137,7 +137,7 @@
     if (state.mode !== 'playing' || !state.plant.tip) return { active: false, angle: 0, spin: 0, length: 0, k: 0 };
     const k = Math.max(0, Math.min(1, FP.plant.speed(state) / 190)) * (state.input.down ? 1.15 : 1);
     const spin = DRILL.spinBase + DRILL.spinGain * k;
-    return { active: true, angle: state.time * spin, spin, length: Math.round(DRILL.lenBase + DRILL.lenGain * k), k };
+    return { active: true, angle: state.time * spin, spin, length: Math.round(DRILL.lenBase + DRILL.lenGain * k), radius: DRILL.radius, k };
   }
 
   // Mèche devant la tête : un cône plein qui se resserre vers l'avant, rayé de bandes diagonales qui défilent

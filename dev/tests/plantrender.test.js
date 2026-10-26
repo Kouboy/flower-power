@@ -37,3 +37,7 @@ FP.test('plantRender: la foreuse part au-dessus de la tête et de ses accessoire
     FP.assert(FP.plantRender.drillStart(id) >= -top, id + ' : ' + FP.plantRender.drillStart && FP.plantRender.drillStart(id) + ' < ' + -top);
   }
 });
+FP.test('plantRender: la foreuse est plus petite (≈ −25 %)', () => {
+  const d = FP.plantRender.drill(drillRun(30));
+  FP.assert(d.length <= 8 && d.radius <= 4, d.length + ' / ' + d.radius);
+});

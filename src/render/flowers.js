@@ -2,7 +2,7 @@
 // Lit     : state.garden.flowers (x, size, maxSize, age, palette, tilt, character), state.world.{surfaceY,viewH}, state.camera.y,
 //           FP.view.W, FP.config.{garden,soil}, FP.px, FP.palette.{flowers,stem}, FP.cast (visage du personnage).
 // Écrit   : rien dans l'état (cache des fleurs finies, créé à la première utilisation).
-// Expose  : FP.flowersRender.draw(actx, state) (repère d'art, caméra appliquée ici), FP.flowersRender.variant(flower), extent(flower) (purs), CACHE_TOP.
+// Expose  : FP.flowersRender.draw(actx, state) (repère d'art, caméra appliquée ici), FP.flowersRender.variant(flower), extent(flower), headOf(flower, state) (purs), CACHE_TOP.
 // Ne touche pas au DOM au chargement : testable sous Node.
 (function () {
   'use strict';
@@ -117,5 +117,11 @@
     for (const f of flowers) if (!isFinished(f)) drawFlower(actx, f, px.toArt(f.x), by, f.size / f.maxSize);
   }
 
-  FP.flowersRender = { draw, variant, extent, CACHE_TOP };
+  // Cœur d'une fleur épanouie, en coordonnées monde (là où s'ouvre le halo d'éclosion).
+  function headOf(f, state) {
+    const g = geometry(f, variant(f), 1), S = FP.px.SCALE, baseY = state.world.surfaceY + FP.config.soil.surfaceOffset;
+    return { x: f.x + Math.sin(f.tilt) * g.len * S, y: baseY - g.len * S };
+  }
+
+  FP.flowersRender = { draw, variant, extent, headOf, CACHE_TOP };
 })();

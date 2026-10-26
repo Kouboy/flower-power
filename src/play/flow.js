@@ -44,13 +44,14 @@
   function bloom(state) {
     const cfg = FP.config.flow, p = state.plant, count = 1 + state.score.flowerBonus;
     state.boosts = {};   // fin de pousse : les achats de la boutique s'arrêtent là
+    const main = state.garden.flowers.length;   // la fleur principale de l'éclosion (le halo s'ouvre sur son cœur)
     plantFlowers(state, count);
     state.score.flowers += count;
     state.level += count;
     p.oldTrails.push(simplifyTrail(p.trail, cfg.trailSimplifyPx));
     if (p.oldTrails.length > cfg.oldTrailsMax) p.oldTrails.shift();
     // bloom : la motte se fend (terre projetée) ; blossom, hatchDelay plus tard : la fleur sort (anneau doré, pétales).
-    const burst = { x: p.tip.x, y: state.world.surfaceY + FP.config.soil.surfaceOffset - 9, count, bonus: state.score.flowerBonus };
+    const burst = { x: p.tip.x, y: state.world.surfaceY + FP.config.soil.surfaceOffset - 9, count, bonus: state.score.flowerBonus, flower: main };
     state.events.push({ type: 'bloom', ...burst });
     state.flow.blossom = burst;
     state.camera.shake = Math.max(state.camera.shake, cfg.hatchShake);
