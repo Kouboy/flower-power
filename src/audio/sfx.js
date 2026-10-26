@@ -39,6 +39,9 @@
     coin: (n, z, d, rank) => { n('bell', coinNote(rank), 0, .1, .36); },
     chain: (n) => { for (const m of [76, 83, 88, 91]) n('bell', m, 0, .7, .42); n('brass', 64, .02, .4, .35); },
     // Bon de commande (v4.6.0), en FM pur : papier froissé (apparition, départ), gratouillis de crayon, tiroir-caisse.
+    // Germination (v4.7.0) : la graine craque (deux fois), puis la pousse part dans un « pop » qui monte.
+    germCrack: (n) => { n('grainA', 70, 0, .03, 1); n('clonk', 45, 0, .06, .4); },
+    germPop: (n) => { n('pluck', 64, 0, .12, .8, 1.5); n('bell', 79, .04, .15, .5); },
     crumple: (n) => crumple(n, 14, .35),
     crumpleOut: (n) => crumple(n, 8, .22),
     pencil: (n) => {

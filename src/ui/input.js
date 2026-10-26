@@ -1,7 +1,7 @@
 // ui/input.js — pointeur (souris / doigt) → instantané d'entrée par frame.
 // Lit     : événements pointeur du canvas, FP.view (taille affichée), FP.camera.totalZoom, FP.config.camera.{zoomEpsilon,focalX}, state.plant.{tip,seed}, state.world.width.
 // Écrit   : state.input = { x (monde), screenX, y (écran, 0..viewH), down, active, pressed (front montant de cette frame),
-//           touch (doigt ou stylet : direction en joystick, play/plant.js) }.
+//           touch (doigt ou stylet : direction en joystick, play/plant.js), key (appui clavier de cette frame) }.
 // Expose  : FP.input.update(state), FP.input.toWorldX(screenX, zoom, focalX), FP.input.focalX(state), FP.input.press(),
 //           FP.input._inject(partial), FP.input._reset() — réservés aux tests (simuler un événement, repartir d'un tampon vide).
 // Porté de la v3.43.16 (setPointer).
@@ -11,7 +11,7 @@
   const { clamp } = FP.math;
 
   // Tampon rempli par les événements, recopié une fois par frame dans l'état.
-  const buffer = { x: 0, y: 0, down: false, active: false, pressed: false, touch: false };
+  const buffer = { x: 0, y: 0, down: false, active: false, pressed: false, touch: false, key: false };
 
   // Chaque appui compte, même si un autre pointeur est déjà enfoncé ; un bouton resté enfoncé n'émet rien.
   function inject(partial) {
@@ -20,10 +20,10 @@
     buffer.active = true;
   }
 
-  function reset() { Object.assign(buffer, { x: 0, y: 0, down: false, active: false, pressed: false, touch: false }); }
+  function reset() { Object.assign(buffer, { x: 0, y: 0, down: false, active: false, pressed: false, touch: false, key: false }); }
 
   // Touche clavier : un appui ponctuel (lance la pousse en « prêt »), sans prendre le contrôle de la direction.
-  function press() { buffer.pressed = true; }
+  function press() { buffer.pressed = true; buffer.key = true; }
 
   // Le zoom est centré sur un point focal : on ramène l'abscisse écran dans le monde.
   function toWorldX(screenX, zoom, focalX) {
@@ -45,6 +45,8 @@
     i.active = buffer.active;
     i.pressed = buffer.pressed;
     i.touch = buffer.touch;
+    i.key = buffer.key;   // appui clavier de cette frame (fait germer d'un coup)
+    buffer.key = false;
     buffer.pressed = false;
   }
 

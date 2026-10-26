@@ -222,12 +222,13 @@
 
     // Déroulé de partie. hatchDelay : la motte se fend, puis la fleur sort (render/mound.js).
     flow: {
+      germTime: .6, germBack: .25,   // germination (v4.7.0) : maintenir .6 s fait sortir la pousse ; lâcher, le germe rentre en .25 s
       dyingTime: .85, bloomTime: 1.55, hatchDelay: .24, hatchShake: .1, fadeOutTime: .46, fadeInTime: .48, oldTrailsMax: 6, trailSimplifyPx: 11, deathShake: .28
     },
 
     // Textes affichés.
     text: {
-      ready: 'TOUCHER POUR POUSSER',
+      ready: 'MAINTENIR POUR POUSSER',
       pressStart: 'PRESS TO START',   // écran d'accueil figé, clin d'œil Mega Drive
       chain: ['KARMA !', 'GREEN !', '0 DÉCHET !'],   // cri du chapelet complet (v4.5.0), tiré au hasard
       // Bon de commande (v4.6.0).

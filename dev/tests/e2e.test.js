@@ -54,6 +54,7 @@ FP.test('e2e: mourir, cocher membrane et aimant, commander → la pousse suivant
     { id: 'beer', price: 600, base: 600, promo: false, checked: false }];
   FP.shop.toggle(s, 0); FP.shop.toggle(s, 1); FP.shop.order(s);
   for (let i = 0; i < 120 && s.mode === 'shop'; i++) { s.time += 1 / 60; FP.shop.update(s, 1 / 60); }
+  FP.assertEqual(s.mode, 'ready'); s.input = { ...s.input, key: true }; FP.flow.update(s, 1 / 60);   // la graine germe
   FP.assertEqual(s.mode, 'playing'); FP.assert(s.power.shield && s.boosts.magnet && !s.boosts.beer);
   FP.assertEqual(s.score.eco, 4000 - 950);
 });

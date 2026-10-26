@@ -4,7 +4,8 @@
 // Écrit   : rien (le canvas uniquement).
 // Expose  : FP.plantRender.drawOld(actx, state) (anciennes tiges, sous les obstacles), FP.plantRender.draw(actx, state) (repère d'art, caméra appliquée ici), FP.plantRender.drawFinger(g, state) (toile d'interface),
 //           FP.plantRender.buried(x, y, old) — portion de tige recouverte de terre, FP.plantRender.haloLevel(d, old) — densité
-//           du halo tramé autour de la tige et de la graine, FP.plantRender.drill(state) — foreuse devant la tête, FP.plantRender.drillStart(id) — où elle commence (pures, testées).
+//           du halo tramé autour de la tige et de la graine, FP.plantRender.drill(state) — foreuse devant la tête, FP.plantRender.drillStart(id) — où elle commence (pures, testées),
+//           FP.plantRender.seed(g, seed, oy, germ, t) — la graine et sa germination (testée).
 // Porté de la v3.43.16 (drawTrail, drawPlant, drawPointer), redessiné en pixels pour la v4.1.0.
 (function () {
   'use strict';
@@ -168,8 +169,10 @@
   }
 
   // Graine du fond : elle dort en attendant le lancement.
-  function drawSeed(g, seed, oy) {
-    const { px } = FP, c = FP.palette.seed, ax = px.toArt(seed.x), ay = px.toArt(seed.y) - oy;
+  // germ (0 à 1, v4.7.0) : la graine tremble de plus en plus, se fissure à 1/3 puis 2/3, et un germe vert pointe et grandit.
+  function drawSeed(g, seed, oy, germ = 0, t = 0) {
+    const { px } = FP, c = FP.palette.seed, shake = germ > 0 ? Math.round(Math.sin(t * 60) * germ * 1.6) : 0;
+    const ax = px.toArt(seed.x) + shake, ay = px.toArt(seed.y) - oy;
     // Halo tramé autour de la graine, le même que celui des obstacles et de la tige.
     for (let y = -11; y <= 11; y++) for (let x = -11; x <= 11; x++) {
       const lv = haloLevel(Math.hypot(x, y) - 7.5, false);
@@ -181,6 +184,13 @@
     px.rect(g, ax - 4, ay - 4, 2, 3, c.light);
     px.rect(g, ax - 3, ay - 1, 2, 1, c.outline); px.rect(g, ax + 1, ay - 1, 2, 1, c.outline);   // yeux fermés
     px.rect(g, ax - 1, ay + 2, 2, 1, c.outline);
+    if (germ >= 1 / 3) { px.rect(g, ax - 1, ay - 6, 1, 2, c.outline); px.rect(g, ax, ay - 4, 1, 2, c.outline); px.rect(g, ax - 1, ay - 2, 1, 1, c.outline); }   // 1re fissure
+    if (germ >= 2 / 3) { px.rect(g, ax + 2, ay - 6, 1, 2, c.outline); px.rect(g, ax + 3, ay - 4, 1, 2, c.outline); px.rect(g, ax + 2, ay - 2, 2, 1, c.outline); }   // 2e
+    if (germ > .15) {   // le germe : une tige verte cernée, une petite feuille au bout
+      const st = FP.palette.stem, len = Math.round(2 + germ * 7), top = ay - 7 - len;
+      px.rect(g, ax - 1, top, 3, len + 1, st.outline); px.rect(g, ax, top, 1, len, st.body);
+      if (germ > .5) { px.rect(g, ax + 1, top, 2, 1, st.leaf); px.rect(g, ax + 1, top - 1, 1, 1, st.outline); }
+    }
   }
 
   // Guide : cible devant la pointe et trajectoire prévue, en pointillés de pixels.
@@ -210,7 +220,7 @@
     const { px } = FP, p = state.plant, camY = state.camera.y, oy = px.toArt(camY);
     if (p.trail.length) drawStem(g, p.trail, oy, true, state.world, state.world.viewH);
     const seedVisible = p.seed.y + 38 >= camY - 70 && p.seed.y - 38 <= camY + state.world.viewH + 70;
-    if (seedVisible && !(p.tip && Math.hypot(p.tip.x - p.seed.x, p.tip.y - p.seed.y) < 24)) drawSeed(g, p.seed, oy);
+    if (seedVisible && !(p.tip && Math.hypot(p.tip.x - p.seed.x, p.tip.y - p.seed.y) < 24)) drawSeed(g, p.seed, oy, state.mode === 'ready' ? p.germ || 0 : 0, state.time);
     const alive = state.mode === 'playing' || state.mode === 'dying' || state.mode === 'over';
     if (alive && p.tip) {
       if (state.mode === 'playing') FP.powerupsRender.drawShield(g, state);   // membrane sous la tête, comme en v3
@@ -235,5 +245,5 @@
     }
   }
 
-  FP.plantRender = { drawOld, draw, drawFinger, buried, haloLevel, drill, drillStart };
+  FP.plantRender = { drawOld, draw, drawFinger, buried, haloLevel, drill, drillStart, seed: drawSeed };
 })();

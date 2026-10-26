@@ -10,6 +10,7 @@ FP.test('flow: contact → mort puis nouvelle pousse sur un nouveau niveau', () 
   FP.assertEqual(s.mode, 'dying'); FP.assertEqual(s.plant.reserves, 2);
   FP.assert(s.events.some(e => e.type === 'death'));
   FP.flow.update(s, .9);   // 1re pousse : pas de bon de commande (toutes les 3 pousses)
+  FP.assertEqual(s.mode, 'ready'); s.input = { ...s.input, key: true }; FP.flow.update(s, 1 / 60);   // germination
   FP.assertEqual(s.mode, 'playing'); FP.assertEqual(s.plant.stemCount, 2);
   FP.assert(JSON.stringify(s.world.solids.map(o => [o.x, o.y])) !== before);
 });
@@ -28,11 +29,11 @@ FP.test('flow: surface → éclosion puis ready au niveau suivant', () => {
   for (let i = 0; i < 180; i++) FP.flow.update(s, 1 / 60);   // éclosion 1,55 s + fondus .46 + .48 s
   FP.assertEqual(s.mode, 'ready');
 });
-FP.test('flow: ready exige un nouvel appui', () => {
-  const s = flowRun(); s.mode = 'ready';
-  s.input = { x: 0, y: 0, down: true, active: true, pressed: false };
+FP.test('flow: ready exige de faire germer la graine', () => {
+  const s = flowRun(); s.mode = 'ready'; s.plant.germ = 0;
+  s.input = { x: 0, y: 0, down: false, active: true, pressed: true };
   FP.flow.update(s, .1); FP.assertEqual(s.mode, 'ready');
-  s.input.pressed = true; FP.flow.update(s, .1); FP.assertEqual(s.mode, 'playing');
+  s.input.down = true; for (let i = 0; i < 40; i++) FP.flow.update(s, 1 / 60); FP.assertEqual(s.mode, 'playing');
 });
 FP.test('flow: une partie complète tourne sans exception', () => {
   const s = flowRun(); tick(s, 60 * 40);
@@ -166,4 +167,32 @@ FP.test('flow: toutes les fleurs d’une éclosion portent le personnage de la p
   FP.collision.update(s); FP.flow.update(s, 0);
   FP.assertEqual(s.garden.flowers.length, 3);
   FP.assert(s.plant.character && s.garden.flowers.every(f => f.character === s.plant.character));
+});
+// Germination (v4.7.0) : chaque pousse naît en maintenant le doigt ~0,6 s ; lâcher avant, le germe rentre.
+const readyRun = () => { const s = flowRun(); s.mode = 'ready'; FP.plant.prepare(s); s.plant.germ = 0; s.events.length = 0; return s; };
+const hold = (s, sec, down = true) => { s.input = { ...s.input, down, pressed: false }; for (let t = 0; t < sec - 1e-9; t += 1 / 60) FP.flow.update(s, 1 / 60); };
+FP.test('flow: maintenir fait germer puis pousser', () => {
+  const s = readyRun(); hold(s, .3); FP.assertEqual(s.mode, 'ready'); FP.assert(s.plant.germ > .4 && s.plant.germ < .6, String(s.plant.germ));
+  hold(s, .35); FP.assertEqual(s.mode, 'playing');
+});
+FP.test('flow: lâcher avant la fin fait rentrer le germe', () => {
+  const s = readyRun(); hold(s, .3); hold(s, .3, false);
+  FP.assertEqual(s.mode, 'ready'); FP.assertEqual(s.plant.germ, 0);
+});
+FP.test('flow: deux fissures puis le pop de départ', () => {
+  const s = readyRun(); const seen = [];
+  s.input = { ...s.input, down: true };
+  for (let i = 0; i < 60 && s.mode === 'ready'; i++) { s.events.length = 0; FP.flow.update(s, 1 / 60); seen.push(...s.events.filter(e => e.type.startsWith('germ')).map(e => e.type)); }
+  FP.assertEqual(seen.join(), 'germCrack,germCrack,germPop');
+});
+FP.test('flow: un simple toucher ne lance plus la pousse', () => {
+  const s = readyRun(); s.input = { ...s.input, down: false, pressed: true }; FP.flow.update(s, 1 / 60); FP.assertEqual(s.mode, 'ready');
+});
+FP.test('flow: au clavier, un appui fait germer d’un coup', () => {
+  const s = readyRun(); s.input = { ...s.input, key: true }; FP.flow.update(s, 1 / 60); FP.assertEqual(s.mode, 'playing');
+});
+FP.test('flow: après une mort, la nouvelle graine attend qu’on la fasse germer', () => {
+  const s = flowRun(); const o = serverAt(s); s.plant.tip = { x: o.x, y: o.y };
+  FP.collision.update(s); FP.flow.update(s, 0); FP.flow.update(s, .9);
+  FP.assertEqual(s.mode, 'ready'); FP.assertEqual(s.plant.stemCount, 1);
 });

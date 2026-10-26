@@ -41,3 +41,12 @@ FP.test('plantRender: la foreuse est plus petite (≈ −25 %)', () => {
   const d = FP.plantRender.drill(drillRun(30));
   FP.assert(d.length <= 8 && d.radius <= 4, d.length + ' / ' + d.radius);
 });
+// Germination (v4.7.0) : la graine tremble, se fissure, un germe vert pointe et grandit.
+FP.test('plantRender: le germe pointe et grandit avec la germination', () => {
+  const sprout = (germ) => { const c = fakeCtx(); FP.plantRender.seed(c, { x: 100, y: 100 }, 0, germ, 1); return [...c.px.entries()].filter(([k, col]) => col === FP.palette.stem.body && +k.split(',')[1] < 50 - 7).length; };
+  FP.assertEqual(sprout(0), 0); FP.assert(sprout(.5) > 0 && sprout(1) > sprout(.5), sprout(.5) + ' / ' + sprout(1));
+});
+FP.test('plantRender: la graine se fissure à mi-germination', () => {
+  const ink = (germ) => { const c = fakeCtx(); FP.plantRender.seed(c, { x: 100, y: 100 }, 0, germ, 0); return [...c.px.values()].filter(v => v === FP.palette.seed.outline).length; };
+  FP.assert(ink(.5) > ink(0) && ink(.9) > ink(.5), ink(0) + ' / ' + ink(.5) + ' / ' + ink(.9));
+});

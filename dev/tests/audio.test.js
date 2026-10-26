@@ -124,3 +124,6 @@ FP.test('audio: la mort coupe net le grincement', () => withBackend(b => {
   FP.audio.consume([], s, 1 / 60); s.mode = 'dying'; FP.audio.consume([{ type: 'death', cause: 'toxic' }], s, 1 / 60);
   const h = b.calls.filter(c => c[0] === 'hum').pop(); FP.assert(h[1] === false && h[2] === true, String(h));
 }));
+FP.test('audio: la graine craque et la pousse part dans un pop', () => {
+  for (const type of ['germCrack', 'germPop']) withBackend(b => { FP.audio.consume([{ type }], auRun(), 0); FP.assert(sounding(b).length > 0, type); });
+});

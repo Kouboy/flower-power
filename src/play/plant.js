@@ -17,7 +17,8 @@
     p.trail = [];
     p.stemAge = 0;
     p.corruption = 0; p.toxicTimer = 0; p.recentToxic = 0;
-    p.scrapeTimer = 0;                    // la nouvelle tige gratte dès sa première frame
+    p.scrapeTimer = 0;
+    p.germ = 0;                           // germination de la graine (play/flow.js, mode ready)                    // la nouvelle tige gratte dès sa première frame
     // Chaque pousse repart sans bouclier ni pollen (v3 : prepareStem).
     state.power.shield = false; state.power.shieldGrace = 0; state.score.flowerBonus = 0;
     state.camera.y = Math.max(0, w.height - w.viewH);

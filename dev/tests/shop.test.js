@@ -127,11 +127,13 @@ FP.test('shop: refuser n’achète rien', () => {
 // Déroulé : la boutique s'intercale entre deux pousses.
 const crash = (s) => { s.query = { ...s.query, solid: { kind: 'cone' }, leak: 0, toxic: 0 }; FP.flow.update(s, 0); s.query = { ...s.query, solid: null }; };
 const until = (s, mode, max = 900) => { for (let i = 0; i < max && s.mode !== mode; i++) { s.time += 1 / 60; FP.shop.update(s, 1 / 60); FP.flow.update(s, 1 / 60); } return s.mode; };
+// Germination (v4.7.0) : une pousse prête ne part qu'une fois germée (au clavier : d'un coup).
+const sprout = (s) => { if (s.mode === 'ready') { s.input = { ...s.input, key: true }; FP.flow.update(s, 1 / 60); s.input = { ...s.input, key: false }; } return s.mode; };
 const settle = (s) => { for (let i = 0; i < 60 && s.shop; i++) { s.time += 1 / 60; FP.shop.update(s, 1 / 60); } };
 FP.test('flow: la 3e pousse finie ouvre le bon ; les autres enchaînent directement', () => {
   const s = shopRun(); s.plant.reserves = 3; crash(s);   // 1re pousse
-  FP.assertEqual(until(s, 'playing'), 'playing'); FP.assert(!s.shop);
-  crash(s); FP.assertEqual(until(s, 'playing'), 'playing');   // 2e
+  FP.assertEqual(until(s, 'ready'), 'ready'); FP.assert(!s.shop); FP.assertEqual(sprout(s), 'playing');
+  crash(s); FP.assertEqual(until(s, 'ready'), 'ready'); FP.assertEqual(sprout(s), 'playing');   // 2e
   s.plant.reserves = 3; s.plant.tip = { x: 220, y: s.world.surfaceY - 1 }; FP.collision.update(s); FP.flow.update(s, 0);   // 3e : éclosion
   FP.assertEqual(until(s, 'shop'), 'shop');
 });
@@ -139,7 +141,7 @@ FP.test('flow: mort → bon de commande → nouvelle pousse', () => {
   const s = shopRun(); s.plant.reserves = 3; s.plant.stemCount = 3; crash(s);
   FP.assertEqual(until(s, 'shop'), 'shop'); FP.assertEqual(s.shop.after, 'death');
   settle(s); FP.assert(s.shop === null || s.shop.phase === 'idle');
-  FP.shop.decline(s); settle(s); FP.assertEqual(s.mode, 'playing');
+  FP.shop.decline(s); settle(s); FP.assertEqual(s.mode, 'ready'); FP.assertEqual(sprout(s), 'playing');
 });
 FP.test('flow: éclosion → bon de commande → prête', () => {
   const s = shopRun(); s.plant.stemCount = 3; s.plant.tip = { x: 220, y: s.world.surfaceY - 1 }; FP.collision.update(s); FP.flow.update(s, 0);
@@ -159,7 +161,7 @@ FP.test('flow: dernière mort refusée → certificat avec la cause d’origine'
 FP.test('flow: dernière mort + graine achetée → la partie continue', () => {
   const s = shopRun(); s.plant.reserves = 1; s.score.eco = 9000; crash(s); until(s, 'shop'); settle(s);
   const i = s.shop.items.findIndex(it => it.id === 'seed'); FP.shop.toggle(s, i); FP.shop.order(s); settle(s);
-  FP.assertEqual(s.mode, 'playing'); FP.assertEqual(s.plant.reserves, 1);
+  FP.assertEqual(sprout(s), 'playing'); FP.assertEqual(s.plant.reserves, 1);
 });
 FP.test('shop: un toucher par réflexe à l’ouverture ne commande rien', () => {
   const s = shopRun(), e = s.score.eco; FP.shop.open(s, { after: 'death' }); s.shop.items[0].checked = true;
@@ -173,7 +175,7 @@ FP.test('shop: lobbying acheté en dernière chance est bien livré', () => {
     { id: 'beer', price: 600, base: 600, promo: false, checked: false }];
   FP.shop.toggle(s, 0); FP.shop.toggle(s, 1); FP.shop.order(s);
   const solids = s.world.solids.length; settle(s);
-  FP.assertEqual(s.mode, 'playing'); FP.assertEqual(s.world.solids.length, solids);
+  FP.assertEqual(sprout(s), 'playing'); FP.assertEqual(s.world.solids.length, solids);
 });
 FP.test('shop: en dernière chance, seule la graine se coche d’abord', () => {
   const s = shopRun(); s.score.eco = 9000; opened(s, 'last');
