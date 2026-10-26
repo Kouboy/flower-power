@@ -1,6 +1,7 @@
 // ui/input.js — pointeur (souris / doigt) → instantané d'entrée par frame.
 // Lit     : événements pointeur du canvas, FP.view (taille affichée), FP.camera.totalZoom, FP.config.camera.{zoomEpsilon,focalX}, state.plant.{tip,seed}, state.world.width.
-// Écrit   : state.input = { x (monde), screenX, y (écran, 0..viewH), down, active, pressed (front montant de cette frame) }.
+// Écrit   : state.input = { x (monde), screenX, y (écran, 0..viewH), down, active, pressed (front montant de cette frame),
+//           touch (doigt ou stylet : direction en joystick, play/plant.js) }.
 // Expose  : FP.input.update(state), FP.input.toWorldX(screenX, zoom, focalX), FP.input.focalX(state), FP.input.press(),
 //           FP.input._inject(partial), FP.input._reset() — réservés aux tests (simuler un événement, repartir d'un tampon vide).
 // Porté de la v3.43.16 (setPointer).
@@ -10,7 +11,7 @@
   const { clamp } = FP.math;
 
   // Tampon rempli par les événements, recopié une fois par frame dans l'état.
-  const buffer = { x: 0, y: 0, down: false, active: false, pressed: false };
+  const buffer = { x: 0, y: 0, down: false, active: false, pressed: false, touch: false };
 
   // Chaque appui compte, même si un autre pointeur est déjà enfoncé ; un bouton resté enfoncé n'émet rien.
   function inject(partial) {
@@ -19,7 +20,7 @@
     buffer.active = true;
   }
 
-  function reset() { Object.assign(buffer, { x: 0, y: 0, down: false, active: false, pressed: false }); }
+  function reset() { Object.assign(buffer, { x: 0, y: 0, down: false, active: false, pressed: false, touch: false }); }
 
   // Touche clavier : un appui ponctuel (lance la pousse en « prêt »), sans prendre le contrôle de la direction.
   function press() { buffer.pressed = true; }
@@ -43,6 +44,7 @@
     i.down = buffer.down;
     i.active = buffer.active;
     i.pressed = buffer.pressed;
+    i.touch = buffer.touch;
     buffer.pressed = false;
   }
 
@@ -60,7 +62,7 @@
       e.preventDefault();
       // Capture : on continue de suivre la souris même hors de la bande de jeu (comme en v3).
       if (canvas.setPointerCapture) { try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* pointeur déjà relâché */ } }
-      inject({ ...fromEvent(e), down: true });
+      inject({ ...fromEvent(e), down: true, touch: e.pointerType === 'touch' || e.pointerType === 'pen' });
     });
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
     canvas.addEventListener('pointermove', (e) => inject(fromEvent(e)));

@@ -1,8 +1,8 @@
 // play/plant.js — croissance et pilotage de la pousse.
-// Lit     : state.input, state.time, state.rng, state.boosts (boutique), FP.config.{cast,shop}, state.score.flowers, state.world.{width,height,viewH}, state.plant.corruption, FP.config.plant.
+// Lit     : state.input (dont touch : doigt → joystick), state.time, state.rng, state.boosts (boutique), FP.config.{cast,shop}, state.score.flowers, state.world.{width,height,viewH}, state.plant.corruption, FP.config.plant.
 // Écrit   : state.plant, state.mode (lancement), state.camera.{y,shake}, state.events (stemStart, growthTick) ;
 //           remise à zéro par pousse de state.power.{shield,shieldGrace} et state.score.flowerBonus.
-// Expose  : FP.plant.prepare(state), FP.plant.launch(state), FP.plant.speed(state), FP.plant.update(state, dt).
+// Expose  : FP.plant.prepare(state), FP.plant.launch(state), FP.plant.speed(state), FP.plant.update(state, dt), FP.plant.stickTurn(screenX, width).
 // Porté de la v3.43.16 (prepareStem, launchPreparedStem, partie « croissance » de update()).
 (function () {
   'use strict';
@@ -48,6 +48,10 @@
     state.events.push({ type: 'stemStart', n: p.stemCount });
   }
 
+  // Joystick au doigt : tiers gauche → −1, tiers droit → +1 (virage maximal) ; tiers central → proportionnel à l'écart au
+  // milieu de l'écran (0 au centre, ±1 à la limite du tiers : aucun saut).
+  function stickTurn(screenX, width) { return clamp((screenX - width / 2) / (width / 6), -1, 1); }
+
   // Les tiges accélèrent à chaque pousse, à chaque fleur, et pendant une pousse longue.
   function speed(state) {
     const p = state.plant, s = FP.config.plant.speed;
@@ -88,7 +92,8 @@
       const lookAhead = lerp(c.lookAheadTop, c.lookAheadBottom, y01);
       p.guide.x = lerp(p.guide.x, input.x, clamp(dt * c.guideRate, 0, 1));
       p.guide.y = p.tip.y - lookAhead;
-      const turn = clamp((p.guide.x - p.tip.x) / c.turnDivisor, -1, 1);
+      // Au doigt (v4.7.0) : joystick sur la largeur de l'écran, quelle que soit la position de la tige ; à la souris, on vise le pointeur.
+      const turn = input.touch ? stickTurn(input.screenX, state.world.width) : clamp((p.guide.x - p.tip.x) / c.turnDivisor, -1, 1);
       desiredX += turn * c.turnGain * lerp(c.sharpTop, c.sharpBottom, y01);
       desiredY = c.desiredY;
     } else {
@@ -128,5 +133,5 @@
     }
   }
 
-  FP.plant = { prepare, launch, speed, update };
+  FP.plant = { prepare, launch, speed, update, stickTurn };
 })();

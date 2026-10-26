@@ -100,3 +100,29 @@ FP.test('plant: le personnage ne change qu’au lancement', () => {
   FP.plant.prepare(s); s.mode = 'over';
   FP.assertEqual(s.plant.character, c);
 });
+// Contrôles au doigt (v4.7.0) : tiers gauche et droit = virage maximal ; tiers central = direction proportionnelle (joystick).
+FP.test('plant: joystick — virage maximal sur les tiers extérieurs, nul au centre', () => {
+  const W = 420, st = (x) => FP.plant.stickTurn(x, W);
+  for (const x of [0, 40, 139]) FP.assertEqual(st(x), -1);
+  for (const x of [281, 380, 420]) FP.assertEqual(st(x), 1);
+  FP.assertEqual(st(210), 0);
+});
+FP.test('plant: joystick — proportionnel et continu dans le tiers central', () => {
+  const W = 420, st = (x) => FP.plant.stickTurn(x, W);
+  let prev = -Infinity;
+  for (let x = 140; x <= 280; x += 5) { FP.assert(st(x) >= prev, 'croissant en ' + x); prev = st(x); }
+  FP.assert(Math.abs(st(140) + 1) < .02 && Math.abs(st(280) - 1) < .02, 'pas de saut aux limites');
+  FP.assert(Math.abs(st(245) - .5) < .02, 'mi-chemin : ' + st(245));
+});
+FP.test('plant: au doigt, toucher à droite tourne à droite même si la tige est déjà à droite', () => {
+  const s = plantRun(); s.plant.tip.x = 400; s.plant.dir = { x: 0, y: -1 };
+  s.input = { ...s.input, down: true, touch: true, x: 360, screenX: 360, y: 400 };
+  for (let i = 0; i < 20; i++) FP.plant.update(s, 1 / 60);
+  FP.assert(s.plant.dir.x > .3, 'dir.x ' + s.plant.dir.x);
+});
+FP.test('plant: à la souris, la tige vise toujours le pointeur', () => {
+  const s = plantRun(); s.plant.tip.x = 400; s.plant.dir = { x: 0, y: -1 };
+  s.input = { ...s.input, down: true, touch: false, x: 360, screenX: 360, y: 400 };
+  for (let i = 0; i < 20; i++) FP.plant.update(s, 1 / 60);
+  FP.assert(s.plant.dir.x < 0, 'dir.x ' + s.plant.dir.x);
+});
