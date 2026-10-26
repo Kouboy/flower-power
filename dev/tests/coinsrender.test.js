@@ -18,3 +18,12 @@ FP.test('coinsRender: la tranche est étroite, la face pleine', () => {
 FP.test('coinsRender: aucune couleur de danger dans les jetons', () => {
   for (const col of Object.values(FP.palette.coin)) FP.assert(!FP.palette.danger.includes(col), col);
 });
+// Effet de ramassage (v4.7.0) : éclair blanc au départ, puis anneau cuivré qui s'ouvre.
+FP.test('coinsRender: le ramassage fait un éclair puis un anneau qui s’ouvre', () => {
+  const at = (k) => { const c = fakeCtx(); FP.coinsRender.pop(c, 50, 50, k); return [...c.px.entries()].map(([key, col]) => { const [x, y] = key.split(',').map(Number); return { d: Math.hypot(x - 50, y - 50), col }; }); };
+  FP.assert(at(0).some(p => p.d < 2 && p.col === '#ffffff'), 'éclair au centre');
+  const ring = (k) => at(k).filter(p => p.col !== '#ffffff');
+  const r1 = Math.max(...ring(.3).map(p => p.d)), r2 = Math.max(...ring(.8).map(p => p.d));
+  FP.assert(r2 > r1 && r2 <= 13, r1 + ' → ' + r2);
+  FP.assertEqual(at(1).length, 0);
+});

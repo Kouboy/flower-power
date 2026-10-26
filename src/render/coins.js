@@ -4,7 +4,7 @@
 //           FP.px, FP.palette.coin.
 // Écrit   : state.fx.coinSparks uniquement (éclats en cours).
 // Expose  : FP.coinsRender.token(g, x, y, frame) (coin haut-gauche, 11 × 11, 6 images par tour, testé), FP.coinsRender.draw(g, state),
-//           FP.coinsRender.FRAMES.
+//           FP.coinsRender.pop(g, x, y, k) (effet de ramassage, testé), FP.coinsRender.FRAMES.
 // Ne touche pas au DOM au chargement : testable sous Node.
 (function () {
   'use strict';
@@ -49,6 +49,15 @@
     }
   }
 
+  // Ramassage (v4.7.0) : éclair blanc les premiers instants, puis anneau cuivré qui s'ouvre jusqu'à 12 px et s'éteint ; k de 0 à 1.
+  function pop(g, x, y, k) {
+    if (k >= 1) return;
+    const c = FP.palette.coin;
+    if (k < .2) FP.px.disc(g, x, y, 3 - Math.round(k * 10), '#ffffff');
+    const r = 3 + Math.round(9 * Math.sqrt(k));
+    if (k > .1) FP.px.ring(g, x, y, r, k < .6 ? c.shine : c.light, 1);
+  }
+
   function draw(g, state) {
     const { px } = FP, w = state.world, oy = px.toArt(state.camera.y), top = state.camera.y - 20, bottom = state.camera.y + w.viewH + 20;
     const sparks = state.fx.coinSparks || (state.fx.coinSparks = []);
@@ -72,8 +81,9 @@
         const a = (j / 5 + s.seed * .13) * Math.PI * 2, d = 2 + 7 * k;
         px.rect(g, px.toArt(s.x) + Math.round(Math.cos(a) * d), px.toArt(s.y) - oy + Math.round(Math.sin(a) * d), 1, 1, j % 2 ? col.shine : col.light);
       }
+      pop(g, px.toArt(s.x), px.toArt(s.y) - oy, k);
     }
   }
 
-  FP.coinsRender = { token, draw, FRAMES };
+  FP.coinsRender = { token, pop, draw, FRAMES };
 })();
