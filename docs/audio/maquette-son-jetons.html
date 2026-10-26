@@ -1,0 +1,140 @@
+<style>
+  .demo { display: flex; gap: 12px; align-items: center; margin-top: 10px; }
+  .demo button { font: 600 15px system-ui; padding: 9px 18px; border-radius: 8px; border: 1px solid #888; background: #fff; cursor: pointer; }
+  .demo button.on { background: #2a3a1c; color: #fff; }
+  .demo .bar { flex: 1; height: 6px; background: #ddd; border-radius: 3px; overflow: hidden; }
+  .demo .bar i { display: block; height: 100%; width: 0; background: #7ed636; }
+</style>
+
+<h2>Le son des jetons : verre éthéré, une phrase par traînée</h2>
+<p class="subtitle">Lance d'abord la musique de jeu (funk hanté), puis ramasse des traînées par-dessus. Compare l'ancien son (cloche, même phrase pour toutes) et le nouveau (verre doux, une octave plus haut, écho long ; chaque traînée tire une phrase parmi six). « Rapide » simule une traînée prise en vitesse, ou avec l'aimant.</p>
+
+<div class="demo" style="margin:12px 0 18px"><button onclick="toggleMusic(this)">▶ Musique de jeu</button></div>
+<div class="cards">
+  <div class="card"><div class="card-body"><h3>Avant : cloche</h3><p>La phrase unique actuelle, timbre cloche.</p>
+    <div class="demo"><button onclick="event.stopPropagation(); chain('old', .2)">Une traînée</button><button onclick="event.stopPropagation(); chain('old', .1)">Rapide</button></div></div></div>
+  <div class="card"><div class="card-body"><h3>Après (2) : verre FM</h3><p>Plus de modulation (×3, indice 1,8 qui retombe), ~2,5 fois plus fort, un peu moins d'écho : la texture FM cristalline revient. Même tirage de phrases.</p>
+    <div class="demo"><button onclick="event.stopPropagation(); chain('glassfm', .2)">Une traînée</button><button onclick="event.stopPropagation(); chain('glassfm', .1)">Rapide</button></div>
+    <p id="phrase2" style="margin-top:8px;opacity:.7"></p></div></div>
+  <div class="card"><div class="card-body"><h3>Après (1) : verre doux</h3><p>Chaque clic tire une nouvelle phrase (montée, descente, arche, question-réponse, vague, escalier), 12 jetons, qui boucle.</p>
+    <div class="demo"><button onclick="event.stopPropagation(); chain('glass', .2)">Une traînée</button><button onclick="event.stopPropagation(); chain('glass', .1)">Rapide</button></div>
+    <p id="phrase" style="margin-top:8px;opacity:.7"></p></div></div>
+</div>
+<script>
+let ac = null, master = null, send = null, current = null, timer = null, raf = null;
+const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
+
+// Un circuit de sortie neuf à chaque lecture : volume, compresseur, écho.
+function setup() {
+  if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+  master = ac.createGain(); master.gain.value = .55;
+  const comp = ac.createDynamicsCompressor(); master.connect(comp); comp.connect(ac.destination);
+  // Écho : retard + rétroaction filtrée (le côté « spooky »).
+  send = ac.createGain(); send.gain.value = 1;
+  const d = ac.createDelay(1.5), fb = ac.createGain(), lp = ac.createBiquadFilter(), wet = ac.createGain();
+  d.delayTime.value = .33; fb.gain.value = .38; lp.type = 'lowpass'; lp.frequency.value = 2400; wet.gain.value = .32;
+  send.connect(d); d.connect(lp); lp.connect(fb); fb.connect(d); lp.connect(wet); wet.connect(master);
+}
+
+// Voix FM à 2 opérateurs : le modulateur (fréquence × ratio) fait vibrer la fréquence de la porteuse ; l'indice
+// (profondeur) qui décroît donne l'attaque métallique typique de la YM2612.
+function fm(t, midi, dur, o) {
+  const f = mtof(midi) * (o.detune ? Math.pow(2, o.detune / 1200) : 1);
+  const car = ac.createOscillator(), mod = ac.createOscillator(), mg = ac.createGain(), env = ac.createGain();
+  car.type = o.wave || 'sine'; mod.type = 'sine';
+  car.frequency.setValueAtTime(f, t); mod.frequency.setValueAtTime(f * (o.ratio || 1), t);
+  if (o.bend) { car.frequency.setValueAtTime(f, t + (o.bendAt || 0)); car.frequency.exponentialRampToValueAtTime(f * o.bend, t + dur); mod.frequency.exponentialRampToValueAtTime(f * (o.ratio || 1) * o.bend, t + dur); }
+  const i0 = (o.index || 1) * f, i1 = (o.indexEnd !== undefined ? o.indexEnd : (o.index || 1) * .3) * f;
+  mg.gain.setValueAtTime(i0, t); mg.gain.exponentialRampToValueAtTime(Math.max(.01, i1), t + (o.indexTime || dur));
+  const a = o.attack || .005, r = o.release || .08, g = o.gain || .1;
+  env.gain.setValueAtTime(0.0001, t); env.gain.exponentialRampToValueAtTime(g, t + a);
+  env.gain.setTargetAtTime(g * (o.sustain !== undefined ? o.sustain : .6), t + a, (o.decay || .15));
+  env.gain.setTargetAtTime(0.0001, t + dur, r / 3);
+  if (o.vibrato) { const l = ac.createOscillator(), lg = ac.createGain(); l.frequency.value = o.vibrato[0]; lg.gain.value = f * o.vibrato[1]; l.connect(lg); lg.connect(car.frequency); l.start(t); l.stop(t + dur + r + .1); }
+  if (o.trem) { const l = ac.createOscillator(), lg = ac.createGain(), tg = ac.createGain(); l.frequency.value = o.trem; lg.gain.value = .45; tg.gain.value = .55; l.connect(lg); lg.connect(tg.gain); env.connect(tg); tg.connect(master); if (o.wet) tg.connect(send); l.start(t); l.stop(t + dur + r + .1); }
+  else { env.connect(master); if (o.wet) { const w = ac.createGain(); w.gain.value = o.wet; env.connect(w); w.connect(send); } }
+  mod.connect(mg); mg.connect(car.frequency); car.connect(env);
+  car.start(t); mod.start(t); car.stop(t + dur + r + .1); mod.stop(t + dur + r + .1);
+}
+
+let noiseBuf = null;
+function noise(t, dur, gain, filt, type, q) {
+  if (!noiseBuf) { noiseBuf = ac.createBuffer(1, ac.sampleRate, ac.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+  const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+  s.buffer = noiseBuf; f.type = type; f.frequency.value = filt; if (q) f.Q.value = q;
+  g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  s.connect(f); f.connect(g); g.connect(master); s.start(t, Math.random() * .5); s.stop(t + dur + .05);
+}
+function kick(t, g = .55) { const o = ac.createOscillator(), e = ac.createGain(); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(42, t + .12); e.gain.setValueAtTime(g, t); e.gain.exponentialRampToValueAtTime(.0001, t + .28); o.connect(e); e.connect(master); o.start(t); o.stop(t + .3); }
+function snare(t, g = .22) { noise(t, .16, g, 1900, 'bandpass', .8); fm(t, 50, .06, { ratio: 1.5, index: 2, gain: .06, release: .05 }); }
+function hat(t, g = .07, open) { noise(t, open ? .18 : .04, g, 7500, 'highpass'); }
+function tamb(t, g = .06) { noise(t, .09, g, 9000, 'bandpass', 2); noise(t + .015, .06, g * .6, 6000, 'highpass'); }
+// ---------- Démo B : funk 70s hanté (mi mineur blues) ----------
+const B = { bpm: 100, bars: 8, build(t0, step) {
+  const s16 = step, bar = 16 * s16, late = () => (Math.random() * .025);   // la boîte à rythmes boite
+  const bassA = [[0, 40, 1], [2, 52, 1], [3, 40, 1], [6, 43, 1], [7, 45, 1], [8, 46, 1], [9, 47, 2], [12, 40, 1], [14, 50, 1], [15, 52, 1]];
+  const bassB = [[0, 40, 1], [2, 52, 1], [4, 40, 1], [6, 47, 1], [7, 46, 1], [8, 45, 2], [11, 43, 1], [12, 40, 1], [13, 52, 1], [14, 38, 2]];
+  for (let b = 0; b < this.bars; b++) {
+    const t = t0 + b * bar;
+    // Basse slap : indice fort qui chute vite (le « clac »), notes hautes pincées.
+    for (const [p, n, d] of (b % 2 ? bassB : bassA)) fm(t + p * s16, n, d * s16 * .8, { ratio: 1, index: n > 48 ? 6 : 3.5, indexEnd: .5, indexTime: .06, gain: n > 48 ? .12 : .17, sustain: .45, decay: .07, release: .05 });
+    // Clavinet étouffé : accords Em7 sur les contretemps.
+    for (const p of [1, 5, 7, 10, 13]) for (const n of [64, 67, 71, 74]) fm(t + p * s16, n, s16 * .45, { ratio: 3, index: 2.2, indexEnd: .3, indexTime: .05, gain: .02, sustain: .2, decay: .03, release: .03 });
+    // Cuivres qui tombent en fin de mesure impaire.
+    if (b % 2 === 1) for (const n of [59, 62, 66]) fm(t + 14 * s16, n, s16 * 2, { ratio: 1, index: 2.5, indexEnd: 4, attack: .03, gain: .05, sustain: .8, bend: .82, bendAt: s16, wet: .3 });
+    // Thérémine fantôme : sinus avec vibrato, glissés lents, très loin dans l'écho.
+    if (b % 4 === 0) fm(t, 76, bar * 1.9, { ratio: 1, index: .05, attack: .5, gain: .03, sustain: .9, vibrato: [6, .015], bend: .667, bendAt: bar, wet: .9, release: .6 });
+    // Boîte à rythmes qui boite.
+    kick(t); kick(t + 3 * s16 + late(), .45); kick(t + 10 * s16, .5);
+    snare(t + 4 * s16 + late()); snare(t + 12 * s16 + late()); if (b % 2) snare(t + 15 * s16, .1);
+    for (let i = 0; i < 16; i++) hat(t + i * s16 + (i % 2 ? s16 * .2 : 0) + late() * .5, i % 4 === 2 ? .08 : .04, i === 14);
+  }
+  return this.bars * bar;
+} };
+// Musique de jeu en boucle (démo B du sound design).
+let musicOn = false, musicTimer = null;
+function toggleMusic(btn) {
+  if (musicOn) { musicOn = false; clearTimeout(musicTimer); if (master) master.gain.setTargetAtTime(0, ac.currentTime, .05); btn.textContent = '▶ Musique de jeu'; return; }
+  setup(); ac.resume(); musicOn = true; btn.textContent = '■ Couper la musique';
+  let start = ac.currentTime + .1; const step = 60 / B.bpm / 4;
+  const loop = () => { if (!musicOn) return; start += B.build(start, step); musicTimer = setTimeout(loop, (start - ac.currentTime - 1) * 1000); };
+  loop();
+}
+// Sortie des jetons : indépendante de la musique (son propre écho, plus long).
+let fx = null, fxSend = null;
+function fxSetup() {
+  if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+  if (fx) return;
+  fx = ac.createGain(); fx.gain.value = .55; fx.connect(ac.destination);
+  fxSend = ac.createGain(); const d = ac.createDelay(1.5), fb = ac.createGain(), lp = ac.createBiquadFilter(), wet = ac.createGain();
+  d.delayTime.value = .27; fb.gain.value = .5; lp.type = 'lowpass'; lp.frequency.value = 5200; wet.gain.value = .45;
+  fxSend.connect(d); d.connect(lp); lp.connect(fb); fb.connect(d); lp.connect(wet); wet.connect(fx);
+}
+function voice(t, midi, o) {
+  const f = mtof(midi), car = ac.createOscillator(), mod = ac.createOscillator(), mg = ac.createGain(), env = ac.createGain();
+  car.frequency.value = f; mod.frequency.value = f * o.ratio; mg.gain.setValueAtTime(f * o.index, t); mg.gain.exponentialRampToValueAtTime(Math.max(.01, f * o.indexEnd), t + o.indexTime);
+  env.gain.setValueAtTime(.0001, t); env.gain.exponentialRampToValueAtTime(o.gain, t + o.attack); env.gain.setTargetAtTime(.0001, t + o.attack, o.release / 3);
+  mod.connect(mg); mg.connect(car.frequency); car.connect(env); env.connect(fx);
+  if (o.wet) { const w = ac.createGain(); w.gain.value = o.wet; env.connect(w); w.connect(fxSend); }
+  car.start(t); mod.start(t); car.stop(t + o.attack + o.release + .2); mod.stop(t + o.attack + o.release + .2);
+}
+const OLD = { ratio: 3.5, index: 4, indexEnd: .2, indexTime: .4, gain: .06 * .36, attack: .005, release: .35, wet: .3 };
+const GLASSFM = { ratio: 3, index: 1.8, indexEnd: .25, indexTime: .2, gain: .11, attack: .006, release: .7, wet: .55 };
+const GLASS = { ratio: 2, index: .6, indexEnd: .08, indexTime: .25, gain: .045, attack: .012, release: .9, wet: .8 };
+const OLD_NOTES = [76, 79, 81, 83, 81, 86, 88, 91];
+// Six phrases de 8 notes, mi pentatonique, une octave au-dessus de la musique (mi6 = 88).
+const PHRASES = {
+  'montée': [88, 91, 93, 95, 98, 100, 98, 95], 'descente': [100, 98, 95, 93, 91, 88, 91, 93], 'arche': [88, 93, 98, 100, 98, 93, 91, 88],
+  'question-réponse': [91, 93, 95, 93, 98, 95, 93, 91], 'vague': [88, 95, 91, 98, 93, 100, 95, 98], 'escalier': [88, 91, 88, 93, 91, 95, 93, 98]
+};
+function chain(kind, gap) {
+  fxSetup(); ac.resume();
+  const t0 = ac.currentTime + .05, names = Object.keys(PHRASES), name = names[Math.floor(Math.random() * names.length)];
+  if (kind === 'glass') document.getElementById('phrase').textContent = 'Phrase tirée : ' + name;
+  if (kind === 'glassfm') document.getElementById('phrase2').textContent = 'Phrase tirée : ' + name;
+  for (let r = 0; r < 12; r++) {
+    const midi = kind === 'old' ? OLD_NOTES[r % 8] - 12 * (Math.floor(r / 8) % 2) : PHRASES[name][r % 8];
+    voice(t0 + r * gap, midi, kind === 'old' ? OLD : (kind === 'glassfm' ? GLASSFM : GLASS));
+  }
+}
+</script>

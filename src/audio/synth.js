@@ -26,6 +26,8 @@
     // Reggae de la boutique (v4.6.0) : skank de clavinet avec écho, bubble d'orgue sec et court.
     skank: { ratio: 3, index: 2.2, indexEnd: .3, indexTime: .05, gain: .03, sustain: .2, decay: .03, release: .03, wet: .35 },
     bubble: { ratio: 1, index: 1.1, indexEnd: .8, attack: .01, gain: .05, sustain: .55, decay: .06, release: .05 },
+    // Jetons (v4.7.1) : verre FM, cristallin (rapport ×3), qui s'adoucit en résonnant, avec de l'écho.
+    glass: { ratio: 3, index: 1.8, indexEnd: .25, indexTime: .2, gain: .11, attack: .006, sustain: .35, decay: .2, release: .7, wet: .55 },
     // Effets de la boutique (v4.6.0), en FM pur : grains inharmoniques à indice énorme qui s'effondre (crayon, papier),
     // bip de caisse, « clonk » du tiroir, pièces qui tintent.
     grainA: { ratio: 1.41, index: 9, indexEnd: .5, indexTime: .03, gain: .035, attack: .002, sustain: .3, decay: .015, release: .01 },
