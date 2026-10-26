@@ -40,3 +40,4 @@ FP.test('certificat: le libellé du record à battre vient de la config', () => 
   s.score.recordBefore = { flowers: 9, eco: 99000 };
   try { t.flowersUnit = 'FLEURETTES'; FP.assertEqual(FP.certificate.lines(s).rows[3].value, '9 FLEURETTES'); } finally { t.flowersUnit = keep; }
 });
+FP.test('certificate: on compte les fleurs écloses', () => FP.assertEqual(FP.config.text.certificate.flowers, 'FLEURS ÉCLOSES'));

@@ -20,7 +20,10 @@
   }
 
   // Recettes : (note, bruit, batterie, t, intensité). note(inst, midi, délai, durée, vel, bend?) ; bruit(délai, durée, gain, Hz, type, q?).
-  const COIN_NOTES = [76, 79, 81, 83, 86, 88, 91, 93];   // mi5 sol5 la5 si5 ré6 mi6 sol6 la6
+  // Phrase des jetons (mi pentatonique) : elle monte, redescend un peu, repart plus haut ; elle boucle tous les 8 jetons,
+  // une octave plus bas un tour sur deux (écho).
+  const COIN_NOTES = [76, 79, 81, 83, 81, 86, 88, 91];
+  const coinNote = (rank) => { const r = Math.max(0, Math.round(rank)); return COIN_NOTES[r % 8] - 12 * (Math.floor(r / 8) % 2); };
   const rnd = (a, b) => a + Math.random() * (b - a);   // variations sensorielles : chaque froissement est différent
   const GRAINS = ['grainA', 'grainB', 'grainC'];
   // Papier froissé : count craquements FM de hauteurs et de timbres variés, serrés au début puis qui s'espacent, sur len secondes.
@@ -33,7 +36,7 @@
     grazeStart: (n, z, d, i) => { n('pluck', 71, 0, .06, i); z(0, .07, .05 * i, 2100, 'bandpass'); },
     eco: (n, z, d, combo) => { const m = 76 + Math.min(5, Math.max(0, Math.round(combo) - 1)); n('bell', m, 0, .12, 1); n('bell', m + 7, .05, .14, .8); z(0, .04, .02, 2600, 'highpass'); },
     // Pièce (v4.5.0) : « tink » qui monte d'une note par pièce du chapelet (mi mineur pentatonique), puis l'accord du chapelet complet.
-    coin: (n, z, d, rank) => { n('bell', COIN_NOTES[Math.min(COIN_NOTES.length - 1, Math.max(0, Math.round(rank)))], 0, .1, .36); },
+    coin: (n, z, d, rank) => { n('bell', coinNote(rank), 0, .1, .36); },
     chain: (n) => { for (const m of [76, 83, 88, 91]) n('bell', m, 0, .7, .42); n('brass', 64, .02, .4, .35); },
     // Bon de commande (v4.6.0), en FM pur : papier froissé (apparition, départ), gratouillis de crayon, tiroir-caisse.
     crumple: (n) => crumple(n, 14, .35),

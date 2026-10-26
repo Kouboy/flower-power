@@ -2,6 +2,14 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.6.3 — Aimant grisant, jetons qui tournent mieux
+
+- l'Aimant à jetons aspire désormais les jetons à moins de 110 px : ils s'arrachent de leur place et filent vers la tête de plus en plus vite, avec une traînée cuivrée ; un halo cuivré pulse autour de la tête tant qu'il est actif ;
+- rotation des jetons en 6 images (face, ¾, profil, tranche, puis l'autre côté) ;
+- la mélodie des jetons boucle : une phrase de 8 notes, rejouée une octave plus bas un tour sur deux, au lieu de rester sur la dernière note ;
+- certificat : « FLEURS ÉCLOSES » au lieu de « FLEURS PLANTÉES » ;
+- banc : 398 tests.
+
 ## v4.6.2 — Grandes routes de jetons, son rééquilibré
 
 - traînées de jetons en grandes routes sinueuses : 12 à 16 jetons espacés de 45 px, ondulation de 60 à 110 px autour du chemin sûr (resserrée automatiquement si les déchets ou les bords la coupent) ;
