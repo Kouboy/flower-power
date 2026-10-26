@@ -109,3 +109,18 @@ FP.test('audio: la mélodie des jetons boucle au lieu de rester sur une note', (
 // Déblocage (v4.7.0) : au doigt, seul le lever (pointerup) compte comme geste pour le navigateur ; le toucher (pointerdown)
 // laissait le moteur en pause et la musique du titre muette jusqu'au toucher suivant.
 FP.test('audio: le son se débloque aussi au lever du doigt', () => FP.assert(FP.audio.UNLOCK_EVENTS.includes('pointerup'), String(FP.audio.UNLOCK_EVENTS)));
+// Nappe toxique (v4.7.0) : un grincement continu qui monte avec l'exposition, coupé à la sortie ou à la mort.
+const humAt = (exposure, inside = true) => { let h = null; withBackend(b => {
+  const s = auRun(); s.query = { ...s.query, toxic: inside ? 1 : 0, grazes: [] }; s.plant.toxicTimer = exposure * FP.config.toxic.burnAt;
+  FP.audio.consume([], s, 1 / 60); h = b.calls.filter(c => c[0] === 'hum').pop(); }); return h; };
+FP.test('audio: la nappe grince, de plus en plus haut et fort avec l’exposition', () => {
+  const a = humAt(.2), b = humAt(.8);
+  FP.assert(a && a[1] === true && b[1] === true, 'grincement actif');
+  FP.assert(b[2] > a[2] && b[4] > a[4], 'plus haut et plus fort : ' + a + ' / ' + b);
+});
+FP.test('audio: hors de la nappe, le grincement se tait', () => { const h = humAt(0, false); FP.assert(!h || h[1] === false, String(h)); });
+FP.test('audio: la mort coupe net le grincement', () => withBackend(b => {
+  const s = auRun(); s.query = { ...s.query, toxic: 1, grazes: [] }; s.plant.toxicTimer = .5;
+  FP.audio.consume([], s, 1 / 60); s.mode = 'dying'; FP.audio.consume([{ type: 'death', cause: 'toxic' }], s, 1 / 60);
+  const h = b.calls.filter(c => c[0] === 'hum').pop(); FP.assert(h[1] === false && h[2] === true, String(h));
+}));

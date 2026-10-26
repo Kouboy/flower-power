@@ -87,6 +87,7 @@
     try {
       for (const e of events) play(b, e);
       FP.sfx.drone(b, state, events);
+      FP.sfx.hum(b, state, events);
       FP.music.update(state, events, b);
     } catch (e) { /* audio muet plutôt qu'une partie figée */ }
   }
