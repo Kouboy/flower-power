@@ -96,7 +96,7 @@ FP.test('audio: un jeton sonne en verre, au-dessus de la musique, sans percer', 
   FP.audio.consume([{ type: 'coin', rank: 3, chain: 2 }], auRun(), 0);
   const n = sounding(b).filter(c => c[0] === 'note');
   FP.assert(n.length && n.every(c => c[1] === 'glass' && c[2] >= 88), JSON.stringify(n.map(c => [c[1], c[2]])));
-  FP.assert(n.every(c => c[5] * FP.synth.INSTRUMENTS.glass.gain <= .1), 'volume');
+  FP.assert(n.every(c => c[5] * FP.synth.INSTRUMENTS.glass.gain <= .036), 'volume');   // v4.7.2 : trop fort en jeu à .088
 }));
 FP.test('music: la musique est plus présente', () => FP.assertEqual(FP.music.MUSIC_GAIN, .8));
 FP.test('audio: chaque traînée a sa phrase, qui boucle tous les 8 jetons', () => {

@@ -37,7 +37,7 @@
     grazeStart: (n, z, d, i) => { n('pluck', 71, 0, .06, i); z(0, .07, .05 * i, 2100, 'bandpass'); },
     eco: (n, z, d, combo) => { const m = 76 + Math.min(5, Math.max(0, Math.round(combo) - 1)); n('bell', m, 0, .12, 1); n('bell', m + 7, .05, .14, .8); z(0, .04, .02, 2600, 'highpass'); },
     // Pièce (v4.5.0) : « tink » qui monte d'une note par pièce du chapelet (mi mineur pentatonique), puis l'accord du chapelet complet.
-    coin: (n, z, d, c) => { n('glass', coinNote(c.rank, c.chain), 0, .15, .8); },   // c = { rank, chain }
+    coin: (n, z, d, c) => { n('glass', coinNote(c.rank, c.chain), 0, .15, .3); },   // c = { rank, chain }
     chain: (n) => { for (const m of [76, 83, 88, 91]) n('bell', m, 0, .7, .42); n('brass', 64, .02, .4, .35); },
     // Bon de commande (v4.6.0), en FM pur : papier froissé (apparition, départ), gratouillis de crayon, tiroir-caisse.
     // Germination (v4.7.0) : la graine craque (deux fois), puis la pousse part dans un « pop » qui monte.

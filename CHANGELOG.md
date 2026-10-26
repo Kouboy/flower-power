@@ -2,6 +2,11 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.7.2 — Jetons moins forts
+
+- le verre des jetons passe à ~40 % de son volume, avec un peu moins d'écho (il couvrait la musique en jeu) ;
+- banc : 417 tests.
+
 ## v4.7.1 — Jetons en verre FM
 
 - les jetons sonnent en verre FM cristallin, une octave au-dessus de la musique, avec un écho : ils planent au lieu de se mêler aux instruments ;
