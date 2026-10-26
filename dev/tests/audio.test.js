@@ -106,3 +106,6 @@ FP.test('audio: la mélodie des jetons boucle au lieu de rester sur une note', (
   FP.assert(coinPitch(8) !== coinPitch(7), 'le 9e jeton repart');
   FP.assertEqual(coinPitch(8), coinPitch(0) - 12); FP.assertEqual(coinPitch(13), coinPitch(5) - 12); FP.assertEqual(coinPitch(16), coinPitch(0));
 });
+// Déblocage (v4.7.0) : au doigt, seul le lever (pointerup) compte comme geste pour le navigateur ; le toucher (pointerdown)
+// laissait le moteur en pause et la musique du titre muette jusqu'au toucher suivant.
+FP.test('audio: le son se débloque aussi au lever du doigt', () => FP.assert(FP.audio.UNLOCK_EVENTS.includes('pointerup'), String(FP.audio.UNLOCK_EVENTS)));
