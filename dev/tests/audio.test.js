@@ -72,10 +72,6 @@ FP.test('audio: réglage illisible en stockage → tout', () => {
   FP.assertEqual(FP.audio.loadSetting(), 'all');
 });
 // Pièces (v4.5.0) : le « tink » monte avec le rang ; le gain d'une pièce ne fait pas sonner le kling du score.
-FP.test('audio: une pièce sonne plus aigu au rang 3 qu’au rang 0', () => {
-  const pitch = (rank) => { let m = 0; withBackend(b => { FP.audio.consume([{ type: 'coin', rank }], auRun(), 0); m = Math.max(...sounding(b).filter(c => c[0] === 'note').map(c => c[2])); }); return m; };
-  FP.assert(pitch(3) > pitch(0), pitch(0) + ' → ' + pitch(3));
-});
 FP.test('audio: un gain de pièce ne sonne pas, un chapelet complet sonne', () => {
   withBackend(b => { FP.audio.consume([{ type: 'eco', amount: 25, combo: 1, kind: 'coin', quiet: true }], auRun(), 0); FP.assertEqual(sounding(b).length, 0); });
   withBackend(b => { FP.audio.consume([{ type: 'chainDone', amount: 400, word: 'GREEN !' }], auRun(), 0); FP.assert(sounding(b).filter(c => c[0] === 'note').length >= 3); });
@@ -95,16 +91,19 @@ FP.test('audio: la commande sonne le tiroir-caisse, plus le tampon', () => withB
   FP.assert(sounding(b).some(c => c[1] === 'clonk') && !sounding(b).some(c => c[0] === 'drum'));
 }));
 // Équilibre (v4.6.2) : jetons plus discrets, musique plus présente.
-FP.test('audio: le tink d’un jeton est discret', () => withBackend(b => {
-  FP.audio.consume([{ type: 'coin', rank: 3 }], auRun(), 0);
-  FP.assert(sounding(b).every(c => c[5] <= .4), JSON.stringify(sounding(b).map(c => c[5])));
+// Jetons en verre FM (v4.7.1) : timbre propre, une octave au-dessus de la musique, volume mesuré.
+FP.test('audio: un jeton sonne en verre, au-dessus de la musique, sans percer', () => withBackend(b => {
+  FP.audio.consume([{ type: 'coin', rank: 3, chain: 2 }], auRun(), 0);
+  const n = sounding(b).filter(c => c[0] === 'note');
+  FP.assert(n.length && n.every(c => c[1] === 'glass' && c[2] >= 88), JSON.stringify(n.map(c => [c[1], c[2]])));
+  FP.assert(n.every(c => c[5] * FP.synth.INSTRUMENTS.glass.gain <= .1), 'volume');
 }));
 FP.test('music: la musique est plus présente', () => FP.assertEqual(FP.music.MUSIC_GAIN, .8));
-// Mélodie des jetons (v4.6.3) : une phrase de 8 notes qui boucle (une octave plus bas au 2e tour), pas une note figée.
-const coinPitch = (rank) => { let m = 0; withBackend(b => { FP.audio.consume([{ type: 'coin', rank }], auRun(), 0); m = sounding(b).filter(c => c[0] === 'note')[0][2]; }); return m; };
-FP.test('audio: la mélodie des jetons boucle au lieu de rester sur une note', () => {
-  FP.assert(coinPitch(8) !== coinPitch(7), 'le 9e jeton repart');
-  FP.assertEqual(coinPitch(8), coinPitch(0) - 12); FP.assertEqual(coinPitch(13), coinPitch(5) - 12); FP.assertEqual(coinPitch(16), coinPitch(0));
+FP.test('audio: chaque traînée a sa phrase, qui boucle tous les 8 jetons', () => {
+  const seq = (chain) => [0, 1, 2, 3, 4, 5, 6, 7, 8].map(rank => { let m = 0; withBackend(b => { FP.audio.consume([{ type: 'coin', rank, chain }], auRun(), 0); m = sounding(b).filter(c => c[0] === 'note')[0][2]; }); return m; });
+  const a = seq(0), b = seq(1);
+  FP.assertEqual(a[8], a[0]); FP.assert(a[8] !== a[7], 'le 9e jeton repart');
+  FP.assert(a.join() !== b.join(), 'deux traînées, deux phrases');
 });
 // Déblocage (v4.7.0) : au doigt, seul le lever (pointerup) compte comme geste pour le navigateur ; le toucher (pointerdown)
 // laissait le moteur en pause et la musique du titre muette jusqu'au toucher suivant.

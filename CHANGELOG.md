@@ -2,6 +2,12 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.7.1 — Jetons en verre FM
+
+- les jetons sonnent en verre FM cristallin, une octave au-dessus de la musique, avec un écho : ils planent au lieu de se mêler aux instruments ;
+- chaque traînée a sa propre petite phrase (montée, descente, arche, question-réponse, vague, escalier), qui boucle tous les 8 jetons ;
+- banc : 417 tests.
+
 ## v4.7.0 — Germination, joystick au doigt
 
 - germination : chaque pousse attend sur sa graine (début de partie, après une éclosion, après une mort) ; maintenir le doigt ~0,6 s la fait trembler, se fissurer et sortir un germe, lâcher le fait rentrer ; deux craquements puis un « pop » au départ ; « MAINTENIR POUR POUSSER » ;

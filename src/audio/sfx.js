@@ -20,10 +20,11 @@
   }
 
   // Recettes : (note, bruit, batterie, t, intensité). note(inst, midi, délai, durée, vel, bend?) ; bruit(délai, durée, gain, Hz, type, q?).
-  // Phrase des jetons (mi pentatonique) : elle monte, redescend un peu, repart plus haut ; elle boucle tous les 8 jetons,
-  // une octave plus bas un tour sur deux (écho).
-  const COIN_NOTES = [76, 79, 81, 83, 81, 86, 88, 91];
-  const coinNote = (rank) => { const r = Math.max(0, Math.round(rank)); return COIN_NOTES[r % 8] - 12 * (Math.floor(r / 8) % 2); };
+  // Phrases des jetons (v4.7.1) : mi pentatonique, une octave au-dessus de la musique (mi6 = 88). Chaque traînée a la sienne
+  // (d'après son numéro), qui boucle tous les 8 jetons : montée, descente, arche, question-réponse, vague, escalier.
+  const COIN_PHRASES = [[88, 91, 93, 95, 98, 100, 98, 95], [100, 98, 95, 93, 91, 88, 91, 93], [88, 93, 98, 100, 98, 93, 91, 88],
+    [91, 93, 95, 93, 98, 95, 93, 91], [88, 95, 91, 98, 93, 100, 95, 98], [88, 91, 88, 93, 91, 95, 93, 98]];
+  const coinNote = (rank, chain) => COIN_PHRASES[Math.max(0, chain || 0) % COIN_PHRASES.length][Math.max(0, Math.round(rank)) % 8];
   const rnd = (a, b) => a + Math.random() * (b - a);   // variations sensorielles : chaque froissement est différent
   const GRAINS = ['grainA', 'grainB', 'grainC'];
   // Papier froissé : count craquements FM de hauteurs et de timbres variés, serrés au début puis qui s'espacent, sur len secondes.
@@ -36,7 +37,7 @@
     grazeStart: (n, z, d, i) => { n('pluck', 71, 0, .06, i); z(0, .07, .05 * i, 2100, 'bandpass'); },
     eco: (n, z, d, combo) => { const m = 76 + Math.min(5, Math.max(0, Math.round(combo) - 1)); n('bell', m, 0, .12, 1); n('bell', m + 7, .05, .14, .8); z(0, .04, .02, 2600, 'highpass'); },
     // Pièce (v4.5.0) : « tink » qui monte d'une note par pièce du chapelet (mi mineur pentatonique), puis l'accord du chapelet complet.
-    coin: (n, z, d, rank) => { n('bell', coinNote(rank), 0, .1, .36); },
+    coin: (n, z, d, c) => { n('glass', coinNote(c.rank, c.chain), 0, .15, .8); },   // c = { rank, chain }
     chain: (n) => { for (const m of [76, 83, 88, 91]) n('bell', m, 0, .7, .42); n('brass', 64, .02, .4, .35); },
     // Bon de commande (v4.6.0), en FM pur : papier froissé (apparition, départ), gratouillis de crayon, tiroir-caisse.
     // Germination (v4.7.0) : la graine craque (deux fois), puis la pousse part dans un « pop » qui monte.
