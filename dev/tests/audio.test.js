@@ -96,7 +96,7 @@ FP.test('audio: un jeton sonne en verre, au-dessus de la musique, sans percer', 
   FP.audio.consume([{ type: 'coin', rank: 3, chain: 2 }], auRun(), 0);
   const n = sounding(b).filter(c => c[0] === 'note');
   FP.assert(n.length && n.every(c => c[1] === 'glass' && c[2] >= 88), JSON.stringify(n.map(c => [c[1], c[2]])));
-  FP.assert(n.every(c => c[5] * FP.synth.INSTRUMENTS.glass.gain <= .036), 'volume');   // v4.7.2 : trop fort en jeu à .088
+  FP.assert(n.every(c => c[5] * FP.synth.INSTRUMENTS.glass.gain <= .02), 'volume');   // v4.7.3 : encore trop fort à .033
 }));
 FP.test('music: la musique est plus présente', () => FP.assertEqual(FP.music.MUSIC_GAIN, .8));
 FP.test('audio: chaque traînée a sa phrase, qui boucle tous les 8 jetons', () => {
@@ -125,4 +125,17 @@ FP.test('audio: la mort coupe net le grincement', () => withBackend(b => {
 }));
 FP.test('audio: la graine craque et la pousse part dans un pop', () => {
   for (const type of ['germCrack', 'germPop']) withBackend(b => { FP.audio.consume([{ type }], auRun(), 0); FP.assert(sounding(b).length > 0, type); });
+});
+// Germination (v4.7.3) : la graine force — un grondement qui monte tant qu'on maintient, retombe si on lâche, coupé net au pop.
+const strainAt = (germ, down = true, events = []) => { let h = null; withBackend(b => {
+  const s = auRun(); s.mode = 'ready'; s.plant.germ = germ; s.input = { ...s.input, down };
+  FP.audio.consume(events, s, 1 / 60); h = b.calls.filter(c => c[0] === 'hum').pop(); }); return h; };
+FP.test('audio: la graine force de plus en plus en germant', () => {
+  const a = strainAt(.2), b = strainAt(.8);
+  FP.assert(a && a[1] === true && b[1] === true, 'grondement actif');
+  FP.assert(b[2] > a[2] * 1.3 && b[4] > a[4], 'monte et forcit : ' + a + ' / ' + b);
+});
+FP.test('audio: lâcher fait retomber le grondement, le pop le coupe net', () => {
+  const r = strainAt(.5, false); FP.assert(!r || (r[1] === false && r[2] !== true), 'retombe : ' + r);
+  const p = strainAt(1, true, [{ type: 'germPop' }]); FP.assert(p && p[1] === false && p[2] === true, 'net : ' + p);
 });
