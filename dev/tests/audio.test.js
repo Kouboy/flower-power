@@ -100,3 +100,9 @@ FP.test('audio: le tink d’un jeton est discret', () => withBackend(b => {
   FP.assert(sounding(b).every(c => c[5] <= .4), JSON.stringify(sounding(b).map(c => c[5])));
 }));
 FP.test('music: la musique est plus présente', () => FP.assertEqual(FP.music.MUSIC_GAIN, .8));
+// Mélodie des jetons (v4.6.3) : une phrase de 8 notes qui boucle (une octave plus bas au 2e tour), pas une note figée.
+const coinPitch = (rank) => { let m = 0; withBackend(b => { FP.audio.consume([{ type: 'coin', rank }], auRun(), 0); m = sounding(b).filter(c => c[0] === 'note')[0][2]; }); return m; };
+FP.test('audio: la mélodie des jetons boucle au lieu de rester sur une note', () => {
+  FP.assert(coinPitch(8) !== coinPitch(7), 'le 9e jeton repart');
+  FP.assertEqual(coinPitch(8), coinPitch(0) - 12); FP.assertEqual(coinPitch(13), coinPitch(5) - 12); FP.assertEqual(coinPitch(16), coinPitch(0));
+});

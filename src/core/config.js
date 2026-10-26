@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '4.6.2',
+    version: '4.6.3',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -182,14 +182,16 @@
       wave: [60, 110], waves: [1, 1.5],   // traînée facile : grande route sinueuse autour du chemin sûr (amplitude en px, nombre de vagues)
       // startClear : rien dans les 180 px au-dessus de la graine (la pousse vient de démarrer, elle ne peut pas aller chercher).
       pickup: 14, radius: 5, missBelow: 40, value: 25, chainBonus: { easy: 150, bait: 400 }, toxicBite: 1 / 3,
-      minChain: 4, spinFps: 6, edge: 4
+      minChain: 4, spinFps: 9, edge: 4
     },
 
     // Boutique de fin de pousse (v4.6.0) : 3 articles tirés (un à −50 %), achetés au score ; effets sur la pousse suivante.
     // co2 : masse satirique ajoutée à la « livraison » (kg), sans effet en jeu. Tirage propre (graine ^ salt ^ passage).
     shop: {
       salt: 0x5f3759df, every: 3, promo: .5,   // every : le bon s'ouvre toutes les 3 pousses (et toujours en dernière chance)
-      lobbyingK: .6, compostK: .8, beerK: .3, magnetK: 2, premiumK: 2, inTime: .25, stampTime: .35, outTime: .3,
+      lobbyingK: .6, compostK: .8, beerK: .3, premiumK: 2,
+      magnetRange: 110, magnetSpeed: 140, magnetAccel: 900,   // Aimant : portée (px), vitesse de départ et accélération (px/s, px/s²) des jetons aspirés
+      inTime: .25, stampTime: .35, outTime: .3,
       items: [
         { id: 'seed', price: 2500, co2: 8.6 }, { id: 'membrane', price: 700, co2: 3.1 }, { id: 'magnet', price: 500, co2: 4.9 },
         { id: 'premium', price: 600, co2: 2.4 }, { id: 'compost', price: 600, co2: 6.2 }, { id: 'spore', price: 800, co2: 5.5 },
@@ -242,7 +244,7 @@
       help: { hold: 'MAINTIENS POUR POUSSER', guide: 'GUIDE LA POINTE' },
       again: 'TOUCHER POUR REPOUSSER',
       footer: ['© 2026 ÉCOSOFT™', 'UNE FILIALE DE PÉTROFLORE'],
-      certificate: { title: 'CERTIFICAT', subtitle: 'D’ÉCO-RESPONSABILITÉ', flowers: 'FLEURS PLANTÉES', eco: 'ÉCOCRÉDITS™',
+      certificate: { title: 'CERTIFICAT', subtitle: 'D’ÉCO-RESPONSABILITÉ', flowers: 'FLEURS ÉCLOSES', eco: 'ÉCOCRÉDITS™',
         stems: 'TIGES SACRIFIÉES', record: 'RECORD', beaten: 'BATTU', flowersUnit: 'FLEURS', cause: 'CAUSE DU DÉCÈS :', stamp: 'VALIDÉ*', note: '* SOUS RÉSERVE' },
       deathDefault: 'rupture : déchet',
       deathLeak: 'lixiviat vivant : pointe brûlée',

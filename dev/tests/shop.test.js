@@ -53,11 +53,28 @@ const buy = (s, ids, price = 100) => {
 const nextStem = (s, ids) => { FP.plant.prepare(s); buy(s, ids); FP.plant.launch(s); s.events.length = 0; return s; };
 FP.test('shop: la graine ajoute une graine', () => { const s = shopRun(), r = s.plant.reserves; nextStem(s, ['seed']); FP.assertEqual(s.plant.reserves, r + 1); });
 FP.test('shop: la membrane donne le bouclier', () => FP.assert(nextStem(shopRun(), ['membrane']).power.shield));
-FP.test('shop: l’aimant double le rayon de ramassage', () => {
+// Aimant (v4.6.3) : les jetons proches sont aspirés vers la tête, et comptent pour leur traînée.
+const magnetRun = (dx, dy = 0) => {
   const s = nextStem(shopRun(), ['magnet']); s.world.coins = []; s.world.chains = [];
-  s.world.chains.push({ kind: 'easy', anchor: 'path', total: 4, got: 0, missed: false, done: false });
-  s.world.coins.push({ x: s.plant.tip.x + 20, y: s.plant.tip.y, chain: 0, rank: 0, taken: false });
-  FP.coinPlay.update(s); FP.assert(s.world.coins[0].taken);
+  s.world.chains.push({ kind: 'easy', anchor: 'path', total: 1, got: 0, missed: false, done: false });
+  s.world.coins.push({ x: s.plant.tip.x + dx, y: s.plant.tip.y + dy, chain: 0, rank: 0, taken: false });
+  return s;
+};
+FP.test('shop: l’aimant aspire les jetons proches jusqu’à la tête', () => {
+  const s = magnetRun(100), x0 = s.world.coins[0].x;
+  FP.coinPlay.update(s, 1 / 60); FP.assert(s.world.coins[0].x < x0, 'le jeton part vers la tête');
+  for (let i = 0; i < 120 && !s.world.coins[0].taken; i++) FP.coinPlay.update(s, 1 / 60);
+  FP.assert(s.world.coins[0].taken && s.world.chains[0].done, 'pris et compté');
+});
+FP.test('shop: l’aimant n’aspire pas au-delà de sa portée', () => {
+  const s = magnetRun(120), x0 = s.world.coins[0].x;
+  for (let i = 0; i < 30; i++) FP.coinPlay.update(s, 1 / 60);
+  FP.assertEqual(s.world.coins[0].x, x0); FP.assert(!s.world.coins[0].taken);
+});
+FP.test('shop: un jeton aspiré n’est jamais raté', () => {
+  const s = magnetRun(0, 80); s.world.coins[0].x += 30;   // sous la pointe, à portée
+  for (let i = 0; i < 120 && !s.world.coins[0].taken; i++) { s.plant.tip.y -= 1; FP.coinPlay.update(s, 1 / 60); }
+  FP.assert(s.world.coins[0].taken && !s.world.chains[0].missed);
 });
 FP.test('shop: premium double la valeur d’une pièce', () => {
   const s = nextStem(shopRun(), ['premium']), e0 = s.score.eco; s.world.coins = []; s.world.chains = [];
