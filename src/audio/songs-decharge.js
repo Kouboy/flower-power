@@ -30,7 +30,7 @@
     const { chords, bass, tune } = VARIANTS[v];
     return song(96, PCS, (bar, add, hit) => {
       const ch = chords[bar], r = ROOT.get(ch);
-      for (const [b, off, d] of bass) add('groove', 'upright', b, r + off, d, 1.1);
+      for (const [b, off, d] of bass) add('groove', 'upright', b, r + off, d, .9);
       hit('groove', 'kick', [0, 2]); hit('groove', 'snare', [1, 3], .5); guiro(hit);
       for (const b of OFF) for (const m of ch) add('clav', 'accordion', b, m, .2, 1, { detune: melt(bar, 25) });
       hit('perc', 'lid', OFF, .5); hit('perc', 'cowbell', [0, 1.5, 2, 3.5], .5);

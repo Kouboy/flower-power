@@ -102,7 +102,7 @@
     const riffB = [[0, 40, 2], [2, 40, 1], [4, 40, 1], [6, 47, 1], [7, 46, 1], [8, 45, 2], [10, 43, 1], [11, 41, 1], [12, 40, 2], [14, 46, 2]];
     return song(112, [4, 7, 9, 10, 11, 2, 5, 3, 1, 0], (bar, add, hit) => {
       for (const [p, m, d] of bar % 2 ? riffB : riffA) {
-        add('groove', 'doom', q(p), m, q(d) * .9, 1, { detune: melt(bar, 25) });
+        add('groove', 'doom', q(p), m, q(d) * .9, .85, { detune: melt(bar, 25) });
         if (d >= 2) add('groove', 'sub', q(p), m - 12, q(d) * .9);
       }
       hit('groove', 'kick', [0, q(2), q(3), q(10), q(11)]); hit('groove', 'snare', [2], 1.3); hit('groove', 'tamb', [2], 1);
