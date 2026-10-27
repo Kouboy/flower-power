@@ -51,11 +51,16 @@ FP.test('sequencer: la musique est planifiée au moins 0,3 s d’avance (gel d�
   FP.assert(FP.sequencer.LOOKAHEAD >= .3, String(FP.sequencer.LOOKAHEAD));
 });
 FP.test('synth: timbres et percussions des milieux (v4.10.0)', () => {
-  for (const k of ['metal', 'siren', 'hum2', 'strings', 'slide', 'choir', 'sbrass', 'rslap', 'accordion', 'melodica', 'horn', 'upright', 'pulse', 'arp', 'pad', 'doom', 'sub', 'lowbrass', 'growl', 'saws', 'cowbell'])
+  for (const k of ['metal', 'siren', 'hum2', 'strings', 'slide', 'sbrass', 'rslap', 'accordion', 'melodica', 'horn', 'upright', 'arp', 'pad', 'doom', 'sub', 'lowbrass', 'growl', 'saws', 'cowbell'])
     FP.assert(FP.synth.INSTRUMENTS[k] && FP.synth.INSTRUMENTS[k].ratio > 0, k);
   const ac = fakeAudio(), e = FP.synth.create(ac), sound = () => (ac.made.osc || 0) + (ac.made.source || 0);
   for (const d of ['clap', 'steam', 'lid', 'tick', 'guiro', 'cowbell']) {
     FP.assert(FP.synth.DRUMS.includes(d), d);
     const before = sound(); e.drum(d, 0, 1, { bus: 'music', layer: 'groove' }); FP.assert(sound() > before, d + ' joue');
   }
+});
+FP.test('synth: chaque timbre des milieux est joué par une partition (pas de timbre mort)', () => {
+  const played = new Set(Object.values(FP.songs).filter(s => s && s.notes).flatMap(s => s.notes.map(n => n.inst)));
+  for (const k of ['metal', 'siren', 'hum2', 'strings', 'slide', 'sbrass', 'rslap', 'accordion', 'melodica', 'horn', 'upright', 'arp', 'pad', 'doom', 'sub', 'lowbrass', 'growl', 'saws'])
+    FP.assert(played.has(k), k + ' n’est joué par aucune partition');
 });

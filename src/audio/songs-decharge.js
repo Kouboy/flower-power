@@ -52,16 +52,17 @@
         add('groove', 'doom', q(p), m, q(d) * .9, m > 40 ? .8 : 1, { detune: melt(bar, 25) });
         if (d >= 2) add('groove', 'sub', q(p), m - 12, q(d) * .9);
       }
-      hit('groove', 'kick', [0, q(2), q(3), q(10), q(11)]); hit('groove', 'snare', [2], 1.3); hit('groove', 'lid', [2], 1); guiro(hit);
-      for (const b of OFF) for (const m of Gm) add('clav', 'accordion', b, m, .2, .8, { detune: melt(bar, 25) });
-      for (const p of [6, 14]) for (const m of [43, 46, 49]) add('clav', 'lowbrass', q(p), m, .4, .9);
+      hit('groove', 'kick', [0, q(2), q(3), q(10), q(11)]); hit('groove', 'snare', [2], 1.3); hit('groove', 'lid', [2], 1);
+      hit('groove', 'guiro', [0, 1, 2, 3], 1);   // la râpe sur le temps seulement : six voix par coup, le boss en a assez
+      for (const b of OFF) for (const m of [55, 62]) add('clav', 'accordion', b, m, .2, .8, { detune: melt(bar, 25) });   // accords à deux notes : le boss reste sous le plafond de voix
+      for (const p of [6, 14]) for (const m of [43, 49]) add('clav', 'lowbrass', q(p), m, .4, .9);   // sol et do♯ : le triton seul
       if (bar % 2 === 0) melody(add, 'clav', 'lowbrass', [[q(12), 43, .25], [q(13), 46, .25], [q(14), 49, .25], [q(15), 50, .25]], 1.1);
       else for (const m of [62, 67, 70]) add('clav', 'horn', q(12), m, .9, 1, { bend: .707 });
-      hit('perc', 'lid', OFF, .6); hit('perc', 'cowbell', [0, 1.5, 2, 3.5], .6);
-      if (bar % 2 === 0) { add('organ', 'siren', 0, 67, 7.5, 1, { bend: 1.06, detune: melt(bar, 40) }); add('organ', 'siren', 0, 73, 7.5, .8, { bend: 1.06 }); }
+      hit('perc', 'lid', OFF, .6); hit('perc', 'cowbell', [0, 2], .6);
+      if (bar % 2 === 0) { add('organ', 'siren', 0, 67, 7, 1, { bend: 1.06, detune: melt(bar, 40) }); add('organ', 'siren', 0, 73, 7, .8, { bend: 1.06 }); }   // 7 temps : pas de chevauchement d'un cycle à l'autre
       if (bar % 4 === 1) melody(add, 'sitar', 'accordion', [[0, 79, 1], [1, 78, 1], [2, 77, 1], [3, 76, 1]], 1.2);
       if (bar % 4 === 3) melody(add, 'sitar', 'accordion', [[0, 75, 1], [1, 74, 1], [2, 73, 2]], 1.2, (d) => (d === 2 ? { bend: .94 } : {}));
-      if (bar % 4 === 0) { add('ghost', 'hum2', 0, 19, 15.5, .8); add('ghost', 'theremin', 0, 79, 7, 1, { bend: .5 }); }
+      if (bar % 4 === 0) { add('ghost', 'hum2', 0, 19, 15, .8); add('ghost', 'theremin', 0, 79, 7, 1, { bend: .5 }); }
     });
   }
 

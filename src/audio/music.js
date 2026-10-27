@@ -22,6 +22,7 @@
     if (state.mode === 'over') return FP.certificate && FP.certificate.canRestart(state) ? { song: 'title', gain: .5 } : { song: null, gain: 0 };
     // Le morceau du niveau généré (v4.10.0) : il change sous le noir du fondu, quand le niveau est régénéré. Sur un niveau
     // de boss, le thème du boss ; sinon une variante par pousse, en boucle : la nouvelle tige démarre sur sa propre progression.
+    if (state.flow.won) return { song: 'title', gain: 1 };   // 4e boss battu : droit à l'écran de fin, sans repasser par la friche
     const id = state.world.milieu;
     if (state.world.boss) return { song: id + 'Boss', gain: 1 };
     return { song: id + ((Math.max(1, state.plant.stemCount) - 1) % FP.songs.variants(id)), gain: 1 };

@@ -103,3 +103,7 @@ FP.test('music: écran de fin, titre et boutique inchangés', () => {
   s.mode = 'won'; FP.assertEqual(FP.music.songFor(s).song, 'title'); s.mode = 'menu'; FP.assertEqual(FP.music.songFor(s).song, 'title');
   s.mode = 'shop'; FP.assertEqual(FP.music.songFor(s).song, 'shop');
 });
+FP.test('music: fin de la saison 1 — du boss du nucléaire droit au titre, sans repasser par la friche', () => {
+  const s = mRun(); inMilieu(s, 3, true); s.mode = 'bloom'; s.flow.won = true;   // nextMilieu a armé l'écran de fin
+  inMilieu(s, 0, false); FP.assertEqual(FP.music.songFor(s).song, 'title');
+});

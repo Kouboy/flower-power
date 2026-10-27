@@ -44,14 +44,12 @@
     strings: { ratio: 1.002, index: 1.6, indexEnd: 1, attack: .03, gain: .028, sustain: .7, decay: .2, release: .2, wet: .4, detune: 8 },
     cowbell: { ratio: 1.48, index: 2, indexEnd: .4, indexTime: .05, gain: .04, sustain: .15, decay: .06, release: .08 },
     slide: { ratio: 1, index: .1, attack: .02, gain: .035, sustain: .9, release: .1, wet: .3 },                                    // sifflet à coulisse
-    choir: { ratio: 2, index: .4, attack: .4, gain: .025, sustain: .9, vibrato: [5.5, .01], wet: .8, release: .6 },
     sbrass: { ratio: 1, index: 2.5, indexEnd: 3.5, attack: .04, gain: .045, sustain: .8, wet: .3, vibrato: [5, .006] },          // cuivres de pub
     rslap: { ratio: 1, index: 4, indexEnd: .8, indexTime: .04, gain: .17, sustain: .5, decay: .05, release: .03, detune: -12 },   // slap robotique
     accordion: { ratio: 2, index: 1.2, attack: .02, gain: .028, sustain: .8, trem: 9, detune: 10, wet: .2 },
     melodica: { ratio: 1, index: 1.2, attack: .05, gain: .03, sustain: .8, vibrato: [5, .012], wet: .3 },
     horn: { ratio: 1, index: 2.2, indexEnd: 3, attack: .04, gain: .045, sustain: .75, wet: .3, detune: 15 },                      // cuivres fatigués
     upright: { ratio: 1, index: .8, indexEnd: .3, attack: .015, gain: .2, sustain: .4, decay: .2, release: .08 },                 // contrebasse
-    pulse: { ratio: 1, index: 1.8, indexEnd: .8, gain: .15, sustain: .6, decay: .1, release: .04 },
     arp: { ratio: 2, index: 1.4, indexEnd: .4, indexTime: .06, gain: .03, sustain: .3, decay: .06, release: .06, wet: .4 },
     pad: { ratio: 1.003, index: .8, attack: .7, gain: .028, sustain: .9, release: .9, wet: .7 },
     growl: { ratio: .5, index: 5, indexEnd: 4, gain: .11, sustain: .9, decay: .1, release: .05, trem: 4.2, detune: -15 },         // basse qui gronde
