@@ -97,13 +97,15 @@
 
   // Ronron de la foreuse, au rythme du battement de croissance : une note FM douce (mi, puis la quinte), à peine
   // soulignée d'un souffle de terre sourd. (Le grattement en bruit aigu de la v3 devenait irritant à force d'être répété.)
+  // Joué une quinzaine de fois par seconde : sur trois voix permanentes (v4.7.5), sans créer de nœuds à chaque battement.
   let drillStep = 0;
+  const DRILL = { bus: 'sfx', mono: 'drill' }, SOIL = { bus: 'sfx', mono: 'soil' }, SCRATCH = { bus: 'sfx', mono: 'scratch' };
   function scrape(b, k) {
     if (!allowed(b, 'scrape')) return;
     const t = b.now();
-    b.note('drill', drillStep++ % 2 ? 59 : 52, t, .06, .8 + k * .4, SFX);   // mi3 / si3 : audible même sur des haut-parleurs d'ordinateur portable
-    b.burst(t, .05, .025 + k * .015, 240, 'lowpass', SFX);
-    if (drillStep % 2) b.burst(t + .01, .03, .02 + k * .015, 1300 + Math.random() * 500, 'bandpass', SFX);   // grattement discret, un battement sur deux
+    b.note('drill', drillStep++ % 2 ? 59 : 52, t, .06, .8 + k * .4, DRILL);   // mi3 / si3 : audible même sur des haut-parleurs d'ordinateur portable
+    b.burst(t, .05, .025 + k * .015, 240, 'lowpass', SOIL);
+    if (drillStep % 2) b.burst(t + .01, .03, .02 + k * .015, 1300 + Math.random() * 500, 'bandpass', SCRATCH);   // grattement discret, un battement sur deux
   }
 
   // Bourdonnement du frôlement (logique de la v3) : proximité = hauteur et brillance, durée = puissance ; coupé net sur un choc.

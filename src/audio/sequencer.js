@@ -6,7 +6,7 @@
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
-  const LOOKAHEAD = .2;   // secondes planifiées d'avance
+  const LOOKAHEAD = .35;   // secondes planifiées d'avance (v4.7.5 : tient un gel d'image sur téléphone modeste)
 
   // Notes dont le début tombe dans [fromBeat, toBeat), boucle dépliée (beat absolu).
   function notesBetween(song, fromBeat, toBeat) {

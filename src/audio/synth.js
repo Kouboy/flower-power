@@ -2,7 +2,7 @@
 // Lit     : rien de l'état ; reçoit un AudioContext.
 // Écrit   : rien dans l'état (le graphe Web Audio uniquement).
 // Expose  : FP.synth.create(ac) → moteur { now, note, drum, burst, setGain, setFilter, setTreble, hum, drone, suspend, resume, context } ;
-//           FP.synth.INSTRUMENTS, FP.synth.DRUMS.
+//           FP.synth.INSTRUMENTS, FP.synth.DRUMS, FP.synth.MAX_VOICES (plafond de voix, au-delà duquel la musique se tait).
 // Seul fichier du jeu qui crée des nœuds Web Audio.
 (function () {
   'use strict';
@@ -39,6 +39,9 @@
     pluck: { ratio: 2, index: 3, indexEnd: .2, indexTime: .08, gain: .07, sustain: .1, decay: .08, release: .1 }
   };
   const DRUMS = ['kick', 'snare', 'hat', 'openhat', 'tamb'];
+  // Plafond de voix (v4.7.5) : trop de voix à la fois font craquer le son d'un téléphone modeste. Au-delà, les notes de
+  // musique sont sautées ; les effets jouent toujours.
+  const MAX_VOICES = 40;
 
   function create(ac) {
     const out = ac.createDynamicsCompressor(); out.connect(ac.destination);
@@ -58,11 +61,69 @@
     const layer = (name) => layers[name] || (layers[name] = (() => { const g = ac.createGain(); g.connect(music); return g; })());
     const dest = (route) => (route && route.bus === 'sfx' ? sfx : layer((route && route.layer) || 'main'));
 
+    // Voix en cours (heures de fin) ; false si la note de musique doit être sautée.
+    let voices = [];
+    function voice(route, end) {
+      if (voices.length >= MAX_VOICES) { const n = ac.currentTime; voices = voices.filter(e => e > n); }
+      if (voices.length >= MAX_VOICES && !(route && route.bus === 'sfx')) return false;
+      voices.push(end);
+      return true;
+    }
+
+    // Nœuds partagés (v4.7.5), créés à la première demande et gardés : envois vers l'écho (un par dosage), oscillateurs
+    // lents des trémolos et vibratos (un par vitesse), filtres des bruits (un par réglage et par sortie, fréquence au pas de 50 Hz).
+    const sends = {}, lfos = {}, trems = {}, filters = new Map();
+    const send = (w) => sends[w] || (sends[w] = (() => { const g = ac.createGain(); g.gain.value = w; g.connect(echo); return g; })());
+    const lfo = (hz) => lfos[hz] || (lfos[hz] = (() => { const l = ac.createOscillator(); l.frequency.value = hz; l.start(); return l; })());
+    const trem = (hz) => trems[hz] || (trems[hz] = (() => { const g = ac.createGain(); g.gain.value = .45; lfo(hz).connect(g); return g; })());
+    function sharedFilter(type, hz, q, to) {
+      const f50 = Math.round(hz / 50) * 50, key = type + ':' + f50 + ':' + (q || 0);
+      let m = filters.get(to);
+      if (!m) filters.set(to, (m = {}));
+      if (!m[key]) { const f = ac.createBiquadFilter(); f.type = type; f.frequency.value = f50; if (q) f.Q.value = q; f.connect(to); m[key] = f; }
+      return m[key];
+    }
+
+    // Voix permanentes (v4.7.5) : un son répété très souvent (route.mono = sa clé) rejoue sur les mêmes nœuds, relancés à
+    // chaque note ; sans trémolo, vibrato ni écho. Les rampes partent de la valeur en cours : pas de clic d'une note à l'autre.
+    const monos = {};
+    function restart(params, t) { for (const p of params) p.cancelScheduledValues(t); }
+    function monoNote(o, f, t, dur, vel, route) {
+      const v = monos[route.mono] || (monos[route.mono] = (() => {
+        const car = ac.createOscillator(), mod = ac.createOscillator(), mg = ac.createGain(), env = ac.createGain();
+        env.gain.value = .0001; mod.connect(mg); mg.connect(car.frequency); car.connect(env); env.connect(dest(route));
+        car.start(); mod.start();
+        return { car, mod, mg, env };
+      })());
+      const i0 = (o.index || 1) * f, i1 = (o.indexEnd !== undefined ? o.indexEnd : (o.index || 1) * .3) * f;
+      const a = o.attack || .005, r = o.release || .08, g = (o.gain || .1) * vel;
+      restart([v.car.frequency, v.mod.frequency, v.mg.gain, v.env.gain], t);
+      v.car.frequency.setValueAtTime(f, t); v.mod.frequency.setValueAtTime(f * o.ratio, t);
+      v.mg.gain.setTargetAtTime(i0, t, .001); v.mg.gain.setTargetAtTime(Math.max(.01, i1), t + .003, (o.indexTime || dur) / 3);
+      v.env.gain.setTargetAtTime(Math.max(.0002, g), t, a / 3);
+      v.env.gain.setTargetAtTime(g * (o.sustain !== undefined ? o.sustain : .6), t + a, o.decay || .15);
+      v.env.gain.setTargetAtTime(.0001, t + dur, r / 3);
+    }
+    function monoBurst(t, dur, gain, filterHz, type, route, q) {
+      const v = monos[route.mono] || (monos[route.mono] = (() => {
+        const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+        s.buffer = buffer(); s.loop = true; g.gain.value = .0001;
+        s.connect(g); g.connect(f); f.connect(dest(route)); s.start();
+        return { f, g };
+      })());
+      restart([v.g.gain, v.f.frequency, v.f.Q], t);
+      v.f.type = type || 'lowpass'; v.f.frequency.setValueAtTime(filterHz, t); v.f.Q.setValueAtTime(q || 1, t);
+      v.g.gain.setTargetAtTime(Math.max(.0002, gain), t, .0015);
+      v.g.gain.setTargetAtTime(.0001, t + .004, Math.max(.002, dur - .004) / 7);
+    }
+
     function note(inst, midi, time, dur, vel = 1, route) {
       const o = INSTRUMENTS[inst];
       if (!o) return;
       const cents = (o.detune || 0) + ((route && route.detune) || 0);   // désaccord de l'instrument, plus celui de la note
       const t = Math.max(time, ac.currentTime), f = mtof(midi) * (cents ? Math.pow(2, cents / 1200) : 1);
+      if (route && route.mono) return monoNote(o, f, t, dur, vel, route);
+      if (!voice(route, t + dur + (o.release || .08) + .1)) return;
       const car = ac.createOscillator(), mod = ac.createOscillator(), mg = ac.createGain(), env = ac.createGain();
       car.frequency.setValueAtTime(f, t); mod.frequency.setValueAtTime(f * o.ratio, t);
       const bend = route && route.bend;
@@ -73,14 +134,17 @@
       env.gain.setValueAtTime(.0001, t); env.gain.exponentialRampToValueAtTime(Math.max(.0002, g), t + a);
       env.gain.setTargetAtTime(g * (o.sustain !== undefined ? o.sustain : .6), t + a, o.decay || .15);
       env.gain.setTargetAtTime(.0001, t + dur, r / 3);
-      if (o.vibrato) { const l = ac.createOscillator(), lg = ac.createGain(); l.frequency.value = o.vibrato[0]; lg.gain.value = f * o.vibrato[1]; l.connect(lg); lg.connect(car.frequency); l.start(t); l.stop(end); }
+      // Trémolo et vibrato : l'oscillateur lent partagé est débranché de la note quand elle se tait (sinon elle resterait en vie).
+      const unhook = [];
+      if (o.vibrato) { const l = lfo(o.vibrato[0]), lg = ac.createGain(); lg.gain.value = f * o.vibrato[1]; l.connect(lg); lg.connect(car.frequency); unhook.push(() => l.disconnect(lg)); }
       let last = env;
       if (o.trem) {
-        const l = ac.createOscillator(), lg = ac.createGain(), tg = ac.createGain();
-        l.frequency.value = o.trem; lg.gain.value = .45; tg.gain.value = .55; l.connect(lg); lg.connect(tg.gain); env.connect(tg); last = tg; l.start(t); l.stop(end);
+        const tg = ac.createGain(), tr = trem(o.trem);
+        tg.gain.value = .55; tr.connect(tg.gain); env.connect(tg); last = tg; unhook.push(() => tr.disconnect(tg.gain));
       }
+      if (unhook.length) car.onended = () => { for (const u of unhook) u(); };
       last.connect(dest(route));
-      if (o.wet) { const w = ac.createGain(); w.gain.value = o.wet; last.connect(w); w.connect(echo); }
+      if (o.wet) last.connect(send(o.wet));
       mod.connect(mg); mg.connect(car.frequency); car.connect(env);
       car.start(t); mod.start(t); car.stop(end); mod.stop(end);
     }
@@ -93,19 +157,23 @@
       for (let i = 0; i < len; i++) { x = (x * 1664525 + 1013904223) >>> 0; d[i] = (x / 4294967296) * 2 - 1; }
       return (noiseBuf = buf);
     };
-    // Bruit filtré bref (batterie, grattement, souffles).
+    // Bruit filtré bref (batterie, grattement, souffles) : enveloppe propre, filtre partagé.
     function burst(time, dur, gain, filterHz, type, route, q) {
-      const t = Math.max(time, ac.currentTime), s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
-      s.buffer = buffer(); f.type = type || 'lowpass'; f.frequency.value = filterHz; if (q) f.Q.value = q;
+      const t = Math.max(time, ac.currentTime);
+      if (route && route.mono) return monoBurst(t, dur, gain, filterHz, type, route, q);
+      if (!voice(route, t + dur + .05)) return;
+      const s = ac.createBufferSource(), g = ac.createGain();
+      s.buffer = buffer();
       g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(Math.max(.0002, gain), t + .004);
       g.gain.exponentialRampToValueAtTime(.0001, t + dur);
-      s.connect(f); f.connect(g); g.connect(dest(route));
+      s.connect(g); g.connect(sharedFilter(type || 'lowpass', filterHz, q, dest(route)));
       s.start(t, Math.random() * (s.buffer.duration - dur - .05 > 0 ? s.buffer.duration - dur - .05 : 0)); s.stop(t + dur + .05);
     }
 
     function drum(kind, time, vel = 1, route) {
       const t = Math.max(time, ac.currentTime);
       if (kind === 'kick') {
+        if (!voice(route, t + .3)) return;
         const o = ac.createOscillator(), e = ac.createGain();
         o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(42, t + .12);
         e.gain.setValueAtTime(.55 * vel, t); e.gain.exponentialRampToValueAtTime(.0001, t + .28);
@@ -178,5 +246,5 @@
       suspend: () => ac.suspend && ac.suspend().catch(() => {}), resume: () => ac.resume && ac.resume().catch(() => {}), context: ac };
   }
 
-  FP.synth = { create, INSTRUMENTS, DRUMS };
+  FP.synth = { create, INSTRUMENTS, DRUMS, MAX_VOICES };
 })();
