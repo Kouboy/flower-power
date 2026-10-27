@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '4.7.3',
+    version: '4.7.4',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -182,7 +182,7 @@
       wave: [60, 110], waves: [1, 1.5],   // traînée facile : grande route sinueuse autour du chemin sûr (amplitude en px, nombre de vagues)
       // startClear : rien dans les 180 px au-dessus de la graine (la pousse vient de démarrer, elle ne peut pas aller chercher).
       pickup: 20, radius: 5,   // pickup : rayon de ramassage d'un jeton (plus généreux que les collisions)
-      missBelow: 40, value: 25, chainBonus: { easy: 150, bait: 400 }, toxicBite: 1 / 3,
+      missBelow: 40, value: 10, chainBonus: { easy: 50, bait: 150 }, toxicBite: 1 / 3,
       minChain: 4, spinFps: 9, edge: 4
     },
 
@@ -194,9 +194,9 @@
       magnetRange: 110, magnetSpeed: 140, magnetAccel: 900,   // Aimant : portée (px), vitesse de départ et accélération (px/s, px/s²) des jetons aspirés
       inTime: .25, stampTime: .35, outTime: .3,
       items: [
-        { id: 'seed', price: 2500, co2: 8.6 }, { id: 'membrane', price: 700, co2: 3.1 }, { id: 'magnet', price: 500, co2: 4.9 },
-        { id: 'premium', price: 600, co2: 2.4 }, { id: 'compost', price: 600, co2: 6.2 }, { id: 'spore', price: 800, co2: 5.5 },
-        { id: 'filter', price: 700, co2: 7.3 }, { id: 'beer', price: 600, co2: 3.8 }, { id: 'lobbying', price: 900, co2: 9.8 }
+        { id: 'seed', price: 5000, co2: 8.6 }, { id: 'membrane', price: 1400, co2: 3.1 }, { id: 'magnet', price: 1000, co2: 4.9 },
+        { id: 'premium', price: 1200, co2: 2.4 }, { id: 'compost', price: 1200, co2: 6.2 }, { id: 'spore', price: 1600, co2: 5.5 },
+        { id: 'filter', price: 1400, co2: 7.3 }, { id: 'beer', price: 1200, co2: 3.8 }, { id: 'lobbying', price: 1800, co2: 9.8 }
       ],
       transports: ['DRONE', 'PORTE-CONTENEURS', 'JET PRIVÉ', 'SUV ÉLECTRIQUE']
     },

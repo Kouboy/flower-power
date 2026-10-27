@@ -19,23 +19,23 @@ FP.test('coinPlay: prise à 20 px, pas à 21 (plus large que les collisions)', (
   const t = cpRun(); clearCoins(t); lay(t, 'easy', 4, 221, 600);
   FP.coinPlay.update(t); FP.assertEqual(evts(t, 'coin').length, 0);
 });
-FP.test('coinPlay: une pièce sans combo vaut 25 et ne lance pas de combo', () => {
+FP.test('coinPlay: une pièce sans combo vaut sa valeur et ne lance pas de combo', () => {
   const s = cpRun(); clearCoins(s); lay(s, 'easy', 4);
   FP.coinPlay.update(s);
-  FP.assertEqual(s.score.eco, 25); FP.assertEqual(s.score.combo, 0); FP.assertEqual(s.score.comboTimer, 0);
+  FP.assertEqual(s.score.eco, FP.config.coins.value); FP.assertEqual(s.score.combo, 0); FP.assertEqual(s.score.comboTimer, 0);
 });
 FP.test('scoring: awardCoin entretient le combo sans le monter', () => {
   const s = cpRun(); s.score.combo = 3; s.score.comboTimer = .5;
   FP.scoring.awardCoin(s, 0, 0, 100);
-  FP.assertEqual(s.score.eco, 150); FP.assertEqual(s.score.comboTimer, FP.config.scoring.comboWindow); FP.assertEqual(s.score.combo, 3);
+  FP.assertEqual(s.score.eco, 145); FP.assertEqual(s.score.comboTimer, FP.config.scoring.comboWindow); FP.assertEqual(s.score.combo, 3);   // 100 × 1,44, arrondi à 5
   const e = evts(s, 'eco')[0]; FP.assert(e.quiet && e.kind === 'coin');
 });
-FP.test('coinPlay: chapelet appât complet → +400, combo +1, cri de la liste', () => {
+FP.test('coinPlay: chapelet appât complet → son bonus, combo +1, cri de la liste', () => {
   const s = cpRun(); clearCoins(s); lay(s, 'bait', 4);
   for (let i = 0; i < 4; i++) { s.plant.tip = { x: 200, y: 600 - i * 30 }; FP.coinPlay.update(s); }
   const done = evts(s, 'chainDone');
-  FP.assertEqual(done.length, 1); FP.assertEqual(done[0].amount, 400); FP.assert(FP.config.text.chain.includes(done[0].word));
-  FP.assertEqual(s.score.combo, 1); FP.assertEqual(s.score.eco, 4 * 25 + 400);
+  const k = FP.config.coins; FP.assertEqual(done.length, 1); FP.assertEqual(done[0].amount, k.chainBonus.bait); FP.assert(FP.config.text.chain.includes(done[0].word));
+  FP.assertEqual(s.score.combo, 1); FP.assertEqual(s.score.eco, 4 * k.value + k.chainBonus.bait);
   FP.assert(s.world.chains[0].done);
 });
 FP.test('coinPlay: deux pièces dans la même image → rangs 0 et 1, un seul chainDone', () => {

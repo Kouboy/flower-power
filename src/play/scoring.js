@@ -10,6 +10,7 @@
   const FP = window.FP = window.FP || {};
 
   const EMPTY = () => ({ flowers: 0, eco: 0 });
+  const COIN_STEP = 5;
 
   function load(backend) {
     const raw = FP.storage.readJSON(FP.config.storageKey, null, backend);
@@ -34,9 +35,10 @@
 
   // Pièce (v4.5.0) : payée au multiplicateur du combo en cours, qu'elle entretient (délai relancé) sans le faire monter ;
   // sans combo en cours, elle vaut sa base et n'en lance pas. Gain discret : pas de nombre flottant (render/effects.js).
+  // Arrondi propre aux pièces (v4.7.4) : au multiple de COIN_STEP, sans le minimum de 25 des autres gains.
   function awardCoin(state, x, y, base) {
     const c = FP.config.scoring, s = state.score, live = s.comboTimer > 0 && s.combo > 0;
-    const amount = Math.max(c.minAmount, Math.round(base * (live ? 1 + (s.combo - 1) * c.comboGain : 1) / c.step) * c.step);
+    const amount = Math.max(COIN_STEP, Math.round(base * (live ? 1 + (s.combo - 1) * c.comboGain : 1) / COIN_STEP) * COIN_STEP);
     if (live) s.comboTimer = c.comboWindow;
     s.eco += amount;
     state.events.push({ type: 'eco', x, y, amount, combo: live ? s.combo : 1, kind: 'coin', quiet: true });

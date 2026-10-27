@@ -2,6 +2,13 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.7.4 — Économie rééquilibrée
+
+- jetons à 10 Ɇ (au lieu de 25, qui remontaient à 25 par l'arrondi du score) ; traînée complète 50 Ɇ (facile) et 150 Ɇ (appât) ;
+- prix de la boutique doublés : Graine Bio™ 5 000, Lobbying 1 800, Spore 1 600, Membrane et Filtre 1 400, Premium, Compost et Bière 1 200, Aimant 1 000 ;
+- les frôlements redeviennent une vraie source de crédits ; un test verrouille l'équilibre (les jetons de 3 pousses parfaites ne paient pas la graine) ;
+- banc : 420 tests.
+
 ## v4.7.3 — La graine force
 
 - germination : un grondement FM grave monte et tremble tant qu'on maintient (la graine force), retombe si on lâche, et se coupe net au « pop » du départ ;
