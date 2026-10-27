@@ -193,6 +193,24 @@
       minChain: 4, spinFps: 9, edge: 4
     },
 
+    // Milieux (v4.9.0) : une partie traverse les quatre dans l'ordre ; chacun dure `run.steps` pousses réussies, puis son boss.
+    // kinds : familles d'obstacles du milieu (identifiants de spawnTables) ; palettes de décor : FP.palette.milieux[id].
+    milieux: [
+      { id: 'friche', name: 'FRICHE URBAINE', line: 'Futur éco-quartier. Livraison prévue : jamais.',
+        kinds: ['cone', 'scooter', 'tire', 'trashbag', 'drone'],
+        boss: { name: 'LA BÉTONNEUSE DU GRAND PROJET', order: 'PERCE SES 4 VANNES À BÉTON' } },
+      { id: 'industrie', name: 'ZONE INDUSTRIELLE', line: 'Taux d\'emploi local : 0,3 robot par habitant.',
+        kinds: ['server', 'battery', 'solar', 'extinguisher', 'drone'],
+        boss: { name: 'RAFFINERIE ÉCO-RESPONSABLE™', order: 'PERCE SES 4 VANNES' } },
+      { id: 'decharge', name: 'DÉCHARGE', line: 'Tri sélectif : la décharge choisit qui elle garde.',
+        kinds: ['microwave', 'arcade', 'trashbag', 'tire', 'scooter'],
+        boss: { name: 'L\'INCINÉRATEUR À ÉNERGIE VERTE', order: 'PERCE SES 4 BRÛLEURS' } },
+      { id: 'nucleaire', name: 'SITE NUCLÉAIRE', line: 'Énergie décarbonée. Déchets : à voir dans 24 000 ans.',
+        kinds: ['nuclear', 'sarcophagus', 'battery', 'server'],
+        boss: { name: 'LE RÉACTEUR « NEUTRE EN CARBONE »', order: 'PERCE SES 4 BARRES DE CONTRÔLE' } }
+    ],
+    run: { steps: 3 },   // pousses réussies par milieu avant son boss
+
     // Boutique de fin de pousse (v4.6.0) : 3 articles tirés (un à −50 %), achetés au score ; effets sur la pousse suivante.
     // co2 : masse satirique ajoutée à la « livraison » (kg), sans effet en jeu. Tirage propre (graine ^ salt ^ passage).
     shop: {

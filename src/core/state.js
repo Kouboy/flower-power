@@ -37,6 +37,9 @@
       level: 0,
       rng: FP.createRng(s),
       signature: { armed: false, spawned: false, targetLevel: 0 },  // T-Rex signature, 1 par run max
+      // Progression dans les milieux (v4.9.0), écrite par play/flow.js : milieu (0 à 3), pousses réussies dans le milieu,
+      // saison, boss vaincus, niveau de boss en cours, carton à montrer, première saison terminée.
+      run: { milieu: 0, step: 0, saison: 1, bosses: 0, boss: false, card: { kind: 'milieu', t0: 0 }, won: false },
       camera: { y: Math.max(0, height - dims.H), manual: false, near: 0, zoom: 1, shake: 0 },
       input: { x: 0, screenX: 0, y: 0, down: false, active: false, pressed: false, touch: false, key: false },   // instantané du pointeur (x monde, y écran)
       plant: {
@@ -47,7 +50,7 @@
         cast: [], castRng: FP.createRng((s ^ FP.config.cast.salt) >>> 0), character: null   // pioche des personnages (play/plant.js)
       },
       world: {
-        width: dims.W, height, viewH: dims.H, surfaceY: surfaceYFor(dims.H),
+        width: dims.W, height, viewH: dims.H, surfaceY: surfaceYFor(dims.H), milieu: 'friche',
         skyVariant: 0, lawnVariant: 0, safePath: [], safeRadius: 0,
         solids: [], toxics: [], leaks: [], bonuses: [],    // bonuses : récompenses de flyover (play/powerups.js)
         coins: [], chains: []                               // circuits de pièces (world/coins.js)

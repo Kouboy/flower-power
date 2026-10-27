@@ -1,36 +1,60 @@
 // render/palette.js — palettes nommées du rendu pixel (d'après docs/art/reference-crepuscule.png).
 // Lit     : rien.
 // Écrit   : rien.
-// Expose  : FP.palette.{sky, strata, strataBounds, strataTone(d, k), lawn, stem, seed, hero, cast, coin, flowers, toxic, slug, danger, decor()}.
+// Expose  : FP.palette.{milieux (décor par milieu : sky, strata, lawn), strataBounds, strataTone(d, k, milieu), stem, seed, hero, cast, coin, flowers,
+//           toxic, slug, danger, decor()}.
 // Les teintes de `danger` (violet chimique) signalent les dangers : interdites au décor, distinctes de la pousse.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
 
-  // Ciel : du zénith à l'horizon. Quatre nuances du même crépuscule pollué (rose, orange, violet, voilé).
-  const sky = [
-    ['#2e1452', '#482078', '#702880', '#b84080', '#c03870', '#d86850', '#f09060', '#f0b890'],
-    ['#3a1a4a', '#5a2470', '#8a3070', '#c84a68', '#e06a50', '#f08a50', '#f4a868', '#f8d0a0'],
-    ['#22103e', '#3a1868', '#58207a', '#86307e', '#a83a7a', '#c0506a', '#d07070', '#e0a090'],
-    ['#2c2040', '#463458', '#64466a', '#8a5a74', '#a46a72', '#b88070', '#c89a80', '#d8bca0']
-  ];
-
-  // Terre : assombrie et désaturée par rapport à la planche (règle de lisibilité n° 1), 4 teintes proches par strate.
-  const strata = {
-    humus: ['#130d0e', '#181110', '#1d1512', '#221914'],
-    clay: ['#2a1a10', '#311f12', '#382414', '#3f2a17'],
-    stone: ['#18140f', '#1d1813', '#221c17', '#28211b']
+  // Décor de chaque milieu (v4.9.0) : ciel (du zénith à l'horizon, 8 bandes, une liste par nuance tirée), terre (4 teintes
+  // proches par strate, assombries et désaturées : règle de lisibilité n° 1) et pelouse (une liste de 4 par nuance).
+  // La friche garde le crépuscule pollué de la v4.1 (rose, orange, violet, voilé) ; aucun milieu n'emprunte le violet des dangers.
+  const milieux = {
+    friche: {
+      sky: [
+        ['#2e1452', '#482078', '#702880', '#b84080', '#c03870', '#d86850', '#f09060', '#f0b890'],
+        ['#3a1a4a', '#5a2470', '#8a3070', '#c84a68', '#e06a50', '#f08a50', '#f4a868', '#f8d0a0'],
+        ['#22103e', '#3a1868', '#58207a', '#86307e', '#a83a7a', '#c0506a', '#d07070', '#e0a090'],
+        ['#2c2040', '#463458', '#64466a', '#8a5a74', '#a46a72', '#b88070', '#c89a80', '#d8bca0']
+      ],
+      strata: { humus: ['#130d0e', '#181110', '#1d1512', '#221914'], clay: ['#2a1a10', '#311f12', '#382414', '#3f2a17'], stone: ['#18140f', '#1d1813', '#221c17', '#28211b'] },
+      lawn: [['#1c2e14', '#2c4a1e', '#3e6426', '#58802e'], ['#202c12', '#34461a', '#4a5e22', '#66782a'], ['#182a18', '#264426', '#365c30', '#4c7438'], ['#262a14', '#3a421c', '#525a24', '#6c722e']]
+    },
+    // Zone industrielle : smog gris qui vire au jaune soufre sur l'horizon ; terre grise et ocre ; herbe jaunie.
+    industrie: {
+      sky: [
+        ['#1e1c1a', '#2e2b26', '#45402f', '#5e5636', '#7d7238', '#a0913a', '#c8b448', '#e6d070'],
+        ['#1a1a1c', '#2a2a2c', '#3e3c38', '#58543e', '#746c42', '#948848', '#b4a656', '#d0c47a'],
+        ['#201c18', '#302a22', '#4a3e2c', '#665432', '#866a34', '#a88238', '#c89c48', '#e0bc6a']
+      ],
+      strata: { humus: ['#141414', '#191918', '#1e1d1b', '#23221f'], clay: ['#2a2418', '#30291b', '#372f1e', '#3e3521'], stone: ['#161819', '#1b1d1f', '#202325', '#26292b'] },
+      lawn: [['#22261a', '#343a20', '#4a5026', '#62682c'], ['#26261a', '#3a3a20', '#505026', '#68682e']]
+    },
+    // Décharge : ciel brun-vert de fumées ; terre brune jonchée ; herbe morte.
+    decharge: {
+      sky: [
+        ['#1c1a12', '#2a2616', '#3c341a', '#524620', '#6a5a26', '#84702e', '#a08a3a', '#bca450'],
+        ['#181c14', '#24281a', '#343820', '#464a26', '#5c5e2c', '#727234', '#8c8a40', '#a8a454'],
+        ['#1e1814', '#2c221a', '#3e3020', '#544028', '#6c5230', '#86663a', '#a07c48', '#b8965e']
+      ],
+      strata: { humus: ['#15110c', '#1a150e', '#1f1910', '#241d12'], clay: ['#29200f', '#2f2511', '#362a13', '#3d3016'], stone: ['#1a1712', '#1f1c16', '#24201a', '#2a251e'] },
+      lawn: [['#262014', '#3a3018', '#50421e', '#685626'], ['#22220f', '#363414', '#4c481a', '#646020']]
+    },
+    // Site nucléaire : nuit verdâtre, lune pâle ; terre bleu-gris ; herbe grise, morte.
+    nucleaire: {
+      sky: [
+        ['#0a120e', '#0e1a14', '#12241a', '#183020', '#1e3c28', '#284a30', '#365a3a', '#4a6e48'],
+        ['#0a0e12', '#0e161a', '#121e22', '#18282a', '#1e3232', '#283e3a', '#344c44', '#46604e'],
+        ['#0c100c', '#121a12', '#182418', '#20301e', '#283c24', '#32482a', '#3e5632', '#50683e']
+      ],
+      strata: { humus: ['#0f1114', '#131619', '#171a1e', '#1b1f23'], clay: ['#191d24', '#1d222a', '#212730', '#262c36'], stone: ['#121519', '#16191e', '#1a1e23', '#1e2228'] },
+      lawn: [['#1a2420', '#26342e', '#344640', '#465a52'], ['#1c221e', '#2a322c', '#3a443c', '#4c584e']]
+    }
   };
   // Profondeur relative (0 = surface, 1 = fond) où commence la strate suivante.
   const strataBounds = { humus: .22, clay: .62 };
-
-  // Pelouse : quatre variantes d'un vert « sain », loin du vert acide des dangers.
-  const lawn = [
-    ['#1c2e14', '#2c4a1e', '#3e6426', '#58802e'],
-    ['#202c12', '#34461a', '#4a5e22', '#66782a'],
-    ['#182a18', '#264426', '#365c30', '#4c7438'],
-    ['#262a14', '#3a421c', '#525a24', '#6c722e']
-  ];
 
   // Tige : contour, ombre, corps, reflet ; ancienne tige plus sombre.
   const stem = { outline: '#141c0c', shade: '#2e4a1a', body: '#4f7a2a', light: '#8fbf4a', old: '#2a3a1c', oldLight: '#44602a', leaf: '#5e8c30' };
@@ -71,13 +95,14 @@
   // Teintes vives qui signalent un danger : interdites au décor, loin des verts de la pousse (tests dans dev/tests/px.test.js).
   const danger = [toxic.mid, toxic.light, toxic.glow, slug.body, slug.clear, slug.spot, slug.flash];
 
-  // Teinte de terre à une profondeur relative d (0 = surface, 1 = fond) ; k de 0 (claire) à 3 (sombre).
-  function strataTone(d, k) {
-    const t = d < strataBounds.humus ? strata.humus : (d < strataBounds.clay ? strata.clay : strata.stone);
+  // Teinte de terre du milieu id à une profondeur relative d (0 = surface, 1 = fond) ; k de 0 (claire) à 3 (sombre).
+  function strataTone(d, k, id) {
+    const s = milieux[id].strata, t = d < strataBounds.humus ? s.humus : (d < strataBounds.clay ? s.clay : s.stone);
     return t[3 - Math.max(0, Math.min(3, k))];
   }
 
-  const decor = () => [...sky.flat(), ...strata.humus, ...strata.clay, ...strata.stone, ...lawn.flat()];
+  // Toutes les teintes de décor de tous les milieux (test : aucune n'approche une teinte de danger).
+  const decor = () => Object.values(milieux).flatMap(m => [...m.sky.flat(), ...m.strata.humus, ...m.strata.clay, ...m.strata.stone, ...m.lawn.flat()]);
 
-  FP.palette = { sky, strata, strataBounds, strataTone, lawn, stem, seed, hero, cast, coin, flowers, toxic, slug, danger, decor };
+  FP.palette = { milieux, strataBounds, strataTone, stem, seed, hero, cast, coin, flowers, toxic, slug, danger, decor };
 })();

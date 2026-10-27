@@ -1,5 +1,5 @@
 // render/soil.js — pelouse et terre en pixels d'art : touffes d'herbe, trois strates tramées, détails clairsemés.
-// Lit     : world.{width,height,surfaceY,lawnVariant}, state.{seed,level}, state.camera.y, FP.view.{W,art}, FP.palette.{strata,strataBounds,lawn},
+// Lit     : world.{width,height,surfaceY,lawnVariant,milieu}, state.{seed,level}, state.camera.y, FP.view.{W,art}, FP.palette.{milieux,strataBounds},
 //           FP.config.soil.surfaceOffset.
 // Écrit   : rien dans l'état (cache créé à la première utilisation).
 // Expose  : FP.soil.draw(actx, state) — repère d'art, la caméra est appliquée ici ; FP.soil.surfaceTop(world) (repère monde) ;
@@ -45,9 +45,9 @@
 
   const hex = (c) => [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16));
 
-  // Teintes de haut en bas : chaque strate, de sa teinte claire à sa teinte sombre.
-  function tones() {
-    const s = FP.palette.strata;
+  // Teintes de haut en bas : chaque strate du milieu, de sa teinte claire à sa teinte sombre.
+  function tones(milieu) {
+    const s = FP.palette.milieux[milieu].strata;
     return [s.humus, s.clay, s.stone].map(t => t.slice().reverse());
   }
 
@@ -67,7 +67,7 @@
     return gi * 4 + bi;   // index dans la liste à plat des 12 teintes
   }
 
-  function build(w, hArt, topArt, lawnVariant, seed) {
+  function build(w, hArt, topArt, lawnVariant, seed, milieu) {
     const { px, palette } = FP;
     cache = cache || document.createElement('canvas');
     cache.width = w; cache.height = hArt;
@@ -75,7 +75,7 @@
     g.clearRect(0, 0, w, hArt);
 
     // Terre : calculée pixel par pixel une seule fois (ImageData), puis mise en cache.
-    const groups = tones(), rgb = groups.flat().map(hex);
+    const groups = tones(milieu), rgb = groups.flat().map(hex);
     const img = g.createImageData(w, hArt - topArt), data = img.data;
     for (let y = topArt; y < hArt; y++) {
       for (let x = 0; x < w; x++) {
@@ -108,7 +108,7 @@
     }
 
     // Frange sous l'herbe : bord irrégulier d'humus sombre.
-    const lawn = palette.lawn[lawnVariant % palette.lawn.length];
+    const lawns = palette.milieux[milieu].lawn, lawn = lawns[lawnVariant % lawns.length];
     for (let x = 0; x < w; x++) {
       const depth = 2 + ((Math.sin(x * .37) + Math.sin(x * .13 + 2)) > .6 ? 1 : 0);
       px.rect(g, x, topArt, 1, depth, groups[0][3]);
@@ -131,8 +131,8 @@
     const topArt = px.toArt(surfaceTop(world));
     // Graine du niveau (partie + numéro de niveau) : chaque niveau a sa propre terre, détails et grain compris.
     const seed = mix(state.seed | 0, state.level | 0, world.lawnVariant);
-    const key = w + '|' + hArt + '|' + topArt + '|' + seed;
-    if (key !== cacheKey) { build(w, hArt, topArt, world.lawnVariant, seed); cacheKey = key; }
+    const key = w + '|' + hArt + '|' + topArt + '|' + seed + '|' + world.milieu;
+    if (key !== cacheKey) { build(w, hArt, topArt, world.lawnVariant, seed, world.milieu); cacheKey = key; }
     const oy = px.toArt(state.camera.y), viewH = FP.view.art.h;
     const y0 = Math.max(0, oy - 8), y1 = Math.min(cache.height, oy + viewH + 8);
     if (y1 > y0) actx.drawImage(cache, 0, y0, cache.width, y1 - y0, 0, y0 - oy, cache.width, y1 - y0);

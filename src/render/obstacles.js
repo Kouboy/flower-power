@@ -161,8 +161,8 @@
       const base = c.height - Math.round(c.height * .28);
       for (let x = 0; x < c.width; x++) {
         const top = base + Math.round(Math.sin(x * .7 + L.hue) * 1.5 + Math.sin(x * .23) * 1.5);
-        px.rect(g, x, top, 1, c.height - top, palette.strataTone(d, 1 + (x % 3 === 0 ? 1 : 0)));
-        px.rect(g, x, top, 1, 1, palette.strataTone(d, 0));
+        px.rect(g, x, top, 1, c.height - top, palette.strataTone(d, 1 + (x % 3 === 0 ? 1 : 0), world.milieu));
+        px.rect(g, x, top, 1, 1, palette.strataTone(d, 0, world.milieu));
       }
       g.globalCompositeOperation = 'source-over';
     }

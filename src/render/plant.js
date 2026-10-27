@@ -1,5 +1,5 @@
 // render/plant.js — tige, anciennes tiges, graine endormie, héros et guide du pointeur, en pixels d'art.
-// Lit     : state.plant, state.input, state.mode, state.time, state.world.viewH, state.camera.y, FP.config.plant.control, FP.plant.speed,
+// Lit     : state.plant, state.world.milieu, state.input, state.mode, state.time, state.world.viewH, state.camera.y, FP.config.plant.control, FP.plant.speed,
 //           FP.px, FP.palette.{stem,seed,strataTone}, FP.soil.surfaceTop, FP.geom.{clampUpAngle,distPointToSegment}, FP.hero, FP.cast, FP.powerupsRender.drawShield.
 // Écrit   : rien (le canvas uniquement).
 // Expose  : FP.plantRender.drawOld(actx, state) (anciennes tiges, sous les obstacles), FP.plantRender.draw(actx, state) (repère d'art, caméra appliquée ici), FP.plantRender.drawFinger(g, state) (toile d'interface),
@@ -117,7 +117,7 @@
     // Tunnel : sur les 7 derniers segments, de la terre remuée de part et d'autre.
     if (current) for (const q of seg) if (q.i > n - 8) {
       const d = depthOf(world, q.my), ax = px.toArt(q.mx), ay = px.toArt(q.my) - oy;
-      for (const side of [-1, 1]) for (let k = 3; k <= 4; k++) px.rect(g, ax + Math.round(q.nx * k * side), ay + Math.round(q.ny * k * side), 1, 1, palette.strataTone(d, k === 3 ? 0 : 3));
+      for (const side of [-1, 1]) for (let k = 3; k <= 4; k++) px.rect(g, ax + Math.round(q.nx * k * side), ay + Math.round(q.ny * k * side), 1, 1, palette.strataTone(d, k === 3 ? 0 : 3, world.milieu));
     }
     // Halo de terre tassée autour de la tige, comme autour des obstacles.
     if (halo) FP.px.blit(g, halo, oy, rows(viewH));
@@ -151,11 +151,11 @@
       if (current && q.i > n - 10) continue;
       if (!buried(q.mx, q.my, !current)) continue;
       const d = depthOf(world, q.my), ax = px.toArt(q.mx), ay = px.toArt(q.my) - oy, h = cellHash(q.mx, q.my, 3);
-      px.rect(g, ax - 3, ay - 2, 7, 4, palette.strataTone(d, 2));
-      px.rect(g, ax - 2, ay - 3, 5, 1, palette.strataTone(d, 1));
-      px.rect(g, ax - 2 + (h % 4), ay - 1, 1, 1, palette.strataTone(d, 0));
-      px.rect(g, ax - 4, ay - 1 + (h >>> 3) % 2, 1, 2, palette.strataTone(d, 3));
-      px.rect(g, ax + 4, ay - 1 + (h >>> 4) % 2, 1, 2, palette.strataTone(d, 3));
+      px.rect(g, ax - 3, ay - 2, 7, 4, palette.strataTone(d, 2, world.milieu));
+      px.rect(g, ax - 2, ay - 3, 5, 1, palette.strataTone(d, 1, world.milieu));
+      px.rect(g, ax - 2 + (h % 4), ay - 1, 1, 1, palette.strataTone(d, 0, world.milieu));
+      px.rect(g, ax - 4, ay - 1 + (h >>> 3) % 2, 1, 2, palette.strataTone(d, 3, world.milieu));
+      px.rect(g, ax + 4, ay - 1 + (h >>> 4) % 2, 1, 2, palette.strataTone(d, 3, world.milieu));
     }
     // Mycélium pâle, en pointillés, qui passe devant la tige.
     for (const q of seg) {
@@ -254,7 +254,7 @@
   function drawOld(g, state) {
     const w = state.world, trails = state.plant.oldTrails, oy = FP.px.toArt(state.camera.y);
     if (!trails.length) return;
-    const key = w.width + ',' + w.height + ';' + trails.map(t => t.length + ':' + (t[0] ? t[0].x + ':' + t[0].y : '')).join(';');
+    const key = w.milieu + ',' + w.width + ',' + w.height + ';' + trails.map(t => t.length + ':' + (t[0] ? t[0].x + ':' + t[0].y : '')).join(';');
     if (oldCache.key !== key) {
       const l = worldLayer(w);
       if (!l) { for (const t of trails) drawStem(g, t, oy, false, w, w.viewH); return; }
