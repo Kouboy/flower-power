@@ -10,7 +10,7 @@ Une entrée par version (voir `AGENTS.md`).
 - cartons d'entrée de milieu, d'annonce du boss et de victoire ; le HUD montre le milieu et le multiplicateur de saison, le certificat les sites réhabilités, le titre le record de progression ;
 - jetons : une traînée peut déborder sur la tranche du dessus, le milieu du niveau n'est plus un creux ;
 - police : « », et — ;
-- banc : 463 tests.
+- banc : 464 tests.
 
 ## v4.8.0 — Le chemin serpente
 

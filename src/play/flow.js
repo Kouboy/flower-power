@@ -167,13 +167,12 @@
     }
   }
 
-  // Fin du bon de commande : on reprend là où la pousse s'était arrêtée. Avant un boss, son carton s'affiche à la germination.
+  // Fin du bon de commande : on reprend là où la pousse s'était arrêtée.
   function afterShop(state, after) {
     if (after === 'last') {
       if (state.plant.reserves <= 0) { state.mode = 'over'; return; }
       if (!state.boosts.lobbying) { FP.level.generate(state); FP.plant.prepare(state); }   // Lobbying a déjà regénéré le niveau
     }
-    if (after === 'bloom' && state.run.boss) state.run.card = { kind: 'boss', t0: state.time };
     toReady(state);
   }
 
@@ -181,7 +180,11 @@
   function continueAfterWin(state) { toReady(state); }
 
   // Toute pousse attend sur sa graine qu'on la fasse germer (v4.7.0).
-  function toReady(state) { state.mode = 'ready'; state.plant.germ = 0; state.events.push({ type: 'ready' }); }
+  // Sur le niveau de boss (après le bon, une mort ou la dernière chance), son carton rappelle l'objectif à chaque graine.
+  function toReady(state) {
+    state.mode = 'ready'; state.plant.germ = 0; state.events.push({ type: 'ready' });
+    if (state.run.boss) state.run.card = { kind: 'boss', t0: state.time };
+  }
 
   // Germination : maintenir remplit (germTime), lâcher vide (germBack) ; deux fissures à 1/3 et 2/3, puis la pousse part.
   // Au clavier, on ne peut pas « maintenir » : un appui fait germer d'un coup.
