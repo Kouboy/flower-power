@@ -1,7 +1,7 @@
 // render/hazards.js — nappes toxiques, limaces de lixiviat et anneau d'exposition, en pixels d'art.
 // Lit     : state.time, state.mode, state.world.{toxics,leaks,viewH}, state.camera.y, state.plant.{tip,toxicTimer},
 //           FP.config.{soil,toxic}, FP.px, FP.palette.{toxic,slug}, FP.hazards.leakHeading.
-// Écrit   : o._px sur chaque nappe — cache de rendu uniquement, jamais lu par la simulation.
+// Écrit   : o._px sur chaque nappe et l._track sur chaque limace — caches de rendu uniquement, jamais lus par la simulation.
 // Expose  : FP.hazardsRender.{drawBase, drawLeaks, drawOverlay, drawExposure}(actx, state) — repère d'art, caméra appliquée ici.
 // Porté de la v3.43.16 (drawToxicZoneBase, limaces de drawHazards, drawToxicZoneOverlay, anneau toxique de drawShieldGauge).
 // Couleurs : FP.palette.toxic et FP.palette.slug (violet chimique), réservées aux dangers.
@@ -83,14 +83,33 @@
   }
 
   // Sillon visqueux le long du trajet, puis limace orientée selon le trajet (clear, fat, debris).
-  function drawTrack(g, l, oy, flash) {
+  function trackPoints(l, oy) {
     const { px } = FP, ca = Math.cos(l.angle), sa = Math.sin(l.angle), na = -sa, nb = ca, pts = [];
     for (let i = 0; i <= 10; i++) {
       const q = i / 10 - .5, wob = Math.sin(i * 1.7 + l.phase) * 3.2;
       pts.push([px.toArt(l.x + ca * l.len * q + na * wob), px.toArt(l.y + sa * l.len * q + nb * wob) - oy]);
     }
+    return pts;
+  }
+
+  function strokeTrack(g, pts, flash) {
+    const { px } = FP;
     for (let i = 1; i < pts.length; i++) px.line(g, pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1], flash ? FP.palette.toxic.glow : FP.palette.toxic.dark, 3);
     for (let i = 1; i < pts.length; i += 2) px.line(g, pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1], FP.palette.toxic.ink, 1);
+  }
+
+  // Le sillon ne bouge pas : dessiné une fois par limace et par teinte (normal, éclair) dans un petit calque, puis recopié (v4.7.5).
+  function drawTrack(g, l, oy, flash) {
+    const cache = l._track || (l._track = {}), key = flash ? 'flash' : 'calm';
+    if (!cache[key]) {
+      const pts = trackPoints(l, 0), xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+      const x0 = Math.min(...xs) - 2, y0 = Math.min(...ys) - 2, layer = FP.px.layer(Math.max(...xs) - x0 + 3, Math.max(...ys) - y0 + 3);
+      if (!layer) return strokeTrack(g, trackPoints(l, oy), flash);
+      strokeTrack(layer.g, pts.map(([x, y]) => [x - x0, y - y0]), flash);
+      cache[key] = { layer, x0, y0 };
+    }
+    const { layer, x0, y0 } = cache[key], w = layer.canvas.width, h = layer.canvas.height;
+    g.drawImage(layer.canvas, 0, 0, w, h, x0, y0 - oy, w, h);
   }
 
   function drawSlug(g, l, oy, flash, t) {

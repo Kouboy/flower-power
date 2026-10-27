@@ -40,6 +40,18 @@
     }
   }
 
+  // Les six images, dessinées une fois chacune dans un petit calque (v4.7.5) ; null sans calque possible (sous Node).
+  const sprites = [];
+  function sprite(frame) {
+    if (!sprites[frame]) {
+      const l = FP.px.layer(SIZE, SIZE);
+      if (!l) return null;
+      token(l.g, 0, 0, frame);
+      sprites[frame] = l;
+    }
+    return sprites[frame];
+  }
+
   // Aura de l'aimant : un anneau cuivré pointillé qui pulse et tourne autour de la tête.
   function aura(g, state, x, y) {
     const c = FP.palette.coin, t = state.time, r = 16 + Math.round(Math.sin(t * 6) * 2);
@@ -71,7 +83,9 @@
         const dx = c.x - tip.x, dy = c.y - tip.y, d = Math.hypot(dx, dy) || 1;
         for (let i = 1; i <= 3; i++) px.rect(g, Math.round(ax + dx / d * i * 4), Math.round(ay + dy / d * i * 4), 2 - (i > 1), 2 - (i > 1), i === 1 ? col.shine : col.light);
       }
-      token(g, ax - R, ay - R, Math.floor(state.time * spin * (c.pulled ? 2 : 1) + c.rank + c.chain) % FRAMES);
+      const frame = Math.floor(state.time * spin * (c.pulled ? 2 : 1) + c.rank + c.chain) % FRAMES, sp = sprite(frame);
+      if (sp) g.drawImage(sp.canvas, 0, 0, SIZE, SIZE, ax - R, ay - R, SIZE, SIZE);
+      else token(g, ax - R, ay - R, frame);
     }
     // Éclat : 5 pixels cuivrés qui s'écartent et s'éteignent en .3 s.
     for (let i = sparks.length - 1; i >= 0; i--) {

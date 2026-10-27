@@ -27,3 +27,13 @@ FP.test('coinsRender: le ramassage fait un éclair puis un anneau qui s’ouvre'
   FP.assert(r2 > r1 && r2 <= 13, r1 + ' → ' + r2);
   FP.assertEqual(at(1).length, 0);
 });
+// Images en calques (v4.7.5) : les six images de rotation sont dessinées une fois, puis recopiées (outils de plantrender.test.js).
+FP.test('coinsRender: les jetons en calques donnent exactement les mêmes pixels', () => {
+  const s = FP.state.createRun(6, { W: 440, H: 783 }); FP.level.startRun(s);
+  const c0 = s.world.coins[Math.floor(s.world.coins.length / 2)];
+  s.camera.y = c0.y - 300; s.time = 1.37;
+  const direct = fakeLayerCtx(), cached = fakeLayerCtx();
+  fakeLayer.made = 0;
+  withoutLayer(() => FP.coinsRender.draw(direct, s)); withLayer(() => FP.coinsRender.draw(cached, s));
+  FP.assert(fakeLayer.made > 0, 'aucun calque'); FP.assert(direct.px.size > 0); FP.assertEqual(visible(cached, s), visible(direct, s));
+});
