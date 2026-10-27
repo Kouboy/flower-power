@@ -199,3 +199,15 @@ FP.test('shop: le bon qui s’en va fait un bruit de papier (refus et commande)'
   t.time += FP.config.shop.stampTime; FP.shop.update(t, 0); FP.assertEqual(t.events.filter(e => e.type === 'shopClose').length, 1);
   t.time += .01; FP.shop.update(t, 0); FP.assertEqual(t.events.filter(e => e.type === 'shopClose').length, 1);
 });
+// Économie (v4.7.4) : même en ramassant tous les jetons de 3 pousses (sans combo), la graine reste hors de portée ;
+// les articles coûtent au moins une pousse et demie de jetons parfaits.
+FP.test('économie: les jetons d’un passage ne paient pas tout', () => {
+  let perStem = 0;
+  for (let seed = 1; seed <= 20; seed++) {
+    const s = FP.state.createRun(seed, { W: 412, H: 915 }); FP.level.generate(s); const k = FP.config.coins;
+    perStem += (s.world.coins.length * k.value + s.world.chains.reduce((t, c) => t + k.chainBonus[c.kind], 0)) / 20;
+  }
+  const price = (id) => FP.config.shop.items.find(i => i.id === id).price;
+  FP.assert(FP.config.shop.every * perStem < price('seed'), 'graine : ' + Math.round(perStem) + ' Ɇ/pousse');
+  FP.assert(FP.config.shop.items.every(i => i.price >= 1.2 * perStem), 'articles trop bon marché');
+});
