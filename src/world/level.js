@@ -1,9 +1,9 @@
 // world/level.js — génération d'un niveau à partir de la graine du run.
-// Lit     : state.rng, state.level, FP.config.shop.lobbyingK (option lobbying), state.world.{width,height,viewH,surfaceY}, state.signature,
-//           FP.config.{level,spawnTables,signature}, FP.catalog, FP.geom.
-// Écrit   : state.world.{skyVariant,lawnVariant,safePath,safeRadius,hazardRadius,solidExtra,solids,toxics,leaks,bonuses}, state.signature ;
+// Lit     : state.rng, state.level, state.run.milieu, FP.config.shop.lobbyingK (option lobbying), state.world.{width,height,viewH,surfaceY}, state.signature,
+//           FP.config.{level,spawnTables,signature,milieux}, FP.catalog, FP.geom.
+// Écrit   : state.world.{milieu,skyVariant,lawnVariant,safePath,safeRadius,hazardRadius,solidExtra,solids,toxics,leaks,bonuses}, state.signature ;
 //           puis FP.coins.place écrit state.world.{coins,chains}.
-// Expose  : FP.level.startRun(state), FP.level.generate(state),
+// Expose  : FP.level.startRun(state), FP.level.generate(state), FP.level.tableFor(milieu, band) (pur, testé),
 //           FP.level.distToSafePath(world,x,y), FP.level.pathXAt(world,y), FP.level.depthK(world,y), FP.level.depthBand(world,y).
 // Porté de la v3.43.16 (generateSoil, generateSafePath, objectFits…) sans les familles vectorielles ni les portes.
 (function () {
@@ -159,8 +159,18 @@
     return true;
   }
 
-  function makeCandidate(world, rng, pos) {
-    const table = FP.config.spawnTables[depthBand(world, pos.y)];
+  // Table d'apparition d'une bande, restreinte aux familles du milieu (v4.9.0), poids d'origine. Si la bande n'en a aucune :
+  // toutes les familles du milieu, à poids égaux, avec l'angle de leur première entrée dans les tables.
+  function tableFor(milieu, band) {
+    const kinds = FP.config.milieux[milieu].kinds, T = FP.config.spawnTables;
+    const table = T[band].filter(e => kinds.includes(e.kind));
+    if (table.length) return table;
+    const all = [...T.upper, ...T.middle, ...T.deep];
+    return kinds.map(kind => { const e = all.find(x => x.kind === kind); return { ...e, w: 1 }; });
+  }
+
+  function makeCandidate(state, rng, pos) {
+    const table = tableFor(state.run.milieu, depthBand(state.world, pos.y));
     let r = rng.next() * table.reduce((sum, e) => sum + e.w, 0);
     let entry = table[table.length - 1];
     for (const e of table) { if (r < e.w) { entry = e; break; } r -= e.w; }
@@ -174,6 +184,7 @@
   function placeSignature(state, grid) {
     const sig = state.signature, cfg = FP.config.signature, world = state.world, rng = state.rng;
     if (!sig.armed || sig.spawned || state.level < sig.targetLevel || !FP.catalog.has('trex_signature')) return;
+    if (FP.config.milieux[state.run.milieu].id !== 'nucleaire') return;   // v4.9.0 : le T-Rex vit au site nucléaire
     for (let tries = 0; tries < cfg.tries && !sig.spawned; tries++) {
       const cell = pickCell(grid, rng, c => c.r > 1 && c.r < grid.rows - 2 && depthK(world, c.y) > cfg.minDepth);
       const pos = cellPos(grid, rng, cell, cfg.jitter);
@@ -197,7 +208,7 @@
         const cell = pickCell(grid, rng, c => c.r > 0 && c.r < grid.rows - 1 &&
           !(c.c === 2 && c.r > grid.rows - 3) &&                      // dégage le départ de la graine
           (tries > s.relaxAfter || depthBand(world, c.y) === preferred));
-        const o = makeCandidate(world, rng, cellPos(grid, rng, cell, s.jitter));
+        const o = makeCandidate(state, rng, cellPos(grid, rng, cell, s.jitter));
         if (o && objectFits(world, o)) { world.solids.push(o); placed = true; }
         else cell.used = false;
       }
@@ -336,6 +347,7 @@
   function generate(state, opts = {}) {
     const world = state.world, rng = state.rng, g = FP.config.level.grid;
     world.solids = []; world.toxics = []; world.leaks = []; world.bonuses = [];
+    world.milieu = FP.config.milieux[state.run.milieu].id;   // v4.9.0 ; le rendu ramène les nuances tirées à celles du milieu
     world.skyVariant = Math.floor(rng.next() * FP.config.level.skyVariants);
     world.lawnVariant = Math.floor(rng.next() * FP.config.level.lawnVariants);
     const grid = makeGrid(world.width, world.surfaceY + g.topPad, world.height - g.bottomPad);
@@ -356,5 +368,5 @@
     generate(state);
   }
 
-  FP.level = { startRun, generate, distToSafePath, pathXAt, depthK, depthBand };
+  FP.level = { startRun, generate, tableFor, distToSafePath, pathXAt, depthK, depthBand };
 })();

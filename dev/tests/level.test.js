@@ -31,7 +31,7 @@ FP.test('level: le T-Rex signature trouve sa place sur écran étroit', () => {
   let placed = 0;
   for (let seed = 1; seed <= 20; seed++) {
     const s = FP.state.createRun(seed, { W: 360, H: 780 });
-    s.signature = { armed: true, spawned: false, targetLevel: 1 }; s.level = 1;
+    s.signature = { armed: true, spawned: false, targetLevel: 1 }; s.level = 1; s.run.milieu = 3;   // le T-Rex vit au site nucléaire
     FP.level.generate(s);
     if (s.world.solids.some(o => o.kind === 'trex_signature')) placed++;
   }
@@ -49,7 +49,7 @@ FP.test('level: chemin sûr du fond vers la surface', () => {
   for (const n of p) FP.assert(n.x >= 52 && n.x <= w.width - 52, String(n.x));
 });
 FP.test('level: T-Rex signature une seule fois par run', () => {
-  const s = FP.state.createRun(7, { W: 440, H: 783 });
+  const s = FP.state.createRun(7, { W: 440, H: 783 }); s.run.milieu = 3;   // le T-Rex vit au site nucléaire
   s.signature = { armed: true, spawned: false, targetLevel: 1 };
   s.level = 0; FP.level.generate(s);
   FP.assert(!s.world.solids.some(o => o.kind === 'trex_signature'), 'pas avant targetLevel');
@@ -161,12 +161,12 @@ FP.test('level: le chemin sûr se resserre avec les niveaux, jusqu’à presque 
   FP.assertEqual(r(0), 25); FP.assert(r(4) < 20 && r(4) > 17, String(r(4))); FP.assertEqual(r(8), 12); FP.assertEqual(r(20), 12);
 });
 // Franchissabilité à tous les niveaux (le chemin sûr se resserre) : géométrie réelle, pas la formule de placement.
-const genAt = (seed, level) => { const s = FP.state.createRun(seed, { W: 440, H: 783 }); s.level = level; FP.level.generate(s); return s.world; };
+const genAt = (seed, level, milieu = 0) => { const s = FP.state.createRun(seed, { W: 440, H: 783 }); s.level = level; s.run.milieu = milieu; FP.level.generate(s); return s.world; };
 const pathPoints = (w) => { const pts = [], P = w.safePath; for (let i = 1; i < P.length; i++) { const a = P[i - 1], b = P[i], n = Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 4); for (let k = 0; k <= n; k++) pts.push({ x: a.x + (b.x - a.x) * k / n, y: a.y + (b.y - a.y) * k / n }); } return pts; };
 const LEVELS = [0, 4, 8, 12], SEEDS = [...Array(30).keys()].map(i => i + 1);
 FP.test('level: à tous les niveaux, aucune nappe toxique ne recouvre le chemin sûr', () => {
   for (const level of LEVELS) for (const seed of SEEDS) {
-    const w = genAt(seed, level), pts = pathPoints(w);
+    const w = genAt(seed, level, seed % 4), pts = pathPoints(w);   // les quatre milieux, tour à tour
     for (const o of w.toxics) {
       const ca = Math.cos(-o.a), sa = Math.sin(-o.a);
       for (const p of pts) { const dx = p.x - o.x, dy = p.y - o.y, u = (dx * ca - dy * sa) / o.rx, v = (dx * sa + dy * ca) / o.ry; FP.assert(u * u + v * v > 1, `niveau ${level}, graine ${seed}`); }
@@ -176,7 +176,7 @@ FP.test('level: à tous les niveaux, aucune nappe toxique ne recouvre le chemin 
 FP.test('level: à tous les niveaux, aucune limace ne touche le chemin sûr', () => {
   const h = FP.config.hazards;
   for (const level of LEVELS) for (const seed of SEEDS) {
-    const w = genAt(seed, level), pts = pathPoints(w);
+    const w = genAt(seed, level, seed % 4), pts = pathPoints(w);   // les quatre milieux, tour à tour
     for (const l of w.leaks) {
       const ax = l.x - Math.cos(l.angle) * l.len / 2, ay = l.y - Math.sin(l.angle) * l.len / 2, bx = l.x + Math.cos(l.angle) * l.len / 2, by = l.y + Math.sin(l.angle) * l.len / 2;
       for (const p of pts) FP.assert(FP.geom.distPointToSegment(p.x, p.y, ax, ay, bx, by) > l.r + h.leakWobble + h.leakHitPad, `niveau ${level}, graine ${seed}`);
@@ -185,7 +185,7 @@ FP.test('level: à tous les niveaux, aucune limace ne touche le chemin sûr', ()
 });
 FP.test('level: à tous les niveaux, aucun déchet ne mord sur le chemin sûr', () => {
   for (const level of LEVELS) for (const seed of SEEDS) {
-    const w = genAt(seed, level);
+    const w = genAt(seed, level, seed % 4);   // les quatre milieux, tour à tour
     for (const o of w.solids) for (const p of FP.catalog.visibleFootprint(o)) FP.assert(FP.level.distToSafePath(w, p.x, p.y) >= w.safeRadius, `niveau ${level}, graine ${seed}, ${o.kind}`);
   }
 });
