@@ -20,3 +20,4 @@ function checkMilieuSongs(id, count) {
   FP.assertEqual(new Set(variants.map(groove)).size, count, id + ' : des basses différentes d’une variante à l’autre');
 }
 FP.test('songs: zone industrielle, 3 variantes et un boss', () => checkMilieuSongs('industrie', 3));
+FP.test('songs: décharge, 3 variantes et un boss', () => checkMilieuSongs('decharge', 3));
