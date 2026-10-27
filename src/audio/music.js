@@ -15,7 +15,7 @@
 
   function songFor(state) {
     if (!state || state.mode === 'splash') return { song: null, gain: 0 };   // le son n'est pas encore débloqué
-    if (state.mode === 'menu') return { song: 'title', gain: 1 };
+    if (state.mode === 'menu' || state.mode === 'won') return { song: 'title', gain: 1 };   // écran de fin de saison (v4.9.0) : le thème du titre
     if (state.mode === 'shop') return { song: 'shop', gain: 1 };   // reggae de la boutique
     if (state.mode === 'over') return FP.certificate && FP.certificate.canRestart(state) ? { song: 'title', gain: .5 } : { song: null, gain: 0 };
     // Une variante de la musique de jeu par pousse, en boucle : la nouvelle tige démarre sur sa propre progression.

@@ -1,7 +1,7 @@
 // render/mound.js — émergence en motte de taupe : la pelouse gonfle au-dessus de la pointe qui approche, se fend à
 // l'éclosion, puis retombe en un petit tas de terre qui reste au pied de la fleur tout le run.
-// Lit     : state.mode, state.time, state.events (bloom), state.plant.tip, state.world.{surfaceY,lawnVariant}, state.camera.y,
-//           FP.config.flow.hatchDelay, FP.palette.{lawn,strata}, FP.soil.surfaceTop, FP.px.
+// Lit     : state.mode, state.time, state.events (bloom), state.plant.tip, state.world.{surfaceY,lawnVariant,milieu}, state.camera.y,
+//           FP.config.flow.hatchDelay, FP.palette.milieux, FP.soil.surfaceTop, FP.px.
 // Écrit   : state.fx.mound uniquement (réservé au rendu) ; aléatoire purement visuel (Math.random).
 // Expose  : FP.mound.draw(actx, state) (repère d'art, caméra appliquée ici) ; FP.mound.swell(state) (pur, testé).
 // Ne touche pas au DOM : testable sous Node. La gerbe de terre de la fente est dans render/particles.js (événement bloom).
@@ -12,10 +12,10 @@
   const MAX_H = 9, HEAP_H = 3;    // hauteur de la motte pleine, puis du tas qui reste (pixels d'art)
   const CRACK_TIME = .1, SETTLE = .35;
   const SINK = 3;                 // le dôme descend sous le tapis d'herbe et le remplace : la pelouse est soulevée, pas recouverte
-  // Terre de la couche du haut (humus, FP.palette.strata) : la motte est raccord avec le sol ; RIM, un reflet du ciel sur la crête.
+  // Terre de la couche du haut (humus du milieu) : la motte est raccord avec le sol ; RIM, un reflet du ciel sur la crête.
   const CRACK = '#0a0605', RIM = '#3a2a1e';
-  const HUMUS = FP.palette.strata.humus;
-  const EARTH = [HUMUS[0], HUMUS[2], HUMUS[3], RIM];   // ombre, corps, éclairé, crête
+  const earthOf = (milieu) => { const h = FP.palette.milieux[milieu].strata.humus; return [h[0], h[2], h[3], RIM]; };   // ombre, corps, éclairé, crête
+  let EARTH = null;   // terre du milieu de l'image en cours (draw)
   const rand = (a, b) => a + (b - a) * Math.random();
 
   // Gonflement : k de 0 (loin) à 1 (la pointe touche la surface), centré sur la pointe. Seulement pendant la pousse.
@@ -85,7 +85,8 @@
     fx.last = t;
     const oy = px.toArt(state.camera.y), base = px.toArt(FP.soil.surfaceTop(world)) - 2 - oy;
     if (base < -20 || base > FP.view.art.h + 20) return;
-    const lawn = FP.palette.lawn[(world.lawnVariant || 0) % FP.palette.lawn.length];
+    const lawns = FP.palette.milieux[world.milieu].lawn, lawn = lawns[(world.lawnVariant || 0) % lawns.length];
+    EARTH = earthOf(world.milieu);
 
     for (const e of state.events) if (e.type === 'bloom') fx.open = { x: e.x, t0: t };
 

@@ -91,14 +91,15 @@ L'état de la partie en cours est `FP.state.current`, créé par `FP.state.creat
 
 ```js
 {
-  mode: 'splash' | 'menu' | 'ready' | 'playing' | 'dying' | 'bloom' | 'over',
+  mode: 'splash' | 'menu' | 'ready' | 'playing' | 'dying' | 'bloom' | 'shop' | 'won' | 'over',
   time, seed, level, rng, signature,
+  run:    { milieu, step, saison, bosses, boss, card, won },   // milieux (v4.9.0), écrit par play/flow.js seul
   input:  { x, screenX, y, down, active, pressed },
   camera: { y, manual, near, zoom, shake },
   plant:  { seed, tip, dir, guide, trail, oldTrails, stemAge, stemCount, reserves, corruption, toxicTimer, recentToxic, scrapeTimer, cast, castRng, character },
-  world:  { width, height, viewH, surfaceY, skyVariant, lawnVariant, safePath, safeRadius, solids, toxics, leaks, bonuses, coins, chains },
+  world:  { width, height, viewH, surfaceY, milieu, skyVariant, lawnVariant, safePath, safeRadius, solids, toxics, leaks, bonuses, coins, chains },
   query:  { solid, danger, near, toxic, leak, leakHit, grazes },
-  flow:   { timer, stage, fade, overReason, blossom },
+  flow:   { timer, stage, fade, overReason, blossom, next, won },
   garden: { flowers },
   graze:  { active /* Map objet → frôlement */ },
   power:  { shield, shieldGrace },
@@ -156,9 +157,17 @@ Spec : `docs/superpowers/specs/2026-10-22-interface-pixel-design.md` ; maquettes
 
 ## Ordre de chargement
 
-`index.html` charge : `assets/obstacles/manifest.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `hazards.js`, `src/play/plant.js`, `src/world/collision.js`, `src/play/flow.js`, `graze.js`, `scoring.js`, `powerups.js`, `src/play/camera.js`, `src/render/palette.js`, `px.js`, `view.js`, `sprites.js`, `soil.js`, `sky.js`, `obstacles.js`, `hazards.js`, `powerups.js`, `faces.js`, `cast.js`, `cast2.js`, `hero.js`, `plant.js`, `effects.js`, `flowers.js`, `particles.js`, `drillfx.js`, `mound.js`, `src/ui/font.js`, `hud.js`, `shout.js`, `logo.js`, `title.js`, `certificate.js`, `ui.js`, `src/render/frame.js`, `src/audio/synth.js`, `songs.js`, `sequencer.js`, `music.js`, `sfx.js`, `audio.js`, `src/debug/perf.js`, `flydebug.js`, `src/core/loop.js`, `src/ui/input.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` (pour le catalogue).
+`index.html` charge : `assets/obstacles/manifest.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `hazards.js`, `src/play/plant.js`, `src/world/collision.js`, `src/play/flow.js`, `graze.js`, `scoring.js`, `powerups.js`, `src/play/camera.js`, `src/render/palette.js`, `px.js`, `view.js`, `sprites.js`, `soil.js`, `sky.js`, `obstacles.js`, `hazards.js`, `powerups.js`, `faces.js`, `cast.js`, `cast2.js`, `hero.js`, `plant.js`, `effects.js`, `flowers.js`, `particles.js`, `drillfx.js`, `mound.js`, `src/ui/font.js`, `hud.js`, `shout.js`, `cheer.js`, `cards.js`, `logo.js`, `title.js`, `certificate.js`, `ui.js`, `src/render/frame.js`, `src/audio/synth.js`, `songs.js`, `sequencer.js`, `music.js`, `sfx.js`, `audio.js`, `src/debug/perf.js`, `flydebug.js`, `src/core/loop.js`, `src/ui/input.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` (pour le catalogue).
 
 `dev/check.html` charge aussi les fichiers `src/audio/*`, `src/debug/perf.js`, `flydebug.js` et `src/ui/input.js` (sans canvas ni paramètre d'URL : `FP.perf` et `FP.flydebug` valent `null`, le son reste muet, le pointeur n'est pas écouté).
+
+## Milieux (v4.9.0)
+
+- Une partie traverse les quatre milieux de `FP.config.milieux` (friche, zone industrielle, décharge, site nucléaire). Chacun dure `FP.config.run.steps` (3) pousses réussies — une éclosion compte pour une, pollen ou non ; une mort ne compte pas —, puis le bon de commande s'ouvre et le niveau suivant est celui du boss (`state.run.boss`). L'éclore bat le boss ; `play/flow.js` passe alors au milieu suivant avant de générer le niveau. Après le quatrième : écran de fin (mode `won`) la première fois, puis saison suivante (gains × `saison`).
+- La boutique ne s'ouvre plus qu'avant un boss et à la dernière chance.
+- `world/level.js` tire les obstacles dans les tables de bande restreintes aux familles du milieu (`FP.level.tableFor`) et écrit `world.milieu` ; le T-Rex ne vit qu'au site nucléaire.
+- Le décor d'un milieu (ciel, strates, pelouse) est dans `FP.palette.milieux[id]` ; `render/sky.js`, `soil.js`, `mound.js`, `plant.js` et `obstacles.js` lisent `world.milieu` (les caches du ciel, de la terre et des anciennes tiges l'ont dans leur clé).
+- `ui/cards.js` dessine les cartons (`state.run.card` : `milieu`, `boss`, `victory`) et l'écran de fin ; le HUD montre le milieu et le multiplicateur de saison, le certificat les sites réhabilités, le titre le record de progression (`FP.scoring.records.reach`).
 
 ## Dangers diffus
 

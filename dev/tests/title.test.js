@@ -26,3 +26,10 @@ FP.test('title: l’icône de son est touchable, et seulement elle', () => {
   FP.assert(!FP.title.hitIcon(103, 183, 206, 366), 'le centre lance la partie');
   FP.assert(r.x + r.w <= 206 && r.y >= 0);
 });
+// Milieux (v4.9.0) : le record de progression sous le titre.
+FP.test('title: le record de progression', () => {
+  FP.assertEqual(FP.title.recordLine({ flowers: 0, eco: 0, reach: { saison: 1, milieu: 2 }, won: false }), 'Record : DÉCHARGE');
+  FP.assertEqual(FP.title.recordLine({ flowers: 0, eco: 0, reach: { saison: 2, milieu: 1 }, won: true }), 'Record : saison 2');
+  FP.assertEqual(FP.title.recordLine({ flowers: 0, eco: 0, reach: { saison: 1, milieu: 0 }, won: false }), null);
+  FP.assertEqual(FP.title.recordLine({ flowers: 3, eco: 500 }), null);
+});

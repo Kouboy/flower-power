@@ -28,3 +28,9 @@ FP.test('hud: plus de nombre de fleurs ni d’élan', () => {
   const it = FP.hud.items(hudRun());
   FP.assert(!('flowers' in it) && !('elan' in it));
 });
+// Milieux (v4.9.0) : nom du milieu en haut, multiplicateur de saison près du score.
+FP.test('hud: le nom du milieu et le multiplicateur de saison', () => {
+  const s = FP.state.createRun(1, { W: 440, H: 783 }); s.run.milieu = 2;
+  FP.assertEqual(FP.hud.items(s).milieu, 'DÉCHARGE'); FP.assertEqual(FP.hud.items(s).mult, 1);
+  s.run.saison = 2; FP.assertEqual(FP.hud.items(s).mult, 2);
+});

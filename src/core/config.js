@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '4.8.0',
+    version: '4.9.0',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -193,10 +193,28 @@
       minChain: 4, spinFps: 9, edge: 4
     },
 
+    // Milieux (v4.9.0) : une partie traverse les quatre dans l'ordre ; chacun dure `run.steps` pousses réussies, puis son boss.
+    // kinds : familles d'obstacles du milieu (identifiants de spawnTables) ; palettes de décor : FP.palette.milieux[id].
+    milieux: [
+      { id: 'friche', name: 'FRICHE URBAINE', line: 'Futur éco-quartier. Livraison prévue : jamais.',
+        kinds: ['cone', 'scooter', 'tire', 'trashbag', 'drone'],
+        boss: { name: 'LA BÉTONNEUSE DU GRAND PROJET', order: 'PERCE SES 4 VANNES À BÉTON' } },
+      { id: 'industrie', name: 'ZONE INDUSTRIELLE', line: 'Taux d\'emploi local : 0,3 robot par habitant.',
+        kinds: ['server', 'battery', 'solar', 'extinguisher', 'drone'],
+        boss: { name: 'RAFFINERIE ÉCO-RESPONSABLE™', order: 'PERCE SES 4 VANNES' } },
+      { id: 'decharge', name: 'DÉCHARGE', line: 'Tri sélectif : la décharge choisit qui elle garde.',
+        kinds: ['microwave', 'arcade', 'trashbag', 'tire', 'scooter'],
+        boss: { name: 'L\'INCINÉRATEUR À ÉNERGIE VERTE', order: 'PERCE SES 4 BRÛLEURS' } },
+      { id: 'nucleaire', name: 'SITE NUCLÉAIRE', line: 'Énergie décarbonée. Déchets : à voir dans 24 000 ans.',
+        kinds: ['nuclear', 'sarcophagus', 'battery', 'server'],
+        boss: { name: 'LE RÉACTEUR « NEUTRE EN CARBONE »', order: 'PERCE SES 4 BARRES DE CONTRÔLE' } }
+    ],
+    run: { steps: 3 },   // pousses réussies par milieu avant son boss
+
     // Boutique de fin de pousse (v4.6.0) : 3 articles tirés (un à −50 %), achetés au score ; effets sur la pousse suivante.
     // co2 : masse satirique ajoutée à la « livraison » (kg), sans effet en jeu. Tirage propre (graine ^ salt ^ passage).
     shop: {
-      salt: 0x5f3759df, every: 3, promo: .5,   // every : le bon s'ouvre toutes les 3 pousses (et toujours en dernière chance)
+      salt: 0x5f3759df, promo: .5,   // le bon s'ouvre avant chaque boss (et toujours en dernière chance) : play/flow.js
       lobbyingK: .6, compostK: .8, beerK: .3, premiumK: 2,
       magnetRange: 110, magnetSpeed: 140, magnetAccel: 900,   // Aimant : portée (px), vitesse de départ et accélération (px/s, px/s²) des jetons aspirés
       inTime: .25, stampTime: .35, outTime: .3,
@@ -229,14 +247,21 @@
 
     // Déroulé de partie. hatchDelay : la motte se fend, puis la fleur sort (render/mound.js).
     flow: {
+      wonDelay: 1.5,   // écran de fin (v4.9.0) : délai avant qu'un appui lance la saison suivante
       germTime: .6, germBack: .25,   // germination (v4.7.0) : maintenir .6 s fait sortir la pousse ; lâcher, le germe rentre en .25 s
       dyingTime: .85, bloomTime: 1.55, hatchDelay: .24, hatchShake: .1, fadeOutTime: .46, fadeInTime: .48, oldTrailsMax: 6, trailSimplifyPx: 11, deathShake: .28
     },
 
     // Textes affichés.
     text: {
+      // Cartons des milieux (v4.9.0, ui/cards.js) ; noms, lignes et boss : FP.config.milieux.
+      cards: {
+        milieu: 'MILIEU', saison: 'SAISON', boss: 'BOSS', pending: '(combat en préparation)', victory: 'BOSS VAINCU',
+        won: { title: 'SITE RÉHABILITÉ', lines: ['Le site est officiellement déclaré réhabilité.', 'Les actionnaires vous remercient.'], next: 'Toucher pour la saison' }
+      },
       ready: 'MAINTENIR POUR POUSSER',
       pressStart: 'PRESS TO START',   // écran d'accueil figé, clin d'œil Mega Drive
+      record: 'Record :', saison: 'saison',   // titre (v4.9.0) : progression la plus lointaine
       chain: ['KARMA !', 'GREEN !', '0 DÉCHET !'],   // cri du chapelet complet (v4.5.0), tiré au hasard
       // Bon de commande (v4.6.0).
       shop: {
@@ -254,7 +279,7 @@
       again: 'TOUCHER POUR REPOUSSER',
       footer: ['© 2026 ÉCOSOFT™', 'UNE FILIALE DE PÉTROFLORE'],
       certificate: { title: 'CERTIFICAT', subtitle: 'D’ÉCO-RESPONSABILITÉ', flowers: 'FLEURS ÉCLOSES', eco: 'ÉCOCRÉDITS™',
-        stems: 'TIGES SACRIFIÉES', record: 'RECORD', beaten: 'BATTU', flowersUnit: 'FLEURS', cause: 'CAUSE DU DÉCÈS :', stamp: 'VALIDÉ*', note: '* SOUS RÉSERVE' },
+        stems: 'TIGES SACRIFIÉES', sites: 'SITES RÉHABILITÉS', record: 'RECORD', beaten: 'BATTU', flowersUnit: 'FLEURS', cause: 'CAUSE DU DÉCÈS :', stamp: 'VALIDÉ*', note: '* SOUS RÉSERVE' },
       deathDefault: 'rupture : déchet',
       deathLeak: 'lixiviat vivant : pointe brûlée',
       deathToxic: 'pointe brûlée dans une zone toxique',

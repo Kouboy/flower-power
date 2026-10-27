@@ -72,7 +72,9 @@
     const k = FP.config.coins, n = k.easy.min + Math.floor(rng.next() * (k.easy.max - k.easy.min + 1));
     const q = { n, offset, amp: k.wave[0] + rng.next() * (k.wave[1] - k.wave[0]), waves: k.waves[0] + rng.next() * (k.waves[1] - k.waves[0]),
       phase: rng.next() * Math.PI * 2, span: (n - 1) * k.spacing * .8 };   // span : hauteur parcourue, à peu près
-    q.y0 = slice.bottom - rng.next() * Math.max(0, slice.bottom - slice.top - q.span);   // départ tiré dans toute la tranche
+    // Départ tiré dans la tranche (v4.9.0) : la traînée peut déborder de la moitié de sa longueur sur la tranche du dessus,
+    // la frontière entre deux tranches (le milieu du niveau) n'est plus un creux, sans dégarnir le bas.
+    q.y0 = slice.bottom - rng.next() * Math.max(0, slice.bottom - slice.top - q.span / 2);
     let best = [];
     for (const scale of [1, .7, .45, .25]) {
       const run = longestRun(world, easyPoints(world, slice, q, scale));

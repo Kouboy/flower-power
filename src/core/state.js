@@ -31,12 +31,15 @@
     const s = pickSeed(seed);
     const height = worldHeightFor(dims.H);
     return {
-      mode: 'menu',          // 'splash' (accueil figé, au lancement) | 'menu' | 'ready' | 'playing' | 'dying' | 'bloom' | 'over'
+      mode: 'menu',          // 'splash' (accueil figé, au lancement) | 'menu' | 'ready' | 'playing' | 'dying' | 'bloom' | 'shop' | 'won' | 'over'
       time: 0,
       seed: s,
       level: 0,
       rng: FP.createRng(s),
       signature: { armed: false, spawned: false, targetLevel: 0 },  // T-Rex signature, 1 par run max
+      // Progression dans les milieux (v4.9.0), écrite par play/flow.js : milieu (0 à 3), pousses réussies dans le milieu,
+      // saison, boss vaincus, niveau de boss en cours, carton à montrer, première saison terminée.
+      run: { milieu: 0, step: 0, saison: 1, bosses: 0, boss: false, card: { kind: 'milieu', t0: 0 }, won: false },
       camera: { y: Math.max(0, height - dims.H), manual: false, near: 0, zoom: 1, shake: 0 },
       input: { x: 0, screenX: 0, y: 0, down: false, active: false, pressed: false, touch: false, key: false },   // instantané du pointeur (x monde, y écran)
       plant: {
@@ -47,13 +50,13 @@
         cast: [], castRng: FP.createRng((s ^ FP.config.cast.salt) >>> 0), character: null   // pioche des personnages (play/plant.js)
       },
       world: {
-        width: dims.W, height, viewH: dims.H, surfaceY: surfaceYFor(dims.H),
+        width: dims.W, height, viewH: dims.H, surfaceY: surfaceYFor(dims.H), milieu: 'friche',
         skyVariant: 0, lawnVariant: 0, safePath: [], safeRadius: 0,
         solids: [], toxics: [], leaks: [], bonuses: [],    // bonuses : récompenses de flyover (play/powerups.js)
         coins: [], chains: []                               // circuits de pièces (world/coins.js)
       },
       query: { solid: null, danger: 0, near: null, toxic: 0, leak: 0, leakHit: null, grazes: [] },          // requête de pointe de la frame (world/collision.js)
-      flow: { timer: 0, stage: 'show', fade: 0, overReason: '', blossom: null },       // déroulé de partie (play/flow.js)
+      flow: { timer: 0, stage: 'show', fade: 0, overReason: '', blossom: null, next: null, won: false },       // déroulé de partie (play/flow.js)
       garden: { flowers: [] },                                // parterre : fleurs écloses pendant tout le run
       graze: { active: new Map() },                           // frôlements en cours (play/graze.js)
       power: { shield: false, shieldGrace: 0 },              // bouclier organique (play/powerups.js)

@@ -1,5 +1,5 @@
 // render/sky.js — ciel de crépuscule pollué en pixels : bandes tramées, soleil voilé, usines, smog qui dérive.
-// Lit     : state.world.{width,surfaceY,skyVariant}, state.camera.y, state.time, FP.view.{W,art}, FP.palette.sky, FP.soil.surfaceTop.
+// Lit     : state.world.{width,surfaceY,skyVariant,milieu}, state.camera.y, state.time, FP.view.{W,art}, FP.palette.milieux, FP.soil.surfaceTop.
 // Écrit   : rien dans l'état (cache de la partie fixe, créé à la première utilisation).
 // Expose  : FP.sky.draw(actx, state) — repère d'art, la caméra est appliquée ici.
 (function () {
@@ -10,9 +10,11 @@
   const SILHOUETTE = '#24122e', SILHOUETTE_LIGHT = '#341a3e';
 
   // Partie fixe : bandes, soleil, usines. h = hauteur du ciel en pixels d'art (jusqu'au haut de la pelouse).
-  function build(w, h, variant) {
-    const { px, palette } = FP;
-    const pal = palette.sky[variant % palette.sky.length];
+  // Ciel du milieu (v4.9.0) : la nuance tirée, ramenée au nombre de nuances du milieu.
+  const skyOf = (world) => { const s = FP.palette.milieux[world.milieu].sky; return s[world.skyVariant % s.length]; };
+
+  function build(w, h, pal) {
+    const { px } = FP;
     cache = cache || document.createElement('canvas');
     cache.width = w; cache.height = h;
     const g = cache.getContext('2d');
@@ -52,16 +54,16 @@
   }
 
   function draw(actx, state) {
-    const { px, palette } = FP, world = state.world;
+    const { px } = FP, world = state.world;
     const w = Math.ceil(Math.max(world.width, FP.view.W) / px.SCALE);
     const h = Math.max(1, px.toArt(FP.soil.surfaceTop(world)));
     const oy = px.toArt(state.camera.y);
     if (oy >= h) return;                                   // ciel hors écran
-    const key = w + '|' + h + '|' + world.skyVariant;
-    if (key !== cacheKey) { build(w, h, world.skyVariant); cacheKey = key; }
+    const key = w + '|' + h + '|' + world.milieu + '|' + world.skyVariant;
+    if (key !== cacheKey) { build(w, h, skyOf(world)); cacheKey = key; }
     actx.drawImage(cache, 0, -oy);
 
-    const pal = palette.sky[world.skyVariant % palette.sky.length], t = state.time;
+    const pal = skyOf(world), t = state.time;
     // Nuages de smog : grappes de disques plats qui dérivent lentement et reviennent par l'autre bord.
     for (let i = 0; i < 4; i++) {
       const speed = 2 + i * .6, span = w + 60;

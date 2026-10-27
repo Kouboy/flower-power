@@ -1,6 +1,6 @@
 // ui/certificate.js — écran de fin : un « certificat d'éco-responsabilité » qui monte sur le jeu assombri, ses lignes qui
 // s'écrivent, puis le tampon « VALIDÉ* » qui s'abat ; la relance n'est possible qu'après le tampon.
-// Lit     : state.time, state.score.{flowers,eco,recordBefore}, state.plant.stemCount, state.flow.overReason,
+// Lit     : state.time, state.score.{flowers,eco,recordBefore}, state.plant.stemCount, state.run.{bosses,saison}, state.flow.overReason,
 //           FP.config.text.{certificate,again}, FP.font, FP.view.ui.
 // Écrit   : state.fx.ui.{overAt, readyAfter, certCue} uniquement (début de la fin de partie ; délai avant relance, tampon compris).
 // Expose  : FP.certificate.lines(state), FP.certificate.canRestart(state), FP.certificate.cues(state) (purs hors mémoire, testés),
@@ -21,6 +21,8 @@
       { label: t.flowers, value: fmt(sc.flowers) },
       { label: t.eco, value: 'Ɇ' + fmt(sc.eco) },
       { label: t.stems, value: fmt(state.plant.stemCount) },
+      // Boss vaincus (v4.9.0) : « 2/4 » pendant la première saison, le total ensuite.
+      { label: t.sites, value: state.run.saison > 1 ? fmt(state.run.bosses) : state.run.bosses + '/' + FP.config.milieux.length },
       beaten ? { label: t.record, value: t.beaten, beaten: true } : { label: t.record, value: fmt(rb.flowers) + ' ' + t.flowersUnit, beaten: false }
     ];
     if (!beaten) rows.push({ label: '', value: 'Ɇ' + fmt(rb.eco) });

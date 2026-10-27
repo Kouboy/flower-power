@@ -2,6 +2,16 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.9.0 — Quatre milieux
+
+- une partie traverse quatre milieux : friche urbaine, zone industrielle, décharge, site nucléaire ; chacun a ses familles d'obstacles, son ciel, sa terre et sa pelouse (le T-Rex ne vit plus qu'au nucléaire) ;
+- cycle : 3 pousses réussies dans le milieu, le bon de commande, puis le niveau de boss (provisoire : un niveau normal annoncé « combat en préparation ») ; l'éclore passe au milieu suivant ; après le 4ᵉ, écran de fin « SITE RÉHABILITÉ » puis saison 2, 3… avec des gains ×2, ×3… ;
+- le bon de commande ne s'ouvre plus qu'avant chaque boss (et toujours en dernière chance) ; une mort ne fait plus avancer sa cadence ;
+- cartons d'entrée de milieu, d'annonce du boss et de victoire ; le HUD montre le milieu et le multiplicateur de saison, le certificat les sites réhabilités, le titre le record de progression ;
+- jetons : une traînée peut déborder sur la tranche du dessus, le milieu du niveau n'est plus un creux ;
+- police : « », et — ;
+- banc : 464 tests.
+
 ## v4.8.0 — Le chemin serpente
 
 - la difficulté passe par la forme du chemin plutôt que par le nombre de dangers : du niveau 0 au niveau 10, le chemin sûr serpente de plus en plus (sinuosité 400 → 720 : nœuds tous les 105 px au lieu de 145, changements de côté 45 % au lieu de 18 %, écarts plus larges) ;

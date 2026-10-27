@@ -102,7 +102,8 @@ FP.test('coins: densité homogène du haut au bas du niveau', () => {
   for (const [W, H] of [[440, 783], [412, 915]]) {
     const thirds = [0, 0, 0];
     for (let seed = 1; seed <= 40; seed++) {
-      const s = FP.state.createRun(seed, { W, H }); FP.level.generate(s); const w = s.world, top = w.surfaceY + FP.config.coins.sliceMargin, span = startLine(w) - top;
+      // Les quatre milieux, tour à tour (v4.9.0).
+      const s = FP.state.createRun(seed, { W, H }); s.run.milieu = seed % 4; FP.level.generate(s); const w = s.world, top = w.surfaceY + FP.config.coins.sliceMargin, span = startLine(w) - top;
       for (const c of w.coins) thirds[Math.min(2, Math.max(0, Math.floor((c.y - top) / span * 3)))]++;
     }
     FP.assert(Math.min(...thirds) >= .6 * Math.max(...thirds), W + '×' + H + ' : ' + thirds.join(' / '));

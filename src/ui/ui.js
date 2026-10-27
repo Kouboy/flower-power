@@ -1,5 +1,5 @@
 // ui/ui.js — aiguillage de l'interface : efface la toile d'interface et dessine l'écran du mode courant.
-// Lit     : state.mode, FP.view.ui, FP.plantRender.drawFinger, FP.hud, FP.shout, FP.cheer, FP.orderForm, FP.title, FP.certificate.
+// Lit     : state.mode, FP.view.ui, FP.plantRender.drawFinger, FP.hud, FP.shout, FP.cheer, FP.cards, FP.orderForm, FP.title, FP.certificate.
 // Écrit   : rien (la toile d'interface uniquement).
 // Expose  : FP.ui.draw(g, state) (repère d'interface : pixels d'art, sans caméra ni zoom).
 (function () {
@@ -13,6 +13,7 @@
     if (m === 'over') FP.certificate.draw(g, state);
     if (m === 'playing') FP.plantRender.drawFinger(g, state);
     if (m === 'playing' || m === 'dying' || m === 'bloom' || m === 'ready') { FP.hud.draw(g, state); FP.shout.draw(g, state); FP.cheer.draw(g, state); }
+    if (m === 'ready' || m === 'bloom' || m === 'won') FP.cards.draw(g, state);   // cartons des milieux, écran de fin de saison
     if (m === 'shop') { FP.orderForm.draw(g, state); FP.hud.draw(g, state); }   // bon de commande ; graines et score restent visibles
   }
 

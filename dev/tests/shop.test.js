@@ -130,23 +130,21 @@ const until = (s, mode, max = 900) => { for (let i = 0; i < max && s.mode !== mo
 // Germination (v4.7.0) : une pousse prête ne part qu'une fois germée (au clavier : d'un coup).
 const sprout = (s) => { if (s.mode === 'ready') { s.input = { ...s.input, key: true }; FP.flow.update(s, 1 / 60); s.input = { ...s.input, key: false }; } return s.mode; };
 const settle = (s) => { for (let i = 0; i < 60 && s.shop; i++) { s.time += 1 / 60; FP.shop.update(s, 1 / 60); } };
-FP.test('flow: la 3e pousse finie ouvre le bon ; les autres enchaînent directement', () => {
+FP.test('flow: la 3e éclosion du milieu ouvre le bon ; les morts enchaînent directement', () => {
   const s = shopRun(); s.plant.reserves = 3; crash(s);   // 1re pousse
   FP.assertEqual(until(s, 'ready'), 'ready'); FP.assert(!s.shop); FP.assertEqual(sprout(s), 'playing');
   crash(s); FP.assertEqual(until(s, 'ready'), 'ready'); FP.assertEqual(sprout(s), 'playing');   // 2e
-  s.plant.reserves = 3; s.plant.tip = { x: 220, y: s.world.surfaceY - 1 }; FP.collision.update(s); FP.flow.update(s, 0);   // 3e : éclosion
+  s.plant.reserves = 3; s.run.step = 2; s.plant.tip = { x: 220, y: s.world.surfaceY - 1 }; FP.collision.update(s); FP.flow.update(s, 0);   // 3e éclosion : boss
   FP.assertEqual(until(s, 'shop'), 'shop');
 });
-FP.test('flow: mort → bon de commande → nouvelle pousse', () => {
-  const s = shopRun(); s.plant.reserves = 3; s.plant.stemCount = 3; crash(s);
-  FP.assertEqual(until(s, 'shop'), 'shop'); FP.assertEqual(s.shop.after, 'death');
-  settle(s); FP.assert(s.shop === null || s.shop.phase === 'idle');
-  FP.shop.decline(s); settle(s); FP.assertEqual(s.mode, 'ready'); FP.assertEqual(sprout(s), 'playing');
+FP.test('flow: une mort n’ouvre plus le bon (sauf la dernière) : nouvelle pousse directe', () => {
+  const s = shopRun(); s.plant.reserves = 3; s.plant.stemCount = 3; crash(s);   // v4.9.0 : le bon n'ouvre qu'avant un boss
+  FP.assertEqual(until(s, 'ready'), 'ready'); FP.assert(!s.shop); FP.assertEqual(sprout(s), 'playing');
 });
 FP.test('flow: éclosion → bon de commande → prête', () => {
-  const s = shopRun(); s.plant.stemCount = 3; s.plant.tip = { x: 220, y: s.world.surfaceY - 1 }; FP.collision.update(s); FP.flow.update(s, 0);
+  const s = shopRun(); s.run.step = 2; s.plant.tip = { x: 220, y: s.world.surfaceY - 1 }; FP.collision.update(s); FP.flow.update(s, 0);   // 3e éclosion du milieu
   FP.assertEqual(until(s, 'shop'), 'shop'); FP.assertEqual(s.shop.after, 'bloom');
-  settle(s); FP.shop.decline(s); settle(s); FP.assertEqual(s.mode, 'ready');
+  settle(s); FP.shop.decline(s); settle(s); FP.assertEqual(s.mode, 'ready'); FP.assertEqual(s.run.card.kind, 'boss');
 });
 FP.test('flow: la dernière mort ouvre toujours le bon de dernière chance', () => {
   const s = shopRun(); s.plant.reserves = 1; s.plant.stemCount = 1; crash(s);
@@ -208,6 +206,6 @@ FP.test('économie: les jetons d’un passage ne paient pas tout', () => {
     perStem += (s.world.coins.length * k.value + s.world.chains.reduce((t, c) => t + k.chainBonus[c.kind], 0)) / 20;
   }
   const price = (id) => FP.config.shop.items.find(i => i.id === id).price;
-  FP.assert(FP.config.shop.every * perStem < price('seed'), 'graine : ' + Math.round(perStem) + ' Ɇ/pousse');
+  FP.assert(FP.config.run.steps * perStem < price('seed'), 'graine : ' + Math.round(perStem) + ' Ɇ/pousse');
   FP.assert(FP.config.shop.items.every(i => i.price >= 1.2 * perStem), 'articles trop bon marché');
 });
