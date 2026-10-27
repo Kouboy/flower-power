@@ -2,7 +2,8 @@
 // de jeu « funk 70s hanté » (B), dont l'orgue et le sitar de A forment des couches de danger.
 // Lit     : rien.
 // Écrit   : rien.
-// Expose  : FP.songs.title, FP.songs.shop (reggae de la boutique), FP.songs.game0..3 (variantes de la musique de jeu, une par pousse ; FP.songs.gameVariants, FP.songs.game = la 1re)
+// Expose  : FP.songs.title, FP.songs.shop (reggae de la boutique), FP.songs.friche0..3 (variantes de la musique de la friche, une par pousse),
+//           FP.songs.variants(milieuId) (nombre de variantes d'un milieu)
 //           = { bpm, bars, beatsPerBar, pcs, notes, swing? }, FP.songs.jingles.{death,blossom,record} ; note = { beat, dur, inst, midi?, vel?, layer, bend?, detune? (cents) }.
 //           swing : retard aléatoire maximal (s) de la caisse claire et des charlestons (« boîte à rythmes qui boite »).
 // Temps en beats (noire = 1) depuis le début de la boucle ; pcs = classes de hauteur de la gamme (contrôlées par les tests).
@@ -71,7 +72,7 @@
       sitarB: [[0, 76, .5], [.5, 74, .5], [1, 70, .5], [1.5, 71, .5], [2, 67, 1], [3, 64, 1]] }
   ];
 
-  function game(v) {
+  function friche(v) {
     const n = [], q = (pos) => pos / 4;   // positions en doubles croches
     const { bassA, bassB, sitarA, sitarB, organ, clav } = VARIANTS[v];
     for (let bar = 0; bar < 8; bar++) {
@@ -131,7 +132,8 @@
     return { bpm: 72, bars: 4, beatsPerBar: 4, pcs: [4, 6, 7, 9, 11, 0, 2], notes: sorted(n) };
   }
 
-  const gameVariants = VARIANTS.map((_, v) => game(v));
-  FP.songs = { title: title(), game: gameVariants[0], gameVariants, shop: shop(), jingles: jingles() };
-  gameVariants.forEach((s, v) => { FP.songs['game' + v] = s; });
+  // Nombre de variantes d'un milieu : les clés « <milieu><chiffre> » présentes (les fichiers de milieu s'y ajoutent).
+  const variants = (id) => Object.keys(FP.songs).filter(k => k.startsWith(id) && /^\d+$/.test(k.slice(id.length))).length;
+  FP.songs = { title: title(), shop: shop(), jingles: jingles(), variants };
+  VARIANTS.forEach((_, v) => { FP.songs['friche' + v] = friche(v); });
 })();

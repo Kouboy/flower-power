@@ -19,8 +19,9 @@
     if (state.mode === 'shop') return { song: 'shop', gain: 1 };   // reggae de la boutique
     if (state.mode === 'over') return FP.certificate && FP.certificate.canRestart(state) ? { song: 'title', gain: .5 } : { song: null, gain: 0 };
     // Une variante de la musique de jeu par pousse, en boucle : la nouvelle tige démarre sur sa propre progression.
-    return { song: 'game' + ((Math.max(1, state.plant.stemCount) - 1) % FP.songs.gameVariants.length), gain: 1 };
+    return { song: 'friche' + ((Math.max(1, state.plant.stemCount) - 1) % FP.songs.variants('friche')), gain: 1 };
   }
+  const isGame = (name) => !!name && name !== 'title' && name !== 'shop';   // un morceau de jeu (pas le titre ni la boutique)
 
   // Frôlement le plus fort en cours (0 à 1).
   function grazeLevel(state) {
@@ -58,10 +59,10 @@
     const m = memoFor(backend), p = m.player, now = backend.now(), want = songFor(state);
     if (want.song !== p.current()) {
       if (!want.song) p.stop(OUT_FADE);
-      else p.play(want.song, { fade: want.song === 'title' ? TITLE_FADE : 0, gain: want.gain, bpm: want.song === 'title' || want.song === 'shop' ? 0 : tempoFor(state),
-        atBar: want.song.startsWith('game') && !!p.current() && p.current().startsWith('game') });   // variante suivante : relais en fin de mesure
+      else p.play(want.song, { fade: want.song === 'title' ? TITLE_FADE : 0, gain: want.gain, bpm: isGame(want.song) ? tempoFor(state) : 0,
+        atBar: isGame(want.song) && isGame(p.current()) });   // variante suivante : relais en fin de mesure
     }
-    if (p.current() && p.current().startsWith('game')) { p.setTempo(tempoFor(state)); p.setLayers(layersFor(state)); }
+    if (isGame(p.current())) { p.setTempo(tempoFor(state)); p.setLayers(layersFor(state)); }
     if (p.current() === 'shop') p.setLayers(layersFor(state));
     for (const e of events || []) {
       if (e.type === 'death') m.duckUntil = Math.max(m.duckUntil, now + DEATH_TIME);
