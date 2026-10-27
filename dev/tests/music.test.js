@@ -21,11 +21,6 @@ FP.test('music: les couches suivent le jeu', () => {
   s.query = { grazes: [{ obj: o, kind: 'solid', intensity: .7 }] }; FP.assertEqual(FP.music.layersFor(s).perc, .7);
   s.mode = 'ready'; L = FP.music.layersFor(s); FP.assertEqual(L.clav + L.perc + L.organ + L.sitar, 0); FP.assertEqual(L.groove, 1);
 });
-FP.test('music: tempo 100, +3,5 par éclosion, plafond 125', () => {
-  const s = mRun(); FP.assertEqual(FP.music.tempoFor(s), 100);
-  s.score.flowers = 2; FP.assertEqual(FP.music.tempoFor(s), 107);
-  s.score.flowers = 20; FP.assertEqual(FP.music.tempoFor(s), 125);
-});
 FP.test('music: baisse pendant le frôlement, jusqu’à −6 dB', () => {
   FP.assertEqual(FP.music.grazeDuck(0), 1);
   FP.assert(Math.abs(FP.music.grazeDuck(1) - Math.pow(10, -6 / 20)) < 1e-9);
@@ -49,11 +44,11 @@ FP.test('music: chaque nouvelle pousse a sa variante, en boucle sur 4', () => {
   FP.assertEqual(names.join(','), 'friche0,friche1,friche2,friche3,friche0');
 });
 FP.test('music: la variante suivante démarre au tempo acquis, pas au tempo de base', () => {
-  const spy = audioSpy(), s = mRun(); s.score.flowers = 4; s.plant.stemCount = 2;
+  const spy = audioSpy(), s = mRun(); s.run.step = 2; s.plant.stemCount = 2;
   for (let i = 0; i <= 24; i++) { spy.t = i * .025; FP.music.update(s, [], spy); }   // pas de 25 ms, comme le vrai minuteur
   const notes = spy.calls.filter(c => c[0] === 'note' || c[0] === 'drum');
   const kicks = spy.calls.filter(c => c[0] === 'drum' && c[1] === 'kick').map(c => c[2]);
-  FP.assert(kicks.length >= 2 && Math.abs((kicks[1] - kicks[0]) - .75 * 60 / 114) < 1e-6, 'écart des 2 premières grosses caisses à 114 BPM : ' + (kicks[1] - kicks[0]));
+  FP.assert(kicks.length >= 2 && Math.abs((kicks[1] - kicks[0]) - .75 * 60 / 108) < 1e-6, 'écart des 2 premières grosses caisses à 108 BPM : ' + (kicks[1] - kicks[0]));
   FP.assert(notes.length > 0);
 });
 FP.test('score: constructeurs partagés', () => {
@@ -62,4 +57,49 @@ FP.test('score: constructeurs partagés', () => {
   FP.assertEqual(s.notes.map(n => n.beat).join(), '0,0.5,1,4,4.5,5');
   FP.assertEqual(FP.score.melt(7, 30), -30); FP.assertEqual(FP.songs.variants('friche'), 4);
   FP.assert(!('game' in FP.songs) && !('gameVariants' in FP.songs));
+});
+// Musiques des milieux (v4.10.0) : le morceau suit le niveau généré (milieu, boss).
+const inMilieu = (s, i, boss) => { s.run.milieu = i; s.run.boss = boss; FP.level.generate(s); };
+FP.test('level: le niveau sait s’il est un niveau de boss', () => {
+  const s = mRun(); FP.assertEqual(s.world.boss, false); s.run.boss = true; FP.level.generate(s); FP.assertEqual(s.world.boss, true);
+});
+FP.test('music: le morceau suit le milieu du niveau, sa variante la pousse', () => {
+  const s = mRun(); inMilieu(s, 1, false); s.plant.stemCount = 1; FP.assertEqual(FP.music.songFor(s).song, 'industrie0');
+  s.plant.stemCount = 4; FP.assertEqual(FP.music.songFor(s).song, 'industrie0');   // 3 variantes en boucle
+  s.plant.stemCount = 3; FP.assertEqual(FP.music.songFor(s).song, 'industrie2');
+});
+FP.test('music: niveau de boss → thème du boss, après une mort et sur la graine après la boutique', () => {
+  const s = mRun(); inMilieu(s, 2, true); FP.assertEqual(FP.music.songFor(s).song, 'dechargeBoss');
+  s.mode = 'ready'; FP.assertEqual(FP.music.songFor(s).song, 'dechargeBoss');
+  s.mode = 'shop'; FP.assertEqual(FP.music.songFor(s).song, 'shop');
+  s.mode = 'dying'; FP.level.generate(s); FP.assertEqual(FP.music.songFor(s).song, 'dechargeBoss');
+});
+FP.test('music: pendant l’éclosion, le morceau du niveau joué continue jusqu’à la régénération', () => {
+  const s = mRun(); inMilieu(s, 0, true); s.mode = 'bloom'; s.run.milieu = 1; s.run.boss = false;   // boss battu, pas encore régénéré
+  FP.assertEqual(FP.music.songFor(s).song, 'fricheBoss'); FP.level.generate(s); FP.assert(FP.music.songFor(s).song.startsWith('industrie'));
+});
+FP.test('music: saison 2, retour en friche après le nucléaire', () => {
+  const s = mRun(); inMilieu(s, 3, false); FP.assert(FP.music.songFor(s).song.startsWith('nucleaire'));
+  inMilieu(s, 0, false); FP.assert(FP.music.songFor(s).song.startsWith('friche'));
+});
+FP.test('music: tempo du morceau + 4 par pousse du milieu ; un boss à son tempo', () => {
+  const s = mRun(); inMilieu(s, 0, false); s.plant.stemCount = 1; s.run.step = 0; FP.assertEqual(FP.music.tempoFor(s), 100);
+  s.run.step = 2; FP.assertEqual(FP.music.tempoFor(s), 108);
+  s.score.flowers = 40; FP.assertEqual(FP.music.tempoFor(s), 108);
+  inMilieu(s, 1, false); s.run.step = 1; FP.assertEqual(FP.music.tempoFor(s), 108);
+  inMilieu(s, 0, true); s.run.step = 3; FP.assertEqual(FP.music.tempoFor(s), FP.songs.fricheBoss.bpm);
+});
+FP.test('music: sur un niveau de boss, la couche de surface reste ouverte', () => {
+  const s = mRun(); inMilieu(s, 1, true); FP.assertEqual(FP.music.layersFor(s).sitar, 1);
+  s.mode = 'ready'; FP.assertEqual(FP.music.layersFor(s).sitar, 0);   // veille : socle seul
+});
+FP.test('music: relais en fin de mesure seulement entre deux variantes du même milieu', () => {
+  FP.assert(FP.music.relay('friche0', 'friche1')); FP.assert(!FP.music.relay('nucleaire2', 'friche0'));
+  FP.assert(!FP.music.relay('industrie1', 'industrieBoss')); FP.assert(!FP.music.relay('shop', 'industrieBoss'));
+  FP.assert(!FP.music.relay(null, 'friche0'));
+});
+FP.test('music: écran de fin, titre et boutique inchangés', () => {
+  const s = mRun(); inMilieu(s, 2, true);
+  s.mode = 'won'; FP.assertEqual(FP.music.songFor(s).song, 'title'); s.mode = 'menu'; FP.assertEqual(FP.music.songFor(s).song, 'title');
+  s.mode = 'shop'; FP.assertEqual(FP.music.songFor(s).song, 'shop');
 });

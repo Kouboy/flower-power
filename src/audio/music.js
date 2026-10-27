@@ -1,9 +1,11 @@
-// audio/music.js — direction musicale : quel morceau pour quel moment, couches selon le jeu, tempo selon les éclosions,
+// audio/music.js — direction musicale : quel morceau pour quel moment (milieu et boss du niveau), couches selon le jeu,
+// tempo selon la progression dans le milieu,
 // veille entre deux niveaux, baisses de volume (mort, fleur qui sort, frôlement), et pilotage du séquenceur.
-// Lit     : state.mode, state.score.flowers, state.plant.{tip,corruption,toxicTimer}, state.world.{surfaceY,height},
+// Lit     : state.mode, state.run.step, state.plant.{tip,corruption,toxicTimer,stemCount}, state.world.{surfaceY,height,milieu,boss},
 //           state.graze.active, state.query.grazes, FP.certificate.canRestart, FP.songs, FP.sequencer.
 // Écrit   : rien dans l'état (le moteur audio uniquement).
-// Expose  : FP.music.{songFor (variante de jeu selon la pousse, reggae en boutique), layersFor, tempoFor, filterFor, trebleFor, grazeDuck} (purs, testés), FP.music.update(state, events, backend),
+// Expose  : FP.music.{songFor (morceau du milieu du niveau, sa variante selon la pousse, thème du boss, reggae en boutique), layersFor,
+//           tempoFor, relay (relais en fin de mesure ?), filterFor, trebleFor, grazeDuck} (purs, testés), FP.music.update(state, events, backend),
 //           FP.music.MUSIC_GAIN.
 (function () {
   'use strict';
@@ -18,10 +20,16 @@
     if (state.mode === 'menu' || state.mode === 'won') return { song: 'title', gain: 1 };   // écran de fin de saison (v4.9.0) : le thème du titre
     if (state.mode === 'shop') return { song: 'shop', gain: 1 };   // reggae de la boutique
     if (state.mode === 'over') return FP.certificate && FP.certificate.canRestart(state) ? { song: 'title', gain: .5 } : { song: null, gain: 0 };
-    // Une variante de la musique de jeu par pousse, en boucle : la nouvelle tige démarre sur sa propre progression.
-    return { song: 'friche' + ((Math.max(1, state.plant.stemCount) - 1) % FP.songs.variants('friche')), gain: 1 };
+    // Le morceau du niveau généré (v4.10.0) : il change sous le noir du fondu, quand le niveau est régénéré. Sur un niveau
+    // de boss, le thème du boss ; sinon une variante par pousse, en boucle : la nouvelle tige démarre sur sa propre progression.
+    const id = state.world.milieu;
+    if (state.world.boss) return { song: id + 'Boss', gain: 1 };
+    return { song: id + ((Math.max(1, state.plant.stemCount) - 1) % FP.songs.variants(id)), gain: 1 };
   }
   const isGame = (name) => !!name && name !== 'title' && name !== 'shop';   // un morceau de jeu (pas le titre ni la boutique)
+  // Relais en fin de mesure entre deux variantes du même milieu ; tout autre changement coupe net.
+  const milieuOf = (name) => name.replace(/\d+$/, '');
+  const relay = (from, to) => isGame(from) && isGame(to) && /\d$/.test(from) && /\d$/.test(to) && milieuOf(from) === milieuOf(to);
 
   // Frôlement le plus fort en cours (0 à 1).
   function grazeLevel(state) {
@@ -37,10 +45,15 @@
     if (STANDBY[state.mode]) return { ...off, groove: 1 };   // veille : basse et batterie seules (filtrées)
     const p = state.plant, w = state.world, tip = p.tip;
     const depth = tip ? (tip.y - w.surfaceY) / Math.max(1, w.height - w.surfaceY) : 1;
-    return { groove: 1, clav: 1, perc: grazeLevel(state), organ: p.corruption > 0 || p.toxicTimer > 0 ? 1 : 0, sitar: depth < 1 / 3 ? 1 : 0, ghost: 1 };
+    const sitar = w.boss || depth < 1 / 3 ? 1 : 0;   // sur un niveau de boss, la mélodie de surface reste ouverte
+    return { groove: 1, clav: 1, perc: grazeLevel(state), organ: p.corruption > 0 || p.toxicTimer > 0 ? 1 : 0, sitar, ghost: 1 };
   }
 
-  const tempoFor = (state) => Math.min(125, 100 + 3.5 * state.score.flowers);
+  // Tempo propre au morceau, +4 BPM par pousse réussie dans le milieu ; un boss joue à son tempo.
+  function tempoFor(state) {
+    const song = FP.songs[songFor(state).song], bpm = song ? song.bpm : 100;
+    return state.world.boss ? bpm : bpm + 4 * state.run.step;
+  }
   const filterFor = (state) => (state.mode === 'ready' ? ASLEEP : OPEN);
   const TREBLE = 7;   // dB d'aigus en plus pour le reggae de la boutique : sono de supermarché
   const trebleFor = (state) => (state.mode === 'shop' ? TREBLE : 0);
@@ -60,7 +73,7 @@
     if (want.song !== p.current()) {
       if (!want.song) p.stop(OUT_FADE);
       else p.play(want.song, { fade: want.song === 'title' ? TITLE_FADE : 0, gain: want.gain, bpm: isGame(want.song) ? tempoFor(state) : 0,
-        atBar: isGame(want.song) && isGame(p.current()) });   // variante suivante : relais en fin de mesure
+        atBar: relay(p.current(), want.song) });   // variante suivante : relais en fin de mesure
     }
     if (isGame(p.current())) { p.setTempo(tempoFor(state)); p.setLayers(layersFor(state)); }
     if (p.current() === 'shop') p.setLayers(layersFor(state));
@@ -77,5 +90,5 @@
     p.update(now);
   }
 
-  FP.music = { songFor, layersFor, tempoFor, filterFor, trebleFor, grazeDuck, update, MUSIC_GAIN };
+  FP.music = { songFor, layersFor, tempoFor, relay, filterFor, trebleFor, grazeDuck, update, MUSIC_GAIN };
 })();
