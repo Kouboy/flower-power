@@ -254,6 +254,11 @@
 
     // Textes affichés.
     text: {
+      // Cartons des milieux (v4.9.0, ui/cards.js) ; noms, lignes et boss : FP.config.milieux.
+      cards: {
+        milieu: 'MILIEU', saison: 'SAISON', boss: 'BOSS', pending: '(combat en préparation)', victory: 'BOSS VAINCU',
+        won: { title: 'SITE RÉHABILITÉ', lines: ['Le site est officiellement déclaré réhabilité.', 'Les actionnaires vous remercient.'], next: 'Toucher pour la saison' }
+      },
       ready: 'MAINTENIR POUR POUSSER',
       pressStart: 'PRESS TO START',   // écran d'accueil figé, clin d'œil Mega Drive
       chain: ['KARMA !', 'GREEN !', '0 DÉCHET !'],   // cri du chapelet complet (v4.5.0), tiré au hasard
