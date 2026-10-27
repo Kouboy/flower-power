@@ -261,6 +261,7 @@
       },
       ready: 'MAINTENIR POUR POUSSER',
       pressStart: 'PRESS TO START',   // écran d'accueil figé, clin d'œil Mega Drive
+      record: 'Record :', saison: 'saison',   // titre (v4.9.0) : progression la plus lointaine
       chain: ['KARMA !', 'GREEN !', '0 DÉCHET !'],   // cri du chapelet complet (v4.5.0), tiré au hasard
       // Bon de commande (v4.6.0).
       shop: {
@@ -278,7 +279,7 @@
       again: 'TOUCHER POUR REPOUSSER',
       footer: ['© 2026 ÉCOSOFT™', 'UNE FILIALE DE PÉTROFLORE'],
       certificate: { title: 'CERTIFICAT', subtitle: 'D’ÉCO-RESPONSABILITÉ', flowers: 'FLEURS ÉCLOSES', eco: 'ÉCOCRÉDITS™',
-        stems: 'TIGES SACRIFIÉES', record: 'RECORD', beaten: 'BATTU', flowersUnit: 'FLEURS', cause: 'CAUSE DU DÉCÈS :', stamp: 'VALIDÉ*', note: '* SOUS RÉSERVE' },
+        stems: 'TIGES SACRIFIÉES', sites: 'SITES RÉHABILITÉS', record: 'RECORD', beaten: 'BATTU', flowersUnit: 'FLEURS', cause: 'CAUSE DU DÉCÈS :', stamp: 'VALIDÉ*', note: '* SOUS RÉSERVE' },
       deathDefault: 'rupture : déchet',
       deathLeak: 'lixiviat vivant : pointe brûlée',
       deathToxic: 'pointe brûlée dans une zone toxique',

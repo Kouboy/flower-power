@@ -1,6 +1,6 @@
 // ui/hud.js — HUD en pixels d'art, dans les coins du bas : graines restantes, ÉcoCrédits™, et seulement quand ils sont actifs,
 // le pollen et le combo ; « TOUCHER POUR POUSSER » entre deux niveaux.
-// Lit     : state.mode, state.time, state.plant.reserves, state.score.{eco,flowerBonus,combo}, FP.config.{plant.seeds,text.ready},
+// Lit     : state.mode, state.time, state.plant.reserves, state.score.{eco,flowerBonus,combo}, state.run.{milieu,saison}, FP.config.{plant.seeds,text.ready,milieux},
 //           FP.palette.seed, FP.font, FP.view.ui.
 // Écrit   : state.fx.ui.hud uniquement (animations : score affiché, graines perdues, rebonds).
 // Expose  : FP.hud.items(state), FP.hud.layout(h) (purs, testés), FP.hud.draw(g, state) (toile d'interface), FP.hud.{MARGIN, SEED_SCALE, SEED_STEP}.
@@ -9,7 +9,7 @@
   const FP = window.FP = window.FP || {};
   const MARGIN = 4;                 // pixels d'art depuis les bords
   const SEED_SCALE = 2, SEED_STEP = 16, LOST_TIME = .4, CRACK_TIME = .25;   // graines ×2 : lisibles sur téléphone
-  const EMPTY = '#3a2a1e', SPROUT = '#7fb04a';
+  const EMPTY = '#3a2a1e', SPROUT = '#7fb04a', MILIEU = '#c9a87a';
 
   // Ce que le HUD affiche : pas de fleurs (le parterre en tient lieu), pas d'élan.
   function items(state) {
@@ -17,7 +17,8 @@
     return {
       seeds: state.plant.reserves, seedsMax: FP.config.plant.seeds, eco: sc.eco,
       pollen: sc.flowerBonus > 0 ? sc.flowerBonus : null, combo: sc.combo > 1 ? sc.combo : null,
-      ready: state.mode === 'ready'
+      ready: state.mode === 'ready',
+      milieu: FP.config.milieux[state.run.milieu].name, mult: state.run.saison   // v4.9.0 : milieu en cours, multiplicateur de saison
     };
   }
 
@@ -70,7 +71,9 @@
     m.shownEco = it.eco < m.shownEco ? it.eco : m.shownEco + (it.eco - m.shownEco) * Math.min(1, dt * 8);
     if (Math.abs(it.eco - m.shownEco) < 1) m.shownEco = it.eco;
     const scoreY = L.scoreY;
-    font.draw(g, 'Ɇ' + Math.round(m.shownEco).toLocaleString('fr-FR'), w - MARGIN, scoreY, { scale: 2, color: font.COLORS.eco, align: 'right' });
+    const scoreW = font.draw(g, 'Ɇ' + Math.round(m.shownEco).toLocaleString('fr-FR'), w - MARGIN, scoreY, { scale: 2, color: font.COLORS.eco, align: 'right' });
+    if (it.mult > 1) font.draw(g, '×' + it.mult, w - MARGIN - scoreW - 4, scoreY + font.HEIGHT, { color: font.COLORS.gold, align: 'right' });   // saison 2 et plus
+    font.draw(g, it.milieu, w / 2, MARGIN, { align: 'center', color: MILIEU });   // le milieu, discret, en haut
 
     // Pollen et combo : apparaissent d'un petit bond, au-dessus des graines et du score.
     if (it.pollen !== m.pollen) { if (it.pollen) m.pollenAt = t; m.pollen = it.pollen; }
