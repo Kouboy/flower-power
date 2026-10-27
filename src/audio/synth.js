@@ -36,9 +36,31 @@
     beep: { ratio: 1, index: .6, indexEnd: .6, gain: .05, attack: .002, sustain: .9, release: .01 },
     clonk: { ratio: 1.41, index: 4, indexEnd: .3, indexTime: .08, gain: .22, sustain: .2, decay: .05, release: .05 },
     tinkle: { ratio: 2.76, index: 2.5, indexEnd: .2, gain: .02, sustain: .2, decay: .03, release: .05 },
-    pluck: { ratio: 2, index: 3, indexEnd: .2, indexTime: .08, gain: .07, sustain: .1, decay: .08, release: .1 }
+    pluck: { ratio: 2, index: 3, indexEnd: .2, indexTime: .08, gain: .07, sustain: .1, decay: .08, release: .1 },
+    // Musiques des milieux (v4.10.0) : usine, décharge, centrale, et les thèmes de boss.
+    metal: { ratio: 1.41, index: 6, indexEnd: .5, indexTime: .08, gain: .06, sustain: .1, decay: .06, release: .12, wet: .2 },   // tôle frappée
+    siren: { ratio: 1, index: .4, attack: .3, gain: .03, sustain: .9, release: .4, wet: .4 },
+    hum2: { ratio: .5, index: 2, indexEnd: 3.5, attack: .5, gain: .03, sustain: .9, release: .5 },                                  // bourdon de machine
+    strings: { ratio: 1.002, index: 1.6, indexEnd: 1, attack: .03, gain: .028, sustain: .7, decay: .2, release: .2, wet: .4, detune: 8 },
+    cowbell: { ratio: 1.48, index: 2, indexEnd: .4, indexTime: .05, gain: .04, sustain: .15, decay: .06, release: .08 },
+    slide: { ratio: 1, index: .1, attack: .02, gain: .035, sustain: .9, release: .1, wet: .3 },                                    // sifflet à coulisse
+    choir: { ratio: 2, index: .4, attack: .4, gain: .025, sustain: .9, vibrato: [5.5, .01], wet: .8, release: .6 },
+    sbrass: { ratio: 1, index: 2.5, indexEnd: 3.5, attack: .04, gain: .045, sustain: .8, wet: .3, vibrato: [5, .006] },          // cuivres de pub
+    rslap: { ratio: 1, index: 4, indexEnd: .8, indexTime: .04, gain: .17, sustain: .5, decay: .05, release: .03, detune: -12 },   // slap robotique
+    accordion: { ratio: 2, index: 1.2, attack: .02, gain: .028, sustain: .8, trem: 9, detune: 10, wet: .2 },
+    melodica: { ratio: 1, index: 1.2, attack: .05, gain: .03, sustain: .8, vibrato: [5, .012], wet: .3 },
+    horn: { ratio: 1, index: 2.2, indexEnd: 3, attack: .04, gain: .045, sustain: .75, wet: .3, detune: 15 },                      // cuivres fatigués
+    upright: { ratio: 1, index: .8, indexEnd: .3, attack: .015, gain: .2, sustain: .4, decay: .2, release: .08 },                 // contrebasse
+    pulse: { ratio: 1, index: 1.8, indexEnd: .8, gain: .15, sustain: .6, decay: .1, release: .04 },
+    arp: { ratio: 2, index: 1.4, indexEnd: .4, indexTime: .06, gain: .03, sustain: .3, decay: .06, release: .06, wet: .4 },
+    pad: { ratio: 1.003, index: .8, attack: .7, gain: .028, sustain: .9, release: .9, wet: .7 },
+    growl: { ratio: .5, index: 5, indexEnd: 4, gain: .11, sustain: .9, decay: .1, release: .05, trem: 4.2, detune: -15 },         // basse qui gronde
+    saws: { ratio: 1, index: 3, indexEnd: 2.2, attack: .12, gain: .022, sustain: .8, decay: .1, release: .08, wet: .3 },          // accords qui pompent
+    doom: { ratio: .5, index: 6, indexEnd: 2.5, indexTime: .15, gain: .13, sustain: .7, decay: .1, release: .05, detune: -8 },    // basse sale des boss
+    sub: { ratio: 1, index: .2, gain: .2, sustain: .9, release: .05 },
+    lowbrass: { ratio: 1, index: 3.5, indexEnd: 5, attack: .03, gain: .06, sustain: .85, wet: .25, detune: -10 }
   };
-  const DRUMS = ['kick', 'snare', 'hat', 'openhat', 'tamb'];
+  const DRUMS = ['kick', 'snare', 'hat', 'openhat', 'tamb', 'clap', 'steam', 'lid', 'tick', 'guiro', 'cowbell'];
   // Plafond de voix (v4.7.5) : trop de voix à la fois font craquer le son d'un téléphone modeste. Au-delà, les notes de
   // musique sont sautées ; les effets jouent toujours.
   const MAX_VOICES = 40;
@@ -182,6 +204,13 @@
       else if (kind === 'hat') burst(t, .04, .07 * vel, 7500, 'highpass', route);
       else if (kind === 'openhat') burst(t, .18, .07 * vel, 7500, 'highpass', route);
       else if (kind === 'tamb') { burst(t, .09, .06 * vel, 9000, 'bandpass', route, 2); burst(t + .015, .06, .036 * vel, 6000, 'highpass', route); }
+      // Percussions des milieux (v4.10.0) : clap, vapeur, couvercle de poubelle, tic de compteur, râpe, cloche à vache.
+      else if (kind === 'clap') { for (const d of [0, .012, .024]) burst(t + d, d === .024 ? .12 : .02, .15 * vel, 1400, 'bandpass', route, 1.5); }
+      else if (kind === 'steam') burst(t, .3, .06 * vel, 5000, 'highpass', route);
+      else if (kind === 'lid') { burst(t, .12, .08 * vel, 3800, 'bandpass', route, 4); note('metal', 88, t, .08, .4 * vel, route); }
+      else if (kind === 'tick') burst(t, .012, .12 * vel, 5000, 'highpass', route);
+      else if (kind === 'guiro') { for (let i = 0; i < 6; i++) burst(t + i * .014, .012, .06 * vel, 4200, 'bandpass', route, 3); }
+      else if (kind === 'cowbell') { note('cowbell', 80, t, .1, vel, route); note('cowbell', 87, t, .1, .6 * vel, route); }
     }
 
     const PARAMS = { master: master.gain, music: music.gain, sfx: sfx.gain, song: song.gain, musicMute: musicMute.gain };
