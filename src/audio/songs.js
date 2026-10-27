@@ -1,9 +1,9 @@
 // audio/songs.js — partitions de la bande-son (données) : le thème du titre « psyché 60s qui a mal tourné » (A) et la musique
 // de jeu « funk 70s hanté » (B), dont l'orgue et le sitar de A forment des couches de danger.
-// Lit     : rien.
+// Lit     : FP.score (thème du boss).
 // Écrit   : rien.
 // Expose  : FP.songs.title, FP.songs.shop (reggae de la boutique), FP.songs.friche0..3 (variantes de la musique de la friche, une par pousse),
-//           FP.songs.variants(milieuId) (nombre de variantes d'un milieu)
+//           FP.songs.fricheBoss (thème du boss de la friche, v4.10.0), FP.songs.variants(milieuId) (nombre de variantes d'un milieu)
 //           = { bpm, bars, beatsPerBar, pcs, notes, swing? }, FP.songs.jingles.{death,blossom,record} ; note = { beat, dur, inst, midi?, vel?, layer, bend?, detune? (cents) }.
 //           swing : retard aléatoire maximal (s) de la caisse claire et des charlestons (« boîte à rythmes qui boite »).
 // Temps en beats (noire = 1) depuis le début de la boucle ; pcs = classes de hauteur de la gamme (contrôlées par les tests).
@@ -92,6 +92,32 @@
     return { bpm: 100, bars: 8, beatsPerBar: 4, pcs: [4, 7, 9, 10, 11, 2], swing: .025, notes: sorted(n) };
   }
 
+  // Thème du boss de la friche (v4.10.0), 112 BPM, tiré de la 1re variante : le riff de slap en demi-temps qui écrase.
+  // Basse sale doublée d'une sous-basse, grosse caisse doublée, grosse frappe sur le 3e temps ; clavinet gardé, cuivres
+  // graves sur un accord diminué, motif du boss (mi sol la si♭) en fin de mesure paire ; les cuivres tombent d'un triton ;
+  // deux sirènes en triton ; le sitar descend chromatiquement.
+  function fricheBoss() {
+    const { song, q, ALL16, OFF, soft16, melody, melt } = FP.score;
+    const riffA = [[0, 40, 2], [2, 40, 1], [3, 40, 1], [6, 43, 1], [7, 45, 1], [8, 46, 1], [9, 47, 3], [12, 40, 1], [14, 38, 2]];
+    const riffB = [[0, 40, 2], [2, 40, 1], [4, 40, 1], [6, 47, 1], [7, 46, 1], [8, 45, 2], [10, 43, 1], [11, 41, 1], [12, 40, 2], [14, 46, 2]];
+    return song(112, [4, 7, 9, 10, 11, 2, 5, 3, 1, 0], (bar, add, hit) => {
+      for (const [p, m, d] of bar % 2 ? riffB : riffA) {
+        add('groove', 'doom', q(p), m, q(d) * .9, 1, { detune: melt(bar, 25) });
+        if (d >= 2) add('groove', 'sub', q(p), m - 12, q(d) * .9);
+      }
+      hit('groove', 'kick', [0, q(2), q(3), q(10), q(11)]); hit('groove', 'snare', [2], 1.3); hit('groove', 'tamb', [2], 1);
+      for (const p of [1, 5, 7, 10, 13]) for (const m of [64, 67, 71, 74]) add('clav', 'clav', q(p), m, .1);
+      for (const p of [6, 14]) for (const m of [40, 43, 46]) add('clav', 'lowbrass', q(p), m, .4, .9);
+      if (bar % 2 === 0) melody(add, 'clav', 'lowbrass', [[q(12), 40, .25], [q(13), 43, .25], [q(14), 45, .25], [q(15), 46, .25]], 1.1);
+      else for (const m of [59, 62, 64]) add('clav', 'brass', q(12), m, .9, 1, { bend: .707 });
+      hit('perc', 'hat', ALL16, soft16); hit('perc', 'tamb', OFF, .7);
+      if (bar % 2 === 0) { add('organ', 'siren', 0, 64, 7.5, 1, { bend: 1.06, detune: melt(bar, 40) }); add('organ', 'siren', 0, 70, 7.5, .8, { bend: 1.06 }); }
+      if (bar % 4 === 1) melody(add, 'sitar', 'sitar', [[0, 76, 1], [1, 75, 1], [2, 74, 1], [3, 73, 1]]);
+      if (bar % 4 === 3) melody(add, 'sitar', 'sitar', [[0, 72, 1], [1, 71, 1], [2, 70, 2]], 1, (d) => (d === 2 ? { bend: .94 } : {}));
+      if (bar % 4 === 0) { add('ghost', 'hum2', 0, 28, 15.5, .8); add('ghost', 'theremin', 0, 76, 7, 1, { bend: .5 }); }
+    });
+  }
+
   // --- Jingles (bus des effets, joués une fois, 160 BPM) ------------------------------------------
   function jingles() {
     const j = (notes) => ({ bpm: 160, bars: 1, beatsPerBar: 4, pcs: [4, 5, 7, 8, 9, 10, 11, 0, 2], notes: sorted(notes) });
@@ -136,4 +162,5 @@
   const variants = (id) => Object.keys(FP.songs).filter(k => k.startsWith(id) && /^\d+$/.test(k.slice(id.length))).length;
   FP.songs = { title: title(), shop: shop(), jingles: jingles(), variants };
   VARIANTS.forEach((_, v) => { FP.songs['friche' + v] = friche(v); });
+  FP.songs.fricheBoss = fricheBoss();
 })();

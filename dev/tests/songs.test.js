@@ -22,3 +22,4 @@ function checkMilieuSongs(id, count) {
 FP.test('songs: zone industrielle, 3 variantes et un boss', () => checkMilieuSongs('industrie', 3));
 FP.test('songs: décharge, 3 variantes et un boss', () => checkMilieuSongs('decharge', 3));
 FP.test('songs: site nucléaire, 3 variantes et un boss', () => checkMilieuSongs('nucleaire', 3));
+FP.test('songs: friche, 4 variantes et un boss', () => checkMilieuSongs('friche', 4));
