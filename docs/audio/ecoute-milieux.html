@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Écoute des milieux</title>
+<!-- Page d'écoute de la v4.10.0 : joue les partitions du jeu (src/audio/*), sans copie, pour la validation à l'oreille. -->
+<style>
+  body { font: 15px/1.5 system-ui; margin: 24px auto; max-width: 960px; padding: 0 16px; background: #f6f3ea; color: #222; }
+  h2 { margin: 24px 0 6px; } .sub { color: #555; margin: 0 0 10px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .row p { flex-basis: 100%; margin: 0 0 4px; font-size: 14px; color: #444; }
+  button { font: 600 14px system-ui; padding: 8px 16px; border-radius: 8px; border: 1px solid #888; background: #fff; cursor: pointer; }
+  button.on { background: #2a3a1c; color: #fff; border-color: #2a3a1c; }
+  button.boss { border-color: #7a1f1f; color: #7a1f1f; } button.boss.on { background: #7a1f1f; color: #fff; }
+  .bar { position: sticky; top: 0; background: #f6f3ea; padding: 10px 0; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; border-bottom: 1px solid #c9c2b0; z-index: 1; }
+  .bar span { color: #555; font-size: 13px; margin-right: 4px; }
+</style></head><body>
+<h1>Musique des milieux : écoute finale</h1>
+<p class="sub">Les vraies partitions du jeu (v4.10.0), jouées par son moteur FM. Une variante par pousse, puis le thème du boss. Les boutons du haut simulent le jeu pendant l'écoute ; « Pousses réussies » monte le tempo de 4 BPM par pousse, comme en jeu.</p>
+
+<div class="bar">
+  <span>En jeu :</span>
+  <button data-layer="sitar">Près de la surface</button>
+  <button data-layer="perc">Frôlement</button>
+  <button data-layer="organ">Toxique</button>
+  <button id="step">Pousses réussies : 0</button>
+  <button id="sleep">Sur la graine (veille)</button>
+  <button id="stop">Stop</button>
+</div>
+
+<div id="milieux"></div>
+
+<script src="../../src/audio/synth.js"></script>
+<script src="../../src/audio/score.js"></script>
+<script src="../../src/audio/songs.js"></script>
+<script src="../../src/audio/songs-industrie.js"></script>
+<script src="../../src/audio/songs-decharge.js"></script>
+<script src="../../src/audio/songs-nucleaire.js"></script>
+<script src="../../src/audio/sequencer.js"></script>
+<script>
+(function () {
+  const MILIEUX = [
+    ['friche', 'Friche', 'Funk 70s hanté (inchangé) et son nouveau thème de boss.'],
+    ['industrie', 'Zone industrielle', 'Funk à la chaîne : variante 1 = la maquette validée, variantes 2 et 3 nouvelles ; le boss de l’usine validé.'],
+    ['decharge', 'Décharge', 'Cumbia de la benne : variante 1 = la maquette validée, variantes 2 et 3 nouvelles ; boss d’après le gabarit.'],
+    ['nucleaire', 'Site nucléaire', 'Disco radieux, EDM malade : variante 1 = la maquette validée allégée, variantes 2 et 3 nouvelles ; boss d’après le gabarit.']
+  ];
+  const root = document.getElementById('milieux');
+  for (const [id, name, text] of MILIEUX) {
+    const h = document.createElement('h2'); h.textContent = name; root.appendChild(h);
+    const row = document.createElement('div'); row.className = 'row';
+    row.innerHTML = '<p>' + text + '</p>';
+    for (let v = 0; v < FP.songs.variants(id); v++) row.innerHTML += '<button data-song="' + id + v + '">Variante ' + (v + 1) + '</button>';
+    row.innerHTML += '<button class="boss" data-song="' + id + 'Boss">Boss</button>';
+    root.appendChild(row);
+  }
+
+  let ac = null, backend = null, player = null, current = null, step = 0, sleep = false;
+  const extra = { sitar: false, perc: false, organ: false };
+  function ensure() {
+    if (ac) return;
+    ac = new (window.AudioContext || window.webkitAudioContext)();
+    backend = FP.synth.create(ac); backend.setGain('music', .8, 0);
+    player = FP.sequencer.createPlayer(backend);
+    setInterval(() => player.update(backend.now()), 25);
+  }
+  const isBoss = () => current && current.endsWith('Boss');
+  const bpm = () => FP.songs[current].bpm + (isBoss() ? 0 : 4 * step);
+  function apply() {
+    if (!player || !current) return;
+    player.setLayers(sleep ? { groove: 1, clav: 0, perc: 0, organ: 0, sitar: 0, ghost: 0 }
+      : { groove: 1, clav: 1, ghost: 1, perc: extra.perc ? 1 : 0, organ: extra.organ ? 1 : 0, sitar: extra.sitar || isBoss() ? 1 : 0 });
+    backend.setFilter(sleep ? 900 : 20000, .3);
+    player.setTempo(bpm());
+  }
+  const songButtons = () => document.querySelectorAll('[data-song]');
+  songButtons().forEach(b => b.onclick = () => {
+    ensure(); ac.resume();
+    songButtons().forEach(x => x.classList.remove('on'));
+    if (current === b.dataset.song) { player.stop(.2); current = null; return; }
+    current = b.dataset.song; b.classList.add('on');
+    player.stop(0); player.play(current, { bpm: bpm() }); apply();
+  });
+  document.querySelectorAll('[data-layer]').forEach(b => b.onclick = () => { extra[b.dataset.layer] = !extra[b.dataset.layer]; b.classList.toggle('on'); apply(); });
+  document.getElementById('step').onclick = (e) => { step = (step + 1) % 3; e.target.textContent = 'Pousses réussies : ' + step; e.target.classList.toggle('on', step > 0); apply(); };
+  document.getElementById('sleep').onclick = (e) => { sleep = !sleep; e.target.classList.toggle('on'); apply(); };
+  document.getElementById('stop').onclick = () => { if (player) player.stop(.2); current = null; songButtons().forEach(x => x.classList.remove('on')); };
+})();
+</script>
+</body></html>

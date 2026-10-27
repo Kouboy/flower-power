@@ -2,6 +2,16 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.10.0 — Musique des milieux
+
+- chaque milieu a sa musique, toujours dansante, trop joyeuse pour ce qu'on voit, et malade dessous : funk 70s hanté (friche, inchangé), « funk à la chaîne » (zone industrielle), « cumbia de la benne » (décharge), « disco radieux, EDM malade » (site nucléaire) ; 3 variantes par nouveau milieu, une par pousse ;
+- chaque niveau de boss a son thème, tiré de la musique du milieu : plus lourd, plus rapide, demi-temps qui écrase, basse sale, cuivres graves et motif du boss ;
+- la musique suit le niveau affiché : coupure nette sous le noir du fondu au changement de milieu, thème du boss dès le niveau de boss (la boutique garde son reggae) ;
+- tempo propre à chaque morceau, +4 BPM par pousse réussie dans le milieu ;
+- nouveaux timbres FM (tôle, slap robotique, accordéon, contrebasse, cuivres de pub, basse qui gronde, accords qui pompent…) et percussions (clap, vapeur, couvercle, râpe, cloche à vache, compteur) ;
+- page d'écoute `docs/audio/ecoute-milieux.html` (partitions du jeu) ;
+- banc : 478 tests.
+
 ## v4.9.0 — Quatre milieux
 
 - une partie traverse quatre milieux : friche urbaine, zone industrielle, décharge, site nucléaire ; chacun a ses familles d'obstacles, son ciel, sa terre et sa pelouse (le T-Rex ne vit plus qu'au nucléaire) ;
