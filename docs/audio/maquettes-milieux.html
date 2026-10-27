@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Maquettes des milieux</title>
+<!-- Maquettes du sous-projet 2 (musique des milieux, v4.10) : deux directions par milieu, jouées par le moteur du jeu. -->
+<style>
+  body { font: 15px/1.5 system-ui; margin: 24px auto; max-width: 960px; padding: 0 16px; background: #f6f3ea; color: #222; }
+  h2 { margin: 28px 0 6px; } .sub { color: #555; margin: 0 0 10px; }
+  .cards { display: flex; gap: 14px; flex-wrap: wrap; }
+  .card { flex: 1; min-width: 260px; border: 1px solid #c9c2b0; border-radius: 10px; padding: 12px 14px; background: #fff; }
+  .card h3 { margin: 0 0 4px; } .card p { margin: 0 0 10px; font-size: 14px; }
+  button { font: 600 14px system-ui; padding: 8px 16px; border-radius: 8px; border: 1px solid #888; background: #fff; cursor: pointer; }
+  button.on { background: #2a3a1c; color: #fff; border-color: #2a3a1c; }
+  .bar { position: sticky; top: 0; background: #f6f3ea; padding: 10px 0; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; border-bottom: 1px solid #c9c2b0; z-index: 1; }
+  .bar span { color: #555; font-size: 13px; margin-right: 4px; }
+</style></head><body>
+<h1>Musique des milieux : maquettes</h1>
+<p class="sub">Toutes jouées en direct par le moteur FM du jeu. Boucles de 8 mesures. Mets le son, clique sur Écouter, puis essaie les boutons du haut : ils simulent ce qui se passe en jeu (les couches entrent et sortent comme pendant une pousse). Règle : ça danse, c'est trop joyeux pour ce qu'on voit, et dessous quelque chose est malade. Choisis une direction par milieu, avec tes retouches.</p>
+
+<div class="bar">
+  <span>En jeu :</span>
+  <button data-layer="sitar">Près de la surface</button>
+  <button data-layer="perc">Frôlement</button>
+  <button data-layer="organ">Toxique</button>
+  <button id="fast">Beaucoup de fleurs (tempo +)</button>
+  <button id="sleep">Sur la graine (veille)</button>
+  <button id="stop">Stop</button>
+</div>
+
+<h2>Référence · Friche (actuelle)</h2>
+<div class="cards"><div class="card"><h3>Funk 70s hanté</h3><p>La musique de jeu actuelle, pour comparer les volumes et l'énergie.</p><button data-song="game0">Écouter</button></div></div>
+
+<h2>Zone industrielle</h2>
+<div class="cards">
+  <div class="card"><h3>I3 · Disco d'entreprise</h3><p>120 BPM, ré dorien. Grosse caisse droite, basse en octaves (slap robotique), cordes triomphantes qui fondent et dont la montée rate, cloche à vache de la pointeuse. Toxique : le chœur des collaborateurs qui déchante. Surface : jingle de cuivres de pub. Gag : un sifflet à coulisse qui dégringole sur l'accord muté.</p><button data-song="mI3">Écouter</button></div>
+  <div class="card"><h3>I4 · Funk à la chaîne</h3><p>104 BPM, la mineur blues. Le funk de la friche, mais tôle en caisse claire, vapeur en charleston, slap robotique, cuivres triomphants qui ratent leur dernière note. Toxique : sirène qui se désaccorde et bourdon de machine. Surface : cordes qui finissent par fondre.</p><button data-song="mI4">Écouter</button></div>
+</div>
+
+<h2>Boss · Zone industrielle (tiré d'I4)</h2>
+<div class="cards"><div class="card"><h3>Boss de l'usine</h3><p>116 BPM, même tonalité et même riff qu'I4, en demi-temps qui écrase. Basse sale doublée d'une sous-basse, grosse caisse doublée, tôle grave sur le 3ᵉ temps, stabs de cuivres graves sur un accord diminué, motif du boss (la-do-mi♭-ré) en fin de mesure paire. On garde le gag, mais la fanfare tombe maintenant d'un triton. Toxique : deux sirènes en triton. Surface : cordes qui descendent chromatiquement.</p><button data-song="mBI4">Écouter</button></div></div>
+
+<h2>Décharge</h2>
+<div class="cards">
+  <div class="card"><h3>D3 · Cumbia de la benne</h3><p>96 BPM, sol mineur harmonique. Râpe qui gratte, contrebasse, accordéon désaccordé sur les contretemps, cloche à vache. Toxique : synthé de supermarché qui fond. Surface : ritournelle d'accordéon orientale. Fond : cuivres fatigués qui s'affaissent.</p><button data-song="mD3">Écouter</button></div>
+  <div class="card"><h3>D4 · Ska de kermesse</h3><p>160 BPM, fa majeur, avec un accord mutant à la 7ᵉ mesure. Walking bass, skank bancal, couvercles de poubelle. Toxique : kazoo qui se désaccorde. Surface : fanfare cuivres + kazoo pas tout à fait ensemble. Gag : sifflet à coulisse qui monte.</p><button data-song="mD4">Écouter</button></div>
+</div>
+
+<h2>Site nucléaire</h2>
+<div class="cards">
+  <div class="card"><h3>N3 · Lounge atomique</h3><p>112 BPM, fa lydien, swing. Musique de film de propagande des années 50 : contrebasse, vibraphone qui fond, bongos, chœur « aah » au loin. Toxique : thérémine dont le « ouuuh » s'effondre. Surface : mélodie naïve qui finit sur une note qui n'a rien à faire là.</p><button data-song="mN3">Écouter</button></div>
+  <div class="card"><h3>N4 · Disco radieux</h3><p>122 BPM, mi majeur. Synth-funk de pub de la centrale : basse en octaves, arpège brillant dont une note grince de plus en plus, claps, cloche à vache. Toxique : compteur Geiger et sirène qui descend. Surface : jingle de cuivres.</p><button data-song="mN4">Écouter</button></div>
+</div>
+
+<h2>Site nucléaire · N4 version EDM malade</h2>
+<div class="cards"><div class="card"><h3>N4 · Disco radieux, EDM malade</h3><p>126 BPM, mi majeur. Six mesures de « drop » : grosse caisse droite, basse qui gronde sur les contretemps, accords qui pompent et se désaccordent de plus en plus, arpège qui grince. Puis une montée (roulement de caisse claire qui accélère, sifflet qui grimpe de deux octaves) et ça retombe. Toxique : compteur Geiger et sirène. Surface : jingle de cuivres de pub.</p><button data-song="mN4E">Écouter</button></div></div>
+
+<script src="../../src/audio/synth.js"></script>
+<script src="../../src/audio/songs.js"></script>
+<script src="../../src/audio/sequencer.js"></script>
+<script src="maquettes-milieux.js"></script>
+<script>
+(function () {
+  let ac = null, backend = null, player = null, timer = null, current = null, fast = false, sleep = false;
+  const extra = { sitar: false, perc: false, organ: false };
+  function ensure() {
+    if (ac) return;
+    ac = new (window.AudioContext || window.webkitAudioContext)();
+    backend = FP.maquettes.wrap(FP.synth.create(ac));
+    backend.setGain('music', .8, 0);
+    player = FP.sequencer.createPlayer(backend);
+    timer = setInterval(() => player.update(backend.now()), 40);
+  }
+  const bpm = () => FP.songs[current].bpm * (fast ? 1.2 : 1);
+  function apply() {
+    if (!player || !current) return;
+    player.setLayers(sleep ? { groove: 1, clav: 0, perc: 0, organ: 0, sitar: 0, ghost: 0 }
+      : { groove: 1, clav: 1, ghost: 1, perc: extra.perc ? 1 : 0, organ: extra.organ ? 1 : 0, sitar: extra.sitar ? 1 : 0 });
+    backend.setFilter(sleep ? 900 : 20000, .3);
+    player.setTempo(bpm());
+  }
+  document.querySelectorAll('[data-song]').forEach(b => b.onclick = () => {
+    ensure(); ac.resume();
+    document.querySelectorAll('[data-song]').forEach(x => x.classList.remove('on'));
+    if (current === b.dataset.song) { player.stop(.2); current = null; return; }
+    current = b.dataset.song; b.classList.add('on');
+    player.stop(0); player.play(current, { bpm: bpm() }); apply();
+  });
+  document.querySelectorAll('[data-layer]').forEach(b => b.onclick = () => { extra[b.dataset.layer] = !extra[b.dataset.layer]; b.classList.toggle('on'); apply(); });
+  document.getElementById('fast').onclick = (e) => { fast = !fast; e.target.classList.toggle('on'); apply(); };
+  document.getElementById('sleep').onclick = (e) => { sleep = !sleep; e.target.classList.toggle('on'); apply(); };
+  document.getElementById('stop').onclick = () => { if (player) player.stop(.2); current = null; document.querySelectorAll('[data-song]').forEach(x => x.classList.remove('on')); };
+})();
+</script>
+</body></html>
