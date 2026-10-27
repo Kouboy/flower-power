@@ -13,3 +13,19 @@ FP.test('hazardsRender: les sillons en calques donnent exactement les mêmes pix
   }
   FP.assert(fakeLayer.made > 0, 'aucun calque');
 });
+// Nappes préparées hors du jeu (v4.7.5) : une par appel, la plus proche de l'écran d'abord ; plus rien quand tout est prêt.
+FP.test('hazardsRender: hors du jeu, les nappes se préparent une à une, les plus proches d’abord', () => {
+  const s = FP.state.createRun(6, { W: 440, H: 783 }); s.level = 14; FP.level.startRun(s);
+  const pools = s.world.toxics, mid = () => s.camera.y + s.world.viewH / 2;
+  FP.assert(pools.length > 2, 'trop peu de nappes');
+  s.camera.y = pools[0].y - 200;
+  withLayer(() => {
+    FP.hazardsRender.prewarm(s);
+    const ready = pools.filter(o => o._px);
+    FP.assertEqual(ready.length, 1);
+    FP.assertEqual(Math.min(...pools.map(o => Math.abs(o.y - mid()))), Math.abs(ready[0].y - mid()));
+    for (let i = 1; i < pools.length; i++) FP.hazardsRender.prewarm(s);
+    FP.assert(pools.every(o => o._px), 'toutes prêtes');
+    fakeLayer.made = 0; FP.hazardsRender.prewarm(s); FP.assertEqual(fakeLayer.made, 0);
+  });
+});

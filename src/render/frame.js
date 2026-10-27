@@ -58,8 +58,9 @@
     // ?perf=1 : tranches sol / dangers / bonus / plante (comme la v3).
     const perf = FP.perf;
 
-    // Hors des moments de jeu (titre, prêt, fin, fondus), on prépare les sprites des obstacles, une famille par frame.
-    if (state.mode !== 'playing' && state.mode !== 'dying' || state.flow.fade > 0) FP.obstacles.prewarm();
+    // Hors des moments de jeu (titre, prêt, fin, fondus), on prépare les sprites des obstacles, une famille par frame,
+    // et les images des nappes toxiques, une nappe par frame.
+    if (state.mode !== 'playing' && state.mode !== 'dying' || state.flow.fade > 0) { FP.obstacles.prewarm(); FP.hazardsRender.prewarm(state); }
     // Une erreur dans le monde ne doit pas figer l'image : on agrandit et on dessine le HUD quand même, puis on la relance
     // (la boucle la signale une fois).
     let worldError = null;

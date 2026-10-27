@@ -2,7 +2,8 @@
 // Lit     : state.time, state.mode, state.world.{toxics,leaks,viewH}, state.camera.y, state.plant.{tip,toxicTimer},
 //           FP.config.{soil,toxic}, FP.px, FP.palette.{toxic,slug}, FP.hazards.leakHeading.
 // Écrit   : o._px sur chaque nappe et l._track sur chaque limace — caches de rendu uniquement, jamais lus par la simulation.
-// Expose  : FP.hazardsRender.{drawBase, drawLeaks, drawOverlay, drawExposure}(actx, state) — repère d'art, caméra appliquée ici.
+// Expose  : FP.hazardsRender.{drawBase, drawLeaks, drawOverlay, drawExposure}(actx, state) — repère d'art, caméra appliquée ici ;
+//           FP.hazardsRender.prewarm(state) — prépare une nappe de plus, hors des moments de jeu (testé).
 // Porté de la v3.43.16 (drawToxicZoneBase, limaces de drawHazards, drawToxicZoneOverlay, anneau toxique de drawShieldGauge).
 // Couleurs : FP.palette.toxic et FP.palette.slug (violet chimique), réservées aux dangers.
 (function () {
@@ -18,44 +19,55 @@
   }
 
   // Champ d'une nappe en coordonnées locales (repère monde, nappe non tournée) : < 1 dedans, plus petit = plus profond.
-  function field(o, lx, ly) {
-    let m = (lx / (o.rx * 1.08)) ** 2 + (ly / (o.ry * 1.02)) ** 2;
-    for (const q of o.lobes) {
-      const cx = Math.cos(q.a) * o.rx * q.r, cy = Math.sin(q.a) * o.ry * q.r;
-      m = Math.min(m, ((lx - cx) / (o.rx * q.sx)) ** 2 + ((ly - cy) / (o.ry * q.sy)) ** 2);
-    }
-    return m;
+  // Les centres et demi-axes des lobes sont calculés une fois par nappe (mêmes valeurs, pas de trigonométrie par pixel).
+  function fieldOf(o) {
+    const ax = o.rx * 1.08, ay = o.ry * 1.02;
+    const lobes = o.lobes.map(q => ({ cx: Math.cos(q.a) * o.rx * q.r, cy: Math.sin(q.a) * o.ry * q.r, sx: o.rx * q.sx, sy: o.ry * q.sy }));
+    return (lx, ly) => {
+      let m = (lx / ax) ** 2 + (ly / ay) ** 2;
+      for (const q of lobes) m = Math.min(m, ((lx - q.cx) / q.sx) ** 2 + ((ly - q.cy) / q.sy) ** 2);
+      return m;
+    };
   }
 
   // Deux images par nappe (pulsation) et une pellicule, en pixels d'art, rotation comprise. Calculées une fois.
   function build(o) {
     const s = FP.px.SCALE, R = Math.ceil(Math.max(o.rx, o.ry) * 1.25 / s) + 2;
     const ca = Math.cos(-o.a), sa = Math.sin(-o.a), size = 2 * R + 1;
-    const mk = () => { const c = document.createElement('canvas'); c.width = size; c.height = size; return c; };
-    const base = [mk(), mk()], film = mk();
-    const gb = base.map(c => c.getContext('2d')), gf = film.getContext('2d');
+    const layers = [0, 1, 2].map(() => FP.px.layer(size, size));
+    if (!layers[0]) return null;
+    const gb = [layers[0].g, layers[1].g], gf = layers[2].g, t = FP.palette.toxic;
+    const f = fieldOf(o);
     for (let y = 0; y < size; y++) {
       for (let x = 0; x < size; x++) {
         const wx = (x - R) * s, wy = (y - R) * s, lx = wx * ca - wy * sa, ly = wx * sa + wy * ca;
-        const m = field(o, lx, ly);
+        const m = f(lx, ly);
         if (m >= 1) continue;
         const b = BAYER[y & 3][x & 3];
         // Bord clairsemé, cœur plus dense ; la pulsation fait varier la densité (8 ↔ 10 niveaux).
-        [6, 8].forEach((lv, i) => {
-          const level = m > .7 ? lv - 3 : (m > .3 ? lv : lv + 3);
-          if (b < level) { gb[i].fillStyle = m < .3 && b < 3 ? FP.palette.toxic.light : (m < .7 ? FP.palette.toxic.mid : FP.palette.toxic.dark); gb[i].fillRect(x, y, 1, 1); }
-        });
-        if (m < .8 && b < 2) { gf.fillStyle = FP.palette.toxic.glow; gf.fillRect(x, y, 1, 1); }
+        for (let i = 0; i < 2; i++) {
+          const lv = 6 + 2 * i, level = m > .7 ? lv - 3 : (m > .3 ? lv : lv + 3);
+          if (b < level) { gb[i].fillStyle = m < .3 && b < 3 ? t.light : (m < .7 ? t.mid : t.dark); gb[i].fillRect(x, y, 1, 1); }
+        }
+        if (m < .8 && b < 2) { gf.fillStyle = t.glow; gf.fillRect(x, y, 1, 1); }
       }
     }
     // Mouchetures claires et sombres, fixes.
     for (const q of o.specks) {
       const wx = q.x * o.rx, wy = q.y * o.ry, cx = Math.cos(o.a), sx = Math.sin(o.a);
       const x = R + Math.round((wx * cx - wy * sx) / s), y = R + Math.round((wx * sx + wy * cx) / s);
-      for (const g of gb) { g.fillStyle = q.light ? FP.palette.toxic.glow : FP.palette.toxic.ink; g.fillRect(x, y, 1, 1); }
+      for (const g of gb) { g.fillStyle = q.light ? t.glow : t.ink; g.fillRect(x, y, 1, 1); }
     }
-    o._px = { base, film, R };
+    o._px = { base: [layers[0].canvas, layers[1].canvas], film: layers[2].canvas, R };
     return o._px;
+  }
+
+  // Hors des moments de jeu : prépare la nappe pas encore construite la plus proche de l'écran (une par appel).
+  function prewarm(state) {
+    const mid = state.camera.y + state.world.viewH / 2;
+    let next = null;
+    for (const o of state.world.toxics) if (!o._px && (!next || Math.abs(o.y - mid) < Math.abs(next.y - mid))) next = o;
+    if (next) build(next);
   }
 
   function drawBase(g, state) {
@@ -162,5 +174,5 @@
     }
   }
 
-  FP.hazardsRender = { drawBase, drawLeaks, drawOverlay, drawExposure };
+  FP.hazardsRender = { drawBase, drawLeaks, drawOverlay, drawExposure, prewarm };
 })();
