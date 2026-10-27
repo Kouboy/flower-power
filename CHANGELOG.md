@@ -2,6 +2,15 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.8.0 — Le chemin serpente
+
+- la difficulté passe par la forme du chemin plutôt que par le nombre de dangers : du niveau 0 au niveau 10, le chemin sûr serpente de plus en plus (sinuosité 400 → 720 : nœuds tous les 105 px au lieu de 145, changements de côté 45 % au lieu de 18 %, écarts plus larges) ;
+- il se resserre aussi : nappes et limaces s'en approchent jusqu'à 16 px (au lieu de 25), les déchets jusqu'à 3 px de marge (au lieu de 8) ;
+- pente bornée (1,4 px de côté par px de montée, ≈ 54°, sous le braquage de la tige) : les lacets restent suivables ; le niveau 0 ne change pas ;
+- nappes plafonnées à 14 (au lieu de 21) et limaces à 8 (au lieu de 10), atteints vers le niveau 6 : au niveau 14, une image coûte ≈ 27 % de moins sur téléphone simulé ;
+- placement exact : l'ellipse d'une nappe et le trajet entier d'une limace sont vérifiés contre le chemin (et plus seulement leur centre ou 9 points) ;
+- banc : 435 tests.
+
 ## v4.7.5 — Plus fluide sur téléphone
 
 - dessin : les anciennes tiges et le halo de la tige en cours sont dessinés une fois dans des calques puis recopiés ; les six images des jetons et le sillon des limaces aussi (pixels identiques, tige ≈ −45 %, limaces ≈ −40 %, jetons ≈ −50 % sur téléphone simulé) ;

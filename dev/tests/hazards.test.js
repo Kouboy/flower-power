@@ -44,11 +44,11 @@ FP.test('hazards: une limace regarde toujours dans le sens où elle avance', () 
   FP.hazards.update(s, 1 / 60);   // première position sur le va-et-vient (celle de la génération est le centre du trajet)
   let flips = 0, last = null;
   for (let i = 0; i < 400; i++) {
-    const x0 = l.cx, y0 = l.cy;
+    const x0 = l.cx, y0 = l.cy, before = FP.hazards.leakHeading(l);
     FP.hazards.update(s, 1 / 60); s.time += 1 / 60;
     if (x0 === undefined) continue;
     const moved = (l.cx - x0) * Math.cos(l.angle) + (l.cy - y0) * Math.sin(l.angle);
-    if (Math.abs(moved) < 1e-3) continue;   // au point de rebroussement
+    if (Math.abs(moved) < 1e-3 || FP.hazards.leakHeading(l) !== before) continue;   // le demi-tour tombe pendant cette image
     FP.assertEqual(FP.hazards.leakHeading(l), Math.sign(moved), 'frame ' + i);
     if (last !== null && last !== Math.sign(moved)) flips++;
     last = Math.sign(moved);

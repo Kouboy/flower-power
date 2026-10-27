@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '4.7.5',
+    version: '4.8.0',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -42,7 +42,12 @@
         baseStep: 58, stepBonusMax: 12, pull: .48, wobble: .42,
         centerDeadzone: 38, centerPush: [42, 72], endJitter: 44,
         // v4.3.0 : la marge du chemin sûr se resserre avec les niveaux (v3 : elle s'élargissait de 25 à 35), jusqu'à presque la tête.
-        radiusBase: 25, radiusPerLevel: -1.625, radiusMin: 12
+        radiusBase: 25, radiusPerLevel: -1.625, radiusMin: 12,
+        // v4.8.0 : la difficulté passe par la forme du chemin plutôt que par le nombre de dangers. Du niveau 0 au niveau `level`,
+        // les réglages ci-dessus glissent vers ceux-ci : nœuds plus rapprochés, changements de côté plus fréquents, écarts plus
+        // larges (chemin plus sinueux) ; nappes, limaces et déchets plus près du chemin (plus étroit).
+        hard: { level: 10, segmentPx: 105, swapChance: .45, spread: [.24, .40], hazardRadius: 16, solidExtra: 3 },
+        maxSlope: 1.4   // déplacement latéral maximal par px de montée, sur un segment (≈ 54° ; la tige braque jusqu'à ≈ 62°)
       },
       // Où un solide a le droit de se poser.
       // maxOutside : de combien de px un obstacle peut dépasser du bord gauche/droit (il doit rester identifiable).
@@ -56,7 +61,8 @@
       // Zones toxiques diffuses : réparties sur les trois tiers de la hauteur, jamais sur le chemin sûr ; un peu plus grosses au fond.
       // v4.2.2 : plus nombreuses et plus grandes, et elles se multiplient vite (v3 : base 3, perLevel .14, maxExtra 4, rx 30-58, ry 23-48).
       toxics: {
-        base: 5, perLevel: .6, maxExtra: 7, scale: .70, tries: 80, relaxAfter: 30, jitter: .29,
+        // v4.8.0 : maxExtra 3, plafond ≈ 14 nappes dès le niveau 5 (était 7 → ≈ 21).
+        base: 5, perLevel: .6, maxExtra: 3, scale: .70, tries: 80, relaxAfter: 30, jitter: .29,
         rx: [36, 70], ry: [28, 58], bigDepth: .58, bigRx: 1.08, bigRy: 1.10,
         lobes: 6, specks: 7, lightChance: .42, safeK: .62, safeExtra: 4,
         // Forme des nappes : lobes (position et taille relatives au rayon) et taches.
@@ -66,7 +72,8 @@
       // Limaces de lixiviat : trajets inclinés, une partie près de la route pour mettre la pression.
       leaks: {
         // v4.1.0 : plus de limaces, plus vite (v3 : base 1, perLevel .10, maxExtra 3).
-        base: 2, perLevel: .35, maxExtra: 4, scale: .68, tries: 120, relaxAfter: 32, jitter: .24, minDepth: .22,
+        // v4.8.0 : maxExtra 3, plafond ≈ 7 limaces (était 4 → ≈ 10).
+        base: 2, perLevel: .35, maxExtra: 3, scale: .68, tries: 120, relaxAfter: 32, jitter: .24, minDepth: .22,
         nearRouteChance: .46, routeTop: 86, routeBottom: 142, routeOffset: [22, 62], routeMarginX: 42,
         angledChance: .90, angleJitter: .24, len: [42, 176], lenPerLevel: 3.2, lenLevelMax: 54, lenDepth: 22,
         rate: [.24, .92], r: [11, 16.2], marginX: 24, top: 48, bottom: 116,

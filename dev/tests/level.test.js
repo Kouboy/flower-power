@@ -189,3 +189,28 @@ FP.test('level: à tous les niveaux, aucun déchet ne mord sur le chemin sûr', 
     for (const o of w.solids) for (const p of FP.catalog.visibleFootprint(o)) FP.assert(FP.level.distToSafePath(w, p.x, p.y) >= w.safeRadius, `niveau ${level}, graine ${seed}, ${o.kind}`);
   }
 });
+// Difficulté par la forme du chemin (v4.8.0) : plus étroit et plus sinueux avec les niveaux, dangers plafonnés.
+const swingOf = (w) => { const p = w.safePath; let lat = 0; for (let i = 1; i < p.length; i++) lat += Math.abs(p[i].x - p[i - 1].x); return lat / ((p[0].y - p[p.length - 1].y) / 1000); };
+const meanOver = (level, f) => { let t = 0; for (let seed = 1; seed <= 12; seed++) t += f(genAt(seed, level)); return t / 12; };
+FP.test('level: le chemin sûr serpente nettement plus avec les niveaux', () => {
+  const a = meanOver(0, swingOf), b = meanOver(10, swingOf), c = meanOver(20, swingOf);
+  FP.assert(b >= 1.45 * a, a.toFixed(0) + ' → ' + b.toFixed(0)); FP.assert(Math.abs(c - b) < .1 * b, 'palier : ' + b.toFixed(0) + ' / ' + c.toFixed(0));
+});
+FP.test('level: le chemin sûr reste suivable (aucun segment plus penché que maxSlope)', () => {
+  const max = FP.config.level.safePath.maxSlope;
+  for (const level of [0, 5, 10, 20]) for (const seed of SEEDS) {
+    const p = genAt(seed, level).safePath;
+    for (let i = 1; i < p.length; i++) FP.assert(Math.abs(p[i].x - p[i - 1].x) <= max * Math.abs(p[i].y - p[i - 1].y) + 1e-6, `niveau ${level}, graine ${seed}, segment ${i}`);
+  }
+});
+FP.test('level: nappes et limaces plafonnées (14 et 7 environ), atteint vers le niveau 6', () => {
+  const tox = (l) => meanOver(l, w => w.toxics.length), leaks = (l) => meanOver(l, w => w.leaks.length);
+  FP.assert(tox(12) <= 15 && tox(20) <= 15, tox(12) + ' / ' + tox(20)); FP.assert(leaks(12) <= 8 && leaks(20) <= 8, leaks(12) + ' / ' + leaks(20));
+  FP.assert(tox(6) >= 13, 'nappes au niveau 6 : ' + tox(6));
+});
+FP.test('level: dangers et déchets se rapprochent du chemin avec les niveaux', () => {
+  const w0 = genAt(3, 0), w10 = genAt(3, 10), w20 = genAt(3, 20), hard = FP.config.level.safePath.hard;
+  FP.assertEqual(w0.hazardRadius, FP.config.level.safePath.radiusBase); FP.assertEqual(w10.hazardRadius, hard.hazardRadius); FP.assertEqual(w20.hazardRadius, hard.hazardRadius);
+  FP.assertEqual(w0.solidExtra, FP.config.level.fit.safeExtra); FP.assertEqual(w10.solidExtra, hard.solidExtra);
+  for (const seed of SEEDS) { const w = genAt(seed, 10); for (const o of w.toxics) FP.assert(FP.level.distToSafePath(w, o.x, o.y) > w.hazardRadius + Math.max(o.rx, o.ry) * FP.config.level.toxics.safeK + FP.config.level.toxics.safeExtra, `graine ${seed}`); }
+});

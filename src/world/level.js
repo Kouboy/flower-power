@@ -1,7 +1,7 @@
 // world/level.js — génération d'un niveau à partir de la graine du run.
 // Lit     : state.rng, state.level, FP.config.shop.lobbyingK (option lobbying), state.world.{width,height,viewH,surfaceY}, state.signature,
 //           FP.config.{level,spawnTables,signature}, FP.catalog, FP.geom.
-// Écrit   : state.world.{skyVariant,lawnVariant,safePath,safeRadius,solids,toxics,leaks,bonuses}, state.signature ;
+// Écrit   : state.world.{skyVariant,lawnVariant,safePath,safeRadius,hazardRadius,solidExtra,solids,toxics,leaks,bonuses}, state.signature ;
 //           puis FP.coins.place écrit state.world.{coins,chains}.
 // Expose  : FP.level.startRun(state), FP.level.generate(state),
 //           FP.level.distToSafePath(world,x,y), FP.level.pathXAt(world,y), FP.level.depthK(world,y), FP.level.depthBand(world,y).
@@ -53,28 +53,35 @@
 
   // --- Chemin sûr ----------------------------------------------------------
 
+  // Chemin plus sinueux et plus étroit avec les niveaux (v4.8.0) : chaque réglage glisse de sa valeur de base vers safePath.hard,
+  // jusqu'au niveau hard.level. Écrit aussi world.hazardRadius (marge des nappes et limaces) et world.solidExtra (des déchets).
   function generateSafePath(world, rng, level) {
-    const p = FP.config.level.safePath, W = world.width;
+    const p = FP.config.level.safePath, h = p.hard, W = world.width, k = clamp(level / h.level, 0, 1);
     const lo = p.edge, hi = W - p.edge, mid = W * .5;
     const startY = world.height - p.startPad, endY = world.surfaceY + p.endPad;
-    const n = Math.max(p.minNodes, Math.round((startY - endY) / p.segmentPx));
+    const n = Math.max(p.minNodes, Math.round((startY - endY) / lerp(p.segmentPx, h.segmentPx, k)));
+    const swapChance = lerp(p.swapChance, h.swapChance, k), spread = [0, 1].map(i => lerp(p.spread[i], h.spread[i], k));
+    const dy = (startY - endY) / n, slope = p.maxSlope * dy;   // aucun segment plus penché que maxSlope : la tige suit
     let x = mid;
     let side = rng.next() < .5 ? -1 : 1;
     const nodes = [{ x, y: startY }];
     for (let i = 1; i < n; i++) {
-      const y = lerp(startY, endY, i / n);
+      const y = lerp(startY, endY, i / n), prev = x;
       // Le premier pas force une vraie sortie du centre, puis le chemin change parfois de côté.
       if (i === 1) x = clamp(mid + side * rng.range(p.firstStep[0], p.firstStep[1]), lo, hi);
-      else if (p.swapNodes.includes(i) || rng.next() < p.swapChance) side *= -1;
-      const target = mid + side * rng.range(W * p.spread[0], W * p.spread[1]);
+      else if (p.swapNodes.includes(i) || rng.next() < swapChance) side *= -1;
+      const target = mid + side * rng.range(W * spread[0], W * spread[1]);
       const maxStep = p.baseStep + Math.max(0, p.stepBonusMax - Math.min(p.stepBonusMax, level));
       x = clamp(lerp(x, target, p.pull) + rng.range(-maxStep, maxStep) * p.wobble, lo, hi);
       if (Math.abs(x - mid) < p.centerDeadzone) x = clamp(mid + side * rng.range(p.centerPush[0], p.centerPush[1]), lo, hi);
+      x = clamp(x, prev - slope, prev + slope);
       nodes.push({ x, y });
     }
-    nodes.push({ x: clamp(x + rng.range(-p.endJitter, p.endJitter), lo, hi), y: endY });
+    nodes.push({ x: clamp(clamp(x + rng.range(-p.endJitter, p.endJitter), lo, hi), x - slope, x + slope), y: endY });
     world.safePath = nodes;
     world.safeRadius = Math.max(p.radiusMin, p.radiusBase + level * p.radiusPerLevel);
+    world.hazardRadius = Math.max(world.safeRadius, lerp(p.radiusBase, h.hazardRadius, k));
+    world.solidExtra = lerp(FP.config.level.fit.safeExtra, h.solidExtra, k);
   }
 
   function distToSafePath(world, x, y) {
@@ -86,6 +93,40 @@
       m = Math.min(m, FP.geom.distPointToSegment(x, y, a.x, a.y, b.x, b.y));
     }
     return m;
+  }
+
+  // Distance exacte du segment [a, b] au chemin sûr, 0 s'ils se croisent (v4.8.0 : la marge serrée des limaces l'exige).
+  const turn = (ax, ay, bx, by, cx, cy) => (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
+  function segmentToSafePath(world, ax, ay, bx, by) {
+    const P = world.safePath, d = FP.geom.distPointToSegment;
+    let m = Infinity;
+    for (let i = 1; i < P.length; i++) {
+      const p = P[i - 1], q = P[i];
+      if (turn(ax, ay, bx, by, p.x, p.y) * turn(ax, ay, bx, by, q.x, q.y) < 0 && turn(p.x, p.y, q.x, q.y, ax, ay) * turn(p.x, p.y, q.x, q.y, bx, by) < 0) return 0;
+      m = Math.min(m, d(ax, ay, p.x, p.y, q.x, q.y), d(bx, by, p.x, p.y, q.x, q.y), d(p.x, p.y, ax, ay, bx, by), d(q.x, q.y, ax, ay, bx, by));
+    }
+    return m;
+  }
+
+  // Points du chemin sûr tous les ~6 px, pour vérifier qu'une nappe n'y mord pas.
+  function pathSamples(world) {
+    const P = world.safePath, pts = [];
+    for (let i = 1; i < P.length; i++) {
+      const a = P[i - 1], b = P[i], n = Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 6);
+      for (let k = 0; k <= n; k++) pts.push({ x: a.x + (b.x - a.x) * k / n, y: a.y + (b.y - a.y) * k / n });
+    }
+    return pts;
+  }
+
+  // L'ellipse de la nappe, élargie de margin, ne contient aucun point du chemin sûr.
+  function toxicClear(o, pts, margin) {
+    const ca = Math.cos(-o.a), sa = Math.sin(-o.a), rx = o.rx + margin, ry = o.ry + margin, reach = Math.max(rx, ry);
+    for (const p of pts) {
+      if (Math.abs(p.y - o.y) > reach) continue;
+      const dx = p.x - o.x, dy = p.y - o.y, u = (dx * ca - dy * sa) / rx, v = (dx * sa + dy * ca) / ry;
+      if (u * u + v * v <= 1) return false;
+    }
+    return true;
   }
 
   // --- Placement -----------------------------------------------------------
@@ -111,7 +152,7 @@
       if (p.x < -out || p.x > W + out) return false;
       if (p.y < world.surfaceY + f.edgeTop || p.y > world.height - f.edgeBottom) return false;
     }
-    if (!clearOfSafePath(world, o, f.safeExtra)) return false;
+    if (!clearOfSafePath(world, o, world.solidExtra)) return false;
     for (const other of world.solids) {
       if (FP.geom.convexPolysOverlap(o.footprint, other.footprint)) return false;
     }
@@ -187,12 +228,9 @@
     return Math.round((c.base + Math.min(c.maxExtra, Math.floor(state.level * c.perLevel))) * worldScaleOf(state.world) * c.scale);
   }
 
-  // Marge du chemin sûr pour les nappes et les limaces : celle d'origine (radiusBase), même quand le chemin se resserre pour les
-  // déchets avec les niveaux — leurs règles de placement (ellipse, va-et-vient) ne tiennent qu'avec cette marge.
-  const hazardRadius = (world) => Math.max(world.safeRadius, FP.config.level.safePath.radiusBase);
 
   function placeToxics(state, grid) {
-    const world = state.world, rng = state.rng, c = FP.config.level.toxics;
+    const world = state.world, rng = state.rng, c = FP.config.level.toxics, pts = pathSamples(world);
     const count = countFor(c, state);
     for (let i = 0; i < count; i++) {
       // v4.2.3 : à tour de rôle dans les trois tiers de la hauteur (v3 : réservées aux profondeurs, la surface restait propre).
@@ -211,7 +249,9 @@
         for (let q = 0; q < c.specks; q++) o.specks.push({ x: rng.range(-c.shape.speckX, c.shape.speckX), y: rng.range(-c.shape.speckY, c.shape.speckY), r: rng.range(...c.shape.speckR), light: rng.next() < c.lightChance });
         // Une nappe peut déborder du cadre, mais on doit en voir assez pour l'anticiper.
         const visible = (Math.min(world.width, o.x + o.rx) - Math.max(0, o.x - o.rx)) / (2 * o.rx);
-        if (visible >= c.minVisible && distToSafePath(world, o.x, o.y) > hazardRadius(world) + Math.max(o.rx, o.ry) * c.safeK + c.safeExtra) { world.toxics.push(o); placed = true; }
+        // Loin du chemin (centre), et l'ellipse elle-même ne s'en approche pas à moins d'une demi-marge.
+        if (visible >= c.minVisible && distToSafePath(world, o.x, o.y) > world.hazardRadius + Math.max(o.rx, o.ry) * c.safeK + c.safeExtra &&
+          toxicClear(o, pts, world.hazardRadius * .5)) { world.toxics.push(o); placed = true; }
         else cell.used = false;
       }
     }
@@ -282,7 +322,8 @@
         const notBuried = !nearSolid(world, pos.x, pos.y, c.solidPad) && !nearToxic(world, pos.x, pos.y, c.toxicPad);
         const breathing = !nearLeak(world, pos.x, pos.y, c.spacingCenter) && pts.every(p => !nearLeak(world, p.x, p.y, c.spacingPath));
         // Une limace peut mettre la pression près du chemin, jamais le condamner.
-        const pathOpen = pts.every(p => distToSafePath(world, p.x, p.y) >= hazardRadius(world) * c.safeK + leak.r);
+        const ca = Math.cos(angle) * len / 2, sa = Math.sin(angle) * len / 2;
+        const pathOpen = segmentToSafePath(world, pos.x - ca, pos.y - sa, pos.x + ca, pos.y + sa) >= world.hazardRadius * c.safeK + leak.r;
         if (inBounds && notBuried && breathing && pathOpen) { world.leaks.push(leak); placed = true; }
       }
     }
