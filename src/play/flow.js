@@ -1,9 +1,10 @@
 // play/flow.js — déroulé de partie : mort, éclosion, transitions, fin de partie.
 // Lit     : state.mode, state.query, state.plant, state.input.pressed, state.events, state.rng, state.boosts.filter, state.world.{surfaceY,width},
 //           FP.config.{flow,text,toxic,garden,soil}.
-// Écrit   : state.mode, state.flow, state.garden.flowers (création, croissance), state.plant.{reserves,oldTrails,corruption,toxicTimer,recentToxic}, state.score.flowers,
+// Écrit   : state.mode, state.flow, state.run (seul à l'écrire : milieu, pousses, boss, saison, carton), state.garden.flowers (création, croissance), state.plant.{reserves,oldTrails,corruption,toxicTimer,recentToxic}, state.score.flowers,
 //           state.level, state.camera.shake, state.events (death, bloom, blossom, toxicEnter, ready) ; appelle FP.level.generate et FP.plant.prepare/launch.
-// Expose  : FP.flow.update(state, dt), FP.flow.simplifyTrail(points, minStep), FP.flow.afterShop(state, after) (fin du bon de commande).
+// Expose  : FP.flow.update(state, dt), FP.flow.simplifyTrail(points, minStep), FP.flow.afterShop(state, after) (fin du bon de commande),
+//           FP.flow.continueAfterWin(state) (écran de fin → saison suivante).
 //           Entre deux pousses (et après la dernière mort), FP.shop.open ouvre le bon de commande (mode shop). Les textes à l'écran sont l'affaire de ui/*.
 // Porté de la v3.43.16 (die, bloom, transitions de update()) ; éclosion visuelle et fondu : étape 6.
 (function () {
@@ -48,6 +49,10 @@
     plantFlowers(state, count);
     state.score.flowers += count;
     state.level += count;
+    // Milieux (v4.9.0) : une éclosion fait avancer d'une pousse (pollen ou non) ; celle du niveau de boss le bat.
+    const r = state.run;
+    if (r.boss) { r.bosses += 1; r.card = { kind: 'victory', t0: state.time }; state.flow.next = 'milieu'; }
+    else if ((r.step += 1) >= FP.config.run.steps) { r.boss = true; state.flow.next = 'boss'; }
     p.oldTrails.push(simplifyTrail(p.trail, cfg.trailSimplifyPx));
     if (p.oldTrails.length > cfg.oldTrailsMax) p.oldTrails.shift();
     // bloom : la motte se fend (terre projetée) ; blossom, hatchDelay plus tard : la fleur sort (anneau doré, pétales).
@@ -82,6 +87,7 @@
     } else if (f.stage === 'fadeOut') {
       f.fade = clamp(1 - f.timer / cfg.fadeOutTime, 0, 1);
       if (f.timer <= 0) {
+        if (f.next === 'milieu') nextMilieu(state);   // boss vaincu : le nouveau niveau est celui du milieu suivant
         FP.level.generate(state);
         FP.plant.prepare(state);
         f.stage = 'fadeIn'; f.timer = cfg.fadeInTime; f.fade = 1;
@@ -90,10 +96,23 @@
       f.fade = clamp(f.timer / cfg.fadeInTime, 0, 1);
       if (f.timer <= 0) {
         f.fade = 0; f.stage = 'show';
-        if (shopDue(state)) FP.shop.open(state, { after: 'bloom' });   // bon de commande, puis « prête »
+        const next = f.next; f.next = null;
+        if (f.won) { f.won = false; state.mode = 'won'; f.timer = cfg.wonDelay; }   // première saison terminée : écran de fin
+        else if (next === 'boss') FP.shop.open(state, { after: 'bloom' });       // bon de commande avant le boss, puis « prête »
         else afterShop(state, 'bloom');
       }
     }
+  }
+
+  // Milieu suivant (après un boss) ; après le dernier, saison suivante au premier milieu, et l'écran de fin la toute première fois.
+  function nextMilieu(state) {
+    const r = state.run;
+    r.milieu += 1; r.step = 0; r.boss = false;
+    if (r.milieu >= FP.config.milieux.length) {
+      r.milieu = 0; r.saison += 1;
+      if (!r.won) { r.won = true; state.flow.won = true; }
+    }
+    r.card = { kind: 'milieu', t0: state.time };
   }
 
   // Nappe toxique : pas de choc mais une exposition qui dévie la croissance, puis brûle la pointe.
@@ -131,12 +150,16 @@
         f.timer -= dt;
         if (f.timer <= 0) {
           if (p.reserves <= 0) FP.shop.open(state, { after: 'last' });   // dernière chance : la Graine Bio™ est garantie
-          else { FP.level.generate(state); FP.plant.prepare(state); if (shopDue(state)) FP.shop.open(state, { after: 'death' }); else toReady(state); }
+          else { FP.level.generate(state); FP.plant.prepare(state); toReady(state); }
         }
         break;
       case 'bloom':
         f.timer -= dt;
         bloomStages(state, cfg);
+        break;
+      case 'won':   // écran de fin : un appui, passé un court délai, lance la saison suivante
+        f.timer -= dt;
+        if (f.timer <= 0 && state.input.pressed) continueAfterWin(state);
         break;
       case 'ready':
         germinate(state, dt, cfg);
@@ -144,17 +167,18 @@
     }
   }
 
-  // Le bon de commande s'ouvre toutes les FP.config.shop.every pousses (la dernière chance, elle, toujours).
-  const shopDue = (state) => state.plant.stemCount % FP.config.shop.every === 0;
-
-  // Fin du bon de commande : on reprend là où la pousse s'était arrêtée.
+  // Fin du bon de commande : on reprend là où la pousse s'était arrêtée. Avant un boss, son carton s'affiche à la germination.
   function afterShop(state, after) {
     if (after === 'last') {
       if (state.plant.reserves <= 0) { state.mode = 'over'; return; }
       if (!state.boosts.lobbying) { FP.level.generate(state); FP.plant.prepare(state); }   // Lobbying a déjà regénéré le niveau
     }
+    if (after === 'bloom' && state.run.boss) state.run.card = { kind: 'boss', t0: state.time };
     toReady(state);
   }
+
+  // Après l'écran de fin : la saison suivante commence (son carton de milieu est déjà prêt).
+  function continueAfterWin(state) { toReady(state); }
 
   // Toute pousse attend sur sa graine qu'on la fasse germer (v4.7.0).
   function toReady(state) { state.mode = 'ready'; state.plant.germ = 0; state.events.push({ type: 'ready' }); }
@@ -165,8 +189,8 @@
     const p = state.plant, before = p.germ || 0, i = state.input;
     p.germ = i.key ? 1 : (i.down ? Math.min(1, before + dt / cfg.germTime) : Math.max(0, before - dt / cfg.germBack));
     for (const th of [1 / 3, 2 / 3]) if (before < th && p.germ >= th) state.events.push({ type: 'germCrack', x: p.seed.x, y: p.seed.y });
-    if (p.germ >= 1) { state.events.push({ type: 'germPop', x: p.seed.x, y: p.seed.y }); FP.plant.launch(state); }
+    if (p.germ >= 1) { state.events.push({ type: 'germPop', x: p.seed.x, y: p.seed.y }); state.run.card = null; FP.plant.launch(state); }
   }
 
-  FP.flow = { update, simplifyTrail, afterShop };
+  FP.flow = { update, simplifyTrail, afterShop, continueAfterWin };
 })();

@@ -66,3 +66,56 @@ FP.test('palette: strataTone suit le milieu', () => {
   FP.assert(FP.palette.strataTone(.1, 0, 'friche') !== FP.palette.strataTone(.1, 0, 'nucleaire'));
   FP.assertEqual(FP.palette.strataTone(.5, 3, 'friche'), FP.palette.milieux.friche.strata.clay[0]);
 });
+// Cycle de partie (v4.9.0) : 3 pousses réussies → boutique → niveau de boss → milieu suivant ; saison 2 après le 4ᵉ boss.
+// Aides de flow.test.js : flowRun, bloomNow, advance, skipShop, serverAt.
+const spyShop = (fn) => { const keep = FP.shop.open, calls = []; FP.shop.open = (s, o) => { calls.push({ after: o.after, boss: s.run.boss }); keep(s, o); }; try { fn(calls); } finally { FP.shop.open = keep; } };
+const nextBloom = (s) => { FP.plant.launch(s); bloomNow(s); advance(s, 8); skipShop(s); };
+const killNow = (s) => { FP.plant.launch(s); serverAt(s); s.plant.tip = { x: 220, y: 900 }; FP.collision.update(s); FP.flow.update(s, 0); advance(s, 3); };
+FP.test('flow: trois éclosions mènent au boss, boutique comprise', () => spyShop(calls => {
+  const s = flowRun();
+  for (let i = 0; i < 3; i++) nextBloom(s);
+  FP.assert(s.run.boss && s.run.step === 3 && s.mode === 'ready', JSON.stringify(s.run) + ' ' + s.mode);
+  FP.assertEqual(JSON.stringify(calls), JSON.stringify([{ after: 'bloom', boss: true }]));
+  FP.assertEqual(s.run.card && s.run.card.kind, 'boss');
+}));
+FP.test('flow: une mort ne fait pas avancer le milieu', () => spyShop(calls => {
+  const s = flowRun(); nextBloom(s); killNow(s);
+  FP.assertEqual(s.run.step, 1); FP.assertEqual(calls.length, 0); FP.assertEqual(s.mode, 'ready');
+}));
+FP.test('flow: une éclosion à plusieurs fleurs compte pour une pousse', () => {
+  const s = flowRun(), level = s.level;
+  FP.plant.launch(s); s.score.flowerBonus = 2; bloomNow(s); advance(s, 8); skipShop(s);   // le pollen se ramasse pendant la pousse
+  FP.assertEqual(s.run.step, 1); FP.assertEqual(s.level, level + 3);
+});
+FP.test('flow: battre le boss passe au milieu suivant', () => {
+  const s = flowRun(); for (let i = 0; i < 4; i++) nextBloom(s);
+  FP.assertEqual(JSON.stringify([s.run.bosses, s.run.milieu, s.run.step, s.run.boss]), JSON.stringify([1, 1, 0, false]));
+  FP.assertEqual(s.world.milieu, 'industrie'); FP.assertEqual(s.run.card && s.run.card.kind, 'milieu');
+});
+FP.test('flow: après le 4ᵉ boss, écran de fin puis saison 2 en friche', () => {
+  const s = flowRun();
+  for (let i = 0; i < 15; i++) nextBloom(s);
+  FP.plant.launch(s); bloomNow(s);   // la 16ᵉ : on s'arrête dès l'écran de fin, sans laisser filer son délai
+  for (let i = 0; i < 900 && s.mode !== 'won'; i++) FP.flow.update(s, 1 / 60);
+  FP.assertEqual(s.mode, 'won'); FP.assert(s.run.won && s.run.saison === 2 && s.run.milieu === 0, JSON.stringify(s.run));
+  s.input = { ...s.input, pressed: true }; FP.flow.update(s, 1 / 60);
+  FP.assertEqual(s.mode, 'won', 'un appui trop tôt ne passe pas');
+  s.input = { ...s.input, pressed: false }; advance(s, 2); s.input = { ...s.input, pressed: true }; FP.flow.update(s, 1 / 60);
+  FP.assertEqual(s.mode, 'ready');
+  s.input = { ...s.input, pressed: false };
+  for (let i = 0; i < 16; i++) { nextBloom(s); FP.assert(s.mode !== 'won', 'la fin ne revient pas'); }
+  FP.assertEqual(s.run.saison, 3);
+});
+FP.test('flow: mort au boss puis dernière chance : on reste au boss', () => spyShop(calls => {
+  const s = flowRun(); for (let i = 0; i < 3; i++) nextBloom(s);
+  s.plant.reserves = 1; killNow(s);
+  FP.assertEqual(s.mode, 'shop'); FP.assertEqual(calls[calls.length - 1].after, 'last');
+  s.plant.reserves = 1; s.shop = null; FP.flow.afterShop(s, 'last');   // la Graine Bio™ achetée
+  FP.assert(s.run.boss && s.run.milieu === 0 && s.run.step === 3 && s.mode === 'ready', JSON.stringify(s.run));
+  FP.assertEqual(calls.length, 2);
+}));
+FP.test('flow: la boutique ne s’ouvre jamais hors boss et dernière chance', () => spyShop(calls => {
+  const s = flowRun();
+  for (let i = 0; i < 10; i++) { s.plant.reserves = 3; if (i % 3 === 1) killNow(s); else nextBloom(s); }
+  FP.assert(calls.length > 0 && calls.every(c => (c.after === 'bloom' && c.boss) || c.after === 'last'), JSON.stringify(calls));
+}));

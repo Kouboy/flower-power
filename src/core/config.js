@@ -214,7 +214,7 @@
     // Boutique de fin de pousse (v4.6.0) : 3 articles tirés (un à −50 %), achetés au score ; effets sur la pousse suivante.
     // co2 : masse satirique ajoutée à la « livraison » (kg), sans effet en jeu. Tirage propre (graine ^ salt ^ passage).
     shop: {
-      salt: 0x5f3759df, every: 3, promo: .5,   // every : le bon s'ouvre toutes les 3 pousses (et toujours en dernière chance)
+      salt: 0x5f3759df, promo: .5,   // le bon s'ouvre avant chaque boss (et toujours en dernière chance) : play/flow.js
       lobbyingK: .6, compostK: .8, beerK: .3, premiumK: 2,
       magnetRange: 110, magnetSpeed: 140, magnetAccel: 900,   // Aimant : portée (px), vitesse de départ et accélération (px/s, px/s²) des jetons aspirés
       inTime: .25, stampTime: .35, outTime: .3,
@@ -247,6 +247,7 @@
 
     // Déroulé de partie. hatchDelay : la motte se fend, puis la fleur sort (render/mound.js).
     flow: {
+      wonDelay: 1.5,   // écran de fin (v4.9.0) : délai avant qu'un appui lance la saison suivante
       germTime: .6, germBack: .25,   // germination (v4.7.0) : maintenir .6 s fait sortir la pousse ; lâcher, le germe rentre en .25 s
       dyingTime: .85, bloomTime: 1.55, hatchDelay: .24, hatchShake: .1, fadeOutTime: .46, fadeInTime: .48, oldTrailsMax: 6, trailSimplifyPx: 11, deathShake: .28
     },
