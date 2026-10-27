@@ -50,3 +50,39 @@ FP.test('plantRender: la graine se fissure à mi-germination', () => {
   const ink = (germ) => { const c = fakeCtx(); FP.plantRender.seed(c, { x: 100, y: 100 }, 0, germ, 0); return [...c.px.values()].filter(v => v === FP.palette.seed.outline).length; };
   FP.assert(ink(.5) > ink(0) && ink(.9) > ink(.5), ink(0) + ' / ' + ink(.5) + ' / ' + ink(.9));
 });
+// Calques (v4.7.5) : les anciennes tiges et le halo de la tige en cours sont dessinés une fois hors écran puis recopiés.
+// Faux calque : un contexte de test qui recopie fidèlement ses pixels par drawImage (source, rectangle source, destination).
+const fakeLayerCtx = () => { const c = fakeCtx(); c.drawImage = (src, sx, sy, sw, sh, dx, dy) => { for (const [k, col] of src.getContext().px) { const [x, y] = k.split(',').map(Number); if (x >= sx && x < sx + sw && y >= sy && y < sy + sh) c.px.set((x - sx + dx) + ',' + (y - sy + dy), col); } }; return c; };
+const fakeLayer = (w, h) => {
+  fakeLayer.made++; const g = fakeCtx();
+  g.clearRect = (x, y, cw, ch) => { for (const k of [...g.px.keys()]) { const [px, py] = k.split(',').map(Number); if (px >= x && px < x + cw && py >= y && py < y + ch) g.px.delete(k); } };
+  const canvas = { width: w, height: h, getContext: () => g }; return { canvas, g }; };
+const visible = (c, s) => { const H = Math.floor(s.world.viewH / FP.px.SCALE), W = Math.ceil(s.world.width / FP.px.SCALE); return [...c.px.entries()].filter(([k]) => { const [x, y] = k.split(',').map(Number); return x >= 0 && x < W && y >= 0 && y < H; }).map(e => e.join('=')).sort().join(';'); };
+const withLayer = (fn) => { const keep = FP.px.layer; FP.px.layer = fakeLayer; try { return fn(); } finally { FP.px.layer = keep; } };
+const withoutLayer = (fn) => { const keep = FP.px.layer; FP.px.layer = () => null; try { return fn(); } finally { FP.px.layer = keep; } };
+const stemRun = () => {
+  const s = FP.state.createRun(6, { W: 440, H: 783 }); FP.level.startRun(s); FP.plant.launch(s); s.world.solids = [];
+  s.input = { ...s.input, down: true, touch: false, y: 400 };
+  for (let i = 0; i < 260; i++) { s.input.x = s.plant.tip.x + Math.sin(i / 20) * 120; s.time += 1 / 60; FP.plant.update(s, 1 / 60); }
+  s.camera.y = Math.max(0, s.plant.tip.y - 500);
+  return s;
+};
+FP.test('plantRender: les anciennes tiges en calque donnent exactement les mêmes pixels', () => {
+  const s = stemRun(); s.plant.oldTrails = [s.plant.trail.map(p => ({ x: p.x - 60, y: p.y })), s.plant.trail.map(p => ({ x: p.x + 70, y: p.y + 30 }))];
+  const direct = fakeLayerCtx(), cached = fakeLayerCtx();
+  fakeLayer.made = 0;
+  withoutLayer(() => FP.plantRender.drawOld(direct, s)); withLayer(() => FP.plantRender.drawOld(cached, s));
+  FP.assert(fakeLayer.made > 0, 'aucun calque'); FP.assert(direct.px.size > 0); FP.assertEqual(visible(cached, s), visible(direct, s));
+});
+FP.test('plantRender: la tige en cours avec son halo en calque donne exactement les mêmes pixels, même quand elle pousse', () => {
+  const s = stemRun(), direct = fakeLayerCtx(), cached = fakeLayerCtx(), cfg = FP.config.plant, keep = cfg.trailMax;
+  fakeLayer.made = 0;   // dessins en mode « dying » : la tige et la tête, sans la membrane du bouclier (render/powerups.js n'est pas chargé sous Node)
+  s.mode = 'dying'; withLayer(() => FP.plantRender.draw(fakeLayerCtx(), s)); s.mode = 'playing';   // le calque se remplit une première fois
+  cfg.trailMax = s.plant.trail.length - 20;   // la queue de la tige s'efface pendant qu'elle pousse, sous nos yeux
+  try { for (let i = 0; i < 90; i++) { s.time += 1 / 60; FP.plant.update(s, 1 / 60); } } finally { cfg.trailMax = keep; }
+  s.camera.y = Math.max(0, s.plant.tip.y - 500); s.time = 3.21;   // même instant pour les deux dessins (tête, foreuse)
+  s.mode = 'dying';
+  const copy = { ...s, plant: { ...s.plant, trail: s.plant.trail.slice() } };   // autre tige : dessinée en direct
+  withoutLayer(() => FP.plantRender.draw(direct, copy)); withLayer(() => FP.plantRender.draw(cached, s));
+  FP.assert(fakeLayer.made > 0, 'aucun calque'); FP.assertEqual(visible(cached, s), visible(direct, s));
+});

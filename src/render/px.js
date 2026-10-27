@@ -1,8 +1,8 @@
 // render/px.js — boîte à outils pixel : tout le dessin « converti » passe par ces primitives, sur la toile monde.
 // Lit     : rien (fonctions pures sur le contexte reçu).
 // Écrit   : uniquement les pixels du contexte passé en argument, par fillRect (jamais de chemin lissé).
-// Expose  : FP.px.{SCALE, toArt, rect, line, disc, ring, dither, downscale, posterize, outline}.
-// Coordonnées en pixels d'art entiers (1 pixel d'art = SCALE pixels CSS). Ne touche pas au DOM : testable sous Node.
+// Expose  : FP.px.{SCALE, toArt, rect, line, disc, ring, dither, downscale, posterize, outline, layer, blit}.
+// Coordonnées en pixels d'art entiers (1 pixel d'art = SCALE pixels CSS). Ne touche au DOM que dans layer (null sous Node) : testable sous Node.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
@@ -125,5 +125,21 @@
     return out;
   }
 
-  FP.px = { SCALE, toArt, rect, line, disc, ring, dither, downscale, posterize, outline };
+  // --- Calques (v4.7.5) : dessiner une fois hors écran, recopier ensuite la portion visible. ---
+
+  // Toile hors écran de w × h pixels d'art, { canvas, g } ; null sans DOM (sous Node, on dessine alors en direct).
+  function layer(w, h) {
+    if (typeof document === 'undefined') return null;
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    return { canvas, g: canvas.getContext('2d') };
+  }
+
+  // Recopie un calque au repère du monde (y d'art absolu) sur la toile visible, décalé de oy, sur h lignes.
+  function blit(g, l, oy, h) {
+    const sy = Math.max(0, oy), sh = Math.min(h, l.canvas.height - sy);
+    if (sh > 0) g.drawImage(l.canvas, 0, sy, l.canvas.width, sh, 0, sy - oy, l.canvas.width, sh);
+  }
+
+  FP.px = { SCALE, toArt, rect, line, disc, ring, dither, downscale, posterize, outline, layer, blit };
 })();

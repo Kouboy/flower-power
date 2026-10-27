@@ -63,9 +63,46 @@
   // Profondeur relative (0 = surface, 1 = fond) pour choisir la teinte de terre.
   const depthOf = (world, y) => Math.max(0, Math.min(.999, (y - FP.soil.surfaceTop(world)) / (world.height - FP.soil.surfaceTop(world))));
 
+  // --- Calques (v4.7.5) : dessinés une fois au repère du monde (oy = 0), puis recopiés à chaque image. ---
+
+  const worldLayer = (world) => FP.px.layer(Math.ceil(world.width / FP.px.SCALE) + 2, Math.ceil(world.height / FP.px.SCALE) + 16);
+  const rows = (viewH) => Math.ceil(viewH / FP.px.SCALE) + 1;
+  const HALO_PAD = 6;   // le halo de la tige en cours ne s'écarte jamais de plus de 5 pixels d'art de son segment
+  const segBox = (p0, p1) => {
+    const { toArt } = FP.px, ax = toArt(p0.x), ay = toArt(p0.y), bx = toArt(p1.x), by = toArt(p1.y);
+    return { x0: Math.min(ax, bx) - HALO_PAD, y0: Math.min(ay, by) - HALO_PAD, x1: Math.max(ax, bx) + HALO_PAD, y1: Math.max(ay, by) + HALO_PAD };
+  };
+  const haloSeg = (g, p0, p1) => haloAround(g, { a: [FP.px.toArt(p0.x), FP.px.toArt(p0.y)], b: [FP.px.toArt(p1.x), FP.px.toArt(p1.y)] }, 0, false, 2);
+  const haloCache = { trail: null, world: null, layer: null, drawn: [] };
+
+  // Halo de la tige en cours : chaque nouveau segment s'y ajoute. Quand la queue de la tige s'efface, on efface sa zone
+  // et on y redessine les segments qui la touchent (le halo est d'une seule couleur : l'ordre des segments ne compte pas).
+  // null sans calque possible : la tige dessine alors son halo en direct.
+  function haloLayer(points, world) {
+    const c = haloCache;
+    if (c.trail !== points || c.world !== world) {
+      const l = worldLayer(world);
+      if (!l) return null;
+      Object.assign(c, { trail: points, world, layer: l, drawn: [] });
+    }
+    const d = c.drawn, g = c.layer.g, cut = d.indexOf(points[0]);
+    if (cut < 0 || d[d.length - 1] !== points[d.length - cut - 1]) { g.clearRect(0, 0, c.layer.canvas.width, c.layer.canvas.height); d.length = 0; }
+    for (let k = 0; k < cut && d.length > 1; k++) {
+      const b = segBox(d[0], d[1]);
+      d.shift();
+      g.clearRect(b.x0, b.y0, b.x1 - b.x0 + 1, b.y1 - b.y0 + 1);
+      for (let i = 1; i < d.length; i++) {
+        const o = segBox(d[i - 1], d[i]);
+        if (o.x0 <= b.x1 && o.x1 >= b.x0 && o.y0 <= b.y1 && o.y1 >= b.y0) haloSeg(g, d[i - 1], d[i]);
+      }
+    }
+    for (let i = d.length; i < points.length; i++) { if (i > 0) haloSeg(g, points[i - 1], points[i]); d.push(points[i]); }
+    return c.layer;
+  }
+
   // Tige : tunnel remué derrière la pointe, racines, corps, mottes qui la recouvrent, mycélium au premier plan.
-  // Seuls les segments visibles sont dessinés.
-  function drawStem(g, points, oy, current, world, viewH) {
+  // Seuls les segments visibles sont dessinés ; halo : calque recopié s'il est fourni, sinon dessiné ici.
+  function drawStem(g, points, oy, current, world, viewH, halo = null) {
     if (points.length < 2) return;
     const { px, palette } = FP, c = palette.stem, top = oy - 8, bottom = oy + viewH + 8;
     const seg = [];
@@ -83,7 +120,8 @@
       for (const side of [-1, 1]) for (let k = 3; k <= 4; k++) px.rect(g, ax + Math.round(q.nx * k * side), ay + Math.round(q.ny * k * side), 1, 1, palette.strataTone(d, k === 3 ? 0 : 3));
     }
     // Halo de terre tassée autour de la tige, comme autour des obstacles.
-    for (const q of seg) haloAround(g, q, oy, !current, current ? 2 : 1.5);
+    if (halo) FP.px.blit(g, halo, oy, rows(viewH));
+    else for (const q of seg) haloAround(g, q, oy, !current, current ? 2 : 1.5);
     // Racines fines qui partent de la tige dans la terre.
     for (const q of seg) {
       const h = cellHash(q.mx, q.my, 2);
@@ -211,14 +249,24 @@
   }
 
   // Anciennes tiges : juste après la terre, sous les dangers et les déchets (elles ne brouillent pas le terrain).
+  // Dessinées entières dans un calque quand une tige s'ajoute (ou au changement de niveau), recopiées ensuite.
+  const oldCache = { key: null, layer: null };
   function drawOld(g, state) {
-    const oy = FP.px.toArt(state.camera.y);
-    for (const t of state.plant.oldTrails) drawStem(g, t, oy, false, state.world, state.world.viewH);
+    const w = state.world, trails = state.plant.oldTrails, oy = FP.px.toArt(state.camera.y);
+    if (!trails.length) return;
+    const key = w.width + ',' + w.height + ';' + trails.map(t => t.length + ':' + (t[0] ? t[0].x + ':' + t[0].y : '')).join(';');
+    if (oldCache.key !== key) {
+      const l = worldLayer(w);
+      if (!l) { for (const t of trails) drawStem(g, t, oy, false, w, w.viewH); return; }
+      for (const t of trails) drawStem(l.g, t, 0, false, w, w.height);
+      Object.assign(oldCache, { key, layer: l });
+    }
+    FP.px.blit(g, oldCache.layer, oy, rows(w.viewH));
   }
 
   function draw(g, state) {
     const { px } = FP, p = state.plant, camY = state.camera.y, oy = px.toArt(camY);
-    if (p.trail.length) drawStem(g, p.trail, oy, true, state.world, state.world.viewH);
+    if (p.trail.length) drawStem(g, p.trail, oy, true, state.world, state.world.viewH, haloLayer(p.trail, state.world));
     const seedVisible = p.seed.y + 38 >= camY - 70 && p.seed.y - 38 <= camY + state.world.viewH + 70;
     if (seedVisible && !(p.tip && Math.hypot(p.tip.x - p.seed.x, p.tip.y - p.seed.y) < 24)) drawSeed(g, p.seed, oy, state.mode === 'ready' ? p.germ || 0 : 0, state.time);
     const alive = state.mode === 'playing' || state.mode === 'dying' || state.mode === 'over';
