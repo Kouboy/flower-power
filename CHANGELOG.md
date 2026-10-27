@@ -2,6 +2,13 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.7.5 — Plus fluide sur téléphone
+
+- dessin : les anciennes tiges et le halo de la tige en cours sont dessinés une fois dans des calques puis recopiés ; les six images des jetons et le sillon des limaces aussi (pixels identiques, tige ≈ −45 %, limaces ≈ −40 %, jetons ≈ −50 % sur téléphone simulé) ;
+- nappes toxiques construites 3× plus vite et préparées hors des moments de jeu : plus de blocages de 50 à 120 ms quand une nappe apparaît ;
+- son : ronron de la foreuse sur trois voix permanentes, filtres, envois d'écho et trémolos partagés, plafond de 40 voix pour la musique (jamais les effets), musique planifiée 0,35 s d'avance ; 145 nœuds Web Audio créés par seconde en jeu au lieu de 301 ;
+- banc : 431 tests.
+
 ## v4.7.4 — Économie rééquilibrée
 
 - jetons à 10 Ɇ (au lieu de 25, qui remontaient à 25 par l'arrondi du score) ; traînée complète 50 Ɇ (facile) et 150 Ɇ (appât) ;
