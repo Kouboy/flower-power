@@ -12,7 +12,7 @@
   const FP = window.FP = window.FP || {};
 
   const TRIES = 40;   // essais par nappe
-  const LANE = 1, BEND = .9;   // le couloir longe la face à r + LANE ; il quitte un flanc à BEND × r au-delà du bord du tronçon
+  const LANE = 1, BEND = .9;   // le couloir longe la face à r + LANE ; il change de flanc au moins à BEND × r au-delà des coins
   const rect = (hw, hh) => [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]];
 
   function makeSolid(kind, x, y, collision, off) {
@@ -36,17 +36,21 @@
     return Math.min(normal * c.corridorK, c.weakOut + c.weakHit - 2);
   }
 
-  // Tronçons du bas vers le haut, séparés d'un intervalle où le couloir change de flanc. Les tronçons dépassent le milieu : le couloir
-  // zigzague d'un bord à l'autre, et l'intervalle est assez haut pour que la traversée en diagonale reste sous maxSlope.
+  // Écart latéral d'un changement de flanc (d'une voie à l'autre), et intervalle minimal pour le faire sous maxSlope à BEND × r des deux coins.
+  const crossing = (W, c, r) => Math.abs(2 * c.segWidth - 1) * W + 2 * (r + LANE);
+  const minGap = (W, c, r) => 2 * BEND * r + crossing(W, c, r) / FP.config.level.safePath.maxSlope;
+
+  // Tronçons du bas vers le haut, minces (thickK de la tranche) : le reste de la zone va aux 3 intervalles, où le couloir change de flanc.
+  // Les tronçons dépassent le milieu : le couloir zigzague d'un bord à l'autre. Le premier est posé au bas de la zone (piste d'envol depuis la graine).
   function buildSegments(world, c, r, rng) {
-    const W = world.width, segW = W * c.segWidth, cross = Math.abs(2 * segW - W) + 2 * (r + LANE);
-    const gap = Math.max(r * 3, 2 * BEND * r + cross / FP.config.level.safePath.maxSlope);
+    const W = world.width, segW = W * c.segWidth;
     const zoneTop = world.surfaceY + c.top, zoneBottom = world.height - c.bottom;
-    const slot = (zoneBottom - zoneTop) / c.segments, thick = slot - gap;
+    const zone = zoneBottom - zoneTop, n = c.segments;
+    const thick = Math.min(zone / n * c.thickK, (zone - (n - 1) * minGap(W, c, r)) / n), gap = (zone - n * thick) / (n - 1);
     let side = rng.next() < .5 ? -1 : 1;
     const segments = [];
     for (let i = 0; i < c.segments; i++, side = -side) {
-      const y1 = zoneBottom - i * slot, y0 = y1 - thick;
+      const y1 = zoneBottom - i * (thick + gap), y0 = y1 - thick;
       const x0 = side < 0 ? 0 : W - segW, x1 = side < 0 ? segW : W;
       const solid = makeSolid('boss', (x0 + x1) / 2, (y0 + y1) / 2, rect(segW / 2, thick / 2), false);
       segments.push({ side, x0, x1, y0, y1, solid });
@@ -77,14 +81,18 @@
     return { y0, y1, openedAt: open ? -Infinity : null, solid: makeSolid('trap', world.width / 2, (y0 + y1) / 2, rect(world.width / 2, c.trap.thick / 2), open) };
   }
 
-  // Couloir : part de la graine, longe chaque flanc à r + LANE (nœud au bord bas, à mi-hauteur, au bord haut), change de flanc en diagonale
-  // dans l'intervalle entre deux tronçons, finit juste sous la trappe.
-  function buildPath(world, r, segments, trap) {
-    const d = r + LANE, q = r * BEND, path = [{ x: world.width / 2, y: world.height - FP.config.plant.seedOffset }];
-    const lane = (seg) => faceX(seg) - seg.side * d;
+  // Couloir : part de la graine, longe chaque flanc à r + LANE (nœud sous le bord bas, à mi-hauteur, au-dessus du bord haut), finit juste
+  // sous la trappe. Changement de flanc : montée droite de `up` au-dessus du coin quitté (crossUp de la hauteur libre : la tige qui anticipe
+  // ne coupe pas ce coin), diagonale à crossK × maxSlope, montée droite de `down` sous le coin suivant (la tige en retard ne le heurte pas).
+  function buildPath(world, c, r, segments, trap) {
+    const d = r + LANE, gap = segments[0].y0 - segments[1].y1;
+    const q = r * BEND, free = Math.max(2 * q, gap - crossing(world.width, c, r) / (c.crossK * FP.config.level.safePath.maxSlope));
+    const up = Math.min(Math.max(free * c.crossUp, q), free - q), down = free - up;
+    const lane = (seg) => faceX(seg) - seg.side * d, path = [{ x: world.width / 2, y: world.height - FP.config.plant.seedOffset }];
+    const launch = Math.min(down, (path[0].y - segments[0].y1) / 2);
     segments.forEach((seg, i) => {
       const x = lane(seg), mid = (seg.y0 + seg.y1) / 2;
-      path.push({ x, y: seg.y1 + q }, { x, y: mid }, { x, y: i === segments.length - 1 ? seg.y0 : seg.y0 - q });
+      path.push({ x, y: seg.y1 + (i ? down : launch) }, { x, y: mid }, { x, y: i === segments.length - 1 ? seg.y0 : seg.y0 - up });
     });
     const top = segments[segments.length - 1];
     path.push({ x: lane(top), y: trap.y1 + 10 });
@@ -118,7 +126,7 @@
     const defenses = buildDefenses(world, c, segments, milieuId), trap = buildTrap(world, c, state.bossFight.pierced);
     world.solids.push(...segments.map(s => s.solid), ...defenses.map(d => d.solid), trap.solid);
     world.bossLevel = { segments, weak, defenses, trap };
-    buildPath(world, r, segments, trap);
+    buildPath(world, c, r, segments, trap);
     buildToxics(world, c, rng, segments, weak, r);
     FP.coins.place(state);
   }

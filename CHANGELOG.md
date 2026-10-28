@@ -5,12 +5,12 @@ Une entrée par version (voir `AGENTS.md`).
 ## v4.12.0 — Moteur de boss
 
 - le niveau de boss est un vrai combat : 4 tronçons de machine accrochés tour à tour aux flancs, un point faible par tronçon à percer de bas en haut, une trappe sous la pelouse qui ne s'ouvre qu'après le quatrième ;
-- les tronçons dépassent le milieu de l'écran : le couloir sûr zigzague d'un flanc à l'autre (pas de victoire tout droit par le centre), et chaque changement de flanc reste assez doux pour que la tige le suive ;
+- les tronçons dépassent le milieu de l'écran : le couloir sûr zigzague d'un flanc à l'autre (pas de victoire tout droit par le centre) ; minces, ils laissent de hauts intervalles où chaque changement de flanc monte droit au-delà du coin, traverse en pente douce et remonte droit sous le coin suivant : la tige le suit au doigt, qu'on anticipe ou qu'on suive en retard ;
 - défenses propres à chaque milieu (piston, jet, bras) : elles préviennent, frappent, se reposent, et accélèrent à chaque point percé sans jamais sauter d'étape (un perçage ne déclenche aucun coup sans avertissement) ; seul le coup est un obstacle ; la trappe fermée tue aussi, même sous la membrane ;
 - les points percés survivent à une mort ; la flèche, au bord de l'écran zoomé, indique le prochain point au-dessus de la pointe quand on ne le voit pas ; HUD du combat, carton BOSS VAINCU, bonus de perçage et de boss ; un perçage fait jaillir étincelles et jetons, secoue l'écran ; sons de perçage, de trappe et de coup, thème du boss qui s'emballe (+6 BPM par point percé) ;
 - avant et pendant un boss, le bon de commande ne propose plus Lobbying ni Bière anti-limaces (sans effet sur ce niveau) ;
 - rendu provisoire en blocs dessinés par le code ; les prompts des vraies images (non générées) sont dans `docs/art/prompts-boss.md` ;
-- banc : 526 tests.
+- banc : 528 tests.
 
 ## v4.11.0 — Décors des milieux
 
