@@ -2,6 +2,14 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.11.0 — Décors des milieux
+
+- chaque milieu a son ciel, son horizon, ses accessoires et son sous-sol, en pixel art dessiné par le code : barres d'immeubles et grue (friche), raffinerie, torchère et convoyeur (zone industrielle), montagne d'ordures, grappin et mouettes (décharge), tour de refroidissement, clôture, lune verte et aurore (site nucléaire) ;
+- surface : palissade taguée, caddie et plots ; palettes, fûts et rails ; sacs, pneus et frigo ; fûts jaunes, panneaux et herbe mutante qui luit ;
+- sous-sol, sur toute la profondeur et en teintes sourdes : briques et canalisations ; conduites rouillées et poches d'huile ; couches de déchets qui suintent ; galeries de béton et fûts enterrés qui fuient ;
+- les usines de l'ancien horizon disparaissent ; le décor change d'un niveau à l'autre et suit la largeur de l'écran ;
+- banc : 485 tests.
+
 ## v4.10.0 — Musique des milieux
 
 - chaque milieu a sa musique, toujours dansante, trop joyeuse pour ce qu'on voit, et malade dessous : funk 70s hanté (friche, inchangé), « funk à la chaîne » (zone industrielle), « cumbia de la benne » (décharge), « disco radieux, EDM malade » (site nucléaire) ; 3 variantes par nouveau milieu, une par pousse ;

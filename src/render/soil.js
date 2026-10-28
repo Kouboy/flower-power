@@ -1,6 +1,7 @@
-// render/soil.js — pelouse et terre en pixels d'art : touffes d'herbe, trois strates tramées, détails clairsemés.
-// Lit     : world.{width,height,surfaceY,lawnVariant,milieu}, state.{seed,level}, state.camera.y, FP.view.{W,art}, FP.palette.{milieux,strataBounds},
-//           FP.config.soil.surfaceOffset.
+// render/soil.js — pelouse et terre en pixels d'art : touffes d'herbe, trois strates tramées, détails clairsemés, et le décor du
+// milieu (v4.11.0) : accessoires sur la pelouse, décor enterré, petites animations.
+// Lit     : world.{width,height,surfaceY,lawnVariant,milieu}, state.{seed,level,time}, state.camera.y, FP.view.{W,art}, FP.palette.{milieux,strataBounds},
+//           FP.config.soil.surfaceOffset, FP.decor (render/decor-*.js).
 // Écrit   : rien dans l'état (cache créé à la première utilisation).
 // Expose  : FP.soil.draw(actx, state) — repère d'art, la caméra est appliquée ici ; FP.soil.surfaceTop(world) (repère monde) ;
 //           FP.soil.grainAt(x, y, seed) — grain noir de la terre (pur, testé).
@@ -9,7 +10,7 @@
   'use strict';
   const FP = window.FP = window.FP || {};
 
-  let cache = null, cacheKey = '';
+  let cache = null, cacheKey = '', layout = null;   // layout : placements du décor du niveau en cache
   const BAYER = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]];
   const TRANSITION = 6;          // rangées tramées entre deux teintes d'une même strate
   const STRATA_TRANSITION = 16;  // rangées tramées entre deux strates
@@ -107,6 +108,11 @@
       }
     }
 
+    // Décor enterré du milieu, sous la frange et la pelouse ; placements tirés de la graine du niveau.
+    const decor = FP.decor[milieu];
+    layout = decor.layout(w, topArt, hArt, rng(seed ^ 0x5eed));
+    decor.under(g, layout);
+
     // Frange sous l'herbe : bord irrégulier d'humus sombre.
     const lawns = palette.milieux[milieu].lawn, lawn = lawns[lawnVariant % lawns.length];
     for (let x = 0; x < w; x++) {
@@ -121,6 +127,7 @@
       px.rect(g, x, topArt - 2, 1, 1, lawn[0]);
       if (rnd() < .025) px.rect(g, x + lean, topArt - 3 - hgt, 1, 1, WILDFLOWERS[Math.floor(rnd() * WILDFLOWERS.length)]);
     }
+    decor.surface(g, layout, topArt - 2);   // accessoires posés sur la pelouse
   }
 
   // Seule la tranche visible du cache est recopiée.
@@ -136,6 +143,7 @@
     const oy = px.toArt(state.camera.y), viewH = FP.view.art.h;
     const y0 = Math.max(0, oy - 8), y1 = Math.min(cache.height, oy + viewH + 8);
     if (y1 > y0) actx.drawImage(cache, 0, y0, cache.width, y1 - y0, 0, y0 - oy, cache.width, y1 - y0);
+    FP.decor[world.milieu].glow(actx, layout, topArt - 2, oy, viewH, state.time);   // petites animations à l'écran
   }
 
   FP.soil = { draw, surfaceTop, grainAt };
