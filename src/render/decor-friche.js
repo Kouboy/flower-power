@@ -1,7 +1,7 @@
 // render/decor-friche.js — décor de la friche urbaine (v4.11.0) : soleil voilé et smog qui dérive ; barres d'immeubles dont
 // des fenêtres s'allument et s'éteignent, grue ; palissade taguée, caddie renversé, plots de chantier ; briques, gravats,
 // canalisation et câble dans la terre.
-// Lit     : FP.px.
+// Lit     : FP.px, FP.decorTube (conduites usées).
 // Écrit   : rien dans l'état (dessine dans le contexte reçu).
 // Expose  : FP.decor.friche = { palette, skyStatic, back, horizon, front, layout, surface, under, glow } (contrat des décors,
 //           voir docs/superpowers/plans/2026-10-28-decors-milieux.md).
@@ -13,8 +13,9 @@
   const TILE = 220, REF = 70;
   const S = '#24122e', SL = '#341a3e', CRANE = '#1a0c22', LIT = ['#f0b890', '#d86850'];
   const FENCE = ['#3a2a1e', '#4a3626'], TAGS = ['#e07a3a', '#5fa88a', '#f0a0a0'], CART = '#9aa4b0', WHEEL = '#3a3a3a', CONE = ['#e07a3a', '#d8d0b8'];
-  const BRICK = ['#4a2a1c', '#3a2016'], RUBBLE = '#2e2620', PIPE = ['#3a3430', '#4a443c', '#2a2420'], CABLE = '#1a1414';
-  const palette = [S, SL, CRANE, ...LIT, ...FENCE, ...TAGS, CART, WHEEL, ...CONE, ...BRICK, RUBBLE, ...PIPE, CABLE];
+  const BRICK = ['#4a2a1c', '#3a2016'], RUBBLE = '#2e2620', CABLE = '#1a1414';
+  const PIPE = { body: '#3a3430', light: '#4a443c', dark: '#2a2420', joint: '#2a2420', rust: '#5a3a26' };
+  const palette = [S, SL, CRANE, ...LIT, ...FENCE, ...TAGS, CART, WHEEL, ...CONE, ...BRICK, RUBBLE, ...Object.values(PIPE), CABLE];
   const scale = (h) => Math.min(1, h / REF);
   const tiles = (w) => { const out = []; for (let ox = 0; ox < w; ox += TILE) out.push(ox); return out; };
 
@@ -81,7 +82,9 @@
     const under = [];
     for (let y = top + 10 + rnd() * 40; y < bottom - 12; y += 70 + 120 * (y - top) / (bottom - top) + rnd() * 40)
       under.push({ kind: rnd() < .6 ? 'bricks' : 'rubble', x: Math.floor(rnd() * (w - 16)), y: Math.round(y), seed: Math.floor(rnd() * 1e6) });
-    for (let y = top + 200 + rnd() * 120; y < bottom - 12; y += 400 + rnd() * 160)   // rien de long en travers sous la pelouse under.push({ kind: rnd() < .5 ? 'pipe' : 'cable', x: 0, y: Math.round(y), w });
+    // Canalisations et câbles usés (coudes, cassures), jamais à moins de 200 pixels de la pelouse.
+    for (let y = top + 230 + rnd() * 120; y < bottom - 60; y += 400 + rnd() * 160)
+      under.push({ kind: rnd() < .5 ? 'pipe' : 'cable', x: 0, y: Math.round(y), w, path: FP.decorTube.path(w, Math.round(y), rnd), seed: Math.floor(rnd() * 1e6) });
     return { surface, under };
   }
 
@@ -111,12 +114,8 @@
       } else if (it.kind === 'rubble') {
         let s = it.seed;
         for (let i = 0; i < 5; i++) { s = (s * 1103515245 + 12345) >>> 0; px.rect(g, it.x + (s % 10), it.y + ((s >> 8) % 6), 2 + ((s >> 4) % 3), 2, RUBBLE); }
-      } else if (it.kind === 'pipe') {
-        px.rect(g, 0, it.y, it.w, 5, PIPE[0]); px.rect(g, 0, it.y, it.w, 1, PIPE[1]);
-        for (let x = 20; x < it.w; x += 50) px.rect(g, x, it.y - 1, 4, 7, PIPE[2]);
-      } else {
-        for (let x = 0; x < it.w; x++) px.rect(g, x, it.y + 3 + Math.round(Math.sin(x / 9) * 3), 1, 1, CABLE);
-      }
+      } else if (it.kind === 'pipe') FP.decorTube.draw(g, it.path, 5, PIPE, it.seed);
+      else FP.decorTube.wire(g, it.path, CABLE);
     }
   }
 

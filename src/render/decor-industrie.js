@@ -1,7 +1,7 @@
 // render/decor-industrie.js — décor de la zone industrielle (v4.11.0) : brume de soufre et gros panaches lents ; raffinerie aux
 // tours cerclées, torchère qui vacille, convoyeur qui monte des caisses, fumées qui montent ; palettes, fûts rouillés, rails ;
 // conduites rouillées, scories et poches d'huile sourdes (un reflet luit de temps en temps) dans la terre.
-// Lit     : FP.px.
+// Lit     : FP.px, FP.decorTube (conduites usées).
 // Écrit   : rien dans l'état (dessine dans le contexte reçu).
 // Expose  : FP.decor.industrie = { palette, skyStatic, back, horizon, front, layout, surface, under, glow } (contrat des décors,
 //           voir docs/superpowers/plans/2026-10-28-decors-milieux.md).
@@ -12,8 +12,8 @@
   const TILE = 220, REF = 70;
   const S = '#1a1814', SL = '#2a2620', SMOKE = ['#3a3428', '#4a4232'], FLAME = ['#f0a848', '#f8d070'], BOX = '#6a5a3a';
   const PALLET = ['#6a5a3a', '#4a3e28'], BARREL = ['#7a3a1e', '#3a1a0c', '#9a5a2e'], RAIL = ['#5a5a5a', '#3a3022'];
-  const PIPE = ['#4a3424', '#6a4a30', '#2a1c12'], OIL = ['#1e1a14', '#26201a'], GLINT = '#3a3830', SLAG = ['#2a2622', '#3a342c'];
-  const palette = [S, SL, ...SMOKE, ...FLAME, BOX, ...PALLET, ...BARREL, ...RAIL, ...PIPE, ...OIL, GLINT, ...SLAG];
+  const PIPE = { body: '#4a3424', light: '#6a4a30', dark: '#2a1c12', joint: '#2a1c12', rust: '#7a4a24' }, OIL = ['#1e1a14', '#26201a'], GLINT = '#3a3830', SLAG = ['#2a2622', '#3a342c'];
+  const palette = [S, SL, ...SMOKE, ...FLAME, BOX, ...PALLET, ...BARREL, ...RAIL, ...Object.values(PIPE), ...OIL, GLINT, ...SLAG];
   const scale = (h) => Math.min(1, h / REF);
   const tiles = (w) => { const out = []; for (let ox = 0; ox < w; ox += TILE) out.push(ox); return out; };
 
@@ -80,7 +80,9 @@
     const under = [];
     for (let y = top + 12 + rnd() * 40; y < bottom - 12; y += 70 + 120 * (y - top) / (bottom - top) + rnd() * 40)
       under.push({ kind: rnd() < .45 ? 'oil' : 'slag', x: 8 + Math.floor(rnd() * (w - 24)), y: Math.round(y), seed: Math.floor(rnd() * 1e6) });
-    for (let y = top + 200 + rnd() * 100; y < bottom - 12; y += 330 + rnd() * 140)   // rien de long en travers sous la pelouse under.push({ kind: 'pipe', x: 0, y: Math.round(y), w });
+    // Conduites rouillées usées (coudes, cassures), jamais à moins de 200 pixels de la pelouse.
+    for (let y = top + 230 + rnd() * 100; y < bottom - 60; y += 330 + rnd() * 140)
+      under.push({ kind: 'pipe', x: 0, y: Math.round(y), w, path: FP.decorTube.path(w, Math.round(y), rnd), seed: Math.floor(rnd() * 1e6) });
     return { surface, under };
   }
 
@@ -102,10 +104,8 @@
   function under(g, L) {
     const { px } = FP;
     for (const it of L.under) {
-      if (it.kind === 'pipe') {
-        px.rect(g, 0, it.y, it.w, 6, PIPE[0]); px.rect(g, 0, it.y, it.w, 1, PIPE[1]);
-        for (let x = 10; x < it.w; x += 36) px.rect(g, x, it.y - 1, 5, 8, PIPE[2]);
-      } else if (it.kind === 'oil') {   // poche d'huile sourde, brun-noir proche de la strate
+      if (it.kind === 'pipe') FP.decorTube.draw(g, it.path, 6, PIPE, it.seed);
+      else if (it.kind === 'oil') {   // poche d'huile sourde, brun-noir proche de la strate
         px.disc(g, it.x, it.y + 6, 6, OIL[0]); px.disc(g, it.x + 4, it.y + 8, 4, OIL[0]); px.disc(g, it.x + 1, it.y + 6, 3, OIL[1]);
       } else {
         let s = it.seed;

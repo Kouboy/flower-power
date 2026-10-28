@@ -44,3 +44,28 @@ FP.test('decor: industrie', () => checkDecor('industrie'));
 FP.test('decor: décharge', () => checkDecor('decharge'));
 FP.test('decor: nucléaire', () => checkDecor('nucleaire'));
 FP.test('decor: un décor pour chaque milieu', () => { for (const m of FP.config.milieux) FP.assert(FP.decor[m.id], m.id); });
+// Conduites usées (v4.11.0, retouche) : coudes, cassures, rouille — plus jamais une barre droite et neuve en travers du sol.
+FP.test('decor: une conduite a des coudes et des cassures, reste dans sa bande et couvre la largeur', () => {
+  const T = FP.decorTube;
+  for (let seed = 1; seed <= 30; seed++) {
+    const P = T.path(300, 500, decorRng(seed));
+    FP.assertEqual(JSON.stringify(P), JSON.stringify(T.path(300, 500, decorRng(seed))));
+    FP.assert(P.some(s => s.kind === 'bend') && P.some(s => s.kind === 'break'), 'graine ' + seed + ' : ni coude ni cassure');
+    FP.assert(P.every(s => Math.abs(s.y0 - 500) <= T.SPREAD && Math.abs(s.y1 - 500) <= T.SPREAD), 'graine ' + seed + ' : sort de sa bande');
+    FP.assert(P[0].x0 <= 0 && P[P.length - 1].x1 >= 300, 'graine ' + seed + ' : ne traverse pas');
+  }
+});
+FP.test('decor: une conduite dessinée est rouillée et trouée', () => {
+  const g = recCtx(), P = FP.decorTube.path(300, 500, decorRng(3)), C = { body: '#3a3430', light: '#4a443c', dark: '#2a2420', joint: '#2a2420', rust: '#5a3a26' };
+  FP.decorTube.draw(g, P, 5, C, 7);
+  FP.assert(g.rects.some(r => r.c === C.rust), 'pas de rouille');
+  const cols = new Set(); g.rects.filter(r => r.c === C.body).forEach(r => { for (let x = Math.round(r.x); x < r.x + r.w; x++) cols.add(x); });
+  const brk = P.find(s => s.kind === 'break'), mid = Math.round((brk.x0 + brk.x1) / 2);
+  FP.assert(!cols.has(mid), 'la cassure n’est pas trouée');
+});
+FP.test('decor: les éléments longs suivent une conduite usée', () => {
+  for (const id of ['friche', 'industrie', 'nucleaire']) {
+    const L = FP.decor[id].layout(300, 100, 1900, decorRng(4)), long = L.under.filter(u => u.w);
+    FP.assert(long.length > 0 && long.every(u => Array.isArray(u.path) && u.path.every(s => Math.min(s.y0, s.y1) >= 100 + 200)), id);
+  }
+});

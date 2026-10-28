@@ -2,7 +2,7 @@
 // aurore verte épaisse ; une tour de refroidissement géante qui fume, clôture barbelée, trèfle radioactif ; fûts jaunes,
 // panneaux de danger, herbe mutante dont les pointes luisent ; galeries de béton, fûts enterrés qui fuient et cailloux qui
 // luisent dans la terre. Les lueurs sont vert d'eau, distinctes du vert de la pousse.
-// Lit     : FP.px.
+// Lit     : FP.px, FP.decorTube (galeries usées).
 // Écrit   : rien dans l'état (dessine dans le contexte reçu).
 // Expose  : FP.decor.nucleaire = { palette, skyStatic, back, horizon, front, layout, surface, under, glow } (contrat des décors,
 //           voir docs/superpowers/plans/2026-10-28-decors-milieux.md).
@@ -14,9 +14,9 @@
   const STAR = ['#a8c8a0', '#d8f0d0'], MOON = ['#a0c880', '#88b070'], AURORA = ['#3a8a5a', '#2a6a4a'], STEAM = ['#4a6e48', '#365a3a'];
   const TOWER = ['#1e2a24', '#2a3830'], FENCE = ['#2a3430', '#3a4440'], SIGN = ['#e8c840', '#1a1a1a'];
   const BARREL = ['#d8b830', '#a88a20'], POST = '#2a2a2a', GRASS = '#465a52';
-  const CONCRETE = ['#2a2e34', '#14171b', '#1a1d22'], PEBBLE = ['#2a3a30', '#2a5a46'], BURIED = ['#5a5020', '#3a3416'];
+  const CONCRETE = { body: '#2a2e34', light: '#3a3e44', dark: '#1a1d22', joint: '#1a1d22', rust: '#22262b' }, INNER = '#14171b', REBAR = '#5a4a3a', PEBBLE = ['#2a3a30', '#2a5a46'], BURIED = ['#5a5020', '#3a3416'];
   const GLOW = ['#3ab88a', '#5ad0a0', '#8af0c0'];   // vert d'eau radioactif
-  const palette = [...STAR, ...MOON, ...AURORA, ...STEAM, ...TOWER, ...FENCE, ...SIGN, ...BARREL, POST, GRASS, ...CONCRETE, ...PEBBLE, ...BURIED, ...GLOW];
+  const palette = [...STAR, ...MOON, ...AURORA, ...STEAM, ...TOWER, ...FENCE, ...SIGN, ...BARREL, POST, GRASS, ...Object.values(CONCRETE), INNER, REBAR, ...PEBBLE, ...BURIED, ...GLOW];
   const scale = (h) => Math.min(1, h / REF);
   const tiles = (w) => { const out = []; for (let ox = 0; ox < w; ox += TILE) out.push(ox); return out; };
   const lcg = (s) => () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
@@ -89,7 +89,9 @@
     const under = [];
     for (let y = top + 12 + rnd() * 40; y < bottom - 16; y += 70 + 120 * (y - top) / (bottom - top) + rnd() * 40)
       under.push({ kind: rnd() < .4 ? 'barrel' : 'pebble', x: 6 + Math.floor(rnd() * (w - 22)), y: Math.round(y) });
-    for (let y = top + 200 + rnd() * 120; y < bottom - 24; y += 420 + rnd() * 160)   // rien de long en travers sous la pelouse under.push({ kind: 'gallery', x: 0, y: Math.round(y), w });
+    // Galeries de béton fissurées, effondrées par endroits, jamais à moins de 200 pixels de la pelouse.
+    for (let y = top + 230 + rnd() * 120; y < bottom - 60; y += 420 + rnd() * 160)
+      under.push({ kind: 'gallery', x: 0, y: Math.round(y), w, path: FP.decorTube.path(w, Math.round(y), rnd), seed: Math.floor(rnd() * 1e6) });
     return { surface, under };
   }
 
@@ -116,10 +118,8 @@
   function under(g, L) {
     const { px } = FP;
     for (const it of L.under) {
-      if (it.kind === 'gallery') {
-        px.rect(g, 0, it.y, it.w, 18, CONCRETE[0]); px.rect(g, 0, it.y + 3, it.w, 12, CONCRETE[1]);
-        for (let x = 0; x < it.w; x += 24) px.rect(g, x, it.y, 2, 18, CONCRETE[2]);
-      } else if (it.kind === 'barrel') {
+      if (it.kind === 'gallery') FP.decorTube.draw(g, it.path, 18, CONCRETE, it.seed, { inner: INNER, cracks: true, collapse: { rubble: CONCRETE.light, rebar: REBAR } });
+      else if (it.kind === 'barrel') {
         px.rect(g, it.x, it.y, 9, 12, BURIED[0]); px.rect(g, it.x, it.y + 3, 9, 1, BURIED[1]); px.rect(g, it.x, it.y + 8, 9, 1, BURIED[1]);
       } else px.rect(g, it.x, it.y, 2, 2, PEBBLE[0]);
     }
