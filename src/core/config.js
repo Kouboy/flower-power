@@ -211,6 +211,20 @@
     ],
     run: { steps: 3 },   // pousses réussies par milieu avant son boss
 
+    // Moteur de boss (v4.12.0) : 4 tronçons accrochés tour à tour aux flancs, un point faible par tronçon, une trappe sous la pelouse.
+    // segWidth : largeur d'un tronçon (part de l'écran) ; corridorK : élargissement du couloir sûr ; weakR / weakHit / weakOut : rayon dessiné,
+    // rayon de perçage, saillie hors du flanc ; top / bottom : zone du boss, de surfaceY + top à height - bottom ; trap : sous la pelouse.
+    // defense : cycle (s), avertissement, coup, accélération par point percé, portée (part de la largeur libre), épaisseur, attache (part du haut du tronçon).
+    boss: {
+      segments: 4, segWidth: .45, corridorK: 1.3,
+      weakR: 14, weakHit: 20, weakOut: 12,
+      top: 70, bottom: 160,
+      trap: { gap: 30, thick: 14 },
+      defense: { period: 2.6, warn: .7, strike: .6, speedup: .2, reach: .5, thick: 14, mountK: .25 },
+      toxics: 2, pierceBonus: 200, bonus: 1500, tempoPerPierce: 6,
+      pairs: { friche: ['piston', 'jet'], industrie: ['jet', 'arm'], decharge: ['arm', 'jet'], nucleaire: ['piston', 'arm'] }
+    },
+
     // Boutique de fin de pousse (v4.6.0) : 3 articles tirés (un à −50 %), achetés au score ; effets sur la pousse suivante.
     // co2 : masse satirique ajoutée à la « livraison » (kg), sans effet en jeu. Tirage propre (graine ^ salt ^ passage).
     shop: {
@@ -288,7 +302,8 @@
         sarcophagus: 'rupture : cercueil', drone: 'rupture : drone cassé', solar: 'rupture : panneau solaire',
         battery: 'rupture : batterie', cone: 'rupture : cône mou', trashbag: 'rupture : sac gonflé',
         extinguisher: 'rupture : extincteur vide', microwave: 'rupture : micro-ondes', trex_signature: 'rupture : dinosaure militant',
-        scooter: 'rupture : trottinette fossile', arcade: 'rupture : borne d’arcade'
+        scooter: 'rupture : trottinette fossile', arcade: 'rupture : borne d’arcade',
+        boss: 'écrasée par le boss', defense: 'fauchée par une défense', trap: 'la trappe est fermée'
       }
     },
 

@@ -1,5 +1,5 @@
 // render/obstacles.js — obstacles PNG ramenés sur la grille de pixels d'art, avec contour et ancrage sombre.
-// Lit     : world.solids (x, y, a, flip, w, h, pivot, collision, grazeRadius, broadR, assetKey), FP.sprites, FP.px, FP.catalog.assets,
+// Lit     : world.solids (hors solides `boss`, dessinés par render/boss.js) (x, y, a, flip, w, h, pivot, collision, grazeRadius, broadR, assetKey), FP.sprites, FP.px, FP.catalog.assets,
 //           FP.view.art.h, FP.palette.strataTone, FP.soil.surfaceTop.
 // Écrit   : o._anchor, o._look sur chaque solide — caches de rendu uniquement, jamais lus par la simulation.
 // Expose  : FP.obstacles.draw(actx, world, cameraY) — repère d'art, la caméra est appliquée ici ; FP.obstacles.look(o) (pur) ;
@@ -111,6 +111,7 @@
   function draw(actx, world, cameraY) {
     const { px } = FP, oy = px.toArt(cameraY), top = cameraY, bottom = cameraY + FP.view.art.h * px.SCALE;
     for (const o of world.solids) {
+      if (o.boss) continue;   // le boss a son propre rendu (render/boss.js)
       const pad = Math.max(CULL_MIN_R, o.broadR) + CULL_PAD;
       if (o.y + pad < top || o.y - pad > bottom) continue;
       actx.save();

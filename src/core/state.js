@@ -1,6 +1,7 @@
 // core/state.js — l'unique objet d'état d'une partie.
 // Lit     : FP.params.seed (graine imposée par l'URL), FP.createRng, FP.config.view, FP.config.world, FP.view.
 // Écrit   : FP.state.current (via ui/menu.js et core/loop.js).
+//           state.bossFight (points faibles percés du boss en cours ; écrit ensuite par play/boss.js).
 // Expose  : FP.state.createRun(seed?, dims?), FP.state.applyView(state, dims), FP.state.current.
 (function () {
   'use strict';
@@ -40,6 +41,7 @@
       // Progression dans les milieux (v4.9.0), écrite par play/flow.js : milieu (0 à 3), pousses réussies dans le milieu,
       // saison, boss vaincus, niveau de boss en cours, carton à montrer, première saison terminée.
       run: { milieu: 0, step: 0, saison: 1, bosses: 0, boss: false, card: { kind: 'milieu', t0: 0 }, won: false },
+      bossFight: { pierced: Array(FP.config.boss.segments).fill(false) },   // points faibles percés (v4.12.0), gardés après une mort
       camera: { y: Math.max(0, height - dims.H), manual: false, near: 0, zoom: 1, shake: 0 },
       input: { x: 0, screenX: 0, y: 0, down: false, active: false, pressed: false, touch: false, key: false },   // instantané du pointeur (x monde, y écran)
       plant: {
