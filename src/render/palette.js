@@ -15,7 +15,7 @@
     friche: {
       sky: [
         ['#2e1452', '#482078', '#702880', '#b84080', '#c03870', '#d86850', '#f09060', '#f0b890'],
-        ['#3a1a4a', '#5a2470', '#8a3070', '#c84a68', '#e06a50', '#f08a50', '#eaa164', '#e4bf93'],
+        ['#3a1a4a', '#5a2470', '#8a3070', '#c84a68', '#e06a50', '#f08a50', '#f4a868', '#f8d0a0'],
         ['#22103e', '#3a1868', '#58207a', '#86307e', '#a83a7a', '#c0506a', '#d07070', '#e0a090'],
         ['#2c2040', '#463458', '#64466a', '#8a5a74', '#a46a72', '#b88070', '#c89a80', '#d8bca0']
       ],
@@ -25,9 +25,9 @@
     // Zone industrielle : smog gris qui vire au jaune soufre sur l'horizon ; terre grise et ocre ; herbe jaunie.
     industrie: {
       sky: [
-        ['#1e1c1a', '#2e2b26', '#45402f', '#5e5636', '#7d7238', '#a0913a', '#c8b448', '#cab763'],
+        ['#1e1c1a', '#2e2b26', '#45402f', '#5e5636', '#7d7238', '#a0913a', '#c8b448', '#e6d070'],
         ['#1a1a1c', '#2a2a2c', '#3e3c38', '#58543e', '#746c42', '#948848', '#b4a656', '#d0c47a'],
-        ['#201c18', '#302a22', '#4a3e2c', '#665432', '#866a34', '#a88238', '#c89c48', '#d3b164']
+        ['#201c18', '#302a22', '#4a3e2c', '#665432', '#866a34', '#a88238', '#c89c48', '#e0bc6a']
       ],
       strata: { humus: ['#141414', '#191918', '#1e1d1b', '#23221f'], clay: ['#2a2418', '#30291b', '#372f1e', '#3e3521'], stone: ['#161819', '#1b1d1f', '#202325', '#26292b'] },
       lawn: [['#22261a', '#343a20', '#4a5026', '#62682c'], ['#26261a', '#3a3a20', '#505026', '#68682e']]
@@ -105,8 +105,8 @@
       decharge: { body: '#585c38', light: '#7a7e4c', dark: '#34381f', edge: '#1a1c0e', rust: '#7a4a24', drip: '#9c9c5c', rivet: '#b0b070' },
       nucleaire: { body: '#5a6862', light: '#7c8c84', dark: '#34403c', edge: '#161c1a', rust: '#6a5a3a', drip: '#9ab0a4', rivet: '#b0c4b8' }
     },
-    weak: ['#fff4b0', '#ffe060'], trap: ['#f0c000', '#14100a'], plate: ['#d8c8a0', '#14100a'],
-    jet: ['#a8d8e8', '#5a9cc0'], glow: ['#ff9a3a', '#ffd070'], smoke: ['#5a5650', '#8a867e'], hole: '#0c0806'
+    weak: ['#ffff80', '#ffe838'], trap: ['#f0c000', '#14100a'], plate: ['#d8c8a0', '#14100a'],
+    jet: ['#a8d8e8', '#5a9cc0'], glow: ['#e86a28', '#ff9a3a'], smoke: ['#5a5650', '#8a867e'], hole: '#0c0806'
   };
 
   // Teinte de terre du milieu id à une profondeur relative d (0 = surface, 1 = fond) ; k de 0 (claire) à 3 (sombre).

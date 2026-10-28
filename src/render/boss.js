@@ -1,7 +1,7 @@
 // render/boss.js — le boss, provisoire (dessiné en blocs par le code, sans image) : tronçons, panneau au nom du boss, points faibles, défenses, trappe, flèche.
 // Lit     : state.{time,camera.y,run.milieu,bossFight.pierced}, state.world.{width,viewH,bossLevel}, les solides de défense (x, y, a, collision : leur forme en cours),
-//           FP.boss.stageAt, FP.config.{boss,milieux}, FP.palette.boss, FP.px, FP.font (au dessin seulement, jamais au chargement), FP.math.clamp.
-// Écrit   : trap._slide, trap._t sur la trappe — caches de rendu (ouverture en coulissant), jamais lus par la simulation.
+//           FP.boss.stageAt, FP.config.{boss (dont trapSlide),milieux}, trap.openedAt, FP.palette.boss, FP.px, FP.font (au dessin seulement, jamais au chargement), FP.math.clamp.
+// Écrit   : rien dans l'état (la toile reçue uniquement) ; l'ouverture de la trappe se déduit de state.time - trap.openedAt.
 // Expose  : FP.bossRender.draw(g, state) — repère d'art, la caméra est appliquée ici ; rien hors niveau de boss ;
 //           FP.bossRender.arrowFor(state) → { x, y, dir: 'up' | 'down' } | null (pur) : x en pixels du monde, y en pixels d'écran (depuis le haut de la vue).
 // Ne touche pas au DOM au chargement : chargeable dans dev/check.html. Seul le texte du panneau demande un DOM (sans lui, un panneau nu).
@@ -9,7 +9,7 @@
   'use strict';
   const FP = window.FP = window.FP || {};
   const lcg = (s) => () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
-  const SLIDE_SPEED = 1.6, TICK = 6;   // ouverture de la trappe (par seconde) ; pas des pointillés d'avertissement (pixels d'art)
+  const TICK = 6;   // pas des pointillés d'avertissement (pixels d'art)
 
   // Prochain point faible non percé (le plus bas : on monte), si l'écran ne le montre pas : flèche collée au bord, du côté où il se trouve.
   function arrowFor(state) {
@@ -132,9 +132,9 @@
 
   // Trappe : rayures jaune et noir en travers ; une fois ouverte, les deux moitiés coulissent vers les bords.
   function trap(g, v, tr, W, t) {
-    const { px } = FP, P = FP.palette.boss, y = v.ay(tr.y0), h = v.ay(tr.y1) - y, dt = Math.min(.1, Math.max(0, t - (tr._t === undefined ? t : tr._t)));
-    tr._t = t; tr._slide = Math.max(0, Math.min(1, (tr._slide || 0) + (tr.solid.off ? 1 : -1) * SLIDE_SPEED * dt));
-    const half = W / 2, s = tr._slide * half, edge = (xa, xb) => {
+    const { px } = FP, P = FP.palette.boss, y = v.ay(tr.y0), h = v.ay(tr.y1) - y;
+    const slide = tr.solid.off ? Math.min(1, (t - tr.openedAt) / FP.config.boss.trapSlide) : 0;
+    const half = W / 2, s = slide * half, edge = (xa, xb) => {
       xa = Math.max(0, xa); xb = Math.min(W, xb);
       if (xb <= xa) return;
       px.rect(g, xa, y, xb - xa, h, P.trap[1]);

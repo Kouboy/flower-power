@@ -2,7 +2,7 @@
 // Lit     : state.{seed,level,rng (non consommé)}, state.run.{saison,milieu}, state.bossFight.pierced, state.world.{width,height,surfaceY},
 //           FP.config.{boss,level.safePath,plant.seedOffset,milieux}, FP.createRng, FP.collision.distanceTo, FP.level.{makeToxic,distToSafePath}, FP.geom.
 // Écrit   : state.world.{bossLevel,solids,toxics,leaks,bonuses,safePath,safeRadius} ; puis FP.coins.place écrit state.world.{coins,chains}.
-//           bossLevel = { segments: [{ side, x0, x1, y0, y1, solid }], weak: [{ i, x, y }], defenses: [{ i, type, side, x, y, reach, solid }], trap: { y0, y1, solid } }.
+//           bossLevel = { segments: [{ side, x0, x1, y0, y1, solid }], weak: [{ i, x, y }], defenses: [{ i, type, side, x, y, reach, solid }], trap: { y0, y1, openedAt (null tant que fermée, -Infinity si déjà ouverte à la génération), solid } }.
 // Expose  : FP.bossLevel.generate(state).
 // Graine propre : empreinte de (state.seed, saison, milieu), jamais state.rng : le niveau est le même d'une tentative à l'autre.
 // Solides du boss : { kind: 'boss' | 'defense' | 'trap', boss: true, x, y, a: 0, flip: 1, collision (local), broadR, flyoverEligible: false, off }.
@@ -70,7 +70,8 @@
 
   function buildTrap(world, c, pierced) {
     const y0 = world.surfaceY + c.trap.gap, y1 = y0 + c.trap.thick;
-    return { y0, y1, solid: makeSolid('trap', world.width / 2, (y0 + y1) / 2, rect(world.width / 2, c.trap.thick / 2), pierced.every(Boolean)) };
+    const open = pierced.every(Boolean);
+    return { y0, y1, openedAt: open ? -Infinity : null, solid: makeSolid('trap', world.width / 2, (y0 + y1) / 2, rect(world.width / 2, c.trap.thick / 2), open) };
   }
 
   // Couloir : part de la graine, longe chaque flanc à r + 1 (nœud au bord bas, à mi-hauteur, au bord haut), change de flanc en diagonale

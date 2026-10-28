@@ -1,7 +1,7 @@
 // play/boss.js — le boss : ses défenses (chaque tronçon prévient, frappe, se repose ; seul le coup est un obstacle), le perçage des points faibles, la trappe.
 // Lit     : state.time, state.mode, state.plant.tip, state.world.bossLevel.{defenses,weak,trap}, state.bossFight.pierced, FP.config.boss.
 // Écrit   : solide de chaque défense : off, collision (repère local, le long de +x), a, broadR ; state.bossFight (seul à l'écrire) ;
-//           trap.solid.off (ouverture) ; state.camera.shake, state.events (bossPierce, bossTrap) ; le score, par FP.scoring.awardFlat.
+//           trap.solid.off et trap.openedAt (ouverture, à l'instant state.time) ; state.camera.shake, state.events (bossPierce, bossTrap) ; le score, par FP.scoring.awardFlat.
 // Expose  : FP.boss.stageAt(i, t, pierced) → { stage: 'rest' | 'warn' | 'strike', k } (pur), FP.boss.update(state, dt),
 //           FP.boss.reset(state) (nouveau boss : plus aucun point percé).
 // Les points percés survivent à une mort (le niveau se régénère avec eux) ; seul reset les remet à zéro.
@@ -44,7 +44,7 @@
       FP.scoring.awardFlat(state, w.x, w.y, c.pierceBonus);
       state.camera.shake = Math.max(state.camera.shake, c.pierceShake);
     }
-    if (done.every(Boolean) && !bl.trap.solid.off) { bl.trap.solid.off = true; state.events.push({ type: 'bossTrap' }); }
+    if (done.every(Boolean) && !bl.trap.solid.off) { bl.trap.solid.off = true; bl.trap.openedAt = state.time; state.events.push({ type: 'bossTrap' }); }
   }
 
   function reset(state) { state.bossFight.pierced = Array(FP.config.boss.segments).fill(false); }

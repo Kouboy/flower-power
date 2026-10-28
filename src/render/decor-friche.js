@@ -12,7 +12,7 @@
   const FP = window.FP = window.FP || {};
   const TILE = 220, REF = 70;
   const S = '#24122e', SL = '#341a3e', CRANE = '#1a0c22', LIT = ['#f0b890', '#d86850'];
-  const FENCE = ['#3a2a1e', '#4a3626'], TAGS = ['#e07a3a', '#5fa88a', '#f0a0a0'], CART = '#9aa4b0', WHEEL = '#3a3a3a', CONE = ['#e07a3a', '#cfc8b1'];
+  const FENCE = ['#3a2a1e', '#4a3626'], TAGS = ['#e07a3a', '#5fa88a', '#f0a0a0'], CART = '#9aa4b0', WHEEL = '#3a3a3a', CONE = ['#e07a3a', '#d8d0b8'];
   const BRICK = ['#4a2a1c', '#3a2016'], RUBBLE = '#2e2620', CABLE = '#1a1414';
   const PIPE = { body: '#3a3430', light: '#4a443c', dark: '#2a2420', joint: '#2a2420', rust: '#5a3a26' };
   const palette = [S, SL, CRANE, ...LIT, ...FENCE, ...TAGS, CART, WHEEL, ...CONE, ...BRICK, RUBBLE, ...Object.values(PIPE), CABLE];

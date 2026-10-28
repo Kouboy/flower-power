@@ -220,7 +220,7 @@
       segments: 4, segWidth: .45, corridorK: 1.3,
       weakR: 14, weakHit: 20, weakOut: 12, arrowMargin: 14,
       top: 70, bottom: 160,
-      trap: { gap: 30, thick: 14 },
+      trap: { gap: 30, thick: 14 }, trapSlide: .6,
       defense: { period: 2.6, warn: .7, strike: .6, speedup: .2, reach: .5, thick: 14, mountK: .25 },
       toxics: 2, pierceBonus: 200, bonus: 1500, tempoPerPierce: 6, pierceShake: .2,
       pairs: { friche: ['piston', 'jet'], industrie: ['jet', 'arm'], decharge: ['arm', 'jet'], nucleaire: ['piston', 'arm'] }

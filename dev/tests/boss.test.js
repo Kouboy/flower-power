@@ -296,10 +296,29 @@ FP.test('bossRender: dessine sans erreur, points faibles dans la teinte réserv�
   }
   FP.bossRender.draw(recCtx(), FP.state.createRun(3, { W: 440, H: 783 }));   // niveau normal : rien, sans erreur
 });
-FP.test('palette: le blanc-jaune des points faibles n’est utilisé par aucun décor ni obstacle', () => {
+// Les points faibles sont toujours sous la trappe : ciel et décor de surface ne partagent jamais leur zone, on ne les compare pas.
+FP.test('palette: le blanc-jaune des points faibles se distingue de tout ce qui partage leur zone (terre, boss, plante, pièces, dangers)', () => {
   const rgb = (h) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)), dist = (a, b) => Math.hypot(...rgb(a).map((v, i) => v - rgb(b)[i]));
-  const tones = [...FP.palette.decor(), ...Object.values(FP.decor).flatMap(d => d.palette || [])];
-  for (const c of FP.palette.boss.weak) for (const t of tones) { FP.assert(c !== t, c + ' utilisé par un décor'); FP.assert(dist(c, t) > 60, c + ' trop proche de ' + t); }
-  const all = [...FP.palette.boss.weak, ...FP.palette.boss.trap, ...FP.palette.boss.jet, ...FP.palette.boss.glow, ...Object.values(FP.palette.boss.milieux).flatMap(m => Object.values(m))];
+  const P = FP.palette, W = P.boss.weak;
+  const others = [...Object.values(P.milieux).flatMap(m => [...m.strata.humus, ...m.strata.clay, ...m.strata.stone]),
+    ...P.boss.trap, ...P.boss.plate, ...P.boss.jet, ...P.boss.glow, ...P.boss.smoke, P.boss.hole, ...Object.values(P.boss.milieux).flatMap(m => Object.values(m)),
+    ...P.danger, ...Object.values(P.stem), ...Object.values(P.hero), ...Object.values(P.coin)];
+  for (const c of W) for (const t of others) FP.assert(dist(c, t) > 60, c + ' trop proche de ' + t);
+});
+FP.test('palette: les teintes du boss restent à 60 de toute teinte de danger', () => {
+  const rgb = (h) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)), dist = (a, b) => Math.hypot(...rgb(a).map((v, i) => v - rgb(b)[i]));
+  const B = FP.palette.boss, all = [...B.weak, ...B.trap, ...B.plate, ...B.jet, ...B.glow, ...B.smoke, B.hole, ...Object.values(B.milieux).flatMap(m => Object.values(m))];
   for (const c of all) for (const d of FP.palette.danger) FP.assert(dist(c, d) >= 60, c + ' trop proche du danger ' + d);
+});
+FP.test('bossTrap: openedAt posé au 4e perçage, -Infinity si le niveau est régénéré ouvert, et le dessin n’écrit rien', () => {
+  const s = bossRun(440, 0), bl = s.world.bossLevel;
+  FP.assertEqual(bl.trap.openedAt, null);
+  s.mode = 'playing'; s.time = 12.5;
+  for (const w of bl.weak) { s.plant.tip = { x: w.x, y: w.y }; FP.boss.update(s, 0); }
+  FP.assertEqual(bl.trap.solid.off, true); FP.assertEqual(bl.trap.openedAt, 12.5);
+  FP.level.generate(s);
+  FP.assertEqual(s.world.bossLevel.trap.openedAt, -Infinity);
+  const tr = s.world.bossLevel.trap, snap = JSON.stringify(tr);
+  s.camera.y = 0; s.time = 13; FP.bossRender.draw(recCtx(), s);
+  FP.assertEqual(JSON.stringify(tr), snap);
 });
