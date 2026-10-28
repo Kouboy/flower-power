@@ -1,9 +1,9 @@
 // render/boss.js — le boss, provisoire (dessiné en blocs par le code, sans image) : tronçons, panneau au nom du boss, points faibles, défenses, trappe, flèche.
-// Lit     : state.{time,camera.y,run.milieu,bossFight.pierced}, state.world.{width,viewH,bossLevel}, les solides de défense (x, y, a, collision : leur forme en cours),
-//           FP.boss.stageAt, FP.config.{boss (dont trapSlide),milieux}, trap.openedAt, FP.palette.boss, FP.px, FP.font (au dessin seulement, jamais au chargement), FP.math.clamp.
+// Lit     : state.{time,camera.y,run.milieu,bossFight.{pierced,phase}}, state.plant.{tip,seed}, state.world.{width,viewH,bossLevel}, les solides de défense (x, y, a, collision : leur forme en cours),
+//           FP.boss.stageAt, FP.camera.{toScreen,toWorld}, FP.config.{boss (dont trapSlide),milieux}, trap.openedAt, FP.palette.boss, FP.px, FP.font (au dessin seulement, jamais au chargement), FP.math.clamp.
 // Écrit   : rien dans l'état (la toile reçue uniquement) ; l'ouverture de la trappe se déduit de state.time - trap.openedAt.
 // Expose  : FP.bossRender.draw(g, state) — repère d'art, la caméra est appliquée ici ; rien hors niveau de boss ;
-//           FP.bossRender.arrowFor(state) → { x, y, dir: 'up' | 'down' } | null (pur) : x en pixels du monde, y en pixels d'écran (depuis le haut de la vue).
+//           FP.bossRender.arrowFor(state) → { x, y, dir: 'up' | 'down' } | null (pur) : ancre en pixels d'écran, zoom de cadrage compris.
 // Ne touche pas au DOM au chargement : chargeable dans dev/check.html. Seul le texte du panneau demande un DOM (sans lui, un panneau nu).
 (function () {
   'use strict';
@@ -11,16 +11,17 @@
   const lcg = (s) => () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
   const TICK = 6;   // pas des pointillés d'avertissement (pixels d'art)
 
-  // Prochain point faible non percé (le plus bas : on monte), si l'écran ne le montre pas : flèche collée au bord, du côté où il se trouve.
+  // Prochain point faible non percé au-dessus de la pointe (on monte ; un point raté en dessous, les icônes du HUD le montrent),
+  // si l'écran zoomé ne le montre pas : flèche collée au bord, du côté où il se trouve.
   function arrowFor(state) {
-    const w = state.world, bl = w.bossLevel;
-    if (!bl) return null;
-    const next = bl.weak.find(k => !state.bossFight.pierced[k.i]);
+    const w = state.world, bl = w.bossLevel, from = state.plant.tip || state.plant.seed;
+    if (!bl || !from) return null;
+    const next = bl.weak.find(k => !state.bossFight.pierced[k.i] && k.y < from.y);
     if (!next) return null;
-    const top = state.camera.y, H = w.viewH, m = FP.config.boss.arrowMargin;
-    if (next.y >= top && next.y <= top + H) return null;
-    const up = next.y < top;
-    return { x: FP.math.clamp(next.x, m, w.width - m), y: up ? m : H - m, dir: up ? 'up' : 'down' };
+    const p = FP.camera.toScreen(state, next.x, next.y), H = w.viewH, m = FP.config.boss.arrowMargin;
+    if (p.y >= 0 && p.y <= H) return null;
+    const up = p.y < 0;
+    return { x: FP.math.clamp(p.x, m, w.width - m), y: up ? m : H - m, dir: up ? 'up' : 'down' };
   }
 
   // Polygone convexe, rempli rangée par rangée.
@@ -146,8 +147,10 @@
     edge(-s, half - s); edge(half + s, W + s);
   }
 
-  function arrow(g, a, t) {
-    const { px } = FP, P = FP.palette.boss, sgn = a.dir === 'up' ? 1 : -1, bob = Math.round(Math.sin(t * 8) * 2) * -sgn, x = px.toArt(a.x), y = px.toArt(a.y) + bob;
+  // Flèche : son ancre d'écran ramenée dans le monde par le cadrage inverse, pour retomber au bord de l'écran une fois zoomée.
+  function arrow(g, state, a, cam) {
+    const { px } = FP, P = FP.palette.boss, sgn = a.dir === 'up' ? 1 : -1, bob = Math.round(Math.sin(state.time * 8) * 2) * -sgn;
+    const o = FP.camera.toWorld(state, a.x, a.y), x = px.toArt(o.x), y = px.toArt(o.y) - cam + bob;
     for (let r = 0; r < 9; r++) {   // pointe côté bord ; rangée r de largeur 2r + 1
       const yy = sgn > 0 ? y + r : y - r;
       px.rect(g, x - r - 1, yy, 2 * r + 3, 1, P.plate[1]);
@@ -167,15 +170,14 @@
     if (seen(roof.y0, roof.y1)) plate(g, v, roof, FP.config.milieux[state.run.milieu].boss.name);
     if (seen(bl.trap.y0, bl.trap.y1)) trap(g, v, bl.trap, W, t);
     for (const k of bl.weak) if (seen(k.y - 20, k.y + 20)) weak(g, v, k, bl.segments[k.i], pierced[k.i], t, M);
-    const nPierced = pierced.filter(Boolean).length;
     for (const df of bl.defenses) {
       if (!seen(df.y, df.y, df.reach)) continue;
-      const st = FP.boss.stageAt(df.i, t, nPierced);
+      const st = FP.boss.stageAt(df.i, state.bossFight.phase);
       mount(g, v, df, M, st, t);
       if (st.stage === 'strike') strike(g, v, df, M, t);
     }
     const a = arrowFor(state);
-    if (a) arrow(g, a, t);
+    if (a) arrow(g, state, a, cam);
   }
 
   FP.bossRender = { draw, arrowFor };

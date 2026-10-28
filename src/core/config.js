@@ -217,7 +217,7 @@
     // defense : cycle (s), avertissement, coup, accélération par point percé, portée (part de la largeur libre), épaisseur, attache (part du haut du tronçon).
     // pierceBonus / bonus : points par point percé / par boss vaincu ; pierceShake : secousse au perçage.
     boss: {
-      segments: 4, segWidth: .45, corridorK: 1.3,
+      segments: 4, segWidth: .6, corridorK: 1.3,
       weakR: 14, weakHit: 20, weakOut: 12, arrowMargin: 14,
       top: 70, bottom: 160,
       trap: { gap: 30, thick: 14 }, trapSlide: .6,

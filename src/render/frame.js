@@ -3,7 +3,7 @@
 // 2. Elle est agrandie sans lissage vers l'écran, avec secousse et zoom ; les gains « +Ɇ » suivent, dans le repère du monde.
 // 3. L'interface (doigt, HUD, cri, titre, certificat) est dessinée dans la toile FP.view.ui, agrandie sans secousse ni zoom.
 // 4. Les outils de réglage et le fondu, à pleine résolution, par-dessus tout.
-// Lit     : FP.config.camera.{zoomEpsilon,focalY}, state.world, state.camera.y, state.plant.{tip,seed}, FP.view, FP.camera.totalZoom, FP.input.focalX,
+// Lit     : state.world, state.camera.y, FP.view, FP.camera.zoomFrame,
 //           FP.view.art, FP.px.SCALE, state.flow.fade, FP.sky, FP.soil, FP.hazardsRender, FP.obstacles, FP.bossRender, FP.coinsRender, FP.powerupsRender, FP.plantRender, FP.flowersRender,
 //           FP.effects, FP.particles, FP.drillFx, FP.ui ; state.camera.shake (secousse) ; FP.perf, FP.flydebug (outils de réglage).
 // Écrit   : rien lui-même (le canvas) ; effects et particles, qu'il appelle, tiennent state.fx.
@@ -11,17 +11,11 @@
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
-  const { clamp } = FP.math;
 
-  // Zoom centré sur la pointe (bornée dans la partie centrale de l'écran), comme en v3.
-  function applyZoom(ctx, state, W, viewH) {
-    const z = FP.camera.totalZoom(state);
-    if (z <= FP.config.camera.zoomEpsilon) return;
-    const focus = state.plant.tip || state.plant.seed;
-    const fx = FP.input.focalX(state);
-    const f = FP.config.camera.focalY;
-    const fy = clamp(focus.y - state.camera.y, viewH * f.min, viewH * f.max);
-    ctx.translate(fx, fy); ctx.scale(z, z); ctx.translate(-fx, -fy);
+  // Zoom centré sur la pointe (FP.camera.zoomFrame : le même cadrage sert à placer la flèche du boss dans l'écran).
+  function applyZoom(ctx, state) {
+    const f = FP.camera.zoomFrame(state);
+    if (f) { ctx.translate(f.fx, f.fy); ctx.scale(f.z, f.z); ctx.translate(-f.fx, -f.fy); }
   }
 
   // Couche 1 : le monde, en pixels d'art. Ordre v3 : ciel, sol, nappes, limaces, obstacles, bonus, plante, fleurs,
@@ -55,7 +49,6 @@
 
   function frame(state) {
     const { ctx, W, art } = FP.view;
-    const viewH = state.world.viewH;
     // ?perf=1 : tranches sol / dangers / bonus / plante (comme la v3).
     const perf = FP.perf;
 
@@ -74,7 +67,7 @@
       // Secousse (v3 : draw) : décalage aléatoire proportionnel à camera.shake, avant le zoom.
       const shake = state.camera.shake;
       if (shake > 0) ctx.translate((Math.random() * 6 - 3) * shake * 7, (Math.random() * 6 - 3) * shake * 7);
-      applyZoom(ctx, state, W, viewH);
+      applyZoom(ctx, state);
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(art.canvas, 0, 0, art.w * FP.px.SCALE, art.h * FP.px.SCALE);
       // Chiffres « +Ɇ » : nets, mais dans le repère du monde (même zoom, même caméra).

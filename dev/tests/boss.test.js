@@ -46,6 +46,31 @@ FP.test('bossLevel: le couloir est franchissable et longe chaque point faible', 
   }
 });
 
+FP.test('bossLevel: le couloir zigzague d’un flanc à l’autre, suivable, franchissable du niveau 3 au niveau 10', () => {
+  const max = FP.config.level.safePath.maxSlope;
+  for (const W of [300, 440]) for (let milieu = 0; milieu < 4; milieu++) for (let level = 3; level <= 10; level++) {
+    const s = bossRun(W, milieu); s.level = level; FP.level.generate(s);
+    const w = s.world, bl = w.bossLevel, P = w.safePath, at = `W=${W} milieu ${milieu} niveau ${level}`;
+    // Pas de victoire gratuite tout droit : la verticale du centre passe loin d'au moins deux points faibles.
+    FP.assert(bl.weak.filter(k => Math.abs(k.x - W / 2) > B().weakHit).length >= 2, 'couloir droit au centre ' + at);
+    for (let i = 1; i < P.length; i++) {
+      const slope = Math.abs(P[i].x - P[i - 1].x) / (P[i - 1].y - P[i].y);
+      FP.assert(slope <= max + 1e-9, `pente ${slope.toFixed(2)} au segment ${i} ` + at);
+    }
+    const blocking = w.solids.filter(o => !o.off && o.kind !== 'trap');
+    for (let i = 1; i < P.length; i++) for (let k = 0; k <= 8; k++) {
+      const x = P[i - 1].x + (P[i].x - P[i - 1].x) * k / 8, y = P[i - 1].y + (P[i].y - P[i - 1].y) * k / 8;
+      for (const o of blocking) FP.assert(FP.collision.distanceTo(o, x, y) >= w.safeRadius - 1e-6, `(${x | 0},${y | 0}) trop près de ${o.kind} ` + at);
+    }
+    for (const wk of bl.weak) {
+      let m = Infinity;
+      for (let i = 1; i < P.length; i++) m = Math.min(m, FP.geom.distPointToSegment(wk.x, wk.y, P[i - 1].x, P[i - 1].y, P[i].x, P[i].y));
+      FP.assert(m <= B().weakHit, `point faible ${wk.i} à ${m} ` + at);
+    }
+    bl.segments.forEach((seg, i) => FP.assert(seg.y1 - seg.y0 > 2 * B().weakR, `tronçon ${i} trop mince ` + at));
+  }
+});
+
 FP.test('bossLevel: même niveau d’une tentative à l’autre', () => {
   const s = bossRun(440, 2), pick = (w) => JSON.stringify([w.bossLevel.segments.map(g => [g.side, g.x0, g.x1, g.y0, g.y1]), w.bossLevel.weak, w.toxics, w.safePath]);
   const first = pick(s.world);
@@ -108,16 +133,20 @@ FP.test('level: un niveau normal n’a pas de bossLevel', () => {
   FP.assert(s.world.solids.every(o => !o.boss));
 });
 
-FP.test('state: bossFight démarre sans point percé', () => {
+FP.test('state: bossFight démarre sans point percé, phase à zéro ; reset y revient', () => {
   const s = FP.state.createRun(3, { W: 440, H: 783 });
-  FP.assertEqual(JSON.stringify(s.bossFight.pierced), '[false,false,false,false]');
+  FP.assertEqual(JSON.stringify(s.bossFight.pierced), '[false,false,false,false]'); FP.assertEqual(s.bossFight.phase, 0);
+  s.bossFight.pierced[1] = true; s.bossFight.phase = .7; FP.boss.reset(s);
+  FP.assertEqual(JSON.stringify(s.bossFight.pierced), '[false,false,false,false]'); FP.assertEqual(s.bossFight.phase, 0);
 });
 
 // Défenses (v4.12.0) : cycle prévient / frappe / repos, formes animées.
+// Durée (s) passée dans une étape sur un cycle, en faisant tourner FP.boss.update avec `pierced` points déjà percés (hors jeu : rien ne perce).
 const sweepStage = (i, pierced, name) => {
-  const f = Math.pow(1 - B().defense.speedup, pierced), P = B().defense.period * f, dt = .001;
+  const s = bossRun(440, 0), f = Math.pow(1 - B().defense.speedup, pierced), P = B().defense.period * f, dt = .001;
+  s.mode = 'ready'; s.bossFight.pierced.fill(true, 0, pierced);
   let n = 0;
-  for (let t = 0; t < P; t += dt) if (FP.boss.stageAt(i, t, pierced).stage === name) n++;
+  for (let t = 0; t < P; t += dt) { FP.boss.update(s, dt); if (FP.boss.stageAt(i, s.bossFight.phase).stage === name) n++; }
   return n * dt;
 };
 
@@ -126,7 +155,7 @@ FP.test('boss: une défense prévient, frappe, se repose, aux durées réglées'
   FP.assert(Math.abs(sweepStage(0, 0, 'warn') - d.warn) < .01, 'warn');
   FP.assert(Math.abs(sweepStage(0, 0, 'strike') - d.strike) < .01, 'strike');
   FP.assert(Math.abs(sweepStage(0, 0, 'rest') - (d.period - d.warn - d.strike)) < .01, 'rest');
-  for (let t = 0; t < 6; t += .05) { const s = FP.boss.stageAt(1, t, 0); FP.assert(s.k >= 0 && s.k <= 1, 'k ' + s.k); }
+  for (let ph = -1; ph < 3; ph += .02) { const s = FP.boss.stageAt(1, ph); FP.assert(s.k >= 0 && s.k <= 1, 'k ' + s.k); }
 });
 
 FP.test('boss: 20 % plus vite par point percé', () => {
@@ -135,10 +164,10 @@ FP.test('boss: 20 % plus vite par point percé', () => {
 });
 
 FP.test('boss: jamais toutes les défenses en coup au même instant', () => {
-  for (let p = 0; p < 4; p++) for (let t = 0; t <= 10; t += .05) {
+  for (let ph = 0; ph <= 3; ph += .005) {
     let n = 0;
-    for (let i = 0; i < 4; i++) if (FP.boss.stageAt(i, t, p).stage === 'strike') n++;
-    FP.assert(n < 4, `${n} coups à t=${t}, ${p} percés`);
+    for (let i = 0; i < 4; i++) if (FP.boss.stageAt(i, ph).stage === 'strike') n++;
+    FP.assert(n < 4, `${n} coups à la phase ${ph}`);
   }
 });
 
@@ -147,9 +176,9 @@ FP.test('boss: une défense n’est un obstacle que pendant son coup, et laisse 
     const s = bossRun(440, milieu), bl = s.world.bossLevel;
     let seen = 0;
     for (let t = 0; t < 6; t += .05) {
-      s.time = t; FP.boss.update(s, 0);
+      FP.boss.update(s, .05);
       for (const df of bl.defenses) {
-        const st = FP.boss.stageAt(df.i, t, 0).stage, o = df.solid;
+        const st = FP.boss.stageAt(df.i, s.bossFight.phase).stage, o = df.solid;
         FP.assertEqual(o.off, st !== 'strike', `off ${df.type} t=${t}`);
         if (o.off) continue;
         seen++;
@@ -169,20 +198,48 @@ FP.test('boss: une défense n’est un obstacle que pendant son coup, et laisse 
 FP.test('boss: le bras au repos ne touche pas le couloir, il y entre à la fin du coup', () => {
   const s = bossRun(440, 1), bl = s.world.bossLevel;
   for (const df of bl.defenses.filter(d => d.type === 'arm')) {
-    const reachOf = (t) => {
-      s.time = t; FP.boss.update(s, 0);
+    const reachOf = (phase) => {
+      s.bossFight.phase = phase; FP.boss.update(s, 0);
       return Math.max(...df.solid.collision.map(([px, py]) => (FP.geom.toWorld(df.solid, px, py).x - df.x) * -df.side));
     };
-    const W = B().defense.warn, S = B().defense.strike, phase = -df.i * B().defense.period / 4;
-    const start = phase + Math.ceil((0 - phase) / B().defense.period) * B().defense.period + W;
-    FP.assert(reachOf(start + .001) <= 1, 'début du coup : le long de la face');
-    FP.assert(Math.abs(reachOf(start + S - .001) - df.reach) < df.reach * .02 + B().defense.thick, 'fin du coup : à l’horizontale');
+    const d = B().defense, W = d.warn / d.period, S = d.strike / d.period, start = ((W - df.i / 4) % 1 + 1) % 1;
+    FP.assert(reachOf(start + .0005) <= 1, 'début du coup : le long de la face');
+    FP.assert(Math.abs(reachOf(start + S - .0005) - df.reach) < df.reach * .02 + d.thick, 'fin du coup : à l’horizontale');
   }
 });
 
 // Perçage, trappe, persistance, victoire (v4.12.0).
 const bossFlow = () => { const s = flowRun(); for (let i = 0; i < 3; i++) nextBloom(s); FP.plant.launch(s); s.events.length = 0; return s; };
 const tipOn = (s, i) => { const w = s.world.bossLevel.weak[i]; s.plant.tip = { x: w.x, y: w.y }; };
+const stageOf = (s, i) => FP.boss.stageAt(i, s.bossFight.phase);
+
+FP.test('boss: un perçage ne fait sauter aucune défense en coup sans avertissement complet', () => {
+  const d = B().defense;
+  let strikes = 0;
+  for (let run = 0; run < 24; run++) {
+    const s = bossFlow(), dt = 1 / 120, prev = [], warned = [];
+    s.plant.tip = { x: -999, y: -999 };
+    for (let n = 0; n < 1600; n++) {
+      s.time += dt;
+      const k = Math.floor((n - 200) / 300);   // un perçage toutes les 2,5 s, décalé à chaque essai
+      if (n >= 200 && (n - 200) % 300 === run * 11 % 300 && k < 4) tipOn(s, k); else s.plant.tip = { x: -999, y: -999 };
+      FP.boss.update(s, dt);
+      for (let i = 0; i < 4; i++) {
+        const st = stageOf(s, i);
+        // Part du cycle passée en avertissement depuis le dernier repos (le cycle accélère à chaque perçage).
+        // (undefined tant qu'aucun repos n'a été vu : la défense a pu démarrer en plein avertissement.)
+        if (st.stage === 'warn' && warned[i] !== undefined) warned[i] += dt / (d.period * Math.pow(1 - d.speedup, s.bossFight.pierced.filter(Boolean).length));
+        if (st.stage === 'strike' && prev[i] !== 'strike' && warned[i] !== undefined) {
+          FP.assert(prev[i] === 'warn' && warned[i] >= d.warn / d.period - 2 * dt / (d.period * .5), `essai ${run}, défense ${i} : coup après ${prev[i]} ${warned[i].toFixed(3)} (n=${n})`);
+          strikes++;
+        }
+        if (st.stage === 'rest') warned[i] = 0;
+        prev[i] = st.stage;
+      }
+    }
+  }
+  FP.assert(strikes > 100, 'des coups ont eu lieu : ' + strikes);
+});
 const seen = (s, type) => s.events.filter(e => e.type === type);
 const pierceAll = (s) => { for (let i = 0; i < B().segments; i++) { tipOn(s, i); FP.boss.update(s, 0); } };
 
@@ -221,6 +278,18 @@ FP.test('boss: trappe fermée atteinte → mort « la trappe est fermée »', ()
   const d = seen(s, 'death');
   FP.assertEqual(d.length, 1); FP.assertEqual(d[0].kind, 'trap');
   FP.assertEqual(s.flow.overReason, FP.config.text.death.trap);
+});
+
+FP.test('boss: ni la membrane ni sa grâce ne traversent la trappe fermée', () => {
+  for (const grace of [0, .3]) {
+    const s = bossFlow(), tr = s.world.bossLevel.trap;
+    s.power.shield = grace === 0; s.power.shieldGrace = grace;
+    s.plant.tip = { x: 220, y: (tr.y0 + tr.y1) / 2 }; s.plant.dir = { x: 0, y: -1 };
+    FP.collision.update(s); FP.powerups.update(s, 0); FP.flow.update(s, 0);
+    const d = seen(s, 'death');
+    FP.assertEqual(d.length, 1, 'grâce ' + grace); FP.assertEqual(d[0].kind, 'trap');
+    FP.assertEqual(seen(s, 'bloom').length, 0); FP.assertEqual(seen(s, 'shieldBreak').length, 0);
+  }
 });
 
 FP.test('boss: une mort garde les points percés et la trappe ouverte', () => {
@@ -267,58 +336,4 @@ FP.test('boss: saison 2, le boss de la friche est intact', () => {
   FP.assert(s.run.boss && s.run.milieu === 0 && s.run.saison === 2, JSON.stringify(s.run));
   FP.assertEqual(JSON.stringify(s.bossFight.pierced), '[false,false,false,false]');
   FP.assertEqual(s.world.bossLevel.trap.solid.off, false);
-});
-
-// Rendu provisoire du boss (v4.12.0, render/boss.js) : flèche, dessin, teinte réservée aux points faibles.
-const bossView = (cam, pierced = []) => { const s = bossRun(440, 0); s.camera.y = cam; pierced.forEach(i => { s.bossFight.pierced[i] = true; }); return s; };
-FP.test('bossRender: flèche vers le prochain point faible hors écran, aucune s’il est à l’écran ou s’ils sont tous percés', () => {
-  const s = bossView(0), wk = s.world.bossLevel.weak, H = s.world.viewH;
-  s.camera.y = wk[0].y - H - 40;   // le point 0 est sous le bas de l'écran
-  let a = FP.bossRender.arrowFor(s);
-  FP.assertEqual(a.dir, 'down'); FP.assert(a.x >= 0 && a.x <= s.world.width && a.y >= 0 && a.y <= H, 'dans l’écran');
-  s.camera.y = wk[0].y + 40;   // le point 0 est au-dessus
-  a = FP.bossRender.arrowFor(s); FP.assertEqual(a.dir, 'up');
-  s.camera.y = wk[0].y - H / 2; FP.assertEqual(FP.bossRender.arrowFor(s), null);   // à l'écran
-  s.bossFight.pierced.fill(true, 0, 3); s.camera.y = wk[3].y + H + 50;   // seul le dernier reste : il est au-dessus de l'écran
-  a = FP.bossRender.arrowFor(s); FP.assertEqual(a.dir, 'up'); FP.assertEqual(a.x, Math.min(s.world.width - FP.config.boss.arrowMargin, Math.max(FP.config.boss.arrowMargin, wk[3].x)));
-  s.bossFight.pierced.fill(true); FP.assertEqual(FP.bossRender.arrowFor(s), null);
-  const n = FP.state.createRun(3, { W: 440, H: 783 }); FP.level.startRun(n); FP.assertEqual(FP.bossRender.arrowFor(n), null);
-});
-FP.test('bossRender: dessine sans erreur, points faibles dans la teinte réservée', () => {
-  for (let milieu = 0; milieu < 4; milieu++) {
-    const s = bossRun(440, milieu), wk = s.world.bossLevel.weak[1];
-    s.camera.y = wk.y - s.world.viewH / 2; s.time = 1.3;
-    const g = recCtx(); FP.bossRender.draw(g, s);
-    FP.assert(g.rects.length > 50, 'rien dessiné');
-    FP.assert(g.rects.some(r => r.c === FP.palette.boss.weak[0]), 'point faible absent (milieu ' + milieu + ')');
-    for (const t of [0, .4, .9, 1.5, 2.2]) { s.time = t; s.bossFight.pierced[1] = t > 1; FP.bossRender.draw(recCtx(), s); }
-    s.world.bossLevel.trap.solid.off = true; s.camera.y = 0; FP.bossRender.draw(recCtx(), s);
-  }
-  FP.bossRender.draw(recCtx(), FP.state.createRun(3, { W: 440, H: 783 }));   // niveau normal : rien, sans erreur
-});
-// Les points faibles sont toujours sous la trappe : ciel et décor de surface ne partagent jamais leur zone, on ne les compare pas.
-FP.test('palette: le blanc-jaune des points faibles se distingue de tout ce qui partage leur zone (terre, boss, plante, pièces, dangers)', () => {
-  const rgb = (h) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)), dist = (a, b) => Math.hypot(...rgb(a).map((v, i) => v - rgb(b)[i]));
-  const P = FP.palette, W = P.boss.weak;
-  const others = [...Object.values(P.milieux).flatMap(m => [...m.strata.humus, ...m.strata.clay, ...m.strata.stone]),
-    ...P.boss.trap, ...P.boss.plate, ...P.boss.jet, ...P.boss.glow, ...P.boss.smoke, P.boss.hole, ...Object.values(P.boss.milieux).flatMap(m => Object.values(m)),
-    ...P.danger, ...Object.values(P.stem), ...Object.values(P.hero), ...Object.values(P.coin)];
-  for (const c of W) for (const t of others) FP.assert(dist(c, t) > 60, c + ' trop proche de ' + t);
-});
-FP.test('palette: les teintes du boss restent à 60 de toute teinte de danger', () => {
-  const rgb = (h) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)), dist = (a, b) => Math.hypot(...rgb(a).map((v, i) => v - rgb(b)[i]));
-  const B = FP.palette.boss, all = [...B.weak, ...B.trap, ...B.plate, ...B.jet, ...B.glow, ...B.smoke, B.hole, ...Object.values(B.milieux).flatMap(m => Object.values(m))];
-  for (const c of all) for (const d of FP.palette.danger) FP.assert(dist(c, d) >= 60, c + ' trop proche du danger ' + d);
-});
-FP.test('bossTrap: openedAt posé au 4e perçage, -Infinity si le niveau est régénéré ouvert, et le dessin n’écrit rien', () => {
-  const s = bossRun(440, 0), bl = s.world.bossLevel;
-  FP.assertEqual(bl.trap.openedAt, null);
-  s.mode = 'playing'; s.time = 12.5;
-  for (const w of bl.weak) { s.plant.tip = { x: w.x, y: w.y }; FP.boss.update(s, 0); }
-  FP.assertEqual(bl.trap.solid.off, true); FP.assertEqual(bl.trap.openedAt, 12.5);
-  FP.level.generate(s);
-  FP.assertEqual(s.world.bossLevel.trap.openedAt, -Infinity);
-  const tr = s.world.bossLevel.trap, snap = JSON.stringify(tr);
-  s.camera.y = 0; s.time = 13; FP.bossRender.draw(recCtx(), s);
-  FP.assertEqual(JSON.stringify(tr), snap);
 });

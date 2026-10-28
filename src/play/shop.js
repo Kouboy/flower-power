@@ -1,21 +1,22 @@
 // play/shop.js — boutique de fin de pousse (v4.6.0) : bon de commande de 3 articles (un à −50 %), achetés au score.
-// Lit     : state.seed, state.score.eco, state.time, state.mode, FP.config.shop, FP.createRng.
+// Lit     : state.seed, state.run.boss, state.score.eco, state.time, state.mode, FP.config.shop, FP.createRng.
 // Écrit   : state.shop, state.shopVisits, state.mode ('shop'), state.events (shopOpen, shopTick, shopOrder, shopClose) ; à la commande :
 //           state.score.eco, state.plant.reserves, state.boosts ; Lobbying regénère le niveau (FP.level.generate, FP.plant.prepare).
 // Expose  : FP.shop.open(state, { after }), FP.shop.total(state), FP.shop.canCheck(state, i), FP.shop.toggle(state, i),
 //           FP.shop.co2(state), FP.shop.order(state), FP.shop.decline(state), FP.shop.update(state). after : 'death' | 'bloom' | 'last'
-//           (dernière chance : la Graine Bio™ est garantie). Les effets (state.boosts) valent pour la pousse suivante :
+//           (dernière chance : la Graine Bio™ est garantie ; au boss, ni Lobbying ni Bière). Les effets (state.boosts) valent pour la pousse suivante :
 //           FP.plant.launch applique membrane et spore, les autres systèmes lisent leur drapeau ; la fin de pousse les efface.
 // Tirage propre (graine ^ salt ^ passage) : state.rng n'est jamais consommé.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
   const STEP = 25;
+  const BOSS_USELESS = ['lobbying', 'beer'];   // sans effet au boss (niveau fixe, pas de limaces) : jamais tirés avant ni pendant un boss
 
   function open(state, { after }) {
     const c = FP.config.shop, visit = (state.shopVisits += 1), lastChance = after === 'last';
     const rng = FP.createRng((state.seed ^ c.salt ^ Math.imul(visit, 2654435761)) >>> 0);
-    const pool = c.items.slice(), picked = [];
+    const pool = c.items.filter(it => !(state.run.boss && BOSS_USELESS.includes(it.id))), picked = [];
     for (let i = 0; i < 3; i++) picked.push(pool.splice(Math.floor(rng.next() * pool.length), 1)[0]);
     if (lastChance && !picked.some(it => it.id === 'seed')) picked[2] = c.items.find(it => it.id === 'seed');
     const promo = Math.floor(rng.next() * 3);

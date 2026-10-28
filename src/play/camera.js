@@ -1,7 +1,9 @@
 // play/camera.js — caméra défilante verticale, zoom de cadrage et zoom de frôlement.
-// Lit     : state.mode, state.plant.tip, state.query.danger, state.world.{height,viewH}, FP.config.camera.
+// Lit     : state.mode, state.plant.{tip,seed}, state.query.danger, state.world.{height,viewH}, FP.config.camera, FP.input.focalX (au calcul du cadrage).
 // Écrit   : state.camera.{y,manual,near,zoom,shake}.
-// Expose  : FP.camera.update(state, dt), FP.camera.maxY(world), FP.camera.scrollBy(state, dy), FP.camera.totalZoom(state).
+// Expose  : FP.camera.update(state, dt), FP.camera.maxY(world), FP.camera.scrollBy(state, dy), FP.camera.totalZoom(state),
+//           FP.camera.zoomFrame(state) → { z, fx, fy } | null (zoom et point focal en pixels d'écran, appliqués par render/frame.js),
+//           FP.camera.toScreen(state, x, y) / FP.camera.toWorld(state, sx, sy) (monde ↔ écran par ce cadrage, sans la secousse ; purs).
 // Porté de la v3.43.16 (updateScrollCamera, updateCamera, viewScaleBase en cadrage B).
 (function () {
   'use strict';
@@ -15,6 +17,24 @@
   const FRAMED = { playing: true, ready: true, bloom: true, dying: true, shop: true };
   function totalZoom(state) {
     return FRAMED[state.mode] ? state.camera.zoom * FP.config.camera.framing : 1;
+  }
+
+  // Zoom autour de la pointe (ou de la graine), son point focal borné dans la partie centrale de l'écran, comme en v3 ; null sans zoom.
+  function zoomFrame(state) {
+    const z = totalZoom(state), focus = state.plant.tip || state.plant.seed;
+    if (z <= FP.config.camera.zoomEpsilon || !focus) return null;
+    const f = FP.config.camera.focalY, H = state.world.viewH;
+    return { z, fx: FP.input.focalX(state), fy: clamp(focus.y - state.camera.y, H * f.min, H * f.max) };
+  }
+
+  function toScreen(state, x, y) {
+    const f = zoomFrame(state), sy = y - state.camera.y;
+    return f ? { x: f.fx + (x - f.fx) * f.z, y: f.fy + (sy - f.fy) * f.z } : { x, y: sy };
+  }
+
+  function toWorld(state, sx, sy) {
+    const f = zoomFrame(state);
+    return f ? { x: f.fx + (sx - f.fx) / f.z, y: state.camera.y + f.fy + (sy - f.fy) / f.z } : { x: sx, y: state.camera.y + sy };
   }
 
   // Frôler un obstacle rapproche brièvement la caméra : la tension se lit à l'image.
@@ -47,5 +67,5 @@
     state.camera.y = clamp(state.camera.y + dy, 0, maxY(state.world));
   }
 
-  FP.camera = { update, maxY, scrollBy, totalZoom };
+  FP.camera = { update, maxY, scrollBy, totalZoom, zoomFrame, toScreen, toWorld };
 })();

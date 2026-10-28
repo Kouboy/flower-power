@@ -1,7 +1,7 @@
 // ui/hud.js — HUD en pixels d'art, dans les coins du bas : graines restantes, ÉcoCrédits™, et seulement quand ils sont actifs,
 // le pollen et le combo ; « TOUCHER POUR POUSSER » entre deux niveaux.
 // Lit     : state.mode, state.time, state.plant.reserves, state.score.{eco,flowerBonus,combo}, state.run.{milieu,saison}, state.world.bossLevel, state.bossFight.pierced, FP.config.{plant.seeds,text.ready,milieux},
-//           FP.palette.{seed,boss}, FP.font, FP.view.ui.
+//           FP.palette.{seed,boss}, FP.font, FP.px, FP.view.ui.
 // Écrit   : state.fx.ui.hud uniquement (animations : score affiché, graines perdues, rebonds).
 // Expose  : FP.hud.items(state) (… boss : booléens des points percés, ou null), FP.hud.layout(h) (purs, testés), FP.hud.draw(g, state) (toile d'interface), FP.hud.{MARGIN, SEED_SCALE, SEED_STEP}.
 (function () {

@@ -177,10 +177,12 @@
   }
 
   // Intercepte un choc (solide ou lixiviat) avant que flow ne décide d'une mort. Les nappes toxiques
-  // ne sont pas concernées : c'est une exposition continue, pas un choc.
+  // ne sont pas concernées : c'est une exposition continue, pas un choc. La trappe fermée du boss tue toujours :
+  // ni le bouclier ni sa grâce ne l'absorbent (sinon on la traverserait sans avoir percé les points faibles).
   function shield(state) {
     const q = state.query;
     if (!q.solid && !(q.leak > 0)) return;
+    if (q.solid && q.solid.kind === 'trap') return;
     if (state.power.shieldGrace <= 0) {
       if (!state.power.shield) return;
       shatter(state, q.solid ? 'impact' : 'acid');

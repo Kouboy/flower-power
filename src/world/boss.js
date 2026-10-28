@@ -1,17 +1,18 @@
 // world/boss.js — le niveau de boss : 4 tronçons accrochés tour à tour aux flancs, leurs points faibles, leurs défenses, la trappe.
 // Lit     : state.{seed,level,rng (non consommé)}, state.run.{saison,milieu}, state.bossFight.pierced, state.world.{width,height,surfaceY},
-//           FP.config.{boss,level.safePath,plant.seedOffset,milieux}, FP.createRng, FP.collision.distanceTo, FP.level.{makeToxic,distToSafePath}, FP.geom.
+//           FP.config.{boss,level.{safePath,toxics},plant.seedOffset,milieux}, FP.createRng, FP.level.{makeToxic,distToSafePath}, FP.coins.place.
 // Écrit   : state.world.{bossLevel,solids,toxics,leaks,bonuses,safePath,safeRadius} ; puis FP.coins.place écrit state.world.{coins,chains}.
 //           bossLevel = { segments: [{ side, x0, x1, y0, y1, solid }], weak: [{ i, x, y }], defenses: [{ i, type, side, x, y, reach, solid }], trap: { y0, y1, openedAt (null tant que fermée, -Infinity si déjà ouverte à la génération), solid } }.
 // Expose  : FP.bossLevel.generate(state).
 // Graine propre : empreinte de (state.seed, saison, milieu), jamais state.rng : le niveau est le même d'une tentative à l'autre.
-// Solides du boss : { kind: 'boss' | 'defense' | 'trap', boss: true, x, y, a: 0, flip: 1, collision (local), broadR, flyoverEligible: false, off }.
+// Solides du boss : { kind: 'boss' | 'defense' | 'trap', boss: true, x, y, a: 0, flip: 1, collision (local), broadR, flyoverEligible: false, grazeRadius: 0, off }.
 // `off` : ignoré par la collision (défense au repos, trappe ouverte). Tronçon i = i-ième du bas ; side -1 = accroché à gauche.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
 
   const TRIES = 40;   // essais par nappe
+  const LANE = 1, BEND = .9;   // le couloir longe la face à r + LANE ; il quitte un flanc à BEND × r au-delà du bord du tronçon
   const rect = (hw, hh) => [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]];
 
   function makeSolid(kind, x, y, collision, off) {
@@ -35,9 +36,11 @@
     return Math.min(normal * c.corridorK, c.weakOut + c.weakHit - 2);
   }
 
-  // Tronçons du bas vers le haut, séparés d'un intervalle où le couloir change de flanc.
+  // Tronçons du bas vers le haut, séparés d'un intervalle où le couloir change de flanc. Les tronçons dépassent le milieu : le couloir
+  // zigzague d'un bord à l'autre, et l'intervalle est assez haut pour que la traversée en diagonale reste sous maxSlope.
   function buildSegments(world, c, r, rng) {
-    const W = world.width, segW = W * c.segWidth, gap = r * 3;
+    const W = world.width, segW = W * c.segWidth, cross = Math.abs(2 * segW - W) + 2 * (r + LANE);
+    const gap = Math.max(r * 3, 2 * BEND * r + cross / FP.config.level.safePath.maxSlope);
     const zoneTop = world.surfaceY + c.top, zoneBottom = world.height - c.bottom;
     const slot = (zoneBottom - zoneTop) / c.segments, thick = slot - gap;
     let side = rng.next() < .5 ? -1 : 1;
@@ -74,14 +77,14 @@
     return { y0, y1, openedAt: open ? -Infinity : null, solid: makeSolid('trap', world.width / 2, (y0 + y1) / 2, rect(world.width / 2, c.trap.thick / 2), open) };
   }
 
-  // Couloir : part de la graine, longe chaque flanc à r + 1 (nœud au bord bas, à mi-hauteur, au bord haut), change de flanc en diagonale
+  // Couloir : part de la graine, longe chaque flanc à r + LANE (nœud au bord bas, à mi-hauteur, au bord haut), change de flanc en diagonale
   // dans l'intervalle entre deux tronçons, finit juste sous la trappe.
-  function buildPath(world, c, r, segments, trap) {
-    const d = r + 1, q = r * .9, path = [{ x: world.width / 2, y: world.height - FP.config.plant.seedOffset }];
+  function buildPath(world, r, segments, trap) {
+    const d = r + LANE, q = r * BEND, path = [{ x: world.width / 2, y: world.height - FP.config.plant.seedOffset }];
     const lane = (seg) => faceX(seg) - seg.side * d;
     segments.forEach((seg, i) => {
       const x = lane(seg), mid = (seg.y0 + seg.y1) / 2;
-      path.push({ x, y: i === 0 ? seg.y1 : seg.y1 + q }, { x, y: mid }, { x, y: i === segments.length - 1 ? seg.y0 : seg.y0 - q });
+      path.push({ x, y: seg.y1 + q }, { x, y: mid }, { x, y: i === segments.length - 1 ? seg.y0 : seg.y0 - q });
     });
     const top = segments[segments.length - 1];
     path.push({ x: lane(top), y: trap.y1 + 10 });
@@ -115,7 +118,7 @@
     const defenses = buildDefenses(world, c, segments, milieuId), trap = buildTrap(world, c, state.bossFight.pierced);
     world.solids.push(...segments.map(s => s.solid), ...defenses.map(d => d.solid), trap.solid);
     world.bossLevel = { segments, weak, defenses, trap };
-    buildPath(world, c, r, segments, trap);
+    buildPath(world, r, segments, trap);
     buildToxics(world, c, rng, segments, weak, r);
     FP.coins.place(state);
   }

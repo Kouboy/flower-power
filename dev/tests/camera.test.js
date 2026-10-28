@@ -54,3 +54,17 @@ FP.test('camera: la secousse s’amortit', () => {
   const s = FP.state.createRun(1, { W: 440, H: 783 }); s.camera.shake = .28;
   FP.camera.update(s, .1); FP.assert(Math.abs(s.camera.shake - .18) < 1e-9);
 });
+FP.test('camera: zoomFrame, toScreen et toWorld suivent le cadrage de render/frame.js, aller-retour exact', () => {
+  const s = FP.state.createRun(1, { W: 440, H: 783 }); s.plant.tip = { x: 300, y: 1500 }; s.camera.y = 1100;
+  s.mode = 'menu'; FP.assertEqual(FP.camera.zoomFrame(s), null);
+  FP.assertEqual(JSON.stringify(FP.camera.toScreen(s, 50, 1200)), JSON.stringify({ x: 50, y: 100 }));
+  s.mode = 'playing';
+  const f = FP.camera.zoomFrame(s), c = FP.config.camera;
+  FP.assert(Math.abs(f.z - c.framing) < 1e-9 && f.fx === FP.input.focalX(s) && f.fy === Math.min(783 * c.focalY.max, Math.max(783 * c.focalY.min, 400)), JSON.stringify(f));
+  const p = FP.camera.toScreen(s, s.plant.tip.x, s.plant.tip.y);
+  FP.assert(Math.abs(p.y - f.fy) < 1e-9, 'la pointe reste au point focal vertical');
+  for (const [x, y] of [[0, 1100], [440, 1883], [123, 1456]]) {
+    const q = FP.camera.toScreen(s, x, y), w = FP.camera.toWorld(s, q.x, q.y);
+    FP.assert(Math.abs(w.x - x) < 1e-9 && Math.abs(w.y - y) < 1e-9, `aller-retour ${x},${y}`);
+  }
+});
