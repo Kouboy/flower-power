@@ -112,3 +112,70 @@ FP.test('state: bossFight démarre sans point percé', () => {
   const s = FP.state.createRun(3, { W: 440, H: 783 });
   FP.assertEqual(JSON.stringify(s.bossFight.pierced), '[false,false,false,false]');
 });
+
+// Défenses (v4.12.0) : cycle prévient / frappe / repos, formes animées.
+const sweepStage = (i, pierced, name) => {
+  const f = Math.pow(1 - B().defense.speedup, pierced), P = B().defense.period * f, dt = .001;
+  let n = 0;
+  for (let t = 0; t < P; t += dt) if (FP.boss.stageAt(i, t, pierced).stage === name) n++;
+  return n * dt;
+};
+
+FP.test('boss: une défense prévient, frappe, se repose, aux durées réglées', () => {
+  const d = B().defense;
+  FP.assert(Math.abs(sweepStage(0, 0, 'warn') - d.warn) < .01, 'warn');
+  FP.assert(Math.abs(sweepStage(0, 0, 'strike') - d.strike) < .01, 'strike');
+  FP.assert(Math.abs(sweepStage(0, 0, 'rest') - (d.period - d.warn - d.strike)) < .01, 'rest');
+  for (let t = 0; t < 6; t += .05) { const s = FP.boss.stageAt(1, t, 0); FP.assert(s.k >= 0 && s.k <= 1, 'k ' + s.k); }
+});
+
+FP.test('boss: 20 % plus vite par point percé', () => {
+  const d = B().defense;
+  FP.assert(Math.abs(sweepStage(2, 2, 'strike') - d.strike * .8 * .8) < .01, 'strike ' + sweepStage(2, 2, 'strike'));
+});
+
+FP.test('boss: jamais toutes les défenses en coup au même instant', () => {
+  for (let p = 0; p < 4; p++) for (let t = 0; t <= 10; t += .05) {
+    let n = 0;
+    for (let i = 0; i < 4; i++) if (FP.boss.stageAt(i, t, p).stage === 'strike') n++;
+    FP.assert(n < 4, `${n} coups à t=${t}, ${p} percés`);
+  }
+});
+
+FP.test('boss: une défense n’est un obstacle que pendant son coup, et laisse la moitié du couloir libre', () => {
+  for (const milieu of [0, 1, 2, 3]) {
+    const s = bossRun(440, milieu), bl = s.world.bossLevel;
+    let seen = 0;
+    for (let t = 0; t < 6; t += .05) {
+      s.time = t; FP.boss.update(s, 0);
+      for (const df of bl.defenses) {
+        const st = FP.boss.stageAt(df.i, t, 0).stage, o = df.solid;
+        FP.assertEqual(o.off, st !== 'strike', `off ${df.type} t=${t}`);
+        if (o.off) continue;
+        seen++;
+        const free = s.world.width - Math.abs(bl.segments[df.i].x1 - bl.segments[df.i].x0);
+        for (const [px, py] of o.collision) {
+          const p = FP.geom.toWorld(o, px, py), out = (p.x - df.x) * -df.side;
+          FP.assert(out <= df.reach + 1e-6 && df.reach <= free / 2 + 1e-6, `${df.type} sort de ${out}`);
+          FP.assert(py === py && p.y === p.y, 'nombre');
+        }
+        FP.assert(o.broadR > 0);
+      }
+    }
+    FP.assert(seen > 0, 'des coups ont eu lieu');
+  }
+});
+
+FP.test('boss: le bras au repos ne touche pas le couloir, il y entre à la fin du coup', () => {
+  const s = bossRun(440, 1), bl = s.world.bossLevel;
+  for (const df of bl.defenses.filter(d => d.type === 'arm')) {
+    const reachOf = (t) => {
+      s.time = t; FP.boss.update(s, 0);
+      return Math.max(...df.solid.collision.map(([px, py]) => (FP.geom.toWorld(df.solid, px, py).x - df.x) * -df.side));
+    };
+    const W = B().defense.warn, S = B().defense.strike, phase = -df.i * B().defense.period / 4;
+    const start = phase + Math.ceil((0 - phase) / B().defense.period) * B().defense.period + W;
+    FP.assert(reachOf(start + .001) <= 1, 'début du coup : le long de la face');
+    FP.assert(Math.abs(reachOf(start + S - .001) - df.reach) < df.reach * .02 + B().defense.thick, 'fin du coup : à l’horizontale');
+  }
+});

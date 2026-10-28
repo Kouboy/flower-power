@@ -55,3 +55,10 @@ FP.test('collision: toutes les limaces touchées clignotent', () => {
   FP.collision.update(s);
   FP.assert(s.world.leaks.every(l => l.hitFlash > 0));
 });
+FP.test('collision: un solide « off » est ignoré', () => {
+  const o = solidAt(200, 300);
+  o.off = true;
+  FP.assertEqual(FP.collision.queryPoint(worldWith(o), 200, 300).solid, null);
+  o.off = false;
+  FP.assertEqual(FP.collision.queryPoint(worldWith(o), 200, 300).solid, o);
+});
