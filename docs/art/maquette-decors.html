@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Maquettes des décors</title>
+<!-- Maquettes des décors de milieu (ciel, horizon, surface, sous-sol), deux variantes par milieu, animées. -->
+<style>
+  body { font: 15px/1.5 system-ui; margin: 24px auto; max-width: 1000px; padding: 0 16px; background: #14100e; color: #e8e0d0; }
+  h2 { margin: 28px 0 8px; } .sub { color: #b0a898; margin: 0 0 10px; }
+  .row { display: flex; gap: 18px; flex-wrap: wrap; }
+  figure { margin: 0; } figcaption { color: #b0a898; font-size: 14px; margin-top: 4px; max-width: 440px; }
+  canvas { width: 440px; height: 400px; image-rendering: pixelated; border: 1px solid #3a3028; display: block; max-width: 100%; }
+  @media (max-width: 480px) { canvas { width: 100%; height: auto; aspect-ratio: 220 / 200; } }
+</style></head><body>
+<h1>Décors des milieux : maquettes</h1>
+<p class="sub">Pixel art dessiné par le code, avec les palettes, les primitives et la police du jeu. Chaque vignette montre le ciel, l'horizon, la pelouse et le haut du sous-sol, à la largeur d'un téléphone (affichée en ×2). Tout ce qui bouge bouge vraiment. Le décor du sous-sol reste sourd et sans couleur de danger, pour ne jamais ressembler à un obstacle.</p>
+<div id="scenes"></div>
+
+<script src="../../src/core/fp.js"></script>
+<script src="../../src/render/px.js"></script>
+<script src="../../src/render/palette.js"></script>
+<script src="../../src/ui/font.js"></script>
+<script src="maquette-decors.js"></script>
+<script>
+(function () {
+  const NAMES = {
+    friche: ['Friche urbaine', ['A · Barres d’immeubles et grue ; fenêtres qui s’allument et s’éteignent.', 'B · Pavillons, grue au loin et grand panneau « GREEN FUTURE » déchiré.']],
+    industrie: ['Zone industrielle', ['A · Cheminées massives qui crachent, cuves, enseigne ACME qui clignote.', 'B · Raffinerie, torchère qui vacille, convoyeur qui monte des caisses.']],
+    decharge: ['Décharge', ['A · Montagnes d’ordures, bulldozer, fumée de brûlage, mouettes.', 'B · Une seule montagne énorme, grue à grappin qui se balance, mouettes.']],
+    nucleaire: ['Site nucléaire', ['A · Deux tours de refroidissement, pylônes, lune verte, aurore discrète.', 'B · Une tour géante, clôture, trèfle radioactif, grosse lune, aurore épaisse.']]
+  };
+  const root = document.getElementById('scenes'), draws = [];
+  for (const m of FP.maquetteDecors.MILIEUX) {
+    const [name, caps] = NAMES[m.id];
+    root.insertAdjacentHTML('beforeend', '<h2>' + name + '</h2>');
+    const row = document.createElement('div'); row.className = 'row'; root.appendChild(row);
+    for (let v = 0; v < 2; v++) {
+      const fig = document.createElement('figure'), c = document.createElement('canvas');
+      c.width = FP.maquetteDecors.W; c.height = FP.maquetteDecors.H;
+      fig.appendChild(c); fig.insertAdjacentHTML('beforeend', '<figcaption>' + caps[v] + '</figcaption>'); row.appendChild(fig);
+      draws.push([c.getContext('2d'), FP.maquetteDecors.scene(m, v)]);
+    }
+  }
+  const t0 = performance.now();
+  (function frame(now) { const t = (now - t0) / 1000; for (const [g, d] of draws) d(g, t); requestAnimationFrame(frame); })(t0);
+})();
+</script>
+</body></html>
