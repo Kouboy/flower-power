@@ -71,3 +71,15 @@ FP.test('bossLevel: le couloir reste loin des colonnes', () => {
     }
   }
 });
+
+FP.test('bossLevel: avec le zoom de cadrage, chaque colonne garde au moins 5 % de la largeur visible', () => {
+  for (const W of [300, 440]) for (const mode of ['ready', 'playing']) {
+    const s = FP.state.createRun(7, { W, H: Math.round(W * 16 / 9) });
+    FP.level.startRun(s); s.level = 5; s.run.boss = true; FP.level.generate(s); s.mode = mode;
+    s.plant.tip = { x: W / 2, y: s.world.height / 2 }; s.camera.y = s.plant.tip.y - s.world.viewH / 2;   // point focal au centre de l'écran
+    for (const c of s.world.bossLevel.spines) {
+      const inner = FP.camera.toScreen(s, c.side < 0 ? c.x1 : c.x0, s.plant.tip.y).x, shown = c.side < 0 ? inner : W - inner;
+      FP.assert(shown >= .05 * W, `colonne ${c.side} visible sur ${(shown / W * 100).toFixed(1)} % à W=${W} (${mode})`);
+    }
+  }
+});

@@ -11,7 +11,7 @@ Une entrée par version (voir `AGENTS.md`).
 - les points percés survivent à une mort ; la flèche, au bord de l'écran zoomé, indique le prochain point au-dessus de la pointe quand on ne le voit pas ; HUD du combat, carton BOSS VAINCU, bonus de perçage et de boss ; un perçage fait jaillir étincelles et jetons, secoue l'écran ; sons de perçage, de trappe et de coup, thème du boss qui s'emballe (+6 BPM par point percé) ;
 - avant et pendant un boss, le bon de commande ne propose plus Lobbying ni Bière anti-limaces (sans effet sur ce niveau) ;
 - rendu provisoire en blocs dessinés par le code ; les prompts des vraies images (non générées) sont dans `docs/art/prompts-boss.md` ;
-- banc : 530 tests.
+- banc : 531 tests.
 
 ## v4.11.0 — Décors des milieux
 
