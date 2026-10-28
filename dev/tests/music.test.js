@@ -89,6 +89,12 @@ FP.test('music: tempo du morceau + 4 par pousse du milieu ; un boss à son tempo
   inMilieu(s, 1, false); s.run.step = 1; FP.assertEqual(FP.music.tempoFor(s), 108);
   inMilieu(s, 0, true); s.run.step = 3; FP.assertEqual(FP.music.tempoFor(s), FP.songs.fricheBoss.bpm);
 });
+FP.test('music: le thème du boss s’emballe de +6 BPM par point percé', () => {
+  const s = mRun(); inMilieu(s, 0, true); const base = FP.songs.fricheBoss.bpm;
+  FP.assertEqual(FP.music.tempoFor(s), base);
+  s.bossFight.pierced[0] = s.bossFight.pierced[2] = s.bossFight.pierced[3] = true;
+  FP.assertEqual(FP.music.tempoFor(s), base + 18);
+});
 FP.test('music: sur un niveau de boss, la couche de surface reste ouverte', () => {
   const s = mRun(); inMilieu(s, 1, true); FP.assertEqual(FP.music.layersFor(s).sitar, 1);
   s.mode = 'ready'; FP.assertEqual(FP.music.layersFor(s).sitar, 0);   // veille : socle seul

@@ -1,7 +1,7 @@
 // audio/music.js — direction musicale : quel morceau pour quel moment (milieu et boss du niveau), couches selon le jeu,
 // tempo selon la progression dans le milieu,
 // veille entre deux niveaux, baisses de volume (mort, fleur qui sort, frôlement), et pilotage du séquenceur.
-// Lit     : state.mode, state.run.step, state.plant.{tip,corruption,toxicTimer,stemCount}, state.world.{surfaceY,height,milieu,boss},
+// Lit     : state.mode, state.run.step, state.bossFight.pierced, FP.config.boss.tempoPerPierce, state.plant.{tip,corruption,toxicTimer,stemCount}, state.world.{surfaceY,height,milieu,boss},
 //           state.graze.active, state.query.grazes, FP.certificate.canRestart, FP.songs, FP.sequencer.
 // Écrit   : rien dans l'état (le moteur audio uniquement).
 // Expose  : FP.music.{songFor (morceau du milieu du niveau, sa variante selon la pousse, thème du boss, reggae en boutique), layersFor,
@@ -50,10 +50,10 @@
     return { groove: 1, clav: 1, perc: grazeLevel(state), organ: p.corruption > 0 || p.toxicTimer > 0 ? 1 : 0, sitar, ghost: 1 };
   }
 
-  // Tempo propre au morceau, +4 BPM par pousse réussie dans le milieu ; un boss joue à son tempo.
+  // Tempo propre au morceau, +4 BPM par pousse réussie dans le milieu ; un boss s'emballe de tempoPerPierce par point faible percé.
   function tempoFor(state) {
     const song = FP.songs[songFor(state).song], bpm = song ? song.bpm : 100;
-    return state.world.boss ? bpm : bpm + 4 * state.run.step;
+    return state.world.boss ? bpm + FP.config.boss.tempoPerPierce * state.bossFight.pierced.filter(Boolean).length : bpm + 4 * state.run.step;
   }
   const filterFor = (state) => (state.mode === 'ready' ? ASLEEP : OPEN);
   const TREBLE = 7;   // dB d'aigus en plus pour le reggae de la boutique : sono de supermarché

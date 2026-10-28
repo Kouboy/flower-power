@@ -63,6 +63,10 @@
     hit: (n, z, d) => { d('kick', 0, 1.4); z(0, .18, .1, 520, 'bandpass'); n('slap', 40, 0, .2, 1, .55); },
     acid: (n, z) => { z(0, .3, .09, 2400, 'highpass'); n('clav', 46, 0, .25, 2, .66); },
     crack: (n, z, d) => { z(0, .12, .12, 300, 'lowpass'); z(.05, .08, .08, 900, 'bandpass'); d('snare', .02, .6); },
+    // Boss (v4.12.0) : point faible percé (craquement métallique et gerbe), trappe qui s'ouvre (clang puis grincement qui descend), boss battu (impact et fanfare qui monte).
+    pierce: (n, z, d) => { n('metal', 76, 0, .12, 1.2); n('cowbell', 83, .02, .1, .8); z(0, .1, .1, 3000, 'highpass'); d('snare', .03, .8); n('bell', 88, .08, .2, .7); n('bell', 95, .13, .25, .6); },
+    trapOpen: (n, z) => { n('clonk', 38, 0, .12, 1.4); n('metal', 52, 0, .25, 1.1); z(0, .2, .1, 600, 'bandpass', 2); n('slide', 64, .15, .5, 1, .6); z(.15, .45, .05, 900, 'bandpass', 4); },
+    bossDown: (n, z, d) => { d('kick', 0, 1.6); z(0, .4, .12, 350, 'lowpass'); n('sub', 33, 0, .5, 1.2); for (const [m, at] of [[64, .12], [71, .2], [76, .28], [83, .36]]) n('brass', m, at, .3, 1.1); n('bell', 88, .36, .6, .9); },
     ready: (n) => { n('organ', 52, 0, .3, 1.5); n('organ', 59, .12, .3, 1.3); },
     // Interface.
     wake: (n) => { n('organ', 52, 0, .9, 1.5); n('organ', 56, 0, .9, 1.3); n('organ', 59, 0, .9, 1.3); n('sitar', 64, .2, .6, 1, 1.06); },
