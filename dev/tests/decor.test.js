@@ -32,3 +32,4 @@ function checkDecor(id) {
   FP.assert(g.rects.every(r => r.y >= -8 - 22 && r.y <= 400 + 8), id + ' glow hors de la tranche visible');
 }
 FP.test('decor: friche', () => checkDecor('friche'));
+FP.test('decor: industrie', () => checkDecor('industrie'));
