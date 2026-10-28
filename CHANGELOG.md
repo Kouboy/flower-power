@@ -2,6 +2,14 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.12.0 — Moteur de boss
+
+- le niveau de boss est un vrai combat : 4 tronçons de machine accrochés tour à tour aux flancs, un point faible par tronçon à percer de bas en haut, une trappe sous la pelouse qui ne s'ouvre qu'après le quatrième ;
+- défenses propres à chaque milieu (piston, jet, bras) : elles préviennent, frappent, se reposent, et accélèrent à chaque point percé ; seul le coup est un obstacle ; la trappe fermée tue aussi ;
+- les points percés survivent à une mort ; la flèche indique le prochain point hors de l'écran ; HUD du combat, carton BOSS VAINCU, bonus de perçage et de boss, secousse, sons de perçage, de trappe et de coup, thème du boss qui s'emballe (+6 BPM par point percé) ;
+- rendu provisoire en blocs dessinés par le code ; les prompts des vraies images (non générées) sont dans `docs/art/prompts-boss.md` ;
+- banc : 520 tests.
+
 ## v4.11.0 — Décors des milieux
 
 - chaque milieu a son ciel, son horizon, ses accessoires et son sous-sol, en pixel art dessiné par le code : barres d'immeubles et grue (friche), raffinerie, torchère et convoyeur (zone industrielle), montagne d'ordures, grappin et mouettes (décharge), tour de refroidissement, clôture, lune verte et aurore (site nucléaire) ;
