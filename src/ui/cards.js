@@ -17,7 +17,7 @@
       const place = t.milieu + ' ' + (r.milieu + 1) + '/' + n;
       return { title: r.saison > 1 ? t.saison + ' ' + r.saison + ' — ' + place : place, lines: [m.name, m.line] };
     }
-    if (r.card.kind === 'boss') return { title: t.boss, lines: [m.boss.name, m.boss.order, t.pending] };
+    if (r.card.kind === 'boss') return { title: t.boss, lines: [m.boss.name, m.boss.order] };
     return { title: t.victory, lines: [m.boss.name] };
   }
 

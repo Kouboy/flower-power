@@ -1,14 +1,15 @@
 // ui/hud.js — HUD en pixels d'art, dans les coins du bas : graines restantes, ÉcoCrédits™, et seulement quand ils sont actifs,
 // le pollen et le combo ; « TOUCHER POUR POUSSER » entre deux niveaux.
-// Lit     : state.mode, state.time, state.plant.reserves, state.score.{eco,flowerBonus,combo}, state.run.{milieu,saison}, FP.config.{plant.seeds,text.ready,milieux},
-//           FP.palette.seed, FP.font, FP.view.ui.
+// Lit     : state.mode, state.time, state.plant.reserves, state.score.{eco,flowerBonus,combo}, state.run.{milieu,saison}, state.world.bossLevel, state.bossFight.pierced, FP.config.{plant.seeds,text.ready,milieux},
+//           FP.palette.{seed,boss}, FP.font, FP.view.ui.
 // Écrit   : state.fx.ui.hud uniquement (animations : score affiché, graines perdues, rebonds).
-// Expose  : FP.hud.items(state), FP.hud.layout(h) (purs, testés), FP.hud.draw(g, state) (toile d'interface), FP.hud.{MARGIN, SEED_SCALE, SEED_STEP}.
+// Expose  : FP.hud.items(state) (… boss : booléens des points percés, ou null), FP.hud.layout(h) (purs, testés), FP.hud.draw(g, state) (toile d'interface), FP.hud.{MARGIN, SEED_SCALE, SEED_STEP}.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
   const MARGIN = 4;                 // pixels d'art depuis les bords
   const SEED_SCALE = 2, SEED_STEP = 16, LOST_TIME = .4, CRACK_TIME = .25;   // graines ×2 : lisibles sur téléphone
+  const BOSS_STEP = 11;             // écart des icônes de points faibles
   const EMPTY = '#3a2a1e', SPROUT = '#7fb04a', MILIEU = '#c9a87a';
 
   // Ce que le HUD affiche : pas de fleurs (le parterre en tient lieu), pas d'élan.
@@ -18,7 +19,8 @@
       seeds: state.plant.reserves, seedsMax: FP.config.plant.seeds, eco: sc.eco,
       pollen: sc.flowerBonus > 0 ? sc.flowerBonus : null, combo: sc.combo > 1 ? sc.combo : null,
       ready: state.mode === 'ready',
-      milieu: FP.config.milieux[state.run.milieu].name, mult: state.run.saison   // v4.9.0 : milieu en cours, multiplicateur de saison
+      milieu: FP.config.milieux[state.run.milieu].name, mult: state.run.saison,   // v4.9.0 : milieu en cours, multiplicateur de saison
+      boss: state.world.bossLevel ? state.bossFight.pierced.slice() : null   // v4.12.0 : un booléen par point faible, vrai une fois percé
     };
   }
 
@@ -52,6 +54,16 @@
     g.fillStyle = FP.font.COLORS.gold; g.fillRect(x + 2, y + 2, 2, 2);
   }
 
+  // Points faibles du boss : une cible par point, jaune pleine une fois percée, creuse et sombre sinon ; sous le nom du milieu.
+  function bossIcons(g, boss, w) {
+    const P = FP.palette.boss, x0 = Math.round(w / 2 - (boss.length - 1) * BOSS_STEP / 2), y = MARGIN + FP.font.HEIGHT + 7;
+    boss.forEach((hit, i) => {
+      const x = x0 + i * BOSS_STEP;
+      FP.px.disc(g, x, y, 4, FP.font.INK);
+      if (hit) { FP.px.disc(g, x, y, 3, P.weak[1]); FP.px.disc(g, x, y, 1, P.weak[0]); } else { FP.px.disc(g, x, y, 3, P.hole); FP.px.ring(g, x, y, 3, P.smoke[1]); }
+    });
+  }
+
   function draw(g, state) {
     const it = items(state), m = memo(state, it), t = state.time, { w, h } = FP.view.ui, font = FP.font;
     const dt = Math.max(0, Math.min(.1, t - m.last));
@@ -74,6 +86,7 @@
     const scoreW = font.draw(g, 'Ɇ' + Math.round(m.shownEco).toLocaleString('fr-FR'), w - MARGIN, scoreY, { scale: 2, color: font.COLORS.eco, align: 'right' });
     if (it.mult > 1) font.draw(g, '×' + it.mult, w - MARGIN - scoreW - 4, scoreY + font.HEIGHT, { color: font.COLORS.gold, align: 'right' });   // saison 2 et plus
     font.draw(g, it.milieu, w / 2, MARGIN, { align: 'center', color: MILIEU });   // le milieu, discret, en haut
+    if (it.boss) bossIcons(g, it.boss, w);
 
     // Pollen et combo : apparaissent d'un petit bond, au-dessus des graines et du score.
     if (it.pollen !== m.pollen) { if (it.pollen) m.pollenAt = t; m.pollen = it.pollen; }

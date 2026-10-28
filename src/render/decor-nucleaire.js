@@ -11,8 +11,8 @@
   'use strict';
   const FP = window.FP = window.FP || {};
   const TILE = 220, REF = 70;
-  const STAR = ['#a8c8a0', '#d8f0d0'], MOON = ['#a0c880', '#88b070'], AURORA = ['#3a8a5a', '#2a6a4a'], STEAM = ['#4a6e48', '#365a3a'];
-  const TOWER = ['#1e2a24', '#2a3830'], FENCE = ['#2a3430', '#3a4440'], SIGN = ['#e8c840', '#1a1a1a'];
+  const STAR = ['#a8c8a0', '#c2d8bb'], MOON = ['#a0c880', '#88b070'], AURORA = ['#3a8a5a', '#2a6a4a'], STEAM = ['#4a6e48', '#365a3a'];
+  const TOWER = ['#1e2a24', '#2a3830'], FENCE = ['#2a3430', '#3a4440'], SIGN = ['#d5b83b', '#1a1a1a'];
   const BARREL = ['#d8b830', '#a88a20'], POST = '#2a2a2a', GRASS = '#465a52';
   const CONCRETE = { body: '#2a2e34', light: '#3a3e44', dark: '#1a1d22', joint: '#1a1d22', rust: '#22262b' }, INNER = '#14171b', REBAR = '#5a4a3a', PEBBLE = ['#2a3a30', '#2a5a46'], BURIED = ['#5a5020', '#3a3416'];
   const GLOW = ['#3ab88a', '#5ad0a0', '#8af0c0'];   // vert d'eau radioactif

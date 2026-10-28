@@ -213,12 +213,12 @@
 
     // Moteur de boss (v4.12.0) : 4 tronçons accrochés tour à tour aux flancs, un point faible par tronçon, une trappe sous la pelouse.
     // segWidth : largeur d'un tronçon (part de l'écran) ; corridorK : élargissement du couloir sûr ; weakR / weakHit / weakOut : rayon dessiné,
-    // rayon de perçage, saillie hors du flanc ; top / bottom : zone du boss, de surfaceY + top à height - bottom ; trap : sous la pelouse.
+    // rayon de perçage, saillie hors du flanc, marge de la flèche au bord de l'écran ; top / bottom : zone du boss, de surfaceY + top à height - bottom ; trap : sous la pelouse.
     // defense : cycle (s), avertissement, coup, accélération par point percé, portée (part de la largeur libre), épaisseur, attache (part du haut du tronçon).
     // pierceBonus / bonus : points par point percé / par boss vaincu ; pierceShake : secousse au perçage.
     boss: {
       segments: 4, segWidth: .45, corridorK: 1.3,
-      weakR: 14, weakHit: 20, weakOut: 12,
+      weakR: 14, weakHit: 20, weakOut: 12, arrowMargin: 14,
       top: 70, bottom: 160,
       trap: { gap: 30, thick: 14 },
       defense: { period: 2.6, warn: .7, strike: .6, speedup: .2, reach: .5, thick: 14, mountK: .25 },
@@ -271,7 +271,7 @@
     text: {
       // Cartons des milieux (v4.9.0, ui/cards.js) ; noms, lignes et boss : FP.config.milieux.
       cards: {
-        milieu: 'MILIEU', saison: 'SAISON', boss: 'BOSS', pending: '(combat en préparation)', victory: 'BOSS VAINCU',
+        milieu: 'MILIEU', saison: 'SAISON', boss: 'BOSS', victory: 'BOSS VAINCU',
         won: { title: 'SITE RÉHABILITÉ', lines: ['Le site est officiellement déclaré réhabilité.', 'Les actionnaires vous remercient.'], next: 'Toucher pour la saison' }
       },
       ready: 'MAINTENIR POUR POUSSER',

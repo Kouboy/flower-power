@@ -10,7 +10,7 @@
   'use strict';
   const FP = window.FP = window.FP || {};
   const TILE = 220, REF = 70;
-  const HILL = '#2a2a1a', BITS = ['#6a6a4a', '#5a4a3a', '#4a5a4a', '#7a6a50'], CRANE = '#1e1e12', SMOKE = ['#5c5e2c', '#727234'], GULL = '#d8d4c0';
+  const HILL = '#2a2a1a', BITS = ['#6a6a4a', '#5a4a3a', '#4a5a4a', '#7a6a50'], CRANE = '#1e1e12', SMOKE = ['#5c5e2c', '#727234'], GULL = '#cbc7b4';
   const BAG = ['#1a1a1a', '#2e2e2e', '#c8b448'], TIRE = ['#141414', '#2a2a2a'], FRIDGE = ['#c8c4b0', '#9a9686', '#5a5a5a'];
   const LAYER = ['#2a2418', '#2f2511'], WASTE = ['#6a6a6a', '#8a7a5a', '#3a5a3a', '#4a6a4a', '#2a2a2a'], OOZE = ['#4a4a20', '#6a6a2a'];
   const palette = [HILL, ...BITS, CRANE, ...SMOKE, GULL, ...BAG, ...TIRE, ...FRIDGE, ...LAYER, ...WASTE, ...OOZE];

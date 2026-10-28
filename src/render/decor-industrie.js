@@ -10,7 +10,7 @@
   'use strict';
   const FP = window.FP = window.FP || {};
   const TILE = 220, REF = 70;
-  const S = '#1a1814', SL = '#2a2620', SMOKE = ['#3a3428', '#4a4232'], FLAME = ['#f0a848', '#f8d070'], BOX = '#6a5a3a';
+  const S = '#1a1814', SL = '#2a2620', SMOKE = ['#3a3428', '#4a4232'], FLAME = ['#f0a848', '#d0af5e'], BOX = '#6a5a3a';
   const PALLET = ['#6a5a3a', '#4a3e28'], BARREL = ['#7a3a1e', '#3a1a0c', '#9a5a2e'], RAIL = ['#5a5a5a', '#3a3022'];
   const PIPE = { body: '#4a3424', light: '#6a4a30', dark: '#2a1c12', joint: '#2a1c12', rust: '#7a4a24' }, OIL = ['#1e1a14', '#26201a'], GLINT = '#3a3830', SLAG = ['#2a2622', '#3a342c'];
   const palette = [S, SL, ...SMOKE, ...FLAME, BOX, ...PALLET, ...BARREL, ...RAIL, ...Object.values(PIPE), ...OIL, GLINT, ...SLAG];

@@ -268,3 +268,38 @@ FP.test('boss: saison 2, le boss de la friche est intact', () => {
   FP.assertEqual(JSON.stringify(s.bossFight.pierced), '[false,false,false,false]');
   FP.assertEqual(s.world.bossLevel.trap.solid.off, false);
 });
+
+// Rendu provisoire du boss (v4.12.0, render/boss.js) : flèche, dessin, teinte réservée aux points faibles.
+const bossView = (cam, pierced = []) => { const s = bossRun(440, 0); s.camera.y = cam; pierced.forEach(i => { s.bossFight.pierced[i] = true; }); return s; };
+FP.test('bossRender: flèche vers le prochain point faible hors écran, aucune s’il est à l’écran ou s’ils sont tous percés', () => {
+  const s = bossView(0), wk = s.world.bossLevel.weak, H = s.world.viewH;
+  s.camera.y = wk[0].y - H - 40;   // le point 0 est sous le bas de l'écran
+  let a = FP.bossRender.arrowFor(s);
+  FP.assertEqual(a.dir, 'down'); FP.assert(a.x >= 0 && a.x <= s.world.width && a.y >= 0 && a.y <= H, 'dans l’écran');
+  s.camera.y = wk[0].y + 40;   // le point 0 est au-dessus
+  a = FP.bossRender.arrowFor(s); FP.assertEqual(a.dir, 'up');
+  s.camera.y = wk[0].y - H / 2; FP.assertEqual(FP.bossRender.arrowFor(s), null);   // à l'écran
+  s.bossFight.pierced.fill(true, 0, 3); s.camera.y = wk[3].y + H + 50;   // seul le dernier reste : il est au-dessus de l'écran
+  a = FP.bossRender.arrowFor(s); FP.assertEqual(a.dir, 'up'); FP.assertEqual(a.x, Math.min(s.world.width - FP.config.boss.arrowMargin, Math.max(FP.config.boss.arrowMargin, wk[3].x)));
+  s.bossFight.pierced.fill(true); FP.assertEqual(FP.bossRender.arrowFor(s), null);
+  const n = FP.state.createRun(3, { W: 440, H: 783 }); FP.level.startRun(n); FP.assertEqual(FP.bossRender.arrowFor(n), null);
+});
+FP.test('bossRender: dessine sans erreur, points faibles dans la teinte réservée', () => {
+  for (let milieu = 0; milieu < 4; milieu++) {
+    const s = bossRun(440, milieu), wk = s.world.bossLevel.weak[1];
+    s.camera.y = wk.y - s.world.viewH / 2; s.time = 1.3;
+    const g = recCtx(); FP.bossRender.draw(g, s);
+    FP.assert(g.rects.length > 50, 'rien dessiné');
+    FP.assert(g.rects.some(r => r.c === FP.palette.boss.weak[0]), 'point faible absent (milieu ' + milieu + ')');
+    for (const t of [0, .4, .9, 1.5, 2.2]) { s.time = t; s.bossFight.pierced[1] = t > 1; FP.bossRender.draw(recCtx(), s); }
+    s.world.bossLevel.trap.solid.off = true; s.camera.y = 0; FP.bossRender.draw(recCtx(), s);
+  }
+  FP.bossRender.draw(recCtx(), FP.state.createRun(3, { W: 440, H: 783 }));   // niveau normal : rien, sans erreur
+});
+FP.test('palette: le blanc-jaune des points faibles n’est utilisé par aucun décor ni obstacle', () => {
+  const rgb = (h) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)), dist = (a, b) => Math.hypot(...rgb(a).map((v, i) => v - rgb(b)[i]));
+  const tones = [...FP.palette.decor(), ...Object.values(FP.decor).flatMap(d => d.palette || [])];
+  for (const c of FP.palette.boss.weak) for (const t of tones) { FP.assert(c !== t, c + ' utilisé par un décor'); FP.assert(dist(c, t) > 60, c + ' trop proche de ' + t); }
+  const all = [...FP.palette.boss.weak, ...FP.palette.boss.trap, ...FP.palette.boss.jet, ...FP.palette.boss.glow, ...Object.values(FP.palette.boss.milieux).flatMap(m => Object.values(m))];
+  for (const c of all) for (const d of FP.palette.danger) FP.assert(dist(c, d) >= 60, c + ' trop proche du danger ' + d);
+});
