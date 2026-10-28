@@ -33,3 +33,4 @@ function checkDecor(id) {
 }
 FP.test('decor: friche', () => checkDecor('friche'));
 FP.test('decor: industrie', () => checkDecor('industrie'));
+FP.test('decor: décharge', () => checkDecor('decharge'));
