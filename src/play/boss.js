@@ -1,7 +1,10 @@
-// play/boss.js — les défenses du boss : chaque tronçon prévient, frappe, se repose ; seul le coup est un obstacle.
-// Lit     : state.time, state.world.bossLevel.defenses, state.bossFight.pierced, FP.config.boss.defense.
-// Écrit   : solide de chaque défense : off, collision (repère local, le long de +x), a, broadR.
-// Expose  : FP.boss.stageAt(i, t, pierced) → { stage: 'rest' | 'warn' | 'strike', k } (pur), FP.boss.update(state, dt).
+// play/boss.js — le boss : ses défenses (chaque tronçon prévient, frappe, se repose ; seul le coup est un obstacle), le perçage des points faibles, la trappe.
+// Lit     : state.time, state.mode, state.plant.tip, state.world.bossLevel.{defenses,weak,trap}, state.bossFight.pierced, FP.config.boss.
+// Écrit   : solide de chaque défense : off, collision (repère local, le long de +x), a, broadR ; state.bossFight (seul à l'écrire) ;
+//           trap.solid.off (ouverture) ; state.camera.shake, state.events (bossPierce, bossTrap) ; le score, par FP.scoring.awardFlat.
+// Expose  : FP.boss.stageAt(i, t, pierced) → { stage: 'rest' | 'warn' | 'strike', k } (pur), FP.boss.update(state, dt),
+//           FP.boss.reset(state) (nouveau boss : plus aucun point percé).
+// Les points percés survivent à une mort (le niveau se régénère avec eux) ; seul reset les remet à zéro.
 // Le cycle accélère de `speedup` par point percé ; la défense i est décalée de i quarts de période (jamais toutes en coup ensemble).
 // Forme : piston = rectangle qui sort de la face ; jet = rectangle fin, plein dès k = .2 ; bras = barre qui pivote de la verticale à l'horizontale.
 (function () {
@@ -31,9 +34,25 @@
     return { a, poly: df.side < 0 ? rect(0, reach, -d.thick, 0) : rect(0, reach, 0, d.thick) };
   }
 
+  // La pointe passe à moins de weakHit d'un point faible intact : il est percé (une fois) ; le quatrième ouvre la trappe.
+  function pierce(state, bl) {
+    const c = FP.config.boss, tip = state.plant.tip, done = state.bossFight.pierced;
+    for (const w of bl.weak) {
+      if (done[w.i] || Math.hypot(tip.x - w.x, tip.y - w.y) >= c.weakHit) continue;
+      done[w.i] = true;
+      state.events.push({ type: 'bossPierce', i: w.i, x: w.x, y: w.y });
+      FP.scoring.awardFlat(state, w.x, w.y, c.pierceBonus);
+      state.camera.shake = Math.max(state.camera.shake, c.pierceShake);
+    }
+    if (done.every(Boolean) && !bl.trap.solid.off) { bl.trap.solid.off = true; state.events.push({ type: 'bossTrap' }); }
+  }
+
+  function reset(state) { state.bossFight.pierced = Array(FP.config.boss.segments).fill(false); }
+
   function update(state) {
     const bl = state.world.bossLevel;
     if (!bl) return;
+    if (state.mode === 'playing') pierce(state, bl);
     const pierced = state.bossFight.pierced.filter(Boolean).length;
     for (const df of bl.defenses) {
       const o = df.solid, s = stageAt(df.i, state.time, pierced);
@@ -45,5 +64,5 @@
     }
   }
 
-  FP.boss = { stageAt, update };
+  FP.boss = { stageAt, update, reset };
 })();

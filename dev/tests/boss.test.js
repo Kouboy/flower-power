@@ -179,3 +179,92 @@ FP.test('boss: le bras au repos ne touche pas le couloir, il y entre à la fin d
     FP.assert(Math.abs(reachOf(start + S - .001) - df.reach) < df.reach * .02 + B().defense.thick, 'fin du coup : à l’horizontale');
   }
 });
+
+// Perçage, trappe, persistance, victoire (v4.12.0).
+const bossFlow = () => { const s = flowRun(); for (let i = 0; i < 3; i++) nextBloom(s); FP.plant.launch(s); s.events.length = 0; return s; };
+const tipOn = (s, i) => { const w = s.world.bossLevel.weak[i]; s.plant.tip = { x: w.x, y: w.y }; };
+const seen = (s, type) => s.events.filter(e => e.type === type);
+const pierceAll = (s) => { for (let i = 0; i < B().segments; i++) { tipOn(s, i); FP.boss.update(s, 0); } };
+
+FP.test('boss: la pointe perce un point faible une seule fois', () => {
+  const s = bossFlow(), eco = s.score.eco;
+  tipOn(s, 1); FP.boss.update(s, 0);
+  FP.assertEqual(JSON.stringify(s.bossFight.pierced), '[false,true,false,false]');
+  const ev = seen(s, 'bossPierce'), w = s.world.bossLevel.weak[1];
+  FP.assertEqual(ev.length, 1); FP.assertEqual(ev[0].i, 1); FP.assertEqual(ev[0].x, w.x); FP.assertEqual(ev[0].y, w.y);
+  FP.assertEqual(s.score.eco - eco, B().pierceBonus * s.run.saison);
+  FP.assert(s.camera.shake >= B().pierceShake, 'secousse');
+  s.events.length = 0; FP.boss.update(s, 0);
+  FP.assertEqual(s.events.length, 0); FP.assertEqual(s.score.eco - eco, B().pierceBonus * s.run.saison);
+});
+
+FP.test('boss: hors du rayon de perçage, ou hors jeu, rien ne perce', () => {
+  const s = bossFlow(), w = s.world.bossLevel.weak[0];
+  s.plant.tip = { x: w.x + B().weakHit + 1, y: w.y }; FP.boss.update(s, 0);
+  FP.assertEqual(s.bossFight.pierced.some(Boolean), false);
+  tipOn(s, 0); s.mode = 'dying'; FP.boss.update(s, 0);
+  FP.assertEqual(s.bossFight.pierced.some(Boolean), false); FP.assertEqual(seen(s, 'bossPierce').length, 0);
+});
+
+FP.test('boss: 4 points percés → la trappe s’ouvre', () => {
+  const s = bossFlow(), tr = s.world.bossLevel.trap.solid;
+  for (let i = 0; i < 3; i++) { tipOn(s, i); FP.boss.update(s, 0); }
+  FP.assertEqual(tr.off, false); FP.assertEqual(seen(s, 'bossTrap').length, 0);
+  tipOn(s, 3); FP.boss.update(s, 0); FP.boss.update(s, 0);
+  FP.assertEqual(tr.off, true); FP.assertEqual(seen(s, 'bossTrap').length, 1);
+});
+
+FP.test('boss: trappe fermée atteinte → mort « la trappe est fermée »', () => {
+  const s = bossFlow(), tr = s.world.bossLevel.trap;
+  s.plant.tip = { x: 220, y: (tr.y0 + tr.y1) / 2 };
+  FP.collision.update(s); FP.flow.update(s, 0);
+  const d = seen(s, 'death');
+  FP.assertEqual(d.length, 1); FP.assertEqual(d[0].kind, 'trap');
+  FP.assertEqual(s.flow.overReason, FP.config.text.death.trap);
+});
+
+FP.test('boss: une mort garde les points percés et la trappe ouverte', () => {
+  const s = bossFlow(); pierceAll(s);
+  s.plant.reserves = 3; killNow(s);
+  FP.assertEqual(s.mode, 'ready');
+  FP.assertEqual(JSON.stringify(s.bossFight.pierced), '[true,true,true,true]');
+  FP.assertEqual(s.world.bossLevel.trap.solid.off, true);
+});
+
+FP.test('boss: la dernière chance garde les points percés', () => {
+  const s = bossFlow(); tipOn(s, 0); FP.boss.update(s, 0); tipOn(s, 2); FP.boss.update(s, 0);
+  s.plant.reserves = 1; killNow(s);
+  FP.assertEqual(s.mode, 'shop');
+  s.plant.reserves = 1; s.shop = null; FP.flow.afterShop(s, 'last');
+  FP.assertEqual(s.mode, 'ready');
+  FP.assertEqual(JSON.stringify(s.bossFight.pierced), '[true,false,true,false]');
+  FP.assertEqual(s.world.bossLevel.trap.solid.off, false);
+});
+
+FP.test('boss: victoire — bonus 1 500 × saison, carton BOSS VAINCU, milieu suivant', () => {
+  const s = bossFlow(); pierceAll(s); s.events.length = 0;
+  const eco = s.score.eco;
+  bloomNow(s);
+  const ev = seen(s, 'bossDown');
+  FP.assertEqual(ev.length, 1); FP.assertEqual(ev[0].x, 220); FP.assertEqual(ev[0].y, s.world.surfaceY);
+  FP.assertEqual(s.score.eco - eco, B().bonus * s.run.saison);
+  FP.assertEqual(s.run.card.kind, 'victory');
+  FP.assertEqual(JSON.stringify(s.bossFight.pierced), '[true,true,true,true]');
+  advance(s, 8); skipShop(s);
+  FP.assertEqual(s.run.milieu, 1);
+  FP.assertEqual(JSON.stringify(s.bossFight.pierced), '[false,false,false,false]');
+});
+
+FP.test('boss: saison 2, le boss de la friche est intact', () => {
+  const s = flowRun();
+  for (let i = 0; i < 15; i++) nextBloom(s);
+  s.bossFight.pierced = [true, true, true, true];   // le boss du réacteur est tombé tout percé
+  FP.plant.launch(s); bloomNow(s);
+  for (let i = 0; i < 900 && s.mode !== 'won'; i++) FP.flow.update(s, 1 / 60);
+  FP.assertEqual(s.mode, 'won'); FP.assertEqual(s.run.saison, 2);
+  advance(s, 2); s.input = { ...s.input, pressed: true }; FP.flow.update(s, 1 / 60); s.input = { ...s.input, pressed: false };
+  for (let i = 0; i < 3; i++) nextBloom(s);
+  FP.assert(s.run.boss && s.run.milieu === 0 && s.run.saison === 2, JSON.stringify(s.run));
+  FP.assertEqual(JSON.stringify(s.bossFight.pierced), '[false,false,false,false]');
+  FP.assertEqual(s.world.bossLevel.trap.solid.off, false);
+});
