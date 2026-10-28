@@ -38,8 +38,10 @@ src/
 │   ├── px.js         ✅ boîte à outils pixel : rect, line, disc, ring, dither, downscale, posterize, outline
 │   ├── view.js       ✅ canvas, DPR, 9:16 ; toile monde à mi-résolution (FP.view.art)
 │   ├── sprites.js    ✅ chargement des PNG, FP.sprites.get(clé)
-│   ├── sky.js        ✅ ciel de crépuscule pollué : bandes tramées, soleil voilé, usines, smog qui dérive
-│   ├── soil.js       ✅ pelouse et trois strates tramées (humus, argile, pierre), détails clairsemés, en cache
+│   ├── decor-tube.js  ✅ conduites usées (coudes, cassures, rouille, galeries effondrées) pour les décors enterrés (FP.decorTube)
+│   ├── decor-friche.js, decor-industrie.js, decor-decharge.js, decor-nucleaire.js ✅ décor de chaque milieu (v4.11.0) : astre et météo, horizon, accessoires de surface, décor enterré, petites animations (FP.decor[id], contrat commun)
+│   ├── sky.js        ✅ ciel : bandes tramées de la nuance du niveau, puis le ciel et l'horizon du décor du milieu (deux caches)
+│   ├── soil.js       ✅ pelouse et trois strates tramées (humus, argile, pierre), détails clairsemés, accessoires et décor enterré du milieu, en cache ; petites animations du décor à l'écran
 │   ├── obstacles.js  ✅ sprites ramenés sur la grille (8 niveaux par canal, contour), ancrage tramé
 │   ├── coins.js      ✅ jetons ÉcoCrédits™ rouillés qui tournent (FP.coinsRender), éclats au ramassage
 │   ├── hazards.js    ✅ nappes tramées (base + pellicule), limaces et sillons, anneau d'exposition
@@ -161,7 +163,7 @@ Spec : `docs/superpowers/specs/2026-10-22-interface-pixel-design.md` ; maquettes
 
 ## Ordre de chargement
 
-`index.html` charge : `assets/obstacles/manifest.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `hazards.js`, `src/play/plant.js`, `src/world/collision.js`, `src/play/flow.js`, `graze.js`, `scoring.js`, `powerups.js`, `src/play/camera.js`, `src/render/palette.js`, `px.js`, `view.js`, `sprites.js`, `soil.js`, `sky.js`, `obstacles.js`, `hazards.js`, `powerups.js`, `faces.js`, `cast.js`, `cast2.js`, `hero.js`, `plant.js`, `effects.js`, `flowers.js`, `particles.js`, `drillfx.js`, `mound.js`, `src/ui/font.js`, `hud.js`, `shout.js`, `cheer.js`, `cards.js`, `logo.js`, `title.js`, `certificate.js`, `ui.js`, `src/render/frame.js`, `src/audio/synth.js`, `score.js`, `songs.js`, `songs-industrie.js`, `songs-decharge.js`, `songs-nucleaire.js`, `sequencer.js`, `music.js`, `sfx.js`, `audio.js`, `src/debug/perf.js`, `flydebug.js`, `src/core/loop.js`, `src/ui/input.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` (pour le catalogue).
+`index.html` charge : `assets/obstacles/manifest.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `hazards.js`, `src/play/plant.js`, `src/world/collision.js`, `src/play/flow.js`, `graze.js`, `scoring.js`, `powerups.js`, `src/play/camera.js`, `src/render/palette.js`, `decor-tube.js`, `decor-friche.js`, `decor-industrie.js`, `decor-decharge.js`, `decor-nucleaire.js`, `px.js`, `view.js`, `sprites.js`, `soil.js`, `sky.js`, `obstacles.js`, `hazards.js`, `powerups.js`, `faces.js`, `cast.js`, `cast2.js`, `hero.js`, `plant.js`, `effects.js`, `flowers.js`, `particles.js`, `drillfx.js`, `mound.js`, `src/ui/font.js`, `hud.js`, `shout.js`, `cheer.js`, `cards.js`, `logo.js`, `title.js`, `certificate.js`, `ui.js`, `src/render/frame.js`, `src/audio/synth.js`, `score.js`, `songs.js`, `songs-industrie.js`, `songs-decharge.js`, `songs-nucleaire.js`, `sequencer.js`, `music.js`, `sfx.js`, `audio.js`, `src/debug/perf.js`, `flydebug.js`, `src/core/loop.js`, `src/ui/input.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` (pour le catalogue).
 
 `dev/check.html` charge aussi les fichiers `src/audio/*`, `src/debug/perf.js`, `flydebug.js` et `src/ui/input.js` (sans canvas ni paramètre d'URL : `FP.perf` et `FP.flydebug` valent `null`, le son reste muet, le pointeur n'est pas écouté).
 
@@ -170,7 +172,7 @@ Spec : `docs/superpowers/specs/2026-10-22-interface-pixel-design.md` ; maquettes
 - Une partie traverse les quatre milieux de `FP.config.milieux` (friche, zone industrielle, décharge, site nucléaire). Chacun dure `FP.config.run.steps` (3) pousses réussies — une éclosion compte pour une, pollen ou non ; une mort ne compte pas —, puis le bon de commande s'ouvre et le niveau suivant est celui du boss (`state.run.boss`). L'éclore bat le boss ; `play/flow.js` passe alors au milieu suivant avant de générer le niveau. Après le quatrième : écran de fin (mode `won`) la première fois, puis saison suivante (gains × `saison`).
 - La boutique ne s'ouvre plus qu'avant un boss et à la dernière chance.
 - `world/level.js` tire les obstacles dans les tables de bande restreintes aux familles du milieu (`FP.level.tableFor`) et écrit `world.milieu` ; le T-Rex ne vit qu'au site nucléaire.
-- Le décor d'un milieu (ciel, strates, pelouse) est dans `FP.palette.milieux[id]` ; `render/sky.js`, `soil.js`, `mound.js`, `plant.js` et `obstacles.js` lisent `world.milieu` (les caches du ciel, de la terre et des anciennes tiges l'ont dans leur clé).
+- Les couleurs d'un milieu (ciel, strates, pelouse) sont dans `FP.palette.milieux[id]`, ses dessins dans `FP.decor[id]` (`render/decor-*.js`, v4.11.0, spec `docs/superpowers/specs/2026-10-28-decors-milieux-design.md`) : `sky.js` peint son astre et son horizon, `soil.js` ses accessoires et son décor enterré (placements tirés de la graine du niveau) ; `render/sky.js`, `soil.js`, `mound.js`, `plant.js` et `obstacles.js` lisent `world.milieu` (les caches du ciel, de la terre et des anciennes tiges l'ont dans leur clé).
 - `ui/cards.js` dessine les cartons (`state.run.card` : `milieu`, `boss`, `victory`) et l'écran de fin ; le HUD montre le milieu et le multiplicateur de saison, le certificat les sites réhabilités, le titre le record de progression (`FP.scoring.records.reach`).
 
 ## Dangers diffus
@@ -215,7 +217,7 @@ Spec : `docs/superpowers/specs/2026-10-22-interface-pixel-design.md` ; maquettes
 
 `bloom` enchaîne trois temps (`flow.stage`) : `show` (1,55 s, les fleurs éclosent), `fadeOut` (.46 s, voile noir), nouveau niveau sous le noir, `fadeIn` (.48 s), puis `ready` (événement `ready`).
 
-Pour ajouter un fichier : une ligne `<script>` après ses dépendances (celles listées dans son en-tête « Lit »), avant `ui/menu.js`. Un fichier de simulation (`core/`, `world/`, `play/`) s'ajoute aussi à `dev/check.html`, avant `harness.js`, avec son fichier de tests dans `dev/tests/`. Les fichiers `render/` et `ui/menu.js` ne sont pas chargés par `check.html` (ils ont besoin du DOM), sauf `palette.js`, `px.js`, `faces.js`, `cast.js`, `cast2.js`, `hero.js`, `flowers.js`, `soil.js`, `plant.js`, `drillfx.js`, `mound.js`, `obstacles.js` et les `ui/*` purs (`font`, `hud`, `shout`, `logo`, `title`, `certificate`), qui ne touchent pas au DOM au chargement et sont testés.
+Pour ajouter un fichier : une ligne `<script>` après ses dépendances (celles listées dans son en-tête « Lit »), avant `ui/menu.js`. Un fichier de simulation (`core/`, `world/`, `play/`) s'ajoute aussi à `dev/check.html`, avant `harness.js`, avec son fichier de tests dans `dev/tests/`. Les fichiers `render/` et `ui/menu.js` ne sont pas chargés par `check.html` (ils ont besoin du DOM), sauf `palette.js`, `decor-*.js`, `px.js`, `faces.js`, `cast.js`, `cast2.js`, `hero.js`, `flowers.js`, `soil.js`, `plant.js`, `drillfx.js`, `mound.js`, `obstacles.js` et les `ui/*` purs (`font`, `hud`, `shout`, `logo`, `title`, `certificate`), qui ne touchent pas au DOM au chargement et sont testés.
 
 ## Vérification
 
