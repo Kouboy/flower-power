@@ -212,14 +212,14 @@
     run: { steps: 3 },   // pousses réussies par milieu avant son boss
 
     // Moteur de boss (v4.12.0) : 4 tronçons accrochés tour à tour aux flancs, un point faible par tronçon, une trappe sous la pelouse.
-    // segWidth : largeur d'un tronçon (part de l'écran, > .5 : le couloir zigzague) ; thickK : épaisseur d'un tronçon (part de la zone / segments),
+    // segWidth : largeur d'un tronçon (part de l'écran, > .5 : le couloir zigzague) ; spineW : largeur de la colonne qui les relie le long de chaque bord ; thickK : épaisseur d'un tronçon (part de la zone / segments),
     // le reste va aux intervalles ; crossK : pente d'un changement de flanc (part de maxSlope) ; crossUp : part de la montée droite d'un intervalle
     // gardée au-dessus du coin quitté (le reste sous le coin suivant) ; corridorK : élargissement du couloir sûr ; weakR / weakHit / weakOut : rayon dessiné,
     // rayon de perçage, saillie hors du flanc, marge de la flèche au bord de l'écran ; top / bottom : zone du boss, de surfaceY + top à height - bottom ; trap : sous la pelouse.
     // defense : cycle (s), avertissement, coup, accélération par point percé, portée (part de la largeur libre), épaisseur, attache (part du haut du tronçon).
     // pierceBonus / bonus : points par point percé / par boss vaincu ; pierceShake : secousse au perçage.
     boss: {
-      segments: 4, segWidth: .53, thickK: .225, crossK: .8, crossUp: .6, corridorK: 1.3,
+      segments: 4, segWidth: .53, spineW: .06, thickK: .225, crossK: .8, crossUp: .6, corridorK: 1.3,
       weakR: 14, weakHit: 20, weakOut: 12, arrowMargin: 14,
       top: 70, bottom: 160,
       trap: { gap: 30, thick: 14 }, trapSlide: .6,

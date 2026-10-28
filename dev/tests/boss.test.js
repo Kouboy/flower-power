@@ -113,7 +113,7 @@ FP.test('bossLevel: une défense par tronçon, montée sur sa face, de la paire 
       FP.assertEqual(df.type, pair[i % 2]); FP.assertEqual(df.side, seg.side);
       FP.assertEqual(df.x, seg.side < 0 ? seg.x1 : seg.x0);
       FP.assert(Math.abs(df.y - (seg.y0 + d.mountK * (seg.y1 - seg.y0))) < 1e-6, 'à mountK du haut');
-      FP.assert(Math.abs(df.reach - d.reach * (w.width - Math.abs(seg.x1 - seg.x0))) < 1e-6, 'portée');
+      FP.assert(Math.abs(df.reach - d.reach * (w.width - Math.abs(seg.x1 - seg.x0) - B().spineW * w.width)) < 1e-6, 'portée');
       FP.assertEqual(df.solid.kind, 'defense'); FP.assertEqual(df.solid.off, true); FP.assertEqual(df.solid.boss, true);
       FP.assert(w.solids.includes(df.solid));
     });
@@ -171,7 +171,7 @@ FP.test('boss: jamais toutes les défenses en coup au même instant', () => {
   }
 });
 
-FP.test('boss: une défense n’est un obstacle que pendant son coup, et laisse la moitié du couloir libre', () => {
+FP.test('boss: une défense n’est un obstacle que pendant son coup, et laisse la moitié de l’espace libre jusqu’à la colonne d’en face', () => {
   for (const milieu of [0, 1, 2, 3]) {
     const s = bossRun(440, milieu), bl = s.world.bossLevel;
     let seen = 0;
@@ -182,7 +182,7 @@ FP.test('boss: une défense n’est un obstacle que pendant son coup, et laisse 
         FP.assertEqual(o.off, st !== 'strike', `off ${df.type} t=${t}`);
         if (o.off) continue;
         seen++;
-        const free = s.world.width - Math.abs(bl.segments[df.i].x1 - bl.segments[df.i].x0);
+        const free = s.world.width - Math.abs(bl.segments[df.i].x1 - bl.segments[df.i].x0) - B().spineW * s.world.width;
         for (const [px, py] of o.collision) {
           const p = FP.geom.toWorld(o, px, py), out = (p.x - df.x) * -df.side;
           FP.assert(out <= df.reach + 1e-6 && df.reach <= free / 2 + 1e-6, `${df.type} sort de ${out}`);

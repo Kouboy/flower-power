@@ -41,3 +41,33 @@ FP.test('bossLevel: un doigt qui suit le couloir perce les 4 points et atteint l
     FP.assert(s.plant.tip.y <= s.world.bossLevel.trap.y0 + 1, 'pointe sous la trappe ' + at);
   }
 });
+
+FP.test('bossLevel: une colonne le long de chaque bord relie les tronçons', () => {
+  for (const W of [300, 440]) {
+    const s = FP.state.createRun(7, { W, H: Math.round(W * 16 / 9) });
+    FP.level.startRun(s); s.level = 5; s.run.boss = true; FP.level.generate(s);
+    const bl = s.world.bossLevel, sp = bl.spines;
+    FP.assertEqual(sp.length, 2, 'deux colonnes');
+    for (const side of [-1, 1]) {
+      const c = sp.find(k => k.side === side), mine = bl.segments.filter(g => g.side === side);
+      FP.assert(c, 'colonne du côté ' + side);
+      FP.assert(Math.abs((c.x1 - c.x0) - FP.config.boss.spineW * W) < 1e-6, 'largeur');
+      FP.assertEqual(side < 0 ? c.x0 : c.x1, side < 0 ? 0 : W, 'collée au bord');
+      for (const g of mine) FP.assert(c.y0 <= g.y1 && c.y1 >= g.y0, 'touche le tronçon');
+      FP.assert(c.y0 === Math.min(...mine.map(g => g.y0)) && c.y1 === Math.max(...mine.map(g => g.y1)), 'du plus haut au plus bas');
+      FP.assert(s.world.solids.includes(c.solid) && c.solid.boss && c.solid.kind === 'boss' && !c.solid.flyoverEligible, 'solide du boss');
+    }
+  }
+});
+
+FP.test('bossLevel: le couloir reste loin des colonnes', () => {
+  for (const W of [300, 360, 440]) for (const level of [3, 6, 10]) for (let milieu = 0; milieu < 4; milieu++) {
+    const s = FP.state.createRun(7, { W, H: Math.round(W * 16 / 9) });
+    FP.level.startRun(s); s.level = level; s.run.milieu = milieu; s.run.boss = true; FP.level.generate(s);
+    const P = s.world.safePath, r = s.world.safeRadius, at = `W=${W} niveau ${level} milieu ${milieu}`;
+    for (const c of s.world.bossLevel.spines) for (let i = 1; i < P.length; i++) for (let k = 0; k <= 20; k++) {
+      const x = P[i - 1].x + (P[i].x - P[i - 1].x) * k / 20, y = P[i - 1].y + (P[i].y - P[i - 1].y) * k / 20;
+      FP.assert(FP.collision.distanceTo(c.solid, x, y) >= r, `colonne ${c.side} trop près en (${x | 0},${y | 0}) ` + at);
+    }
+  }
+});

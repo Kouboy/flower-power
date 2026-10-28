@@ -1,4 +1,4 @@
-// render/boss.js — le boss, provisoire (dessiné en blocs par le code, sans image) : tronçons, panneau au nom du boss, points faibles, défenses, trappe, flèche.
+// render/boss.js — le boss, provisoire (dessiné en blocs par le code, sans image) : tronçons et colonnes de liaison, panneau au nom du boss, points faibles, défenses, trappe, flèche.
 // Lit     : state.{time,camera.y,run.milieu,bossFight.{pierced,phase}}, state.plant.{tip,seed}, state.world.{width,viewH,bossLevel}, les solides de défense (x, y, a, collision : leur forme en cours),
 //           FP.boss.stageAt, FP.camera.{toScreen,toWorld}, FP.config.{boss (dont trapSlide),milieux}, trap.openedAt, FP.palette.boss, FP.px, FP.font (au dessin seulement, jamais au chargement), FP.math.clamp.
 // Écrit   : rien dans l'état (la toile reçue uniquement) ; l'ouverture de la trappe se déduit de state.time - trap.openedAt.
@@ -40,7 +40,7 @@
     }
   }
 
-  // Tronçon : corps, joints de tôle, ombre et contour côté couloir, rivets, plaques de rouille et leurs coulées, coulures luisantes.
+  // Tronçon ou colonne (même bloc, même graine de motif) : corps, joints de tôle, ombre et contour côté couloir, rivets, plaques de rouille et leurs coulées, coulures luisantes.
   function segment(g, v, seg, i, M) {
     const { px } = FP, x0 = v.ax(seg.x0), x1 = v.ax(seg.x1), y0 = v.ay(seg.y0), y1 = v.ay(seg.y1), w = x1 - x0, h = y1 - y0, r = lcg(977 * (i + 1));
     const faceX = seg.side < 0 ? x1 : x0, inner = seg.side < 0 ? x1 - 4 : x0 + 3;
@@ -53,11 +53,11 @@
     px.rect(g, seg.side < 0 ? x1 - 1 : x0, y0, 1, h, M.edge);
     for (let x = x0 + 5; x < x1 - 3; x += 9) { px.rect(g, x, y0 + 4, 2, 2, M.rivet); px.rect(g, x, y1 - 7, 2, 2, M.rivet); }
     for (let k = 0; k < 7; k++) {
-      const rx = x0 + 4 + Math.floor(r() * (w - 20)), ry = y0 + 6 + Math.floor(r() * (h - 24)), rw = 4 + Math.floor(r() * 9), rh = 2 + Math.floor(r() * 4);
+      const rx = x0 + 4 + Math.floor(r() * Math.max(1, w - 20)), ry = y0 + 6 + Math.floor(r() * Math.max(1, h - 24)), rw = Math.min(4 + Math.floor(r() * 9), Math.max(2, w - 8)), rh = 2 + Math.floor(r() * 4);
       px.rect(g, rx, ry, rw, rh, M.rust); px.rect(g, rx + 1 + Math.floor(r() * (rw - 2)), ry + rh, 1, 3 + Math.floor(r() * 7), M.rust);
     }
     for (let k = 0; k < 5; k++) {
-      const dx = x0 + 6 + Math.floor(r() * (w - 14)), len = 5 + Math.floor(r() * 10);
+      const dx = x0 + 6 + Math.floor(r() * Math.max(1, w - 14)), len = 5 + Math.floor(r() * 10);
       px.rect(g, dx, y0 + 2, 2, len, M.drip); px.rect(g, dx, y0 + 2 + len, 2, 1, M.light);
     }
   }
@@ -165,6 +165,7 @@
     const v = { cam, ax: px.toArt, ay: (y) => px.toArt(y) - cam };
     const M = FP.palette.boss.milieux[FP.config.milieux[state.run.milieu].id], pierced = state.bossFight.pierced;
     const seen = (y0, y1, pad = 0) => y1 >= top - pad && y0 <= top + H + pad;
+    bl.spines.forEach((sp, i) => { if (seen(sp.y0, sp.y1)) segment(g, v, sp, i + 7, M); });
     bl.segments.forEach((seg, i) => { if (seen(seg.y0, seg.y1)) segment(g, v, seg, i, M); });
     const roof = bl.segments[bl.segments.length - 1];
     if (seen(roof.y0, roof.y1)) plate(g, v, roof, FP.config.milieux[state.run.milieu].boss.name);

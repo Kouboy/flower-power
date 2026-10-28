@@ -1,8 +1,8 @@
-// world/boss.js — le niveau de boss : 4 tronçons accrochés tour à tour aux flancs, leurs points faibles, leurs défenses, la trappe.
+// world/boss.js — le niveau de boss : 4 tronçons accrochés tour à tour aux flancs, reliés par une colonne le long de chaque bord, leurs points faibles, leurs défenses, la trappe.
 // Lit     : state.{seed,level,rng (non consommé)}, state.run.{saison,milieu}, state.bossFight.pierced, state.world.{width,height,surfaceY},
 //           FP.config.{boss,level.{safePath,toxics},plant.seedOffset,milieux}, FP.createRng, FP.level.{makeToxic,distToSafePath}, FP.coins.place.
 // Écrit   : state.world.{bossLevel,solids,toxics,leaks,bonuses,safePath,safeRadius} ; puis FP.coins.place écrit state.world.{coins,chains}.
-//           bossLevel = { segments: [{ side, x0, x1, y0, y1, solid }], weak: [{ i, x, y }], defenses: [{ i, type, side, x, y, reach, solid }], trap: { y0, y1, openedAt (null tant que fermée, -Infinity si déjà ouverte à la génération), solid } }.
+//           bossLevel = { segments: [{ side, x0, x1, y0, y1, solid }], spines: [{ side, x0, x1, y0, y1, solid }] (colonne par bord, spineW de la largeur), weak: [{ i, x, y }], defenses: [{ i, type, side, x, y, reach, solid }], trap: { y0, y1, openedAt (null tant que fermée, -Infinity si déjà ouverte à la génération), solid } }.
 // Expose  : FP.bossLevel.generate(state).
 // Graine propre : empreinte de (state.seed, saison, milieu), jamais state.rng : le niveau est le même d'une tentative à l'autre.
 // Solides du boss : { kind: 'boss' | 'defense' | 'trap', boss: true, x, y, a: 0, flip: 1, collision (local), broadR, flyoverEligible: false, grazeRadius: 0, off }.
@@ -58,6 +58,17 @@
     return segments;
   }
 
+  // Colonne le long de chaque bord utilisé : du bas du tronçon le plus bas au haut du plus haut de ce flanc, spineW de la largeur ; elle relie les tronçons.
+  function buildSpines(world, c, segments) {
+    const w = world.width * c.spineW;
+    return [-1, 1].map(side => {
+      const mine = segments.filter(s => s.side === side);
+      if (!mine.length) return null;
+      const y0 = Math.min(...mine.map(s => s.y0)), y1 = Math.max(...mine.map(s => s.y1)), x0 = side < 0 ? 0 : world.width - w;
+      return { side, x0, x1: x0 + w, y0, y1, solid: makeSolid('boss', x0 + w / 2, (y0 + y1) / 2, rect(w / 2, (y1 - y0) / 2), false) };
+    }).filter(Boolean);
+  }
+
   const faceX = (seg) => (seg.side < 0 ? seg.x1 : seg.x0);
 
   function buildWeak(c, segments) {
@@ -65,11 +76,11 @@
   }
 
   function buildDefenses(world, c, segments, milieuId) {
-    const d = c.defense, pair = c.pairs[milieuId];
+    const d = c.defense, spine = world.width * c.spineW, pair = c.pairs[milieuId];
     return segments.map((seg, i) => {
       const x = faceX(seg), y = seg.y0 + d.mountK * (seg.y1 - seg.y0);
       return {
-        i, type: pair[i % 2], side: seg.side, x, y, reach: d.reach * (world.width - (seg.x1 - seg.x0)),
+        i, type: pair[i % 2], side: seg.side, x, y, reach: d.reach * (world.width - (seg.x1 - seg.x0) - spine),
         solid: makeSolid('defense', x, y, rect(1, 1), true)   // au repos : un point à l'attache (play/boss.js l'anime)
       };
     });
@@ -124,8 +135,9 @@
     const milieuId = FP.config.milieux[state.run.milieu].id;
     const segments = buildSegments(world, c, r, rng), weak = buildWeak(c, segments);
     const defenses = buildDefenses(world, c, segments, milieuId), trap = buildTrap(world, c, state.bossFight.pierced);
-    world.solids.push(...segments.map(s => s.solid), ...defenses.map(d => d.solid), trap.solid);
-    world.bossLevel = { segments, weak, defenses, trap };
+    const spines = buildSpines(world, c, segments);
+    world.solids.push(...segments.map(s => s.solid), ...spines.map(s => s.solid), ...defenses.map(d => d.solid), trap.solid);
+    world.bossLevel = { segments, spines, weak, defenses, trap };
     buildPath(world, c, r, segments, trap);
     buildToxics(world, c, rng, segments, weak, r);
     FP.coins.place(state);
