@@ -34,3 +34,5 @@ function checkDecor(id) {
 FP.test('decor: friche', () => checkDecor('friche'));
 FP.test('decor: industrie', () => checkDecor('industrie'));
 FP.test('decor: décharge', () => checkDecor('decharge'));
+FP.test('decor: nucléaire', () => checkDecor('nucleaire'));
+FP.test('decor: un décor pour chaque milieu', () => { for (const m of FP.config.milieux) FP.assert(FP.decor[m.id], m.id); });
