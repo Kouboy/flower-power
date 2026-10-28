@@ -14,7 +14,7 @@
   const STAR = ['#a8c8a0', '#d8f0d0'], MOON = ['#a0c880', '#88b070'], AURORA = ['#3a8a5a', '#2a6a4a'], STEAM = ['#4a6e48', '#365a3a'];
   const TOWER = ['#1e2a24', '#2a3830'], FENCE = ['#2a3430', '#3a4440'], SIGN = ['#e8c840', '#1a1a1a'];
   const BARREL = ['#d8b830', '#a88a20'], POST = '#2a2a2a', GRASS = '#465a52';
-  const CONCRETE = ['#2a2e34', '#0c0e10', '#1a1d22'], PEBBLE = ['#2a3a30', '#2a5a46'], BURIED = ['#5a5020', '#3a3416'];
+  const CONCRETE = ['#2a2e34', '#14171b', '#1a1d22'], PEBBLE = ['#2a3a30', '#2a5a46'], BURIED = ['#5a5020', '#3a3416'];
   const GLOW = ['#3ab88a', '#5ad0a0', '#8af0c0'];   // vert d'eau radioactif
   const palette = [...STAR, ...MOON, ...AURORA, ...STEAM, ...TOWER, ...FENCE, ...SIGN, ...BARREL, POST, GRASS, ...CONCRETE, ...PEBBLE, ...BURIED, ...GLOW];
   const scale = (h) => Math.min(1, h / REF);
@@ -78,16 +78,18 @@
   // Placements : fûts, panneaux et herbe mutante sans chevauchement ; dans la terre, fûts enterrés et cailloux (plus serrés
   // près de la surface), une galerie de béton par tranche de 420 environ.
   function layout(w, top, bottom, rnd) {
+    // Au plus un tiers de la largeur, même sur un petit téléphone : moins de fûts et de panneaux.
     const zone = w / 3, order = [0, 1, 2].sort(() => rnd() - .5);
+    const barrels = w < 190 ? 1 : w < 240 ? 2 : 2 + Math.floor(rnd() * 3), panels = w < 300 ? 1 : 1 + Math.floor(rnd() * 2);
     const surface = [
-      { kind: 'barrels', x: Math.round(order[0] * zone + rnd() * Math.max(1, zone - 34)), n: 2 + Math.floor(rnd() * 3) },
-      { kind: 'panels', x: Math.round(order[1] * zone + rnd() * Math.max(1, zone - 30)), n: 1 + Math.floor(rnd() * 2) },
+      { kind: 'barrels', x: Math.round(order[0] * zone + rnd() * Math.max(1, zone - 34)), n: barrels },
+      { kind: 'panels', x: Math.round(order[1] * zone + rnd() * Math.max(1, zone - 30)), n: panels },
       { kind: 'grass', x: Math.round(order[2] * zone + 6 + rnd() * Math.max(1, zone - 34)) }
     ];
     const under = [];
     for (let y = top + 12 + rnd() * 40; y < bottom - 16; y += 70 + 120 * (y - top) / (bottom - top) + rnd() * 40)
       under.push({ kind: rnd() < .4 ? 'barrel' : 'pebble', x: 6 + Math.floor(rnd() * (w - 22)), y: Math.round(y) });
-    for (let y = top + 40 + rnd() * 120; y < bottom - 24; y += 420 + rnd() * 160) under.push({ kind: 'gallery', x: 0, y: Math.round(y), w });
+    for (let y = top + 200 + rnd() * 120; y < bottom - 24; y += 420 + rnd() * 160)   // rien de long en travers sous la pelouse under.push({ kind: 'gallery', x: 0, y: Math.round(y), w });
     return { surface, under };
   }
 

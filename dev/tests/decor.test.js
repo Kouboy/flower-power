@@ -24,10 +24,18 @@ function checkDecor(id) {
   FP.assert(L.under.some(u => u.y > top + (bottom - top) * .66), id + ' : rien dans le bas du niveau');
   let g = recCtx(); D.surface(g, L, top - 2); used(g);
   FP.assert(g.rects.every(r => r.y >= top - 2 - 22 && r.y + r.h <= top + 1), id + ' accessoire trop haut');
-  const cover = new Set(); g.rects.forEach(r => { for (let x = Math.round(r.x); x < r.x + r.w; x++) cover.add(x); });
-  FP.assert(cover.size <= 300 / 3, id + ' accessoires trop larges : ' + cover.size);
+  // Au plus un tiers de la largeur, des petits téléphones (150 pixels d'art) aux grands écrans.
+  for (const w of [150, 165, 180, 195, 210, 240, 270, 300]) for (let seed = 1; seed <= 20; seed++) {
+    const gw = recCtx(); D.surface(gw, D.layout(w, top, bottom, decorRng(seed)), top - 2);
+    const cover = new Set(); gw.rects.forEach(r => { for (let x = Math.round(r.x); x < r.x + r.w; x++) cover.add(x); });
+    FP.assert(cover.size <= w / 3, id + ' accessoires trop larges : ' + cover.size + ' sur ' + w);
+  }
+  // Rien de long en travers sous la pelouse : le premier écran (et le titre) reste libre de barres pleine largeur.
+  FP.assert(L.under.every(u => !u.w || u.y >= top + 200), id + ' : élément long trop près de la surface');
   g = recCtx(); D.under(g, L); used(g);
   FP.assert(g.rects.every(r => r.y >= top && r.y < bottom && Math.max(...decorRgb(r.c)) >= 10), id + ' sous-sol hors terre ou noir pur');
+  // Le noir du halo des obstacles (#0a0605) doit rester lisible sur le décor enterré.
+  FP.assert(g.rects.every(r => decorDist(r.c, '#0a0605') >= 20), id + ' : décor enterré trop proche du halo des obstacles');
   g = recCtx(); D.glow(g, L, top - 2, 600, 400, 2.3); used(g);
   FP.assert(g.rects.every(r => r.y >= -8 - 22 && r.y <= 400 + 8), id + ' glow hors de la tranche visible');
 }

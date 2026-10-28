@@ -58,14 +58,16 @@
   // Placements : sacs, pneus et frigo sans chevauchement ; dans la terre, des couches compactées (plus serrées près de la
   // surface) et des suintements sous certaines d'entre elles.
   function layout(w, top, bottom, rnd) {
+    // Au plus un tiers de la largeur, même sur un petit téléphone : moins de sacs et de pneus.
     const zone = w / 3, order = [0, 1, 2].sort(() => rnd() - .5);
+    const bags = w < 190 ? 2 : w < 240 ? 3 : 3 + Math.floor(rnd() * 2), tires = w < 190 ? 1 : w < 240 ? 2 : 1 + Math.floor(rnd() * 3);
     const surface = [
-      { kind: 'bags', x: Math.round(order[0] * zone + 4 + rnd() * Math.max(1, zone - 34)), n: 3 + Math.floor(rnd() * 2) },
-      { kind: 'tires', x: Math.round(order[1] * zone + 6 + rnd() * Math.max(1, zone - 34)), n: 1 + Math.floor(rnd() * 3) },
+      { kind: 'bags', x: Math.round(order[0] * zone + 4 + rnd() * Math.max(1, zone - 34)), n: bags },
+      { kind: 'tires', x: Math.round(order[1] * zone + 6 + rnd() * Math.max(1, zone - 34)), n: tires },
       { kind: 'fridge', x: Math.round(order[2] * zone + rnd() * Math.max(1, zone - 18)) }
     ];
     const under = [];
-    for (let y = top + 10 + rnd() * 30; y < bottom - 24; y += 90 + 150 * (y - top) / (bottom - top) + rnd() * 50) {
+    for (let y = top + 200 + rnd() * 30; y < bottom - 24; y += 90 + 150 * (y - top) / (bottom - top) + rnd() * 50) {   // rien de long en travers sous la pelouse
       under.push({ kind: 'layer', x: 0, y: Math.round(y), w, seed: Math.floor(rnd() * 1e6) });
       if (rnd() < .5) under.push({ kind: 'ooze', x: 10 + Math.floor(rnd() * (w - 20)), y: Math.round(y) + 11, phase: rnd() });
     }

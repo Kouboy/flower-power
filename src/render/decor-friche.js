@@ -70,16 +70,18 @@
   // Placements : la palissade, le caddie et les plots se partagent la largeur sans se chevaucher ; dans la terre, un élément
   // tous les 70 à 190 pixels (plus serré près de la surface), une canalisation et un câble par tranche de 400.
   function layout(w, top, bottom, rnd) {
-    const fence = Math.max(24, Math.round(w * .16)), zone = w / 3, order = [0, 1, 2].sort(() => rnd() - .5);
+    // Au plus un tiers de la largeur, même sur un petit téléphone : palissade proportionnelle, moins de plots.
+    const fence = Math.max(16, Math.round(w * .1)), zone = w / 3, order = [0, 1, 2].sort(() => rnd() - .5);
+    const cones = w < 170 ? 1 : w < 230 ? 2 : 2 + Math.floor(rnd() * 2);
     const surface = [
       { kind: 'fence', x: Math.round(order[0] * zone + rnd() * Math.max(1, zone - fence - 4)), w: fence },
       { kind: 'cart', x: Math.round(order[1] * zone + rnd() * Math.max(1, zone - 24)) },
-      { kind: 'cones', x: Math.round(order[2] * zone + rnd() * Math.max(1, zone - 22)), n: 2 + Math.floor(rnd() * 2) }
+      { kind: 'cones', x: Math.round(order[2] * zone + rnd() * Math.max(1, zone - 22)), n: cones }
     ];
     const under = [];
     for (let y = top + 10 + rnd() * 40; y < bottom - 12; y += 70 + 120 * (y - top) / (bottom - top) + rnd() * 40)
       under.push({ kind: rnd() < .6 ? 'bricks' : 'rubble', x: Math.floor(rnd() * (w - 16)), y: Math.round(y), seed: Math.floor(rnd() * 1e6) });
-    for (let y = top + 30 + rnd() * 120; y < bottom - 12; y += 400 + rnd() * 160) under.push({ kind: rnd() < .5 ? 'pipe' : 'cable', x: 0, y: Math.round(y), w });
+    for (let y = top + 200 + rnd() * 120; y < bottom - 12; y += 400 + rnd() * 160)   // rien de long en travers sous la pelouse under.push({ kind: rnd() < .5 ? 'pipe' : 'cable', x: 0, y: Math.round(y), w });
     return { surface, under };
   }
 

@@ -69,16 +69,18 @@
   // Placements : palettes, fûts et rails sans chevauchement ; dans la terre, scories et poches d'huile (plus serrées près de
   // la surface), une conduite rouillée par tranche de 350 environ.
   function layout(w, top, bottom, rnd) {
-    const zone = w / 3, order = [0, 1, 2].sort(() => rnd() - .5), rails = Math.max(24, Math.round(w * .13));
+    // Au plus un tiers de la largeur, même sur un petit téléphone : moins de palettes et de fûts, rails proportionnels.
+    const zone = w / 3, order = [0, 1, 2].sort(() => rnd() - .5), rails = Math.max(14, Math.round(w * .1));
+    const pallets = w < 190 ? 2 : w < 240 ? 3 : 3 + Math.floor(rnd() * 3), barrels = w < 190 ? 1 : w < 240 ? 2 : 2 + Math.floor(rnd() * 2);
     const surface = [
-      { kind: 'pallets', x: Math.round(order[0] * zone + rnd() * Math.max(1, zone - 28)), n: 3 + Math.floor(rnd() * 3) },
-      { kind: 'barrels', x: Math.round(order[1] * zone + rnd() * Math.max(1, zone - 22)), n: 2 + Math.floor(rnd() * 2) },
+      { kind: 'pallets', x: Math.round(order[0] * zone + rnd() * Math.max(1, zone - 30)), n: pallets },
+      { kind: 'barrels', x: Math.round(order[1] * zone + rnd() * Math.max(1, zone - 22)), n: barrels },
       { kind: 'rails', x: Math.round(order[2] * zone + rnd() * Math.max(1, zone - rails - 2)), w: rails }
     ];
     const under = [];
     for (let y = top + 12 + rnd() * 40; y < bottom - 12; y += 70 + 120 * (y - top) / (bottom - top) + rnd() * 40)
       under.push({ kind: rnd() < .45 ? 'oil' : 'slag', x: 8 + Math.floor(rnd() * (w - 24)), y: Math.round(y), seed: Math.floor(rnd() * 1e6) });
-    for (let y = top + 24 + rnd() * 100; y < bottom - 12; y += 330 + rnd() * 140) under.push({ kind: 'pipe', x: 0, y: Math.round(y), w });
+    for (let y = top + 200 + rnd() * 100; y < bottom - 12; y += 330 + rnd() * 140)   // rien de long en travers sous la pelouse under.push({ kind: 'pipe', x: 0, y: Math.round(y), w });
     return { surface, under };
   }
 
