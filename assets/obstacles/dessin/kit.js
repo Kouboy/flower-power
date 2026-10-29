@@ -3,7 +3,7 @@
 // Lit     : rien (aucun DOM : les dessins sont des données, lues par world/catalog.js et render/obstacles.js).
 // Écrit   : FP.drawn.families (registre des familles, rempli par assets/obstacles/dessin/<famille>.js).
 // Expose  : FP.drawn = { families, define(kind, def), grid(w, h), renderDef(def, v), render(kind, v), material(…), M, paint,
-//           over, stains, tone(m, n), blob, roundRect, drip, hash(x, y, k) }.
+//           over, stains, tone(m, n), blob, roundRect, softBox, drip, hash(x, y, k) }.
 // Une famille : define(kind, { w, h, inset?, paint(g, v) }) — w × h pixels d'art sans le contour, v = variante 0 à 3.
 // Règles de la spec (docs/superpowers/specs/2026-10-29-obstacles-dessines-design.md) : rond, organique, contour teinté,
 // d'un seul tenant ; les variantes ne changent que l'intérieur de la silhouette.
@@ -111,6 +111,22 @@
     }
   }
 
+  // Boîte molle : super-ellipse (|u|^p + |v|^p ≤ 1, p = 6 par défaut) — coins très arrondis, flancs droits qui bombent ;
+  // opts.lean : décalage horizontal du haut par rapport au bas (pixels, objet de travers), opts.wobble / opts.seed : bords
+  // qui ondulent. Modelé : tone() sur la largeur, arête haute éclairée, pied ombré.
+  function softBox(g, cx, cy, rx, ry, m, opts = {}) {
+    const p = opts.p || 6, lean = opts.lean || 0, wob = opts.wobble || 0, ph = opts.seed || 0;
+    for (let y = Math.floor(cy - ry); y <= cy + ry; y++) {
+      const v = (y + .5 - cy) / ry, sx = cx - lean * v / 2, k = 1 + wob / rx * Math.sin(y * .6 + ph);
+      if (Math.abs(v) > 1) continue;
+      for (let x = Math.floor(sx - rx * k - 1); x <= sx + rx * k + 1; x++) {
+        const u = (x + .5 - sx) / (rx * k);
+        if (Math.abs(u) ** p + Math.abs(v) ** p > 1) continue;
+        g.set(x, y, v > .88 ? m[1] : v < -.86 && u < .4 ? m[3] : tone(m, u), m.ink);
+      }
+    }
+  }
+
   // Coulure collée à la forme : colonne de 2 pixels depuis (x, y), goutte au bout.
   function drip(g, x, y, len, m) {
     for (let k = 0; k < len; k++) { paint(g, x, y + k, m, 3); paint(g, x + 1, y + k, m, 2); }
@@ -119,5 +135,5 @@
     paint(g, x, e + 1, m, 2); paint(g, x + 1, e + 1, m, 1);
   }
 
-  FP.drawn = { families, define, grid, renderDef, render, material, M, paint, over, stains, tone, blob, roundRect, drip, hash };
+  FP.drawn = { families, define, grid, renderDef, render, material, M, paint, over, stains, tone, blob, roundRect, softBox, drip, hash };
 })();

@@ -33,6 +33,14 @@
     FP.assert(g.get(10, 6), 'centre peint');
   });
 
+  FP.test('drawn: softBox arrondit ses coins et penche', () => {
+    const m = M(), g = FP.drawn.grid(40, 30);
+    FP.drawn.softBox(g, 20, 15, 15, 12, m, { lean: 6 });
+    FP.assert(g.get(20, 15), 'centre'); FP.assertEqual(g.get(5, 3), null);
+    const firstX = (y) => { for (let x = 0; x < 40; x++) if (g.get(x, y)) return x; return -1; };
+    FP.assert(firstX(5) > firstX(25), 'le haut penche à droite');
+  });
+
   FP.test('drawn: blob est symétrique sans wobble', () => {
     const g = FP.drawn.grid(31, 21), m = M();
     FP.drawn.blob(g, 15, 10, 12, 8, m);
