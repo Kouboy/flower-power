@@ -1,6 +1,6 @@
 // ui/certificate.js — écran de fin : un « certificat d'éco-responsabilité » qui monte sur le jeu assombri, ses lignes qui
 // s'écrivent, puis le tampon « VALIDÉ* » qui s'abat ; la relance n'est possible qu'après le tampon.
-// Lit     : state.time, state.score.{flowers,eco,recordBefore}, state.plant.stemCount, state.run.{bosses,saison}, state.flow.overReason,
+// Lit     : state.time, state.score.{flowers,eco,recordBefore}, state.plant.stemCount, state.run.{bosses,saison,milieu,playtest,done}, state.flow.overReason,
 //           FP.config.text.{certificate,again}, FP.font, FP.view.ui.
 // Écrit   : state.fx.ui.{overAt, readyAfter, certCue} uniquement (début de la fin de partie ; délai avant relance, tampon compris).
 // Expose  : FP.certificate.lines(state), FP.certificate.canRestart(state), FP.certificate.cues(state) (purs hors mémoire, testés),
@@ -14,6 +14,13 @@
   const PAPER = '#efe6c8', BAND = '#d8ccaa', TRIM = '#7ed636', TEXT = '#2a3a1c', LABEL = '#5a4a3a', RED = '#c0392b';
   const fmt = (n) => n.toLocaleString('fr-FR');
 
+  // Boss vaincus (v4.9.0) : « 2/4 » pendant la première saison, le total ensuite. Playtest (v4.13.0) : milieux traversés.
+  function sitesRow(state, t) {
+    const r = state.run, n = FP.config.milieux.length;
+    if (r.playtest) return { label: t.crossed, value: (r.done ? n : r.milieu) + '/' + n };
+    return { label: t.sites, value: r.saison > 1 ? fmt(r.bosses) : r.bosses + '/' + n };
+  }
+
   function lines(state) {
     const t = FP.config.text.certificate, sc = state.score, rb = sc.recordBefore || { flowers: 0, eco: 0 };
     const beaten = sc.flowers > rb.flowers || sc.eco > rb.eco;
@@ -21,12 +28,12 @@
       { label: t.flowers, value: fmt(sc.flowers) },
       { label: t.eco, value: 'Ɇ' + fmt(sc.eco) },
       { label: t.stems, value: fmt(state.plant.stemCount) },
-      // Boss vaincus (v4.9.0) : « 2/4 » pendant la première saison, le total ensuite.
-      { label: t.sites, value: state.run.saison > 1 ? fmt(state.run.bosses) : state.run.bosses + '/' + FP.config.milieux.length },
+      sitesRow(state, t),
       beaten ? { label: t.record, value: t.beaten, beaten: true } : { label: t.record, value: fmt(rb.flowers) + ' ' + t.flowersUnit, beaten: false }
     ];
     if (!beaten) rows.push({ label: '', value: 'Ɇ' + fmt(rb.eco) });
-    return { title: t.title, subtitle: t.subtitle, rows, cause: (state.flow.overReason || '').toLocaleUpperCase('fr-FR'), note: t.note, stamp: t.stamp };
+    const done = state.run.done;   // playtest terminé (v4.13.0) : « SITE RÉHABILITÉ » sous le titre, pas de cause de décès
+    return { title: t.title, subtitle: done ? t.wonSubtitle : t.subtitle, rows, cause: done ? '' : (state.flow.overReason || '').toLocaleUpperCase('fr-FR'), note: t.note, stamp: t.stamp };
   }
 
   function canRestart(state) {
@@ -37,8 +44,8 @@
 
   // Nombre d'éléments écrits sur la feuille et instant du tampon (même calcul que le dessin).
   function schedule(state, w) {
-    const c = lines(state), inner = w - 2 * MARGIN - 2 * PADDING, causeLines = FP.font.wrap(c.cause, inner);
-    const count = 2 + c.rows.length + 1 + causeLines.length;
+    const c = lines(state), inner = w - 2 * MARGIN - 2 * PADDING, causeLines = c.cause ? FP.font.wrap(c.cause, inner) : [];
+    const count = 2 + c.rows.length + (c.cause ? 1 : 0) + causeLines.length;   // sans cause (playtest terminé) : ni libellé ni lignes
     return { c, causeLines, inner, count, stampAt: VEIL + RISE + count * LINE_STEP };
   }
 
@@ -86,7 +93,7 @@
         font.draw(g, r.value, x + inner, y, { color: r.beaten ? RED : TEXT, align: 'right', outline: false });
       } })),
       // Libellé de la cause : ses accents dépassent au-dessus, on le descend ; puis de l'air avant la cause elle-même.
-      { h: 17, draw: (x, y) => font.draw(g, FP.config.text.certificate.cause, x, y + 6, { color: LABEL, outline: false }) },
+      ...(c.cause ? [{ h: 17, draw: (x, y) => font.draw(g, FP.config.text.certificate.cause, x, y + 6, { color: LABEL, outline: false }) }] : []),
       ...causeLines.map(l => ({ h: 9, draw: (x, y) => font.draw(g, l, x, y, { color: TEXT, outline: false }) }))
     ];
     const stampAt = S.stampAt, stampH = 26;

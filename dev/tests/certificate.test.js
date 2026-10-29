@@ -48,3 +48,20 @@ FP.test('certificate: les sites réhabilités', () => {
   FP.assertEqual(row && row.value, '2/4');
   s.run.saison = 2; s.run.bosses = 5; FP.assertEqual(FP.certificate.lines(s).rows.find(r => r.label === t.sites).value, '5');
 });
+// Version playtest (v4.13.0) : résultats à la fin du parcours, sites traversés au game over.
+FP.test('certificate: fin de playtest', () => {
+  const s = overRun(), t = FP.config.text.certificate; s.run.playtest = true; s.run.done = true; s.run.milieu = 3; s.flow.overReason = null;
+  const c = FP.certificate.lines(s), row = c.rows.find(r => r.label === t.crossed);
+  FP.assertEqual(c.title, 'CERTIFICAT'); FP.assertEqual(c.subtitle, 'SITE RÉHABILITÉ'); FP.assertEqual(row && row.value, '4/4'); FP.assertEqual(c.cause, '');
+});
+FP.test('certificate: game over en playtest', () => {
+  const s = overRun(), t = FP.config.text.certificate; s.run.playtest = true; s.run.milieu = 2;
+  const c = FP.certificate.lines(s), row = c.rows.find(r => r.label === 'SITES TRAVERSÉS');
+  FP.assertEqual(row && row.value, '2/4'); FP.assertEqual(c.title, 'CERTIFICAT'); FP.assert(c.cause.length > 0);
+  FP.assertEqual(t.crossed, 'SITES TRAVERSÉS');
+});
+FP.test('certificate: version avec boss inchangée', () => {
+  const s = overRun(); s.run.bosses = 2;
+  const row = FP.certificate.lines(s).rows.find(r => r.label === 'SITES RÉHABILITÉS');
+  FP.assertEqual(row && row.value, '2/4');
+});

@@ -33,3 +33,8 @@ FP.test('title: le record de progression', () => {
   FP.assertEqual(FP.title.recordLine({ flowers: 0, eco: 0, reach: { saison: 1, milieu: 0 }, won: false }), null);
   FP.assertEqual(FP.title.recordLine({ flowers: 3, eco: 500 }), null);
 });
+// Version playtest (v4.13.0) : un repère sous le titre, pour savoir quelle version a été jouée.
+FP.test('title: repère VERSION PLAYTEST seulement en mode playtest', () => {
+  FP.assertEqual(FP.title.playtestLine({ sansboss: true }), 'VERSION PLAYTEST');
+  FP.assertEqual(FP.title.playtestLine({ sansboss: false }), null);
+});

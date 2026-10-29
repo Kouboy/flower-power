@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '4.12.0',
+    version: '4.13.0',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -298,9 +298,10 @@
       shout: { leak: 'LIXIVIAT\u00a0!', toxic: 'BRÛLÉE\u00a0!' },   // espace insécable avant « ! »
       help: { hold: 'MAINTIENS POUR POUSSER', guide: 'GUIDE LA POINTE' },
       again: 'TOUCHER POUR REPOUSSER',
+      playtest: 'VERSION PLAYTEST',   // v4.13.0 : repère sous le titre, ?sansboss=1
       footer: ['© 2026 ÉCOSOFT™', 'UNE FILIALE DE PÉTROFLORE'],
       certificate: { title: 'CERTIFICAT', subtitle: 'D’ÉCO-RESPONSABILITÉ', flowers: 'FLEURS ÉCLOSES', eco: 'ÉCOCRÉDITS™',
-        stems: 'TIGES SACRIFIÉES', sites: 'SITES RÉHABILITÉS', record: 'RECORD', beaten: 'BATTU', flowersUnit: 'FLEURS', cause: 'CAUSE DU DÉCÈS :', stamp: 'VALIDÉ*', note: '* SOUS RÉSERVE' },
+        stems: 'TIGES SACRIFIÉES', sites: 'SITES RÉHABILITÉS', crossed: 'SITES TRAVERSÉS', wonSubtitle: 'SITE RÉHABILITÉ', record: 'RECORD', beaten: 'BATTU', flowersUnit: 'FLEURS', cause: 'CAUSE DU DÉCÈS :', stamp: 'VALIDÉ*', note: '* SOUS RÉSERVE' },
       deathDefault: 'rupture : déchet',
       deathLeak: 'lixiviat vivant : pointe brûlée',
       deathToxic: 'pointe brûlée dans une zone toxique',
