@@ -108,12 +108,12 @@
   }
 
   // Polygone : tolérance .75 pixel (à 1 pixel, les cordes débordent de plus de 3 % sur une petite forme ronde), relevée par
-  // pas de .25 tant qu'il y a trop de points.
+  // pas de .05 tant qu'il y a trop de points (des pas plus gros tombent bien en dessous du nombre permis).
   function polygon(m, maxPoints = 48) {
     const ring = outline(m);
     if (ring.length < 3) return ring;
     let tol = .75, p = simplifyRing(ring, tol);
-    while (p.length > maxPoints) { tol += .25; p = simplifyRing(ring, tol); }
+    while (p.length > maxPoints) { tol += .05; p = simplifyRing(ring, tol); }
     return p.length >= 3 ? p : ring;
   }
 
