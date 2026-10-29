@@ -1,10 +1,10 @@
 // render/soil.js — pelouse et terre en pixels d'art : touffes d'herbe, trois strates tramées, détails clairsemés, et le décor du
 // milieu (v4.11.0) : accessoires sur la pelouse, décor enterré, petites animations.
-// Lit     : world.{width,height,surfaceY,lawnVariant,milieu}, state.{seed,level,time}, state.camera.y, FP.view.{W,art}, FP.palette.{milieux,strataBounds},
+// Lit     : world.{width,height,surfaceY,lawnVariant,milieu}, world.level (compteur figé à la génération), state.{seed,time}, state.camera.y, FP.view.{W,art}, FP.palette.{milieux,strataBounds},
 //           FP.config.soil.surfaceOffset, FP.decor (render/decor-*.js).
 // Écrit   : rien dans l'état (cache créé à la première utilisation).
 // Expose  : FP.soil.draw(actx, state) — repère d'art, la caméra est appliquée ici ; FP.soil.surfaceTop(world) (repère monde) ;
-//           FP.soil.grainAt(x, y, seed) — grain noir de la terre (pur, testé).
+//           FP.soil.grainAt(x, y, seed) — grain noir de la terre (pur, testé) ; FP.soil.seedOf(state) — graine du niveau (pure, testée).
 // Règles de lisibilité (spec §4) : contraste bas, aucun contour, détails rares et proches de leur strate, ni vert acide ni violet.
 (function () {
   'use strict';
@@ -130,14 +130,17 @@
     decor.surface(g, layout, topArt - 2);   // accessoires posés sur la pelouse
   }
 
+  // Graine du niveau (partie + compteur au moment de la génération) : chaque niveau a sa propre terre, détails et grain
+  // compris ; elle ne bouge pas pendant l'éclosion, qui avance state.level avant le fondu.
+  const seedOf = (state) => mix(state.seed | 0, state.world.level | 0, state.world.lawnVariant);
+
   // Seule la tranche visible du cache est recopiée.
   function draw(actx, state) {
     const { px } = FP, world = state.world;
     if (!(world.width > 0 && world.height > 0)) return;
     const w = Math.ceil(Math.max(world.width, FP.view.W) / px.SCALE), hArt = Math.ceil(world.height / px.SCALE);
     const topArt = px.toArt(surfaceTop(world));
-    // Graine du niveau (partie + numéro de niveau) : chaque niveau a sa propre terre, détails et grain compris.
-    const seed = mix(state.seed | 0, state.level | 0, world.lawnVariant);
+    const seed = seedOf(state);
     const key = w + '|' + hArt + '|' + topArt + '|' + seed + '|' + world.milieu;
     if (key !== cacheKey) { build(w, hArt, topArt, world.lawnVariant, seed, world.milieu); cacheKey = key; }
     const oy = px.toArt(state.camera.y), viewH = FP.view.art.h;
@@ -146,5 +149,5 @@
     FP.decor[world.milieu].glow(actx, layout, topArt - 2, oy, viewH, state.time);   // petites animations à l'écran
   }
 
-  FP.soil = { draw, surfaceTop, grainAt };
+  FP.soil = { draw, surfaceTop, grainAt, seedOf };
 })();

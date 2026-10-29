@@ -2,6 +2,11 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.13.1 — Le décor ne change plus à l'éclosion
+
+- le décor de surface et la terre gardent leur tirage pendant l'éclosion : leur graine est figée à la génération du niveau, ils ne changent qu'avec la pousse suivante ;
+- banc : 553 tests.
+
 ## v4.13.0 — Version playtest et difficulté en dents de scie
 
 - `?sansboss=1` ouvre la version playtest : 6 pousses par milieu, bon de commande toutes les 3, jamais de boss ; après la 6ᵉ pousse du site nucléaire, le certificat « SITE RÉHABILITÉ » (sites traversés 4/4) ; « VERSION PLAYTEST » sous le titre ;
