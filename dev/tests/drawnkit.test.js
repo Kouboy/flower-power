@@ -40,6 +40,20 @@
     FP.assert(left > 50 && Math.abs(left - right) <= 2, left + ' / ' + right);
   });
 
+  FP.test('drawn: over ne peint que sur un pixel déjà peint', () => {
+    const g = FP.drawn.grid(3, 1), m = M();
+    FP.drawn.paint(g, 0, 0, m, 2); FP.drawn.over(g, 0, 0, m, 3); FP.drawn.over(g, 1, 0, m, 3);
+    FP.assertEqual(g.get(0, 0), m[3]); FP.assertEqual(g.get(1, 0), null);
+  });
+
+  FP.test('drawn: stains ne tache que la forme, et autrement selon la graine', () => {
+    const m = M(), fill = () => { const g = FP.drawn.grid(10, 10); for (let x = 0; x < 5; x++) for (let y = 0; y < 10; y++) FP.drawn.paint(g, x, y, m, 2); return g; };
+    const a = fill(), b = fill();
+    FP.drawn.stains(a, m, 0, 30, 1, { x: 0, y: 0, w: 10, h: 10 }); FP.drawn.stains(b, m, 0, 30, 2, { x: 0, y: 0, w: 10, h: 10 });
+    FP.assertEqual(count(a, (c, x) => c && x >= 5), 0);
+    FP.assert(count(a, c => c === m[0]) > 0 && count(a, (c, x, y) => c !== b.get(x, y)) > 0);
+  });
+
   FP.test('drawn: hash est déterministe et dans [0, 1[', () => {
     for (let i = 0; i < 200; i++) {
       const h = FP.drawn.hash(i, i * 3, 7);

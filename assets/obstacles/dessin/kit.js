@@ -3,7 +3,7 @@
 // Lit     : rien (aucun DOM : les dessins sont des données, lues par world/catalog.js et render/obstacles.js).
 // Écrit   : FP.drawn.families (registre des familles, rempli par assets/obstacles/dessin/<famille>.js).
 // Expose  : FP.drawn = { families, define(kind, def), grid(w, h), renderDef(def, v), render(kind, v), material(…), M, paint,
-//           tone(m, n), blob, roundRect, drip, hash(x, y, k) }.
+//           over, stains, tone(m, n), blob, roundRect, drip, hash(x, y, k) }.
 // Une famille : define(kind, { w, h, inset?, paint(g, v) }) — w × h pixels d'art sans le contour, v = variante 0 à 3.
 // Règles de la spec (docs/superpowers/specs/2026-10-29-obstacles-dessines-design.md) : rond, organique, contour teinté,
 // d'un seul tenant ; les variantes ne changent que l'intérieur de la silhouette.
@@ -59,6 +59,8 @@
     rust: material('#4a2210', '#7a3a18', '#a85a28', '#c8804a', '#1e0c04')
   };
   const paint = (g, x, y, m, k) => g.set(x, y, m[k], m.ink);
+  // Sur un pixel déjà peint seulement : usure, taches, éraflures (les variantes ne touchent jamais la silhouette).
+  const over = (g, x, y, m, k) => { if (g.get(x, y)) paint(g, x, y, m, k); };
 
   // Volume arrondi : teinte selon la position horizontale n (-1 bord gauche … 1 bord droit), lumière en haut à gauche.
   const tone = (m, n) => (n < -.82 ? m[1] : n < -.5 ? m[2] : n < -.2 ? m[3] : n < .55 ? m[2] : n < .82 ? m[1] : m[0]);
@@ -68,6 +70,17 @@
     let h = Math.imul(x * 374761393 + y * 668265263 + k * 2246822519, 1274126177);
     h ^= h >>> 13;
     return ((h >>> 0) % 1000) / 1000;
+  }
+
+  // Taches groupées (1 à 4 pixels chacune) sur les pixels déjà peints d'une zone : usure, rouille, terre d'une variante.
+  function stains(g, m, k, count, seed, box) {
+    for (let i = 0; i < count; i++) {
+      const x = box.x + Math.floor(hash(i, 1, seed) * box.w), y = box.y + Math.floor(hash(i, 2, seed) * box.h), s = 1 + Math.floor(hash(i, 3, seed) * 4);
+      over(g, x, y, m, k);
+      if (s > 1) over(g, x + 1, y, m, k);
+      if (s > 2) over(g, x, y + 1, m, k);
+      if (s > 3) over(g, x - 1, y + 1, m, Math.max(0, k - 1));
+    }
   }
 
   // Ellipse pleine modelée : reflet en croissant en haut à gauche, ombre en bas à droite. opts.wobble : bord qui ondule
@@ -106,5 +119,5 @@
     paint(g, x, e + 1, m, 2); paint(g, x + 1, e + 1, m, 1);
   }
 
-  FP.drawn = { families, define, grid, renderDef, render, material, M, paint, tone, blob, roundRect, drip, hash };
+  FP.drawn = { families, define, grid, renderDef, render, material, M, paint, over, stains, tone, blob, roundRect, drip, hash };
 })();
