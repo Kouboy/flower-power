@@ -8,6 +8,11 @@
   const sameMask = (a, b) => a.on.every((v, i) => v === b.on[i]);
 
   FP.test('dessin: au moins une famille', () => FP.assert(kinds.length > 0));
+  FP.test('dessin: les 14 familles du jeu', () => {
+    FP.catalog.select('dessin');
+    try { FP.assertEqual(Object.keys(FP.catalog.assets).sort().join(), Object.keys(png).sort().join()); }
+    finally { FP.catalog.select(null); }
+  });
   for (const k of kinds) {
     const def = FP.drawn.families[k];
     FP.test(`dessin ${k} : taille de la fiche PNG`, () => {

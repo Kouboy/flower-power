@@ -6,20 +6,26 @@ FP.test('level: déterministe', () => {
   FP.assertEqual(pick(gen(1234)), pick(gen(1234)));
   FP.assert(pick(gen(1234)) !== pick(gen(1235)));
 });
-FP.test('level: aucun chevauchement visuel', () => {
+// Rejoués avec le catalogue dessiné (v4.14.0, ?obstacles=dessin) : mêmes règles de placement.
+const withDrawn = (fn) => () => { FP.catalog.select('dessin'); try { fn(); } finally { FP.catalog.select(null); } };
+function noOverlap() {
   for (const seed of [1, 2, 3, 1234, 99999]) {
     const so = gen(seed).world.solids;
     for (let i = 0; i < so.length; i++) for (let j = i + 1; j < so.length; j++)
       FP.assert(!FP.geom.convexPolysOverlap(so[i].footprint, so[j].footprint), `seed ${seed}: ${so[i].kind}/${so[j].kind}`);
   }
-});
-FP.test('level: chemin sûr dégagé', () => {
+}
+FP.test('level: aucun chevauchement visuel', noOverlap);
+FP.test('level (dessin): aucun chevauchement visuel', withDrawn(noOverlap));
+function safePathClear() {
   for (const seed of [1, 2, 3, 1234, 99999]) {
     const s = gen(seed), w = s.world;
     for (const o of w.solids) for (const p of FP.catalog.visibleFootprint(o))
       FP.assert(FP.level.distToSafePath(w, p.x, p.y) >= w.safeRadius, `seed ${seed}: ${o.kind}`);
   }
-});
+}
+FP.test('level: chemin sûr dégagé', safePathClear);
+FP.test('level (dessin): chemin sûr dégagé', withDrawn(safePathClear));
 FP.test('level: obstacles identifiables (rognés de quelques px au plus)', () => {
   for (const seed of [1, 2, 3, 1234]) {
     const s = gen(seed), w = s.world;
@@ -27,7 +33,7 @@ FP.test('level: obstacles identifiables (rognés de quelques px au plus)', () =>
       FP.assert(p.x >= -8 && p.x <= w.width + 8 && p.y >= w.surfaceY + 34 && p.y <= w.height - 100, `${seed} ${o.kind}`);
   }
 });
-FP.test('level: le T-Rex signature trouve sa place sur écran étroit', () => {
+function trexFits() {
   let placed = 0;
   for (let seed = 1; seed <= 20; seed++) {
     const s = FP.state.createRun(seed, { W: 360, H: 780 });
@@ -36,7 +42,9 @@ FP.test('level: le T-Rex signature trouve sa place sur écran étroit', () => {
     if (s.world.solids.some(o => o.kind === 'trex_signature')) placed++;
   }
   FP.assert(placed >= 15, `placé ${placed}/20`);
-});
+}
+FP.test('level: le T-Rex signature trouve sa place sur écran étroit', trexFits);
+FP.test('level (dessin): le T-Rex signature trouve sa place sur écran étroit', withDrawn(trexFits));
 FP.test('level: densité plausible, familles PNG uniquement', () => {
   const s = gen(1234);
   FP.assert(s.world.solids.length >= 12 && s.world.solids.length <= 22, String(s.world.solids.length));   // v4.1.0 : plus dense
