@@ -9,6 +9,7 @@
   const images = {};
 
   for (const [key, a] of Object.entries(FP.catalog.assets)) {
+    if (!a.runtime || !a.runtime.src) continue;   // obstacle dessiné (v4.14.0) : pas d'image à charger
     const img = new Image();
     const entry = { img, ready: false };
     img.onload = () => { entry.ready = true; };
