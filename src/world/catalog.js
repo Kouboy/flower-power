@@ -1,8 +1,10 @@
 // world/catalog.js — obstacles authorés : JSON de l'Asset Editor → solides prêts à placer.
-// Lit     : window.FLOWER_POWER_AUTHORED_ASSETS (assets/obstacles/manifest.js), FP.config.level.padding, FP.geom.toWorld.
+// Lit     : window.FLOWER_POWER_AUTHORED_ASSETS (assets/obstacles/manifest.js), FP.config.level.padding, FP.geom.toWorld ;
+//           avec ?obstacles=dessin (FP.params.obstacles) : FP.drawn (assets/obstacles/dessin/*), FP.silhouette, FP.config.obstacles.drawnInset.
 // Écrit   : rien.
 // Expose  : FP.catalog.assets, FP.catalog.has(kind), FP.catalog.makeSolid({kind,x,y,a,flip,scale}),
-//           FP.catalog.visibleFootprint(solid), FP.catalog.filterAssets(raw).
+//           FP.catalog.visibleFootprint(solid), FP.catalog.filterAssets(raw), FP.catalog.drawnAssets(families, png),
+//           FP.catalog.select(mode) (null : PNG ; 'dessin' : obstacles dessinés).
 // Le JSON est la source de vérité : worldWidth, pivot, mirrorSafe, polygone, grazeRadius, flyoverEligible.
 (function () {
   'use strict';
@@ -18,7 +20,38 @@
     return out;
   }
 
-  const assets = filterAssets(window.FLOWER_POWER_AUTHORED_ASSETS);
+  const assets = {};   // fiches en service : PNG, ou dessinées avec ?obstacles=dessin (select)
+
+  // Fiches des obstacles dessinés (v4.14.0) : même format que les fiches PNG, dont elles reprennent les réglages ; la grille
+  // (contour compris) tient lieu d'image source et la collision vient de sa silhouette, rétrécie de `inset` pixels.
+  const ART = 2;   // pixels CSS par pixel d'art (FP.px.SCALE, que le monde ne lit pas)
+  function drawnAssets(families, png) {
+    const out = {}, S = FP.silhouette;
+    for (const [kind, def] of Object.entries(families)) {
+      const p = png[kind];
+      if (!p) continue;
+      const g = FP.drawn.renderDef(def, 0), pivot = (p.render && p.render.pivot) || [.5, .5];
+      const inset = def.inset !== undefined ? def.inset : FP.config.obstacles.drawnInset;
+      const points = S.polygon(S.erode(S.mask(g), inset)).map(([x, y]) => [x - pivot[0] * g.w, y - pivot[1] * g.h]);
+      const runtime = Object.assign({}, p.runtime);
+      delete runtime.src; delete runtime.metadata;
+      out[kind] = {
+        id: kind, kind: 'obstacle', drawn: true,
+        source: { width: g.w, height: g.h },
+        render: { worldWidth: g.w * ART, pivot, mirrorSafe: p.render.mirrorSafe },
+        collision: { type: 'polygon', points, grazeRadius: p.collision.grazeRadius, flyoverEligible: p.collision.flyoverEligible },
+        spawn: p.spawn, runtime
+      };
+    }
+    return out;
+  }
+
+  // Remplit les fiches en service (même objet, partagé) : PNG (null) ou dessinées ('dessin').
+  function select(mode) {
+    for (const k of Object.keys(assets)) delete assets[k];
+    const png = filterAssets(window.FLOWER_POWER_AUTHORED_ASSETS);
+    Object.assign(assets, mode === 'dessin' ? drawnAssets(FP.drawn.families, png) : png);
+  }
 
   // Rectangle rendu en coordonnées locales (pivot pris en compte, miroir appliqué), élargi de pad.
   function localRect(o, pad) {
@@ -70,6 +103,9 @@
     has: (kind) => Object.prototype.hasOwnProperty.call(assets, kind),
     makeSolid,
     visibleFootprint,
-    filterAssets
+    filterAssets,
+    drawnAssets,
+    select
   };
+  select(FP.params && FP.params.obstacles);
 })();
