@@ -1,5 +1,5 @@
 // world/boss.js — le niveau de boss : 4 tronçons accrochés tour à tour aux flancs, reliés par une colonne le long de chaque bord, leurs points faibles, leurs défenses, la trappe.
-// Lit     : state.{seed,level,rng (non consommé)}, state.run.{saison,milieu}, state.bossFight.pierced, state.world.{width,height,surfaceY},
+// Lit     : state.{seed,difficulty,rng (non consommé)}, state.run.{saison,milieu}, state.bossFight.pierced, state.world.{width,height,surfaceY},
 //           FP.config.{boss,level.{safePath,toxics},plant.seedOffset,milieux}, FP.createRng, FP.level.{makeToxic,distToSafePath}, FP.coins.place.
 // Écrit   : state.world.{bossLevel,solids,toxics,leaks,bonuses,safePath,safeRadius} ; puis FP.coins.place écrit state.world.{coins,chains}.
 //           bossLevel = { segments: [{ side, x0, x1, y0, y1, solid }], spines: [{ side, x0, x1, y0, y1, solid }] (colonne par bord, spineW de la largeur), weak: [{ i, x, y }], defenses: [{ i, type, side, x, y, reach, solid }], trap: { y0, y1, openedAt (null tant que fermée, -Infinity si déjà ouverte à la génération), solid } }.
@@ -32,7 +32,7 @@
   // Rayon du couloir : celui d'un niveau normal × corridorK, borné pour que la pointe qui longe le flanc touche encore le point faible.
   function corridorRadius(state) {
     const p = FP.config.level.safePath, c = FP.config.boss;
-    const normal = Math.max(p.radiusMin, p.radiusBase + state.level * p.radiusPerLevel);
+    const normal = Math.max(p.radiusMin, p.radiusBase + state.difficulty * p.radiusPerLevel);
     return Math.min(normal * c.corridorK, c.weakOut + c.weakHit - 2);
   }
 
