@@ -2,6 +2,13 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.14.0 — Obstacles dessinés (version test)
+
+- `?obstacles=dessin` ouvre une version test où les 14 obstacles sont dessinés pixel par pixel par le code, dans le style de la pousse : 4 teintes par matière, contour teinté, formes rondes et cabossées, usure, coulures vert acide ; 4 variantes par obstacle ; combinable avec `?sansboss=1`. Sans le paramètre, rien ne change ;
+- leurs collisions sont calculées depuis les dessins (silhouette rétrécie d'un pixel, polygone de 48 points au plus) : ce qu'on voit est ce qui touche ;
+- galerie de développement `dev/obstacles.html` (les 14 familles, leurs variantes, la collision, sur la terre de chaque milieu) ;
+- banc : 696 tests.
+
 ## v4.13.1 — Le décor ne change plus à l'éclosion
 
 - le décor de surface et la terre gardent leur tirage pendant l'éclosion : leur graine est figée à la génération du niveau, ils ne changent qu'avec la pousse suivante ;
