@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '4.11.0',
+    version: '4.12.0',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -211,6 +211,23 @@
     ],
     run: { steps: 3 },   // pousses réussies par milieu avant son boss
 
+    // Moteur de boss (v4.12.0) : 4 tronçons accrochés tour à tour aux flancs, un point faible par tronçon, une trappe sous la pelouse.
+    // segWidth : largeur d'un tronçon (part de l'écran, > .5 : le couloir zigzague) ; spineW : largeur de la colonne qui les relie le long de chaque bord ; thickK : épaisseur d'un tronçon (part de la zone / segments),
+    // le reste va aux intervalles ; crossK : pente d'un changement de flanc (part de maxSlope) ; crossUp : part de la montée droite d'un intervalle
+    // gardée au-dessus du coin quitté (le reste sous le coin suivant) ; corridorK : élargissement du couloir sûr ; weakR / weakHit / weakOut : rayon dessiné,
+    // rayon de perçage, saillie hors du flanc, marge de la flèche au bord de l'écran ; top / bottom : zone du boss, de surfaceY + top à height - bottom ; trap : sous la pelouse.
+    // defense : cycle (s), avertissement, coup, accélération par point percé, portée (part de la largeur libre), épaisseur, attache (part du haut du tronçon).
+    // pierceBonus / bonus : points par point percé / par boss vaincu ; pierceShake : secousse au perçage.
+    boss: {
+      segments: 4, segWidth: .53, spineW: .12, thickK: .225, crossK: .8, crossUp: .6, corridorK: 1.3,
+      weakR: 14, weakHit: 20, weakOut: 12, arrowMargin: 14,
+      top: 70, bottom: 160,
+      trap: { gap: 30, thick: 14 }, trapSlide: .6,
+      defense: { period: 2.6, warn: .7, strike: .6, speedup: .2, reach: .5, thick: 14, mountK: .25 },
+      toxics: 2, pierceBonus: 200, bonus: 1500, tempoPerPierce: 6, pierceShake: .2,
+      pairs: { friche: ['piston', 'jet'], industrie: ['jet', 'arm'], decharge: ['arm', 'jet'], nucleaire: ['piston', 'arm'] }
+    },
+
     // Boutique de fin de pousse (v4.6.0) : 3 articles tirés (un à −50 %), achetés au score ; effets sur la pousse suivante.
     // co2 : masse satirique ajoutée à la « livraison » (kg), sans effet en jeu. Tirage propre (graine ^ salt ^ passage).
     shop: {
@@ -256,7 +273,7 @@
     text: {
       // Cartons des milieux (v4.9.0, ui/cards.js) ; noms, lignes et boss : FP.config.milieux.
       cards: {
-        milieu: 'MILIEU', saison: 'SAISON', boss: 'BOSS', pending: '(combat en préparation)', victory: 'BOSS VAINCU',
+        milieu: 'MILIEU', saison: 'SAISON', boss: 'BOSS', victory: 'BOSS VAINCU',
         won: { title: 'SITE RÉHABILITÉ', lines: ['Le site est officiellement déclaré réhabilité.', 'Les actionnaires vous remercient.'], next: 'Toucher pour la saison' }
       },
       ready: 'MAINTENIR POUR POUSSER',
@@ -288,7 +305,8 @@
         sarcophagus: 'rupture : cercueil', drone: 'rupture : drone cassé', solar: 'rupture : panneau solaire',
         battery: 'rupture : batterie', cone: 'rupture : cône mou', trashbag: 'rupture : sac gonflé',
         extinguisher: 'rupture : extincteur vide', microwave: 'rupture : micro-ondes', trex_signature: 'rupture : dinosaure militant',
-        scooter: 'rupture : trottinette fossile', arcade: 'rupture : borne d’arcade'
+        scooter: 'rupture : trottinette fossile', arcade: 'rupture : borne d’arcade',
+        boss: 'écrasée par le boss', defense: 'fauchée par une défense', trap: 'la trappe est fermée'
       }
     },
 

@@ -1,8 +1,9 @@
 // play/flow.js — déroulé de partie : mort, éclosion, transitions, fin de partie.
 // Lit     : state.mode, state.query, state.plant, state.input.pressed, state.events, state.rng, state.boosts.filter, state.world.{surfaceY,width},
-//           FP.config.{flow,text,toxic,garden,soil}.
+//           FP.config.{flow,text,toxic,garden,soil,boss}.
 // Écrit   : state.mode, state.flow, state.run (seul à l'écrire : milieu, pousses, boss, saison, carton), state.garden.flowers (création, croissance), state.plant.{reserves,oldTrails,corruption,toxicTimer,recentToxic}, state.score.flowers,
-//           state.level, state.camera.shake, state.events (death, bloom, blossom, toxicEnter, ready) ; appelle FP.level.generate et FP.plant.prepare/launch.
+//           state.level, state.camera.shake, state.score.eco et state.events (death, bloom, blossom, toxicEnter, ready, bossDown) ; appelle FP.level.generate, FP.plant.prepare/launch,
+//           FP.scoring.awardFlat (bonus du boss) et FP.boss.reset (milieu suivant).
 // Expose  : FP.flow.update(state, dt), FP.flow.simplifyTrail(points, minStep), FP.flow.afterShop(state, after) (fin du bon de commande),
 //           FP.flow.continueAfterWin(state) (écran de fin → saison suivante).
 //           Entre deux pousses (et après la dernière mort), FP.shop.open ouvre le bon de commande (mode shop). Les textes à l'écran sont l'affaire de ui/*.
@@ -51,7 +52,11 @@
     state.level += count;
     // Milieux (v4.9.0) : une éclosion fait avancer d'une pousse (pollen ou non) ; celle du niveau de boss le bat.
     const r = state.run;
-    if (r.boss) { r.bosses += 1; r.card = { kind: 'victory', t0: state.time }; state.flow.next = 'milieu'; }
+    if (r.boss) {
+      r.bosses += 1; r.card = { kind: 'victory', t0: state.time }; state.flow.next = 'milieu';
+      FP.scoring.awardFlat(state, p.tip.x, state.world.surfaceY, FP.config.boss.bonus);
+      state.events.push({ type: 'bossDown', x: p.tip.x, y: state.world.surfaceY });
+    }
     else if ((r.step += 1) >= FP.config.run.steps) { r.boss = true; state.flow.next = 'boss'; }
     p.oldTrails.push(simplifyTrail(p.trail, cfg.trailSimplifyPx));
     if (p.oldTrails.length > cfg.oldTrailsMax) p.oldTrails.shift();
@@ -108,6 +113,7 @@
   function nextMilieu(state) {
     const r = state.run;
     r.milieu += 1; r.step = 0; r.boss = false;
+    FP.boss.reset(state);
     if (r.milieu >= FP.config.milieux.length) {
       r.milieu = 0; r.saison += 1;
       if (!r.won) { r.won = true; state.flow.won = true; }

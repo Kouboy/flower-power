@@ -1,9 +1,10 @@
 // world/level.js — génération d'un niveau à partir de la graine du run.
 // Lit     : state.rng, state.level, state.run.{milieu,boss}, FP.config.shop.lobbyingK (option lobbying), state.world.{width,height,viewH,surfaceY}, state.signature,
-//           FP.config.{level,spawnTables,signature,milieux}, FP.catalog, FP.geom.
-// Écrit   : state.world.{milieu,boss,skyVariant,lawnVariant,safePath,safeRadius,hazardRadius,solidExtra,solids,toxics,leaks,bonuses}, state.signature ;
+//           FP.config.{level,spawnTables,signature,milieux}, FP.catalog, FP.geom, FP.bossLevel.generate (niveau de boss).
+// Écrit   : state.world.{milieu,boss,bossLevel,skyVariant,lawnVariant,safePath,safeRadius,hazardRadius,solidExtra,solids,toxics,leaks,bonuses}, state.signature ;
 //           puis FP.coins.place écrit state.world.{coins,chains}.
 // Expose  : FP.level.startRun(state), FP.level.generate(state), FP.level.tableFor(milieu, band) (pur, testé),
+//           FP.level.makeToxic(rng, x, y, big),
 //           FP.level.distToSafePath(world,x,y), FP.level.pathXAt(world,y), FP.level.depthK(world,y), FP.level.depthBand(world,y).
 // Porté de la v3.43.16 (generateSoil, generateSafePath, objectFits…) sans les familles vectorielles ni les portes.
 (function () {
@@ -240,6 +241,19 @@
   }
 
 
+  // Une nappe : ellipse, lobes et taches tirés dans rng (placeToxics et niveau de boss).
+  function makeToxic(rng, x, y, big) {
+    const c = FP.config.level.toxics;
+    const o = {
+      x, y,
+      rx: rng.range(c.rx[0], c.rx[1]) * (big ? c.bigRx : 1), ry: rng.range(c.ry[0], c.ry[1]) * (big ? c.bigRy : 1),
+      a: rng.range(0, Math.PI), pulse: rng.range(0, 10), lobes: [], specks: []
+    };
+    for (let q = 0; q < c.lobes; q++) o.lobes.push({ a: rng.range(0, FP.TAU), r: rng.range(...c.shape.lobeR), sx: rng.range(...c.shape.lobeSx), sy: rng.range(...c.shape.lobeSy) });
+    for (let q = 0; q < c.specks; q++) o.specks.push({ x: rng.range(-c.shape.speckX, c.shape.speckX), y: rng.range(-c.shape.speckY, c.shape.speckY), r: rng.range(...c.shape.speckR), light: rng.next() < c.lightChance });
+    return o;
+  }
+
   function placeToxics(state, grid) {
     const world = state.world, rng = state.rng, c = FP.config.level.toxics, pts = pathSamples(world);
     const count = countFor(c, state);
@@ -251,13 +265,7 @@
         const cell = pickCell(grid, rng, cl => cl.r > 0 && cl.r < grid.rows - 1 &&
           (tries > c.relaxAfter || Math.min(2, Math.floor(depthK(world, cl.y) * 3)) === third));
         const pos = cellPos(grid, rng, cell, c.jitter), big = depthK(world, pos.y) > c.bigDepth;
-        const o = {
-          x: pos.x, y: pos.y,
-          rx: rng.range(c.rx[0], c.rx[1]) * (big ? c.bigRx : 1), ry: rng.range(c.ry[0], c.ry[1]) * (big ? c.bigRy : 1),
-          a: rng.range(0, Math.PI), pulse: rng.range(0, 10), lobes: [], specks: []
-        };
-        for (let q = 0; q < c.lobes; q++) o.lobes.push({ a: rng.range(0, FP.TAU), r: rng.range(...c.shape.lobeR), sx: rng.range(...c.shape.lobeSx), sy: rng.range(...c.shape.lobeSy) });
-        for (let q = 0; q < c.specks; q++) o.specks.push({ x: rng.range(-c.shape.speckX, c.shape.speckX), y: rng.range(-c.shape.speckY, c.shape.speckY), r: rng.range(...c.shape.speckR), light: rng.next() < c.lightChance });
+        const o = makeToxic(rng, pos.x, pos.y, big);
         // Une nappe peut déborder du cadre, mais on doit en voir assez pour l'anticiper.
         const visible = (Math.min(world.width, o.x + o.rx) - Math.max(0, o.x - o.rx)) / (2 * o.rx);
         // Loin du chemin (centre), et l'ellipse elle-même ne s'en approche pas à moins d'une demi-marge.
@@ -351,6 +359,8 @@
     world.boss = !!state.run.boss;   // v4.10.0 : la musique suit le niveau réellement généré (milieu, boss)
     world.skyVariant = Math.floor(rng.next() * FP.config.level.skyVariants);
     world.lawnVariant = Math.floor(rng.next() * FP.config.level.lawnVariants);
+    world.bossLevel = null;
+    if (state.run.boss) { FP.bossLevel.generate(state); return; }   // v4.12.0 : le niveau de boss a sa propre génération (world/boss.js)
     const grid = makeGrid(world.width, world.surfaceY + g.topPad, world.height - g.bottomPad);
     generateSafePath(world, rng, state.level);
     placeSignature(state, grid);
@@ -369,5 +379,5 @@
     generate(state);
   }
 
-  FP.level = { startRun, generate, tableFor, distToSafePath, pathXAt, depthK, depthBand };
+  FP.level = { startRun, generate, tableFor, makeToxic, distToSafePath, pathXAt, depthK, depthBand };
 })();

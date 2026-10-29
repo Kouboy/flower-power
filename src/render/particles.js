@@ -1,5 +1,5 @@
 // render/particles.js — particules : gerbes nées des événements, terre et éclats derrière la pointe.
-// Lit     : state.events (eco, bomb, shieldBreak, pickup, death, toxicEnter, bloom, blossom, growthTick), state.time, state.mode,
+// Lit     : state.events (eco, bomb, shieldBreak, pickup, death, toxicEnter, bloom, blossom, growthTick, bossPierce), state.time, state.mode,
 //           state.plant.{tip,dir}, state.camera.y, state.world.viewH.
 // Écrit   : state.fx.particles uniquement (réservé au rendu) ; aléatoire visuel via Math.random.
 // Expose  : FP.particles.draw(actx, state) (repère d'art, caméra appliquée ici).
@@ -32,6 +32,7 @@
           burst(state, e.x, e.y, 'eco', e.flat ? 16 + Math.min(36, Math.floor(e.amount / 700)) : 10 + Math.min(22, e.combo * 3)); break;
         case 'bomb': burst(state, e.x, e.y, 'bomb', 96); break;
         case 'shieldBreak': burst(state, e.x, e.y, 'shield', 46); break;
+        case 'bossPierce': burst(state, e.x, e.y, 'spark', 40); burst(state, e.x, e.y, 'sparkHot', 14); break;   // point faible percé (v4.12.0)
         case 'pickup': burst(state, e.x, e.y, e.kind === 'water' ? 'water' : 'bud', e.kind === 'water' ? 34 : 36); break;
         case 'toxicEnter': burst(state, e.x, e.y, 'acid', 8); break;
         case 'death':
@@ -85,7 +86,8 @@
     }
   }
 
-  const COLORS = { water: '#93ddff', bud: '#cfff9a', acid: '#b45cff', bomb: '#a6ff7a', impact: '#ff815f', petal: '#fff1a6', eco: '#cfff78', soil: '#7a5436', chip: '#4a3020', clod: '#221914', clodRim: '#3a2a1e', turf: '#4a7a2a', shield: '#caffde' };
+  const COLORS = { water: '#93ddff', bud: '#cfff9a', acid: '#b45cff', bomb: '#a6ff7a', impact: '#ff815f', petal: '#fff1a6', eco: '#cfff78', soil: '#7a5436', chip: '#4a3020', clod: '#221914', clodRim: '#3a2a1e', turf: '#4a7a2a', shield: '#caffde',
+    spark: '#ffb347', sparkHot: '#fff2c4' };   // étincelles de perçage : ambre et blanc chaud, loin des violets de danger
 
   // Carré de 1 à 2 pixels d'art : il rétrécit en fin de vie au lieu de devenir transparent.
   function drawOne(g, q, oy) {

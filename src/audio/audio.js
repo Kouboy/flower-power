@@ -79,6 +79,9 @@
       case 'death': FP.sfx.play(b, e.cause === 'solid' ? 'hit' : 'acid'); return FP.sfx.jingle(b, 'death');
       case 'toxicEnter': return FP.sfx.play(b, 'contaminate');
       case 'bonusSpawn': case 'ready': return FP.sfx.play(b, 'ready');
+      case 'bossPierce': return FP.sfx.play(b, 'pierce');
+      case 'bossTrap': return FP.sfx.play(b, 'trapOpen');
+      case 'bossDown': return FP.sfx.play(b, 'bossDown');
       case 'growthTick': return FP.sfx.scrape(b, e.k || 0);
     }
   }

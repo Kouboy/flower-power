@@ -6,6 +6,7 @@
 //           state.query (choc absorbé), state.plant.{tip,guide} (bris), state.events (bonusSpawn, bonusMissed, pickup,
 //           bomb, shieldBreak, flyover — décision du flyover, lue par ?flydebug=1), state.camera.shake (spore, bris),
 //           un tirage state.rng par récompense (phase) ; gains via FP.scoring.awardFlat.
+// Spore : le boss (solides `boss`) y résiste.
 // Bouclier : intercepte les chocs dans update (shatterOrganicShield v3).
 // Expose  : FP.powerups.assess(state, obj, record), FP.powerups.rewardType(a), FP.powerups.onFlyover(state, obj, record),
 //           FP.powerups.update(state, dt), FP.powerups.detonate(state, x, y) (déflagration de spore ; Spore de départ de la boutique).
@@ -125,7 +126,7 @@
   function detonate(state, x, y) {
     const c = FP.config.powerups.spore, w = state.world, R = c.radius;
     const gone = (keep) => (o) => !keep(o);
-    const keepSolid = (o) => dist(x, y, o.x, o.y) > R + o.broadR * c.solidK;
+    const keepSolid = (o) => o.boss || dist(x, y, o.x, o.y) > R + o.broadR * c.solidK;
     const keepToxic = (o) => dist(x, y, o.x, o.y) > R + Math.max(o.rx, o.ry) * c.toxicK;
     const keepLeak = (l) => {
       const ca = Math.cos(l.angle), sa = Math.sin(l.angle);
@@ -176,10 +177,12 @@
   }
 
   // Intercepte un choc (solide ou lixiviat) avant que flow ne décide d'une mort. Les nappes toxiques
-  // ne sont pas concernées : c'est une exposition continue, pas un choc.
+  // ne sont pas concernées : c'est une exposition continue, pas un choc. La trappe fermée du boss tue toujours :
+  // ni le bouclier ni sa grâce ne l'absorbent (sinon on la traverserait sans avoir percé les points faibles).
   function shield(state) {
     const q = state.query;
     if (!q.solid && !(q.leak > 0)) return;
+    if (q.solid && q.solid.kind === 'trap') return;
     if (state.power.shieldGrace <= 0) {
       if (!state.power.shield) return;
       shatter(state, q.solid ? 'impact' : 'acid');

@@ -209,3 +209,15 @@ FP.test('économie: les jetons d’un passage ne paient pas tout', () => {
   FP.assert(FP.config.run.steps * perStem < price('seed'), 'graine : ' + Math.round(perStem) + ' Ɇ/pousse');
   FP.assert(FP.config.shop.items.every(i => i.price >= 1.2 * perStem), 'articles trop bon marché');
 });
+FP.test('shop: avant ou pendant un boss, ni Lobbying ni Bière anti-limaces (sans effet au boss) ; ailleurs, toujours tirables', () => {
+  const useless = ['lobbying', 'beer'], drawn = (boss) => {
+    const ids = new Set();
+    for (let v = 1; v <= 200; v++) {
+      const s = shopRun(v); s.run.boss = boss; s.shopVisits = v - 1;
+      for (const after of ['bloom', 'death', 'last']) { opened(s, after); s.shop.items.forEach(it => ids.add(it.id)); }
+    }
+    return ids;
+  };
+  const boss = drawn(true), normal = drawn(false);
+  for (const id of useless) { FP.assert(!boss.has(id), id + ' tiré au boss'); FP.assert(normal.has(id), id + ' jamais tiré hors boss'); }
+});

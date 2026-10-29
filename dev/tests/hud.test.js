@@ -34,3 +34,11 @@ FP.test('hud: le nom du milieu et le multiplicateur de saison', () => {
   FP.assertEqual(FP.hud.items(s).milieu, 'DÉCHARGE'); FP.assertEqual(FP.hud.items(s).mult, 1);
   s.run.saison = 2; FP.assertEqual(FP.hud.items(s).mult, 2);
 });
+// Boss (v4.12.0) : 4 icônes de points faibles, allumées selon les points percés.
+FP.test('hud: 4 icônes de points faibles au boss, allumées selon les points percés ; aucune hors boss', () => {
+  FP.assertEqual(FP.hud.items(hudRun()).boss, null);
+  const s = FP.state.createRun(7, { W: 440, H: 783 }); FP.level.startRun(s); s.run.milieu = 1; s.run.boss = true; FP.level.generate(s);
+  FP.assertEqual(JSON.stringify(FP.hud.items(s).boss), '[false,false,false,false]');
+  s.bossFight.pierced[0] = true; s.bossFight.pierced[2] = true;
+  FP.assertEqual(JSON.stringify(FP.hud.items(s).boss), '[true,false,true,false]');
+});

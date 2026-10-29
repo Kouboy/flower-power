@@ -22,12 +22,14 @@ src/
 │   ├── catalog.js    ✅ JSON authorés → solides (taille, collision, miroir, footprint)
 │   ├── level.js      ✅ génération : chemin sûr, solides (SAT), T-Rex signature, nappes toxiques, limaces
 │   ├── coins.js      ✅ circuits de pièces (v4.5.0) : un chapelet facile et un appât par hauteur d'écran, tirage propre
+│   ├── boss.js       ✅ niveau de boss (v4.12.0, FP.bossLevel) : 4 tronçons alternés reliés par une colonne par bord, points faibles, montures de défense, trappe, couloir sûr, graine propre à (graine, saison, milieu)
 │   ├── collision.js  ✅ requête de pointe : solide, intensité toxique, contact lixiviat, frôlements en cours, danger
 │   └── hazards.js    ✅ limaces en mouvement (cx, cy, cr, hitFlash), intensité des nappes
 ├── play/
 │   ├── plant.js      ✅ croissance, pilotage, trace (prepare / launch / update)
 │   ├── flow.js       ✅ morts (solide, lixiviat, brûlure toxique), exposition, éclosion, transitions (plus de messages texte : l'interface se déduit de l'état)
-│   ├── camera.js     ✅ défilement, cadrage ×1,18, zoom de frôlement
+│   ├── boss.js       ✅ le boss (v4.12.0, FP.boss) : cycle des défenses (repos, avertissement, coup), perçage des points faibles, ouverture de la trappe, `state.bossFight`
+│   ├── camera.js     ✅ défilement, cadrage ×1,18 (zoomFrame, toScreen, toWorld), zoom de frôlement
 │   ├── graze.js      ✅ frôlement : suivi par objet, paiement à la sortie, annulation au contact, mesures du flyover
 │   ├── coins.js      ✅ ramassage des pièces (FP.coinPlay) : pièce au combo en cours, bonus du chapelet complet
 │   ├── shop.js       ✅ boutique de fin de pousse (FP.shop) : tirage de 3 articles (un à −50 %), coches, commande, effets
@@ -40,6 +42,7 @@ src/
 │   ├── sprites.js    ✅ chargement des PNG, FP.sprites.get(clé)
 │   ├── decor-tube.js  ✅ conduites usées (coudes, cassures, rouille, galeries effondrées) pour les décors enterrés (FP.decorTube)
 │   ├── decor-friche.js, decor-industrie.js, decor-decharge.js, decor-nucleaire.js ✅ décor de chaque milieu (v4.11.0) : astre et météo, horizon, accessoires de surface, décor enterré, petites animations (FP.decor[id], contrat commun)
+│   ├── boss.js       ✅ le boss provisoire (v4.12.0, FP.bossRender) : tronçons, panneau, points faibles, défenses, trappe, flèche, dessinés en blocs par le code (images : docs/art/prompts-boss.md)
 │   ├── sky.js        ✅ ciel : bandes tramées de la nuance du niveau, puis le ciel et l'horizon du décor du milieu (deux caches)
 │   ├── soil.js       ✅ pelouse et trois strates tramées (humus, argile, pierre), détails clairsemés, accessoires et décor enterré du milieu, en cache ; petites animations du décor à l'écran
 │   ├── obstacles.js  ✅ sprites ramenés sur la grille (8 niveaux par canal, contour), ancrage tramé
@@ -103,9 +106,10 @@ L'état de la partie en cours est `FP.state.current`, créé par `FP.state.creat
   input:  { x, screenX, y, down, active, pressed },
   camera: { y, manual, near, zoom, shake },
   plant:  { seed, tip, dir, guide, trail, oldTrails, stemAge, stemCount, reserves, corruption, toxicTimer, recentToxic, scrapeTimer, cast, castRng, character },
-  world:  { width, height, viewH, surfaceY, milieu, skyVariant, lawnVariant, safePath, safeRadius, solids, toxics, leaks, bonuses, coins, chains },
+  world:  { width, height, viewH, surfaceY, milieu, boss, bossLevel, skyVariant, lawnVariant, safePath, safeRadius, solids, toxics, leaks, bonuses, coins, chains },
   query:  { solid, danger, near, toxic, leak, leakHit, grazes },
   flow:   { timer, stage, fade, overReason, blossom, next, won },
+  bossFight: { pierced, phase },   // v4.12.0 : un booléen par point faible, gardé après une mort ; phase du cycle des défenses (en cycles) ; remis à zéro par FP.boss.reset (seul play/boss.js l'écrit)
   garden: { flowers },
   graze:  { active /* Map objet → frôlement */ },
   power:  { shield, shieldGrace },
@@ -126,7 +130,7 @@ Un niveau est généré par `FP.level.startRun(state)` (tirage du T-Rex signatur
 `FP.loop.step(state, dt)` :
 
 1. `dt` plafonné à `config.loop.maxDt` (dt invalide → `fallbackDt`) ; `state.time += dt` ;
-2. dans tous les modes sauf `splash` et `menu`, `FP[nom].update(state, dt)` pour `input → plant → hazards → collision → graze → coinPlay → scoring → powerups → shop → flow → camera` (un système pas encore porté est sauté ; chacun décide selon `state.mode`). **Tout système expose `update(state, dt)`** : par exemple la requête de pointe vit dans `FP.collision.update` ;
+2. dans tous les modes sauf `splash` et `menu`, `FP[nom].update(state, dt)` pour `input → plant → hazards → boss → collision → graze → coinPlay → scoring → powerups → shop → flow → camera` (un système pas encore porté est sauté ; chacun décide selon `state.mode`). **Tout système expose `update(state, dt)`** : par exemple la requête de pointe vit dans `FP.collision.update` ;
 3. `FP.audio.consume(state.events, state, dt)` ;
 4. `FP.render.frame(state)` ;
 5. `state.events` est vidé.
@@ -163,7 +167,7 @@ Spec : `docs/superpowers/specs/2026-10-22-interface-pixel-design.md` ; maquettes
 
 ## Ordre de chargement
 
-`index.html` charge : `assets/obstacles/manifest.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `hazards.js`, `src/play/plant.js`, `src/world/collision.js`, `src/play/flow.js`, `graze.js`, `scoring.js`, `powerups.js`, `src/play/camera.js`, `src/render/palette.js`, `decor-tube.js`, `decor-friche.js`, `decor-industrie.js`, `decor-decharge.js`, `decor-nucleaire.js`, `px.js`, `view.js`, `sprites.js`, `soil.js`, `sky.js`, `obstacles.js`, `hazards.js`, `powerups.js`, `faces.js`, `cast.js`, `cast2.js`, `hero.js`, `plant.js`, `effects.js`, `flowers.js`, `particles.js`, `drillfx.js`, `mound.js`, `src/ui/font.js`, `hud.js`, `shout.js`, `cheer.js`, `cards.js`, `logo.js`, `title.js`, `certificate.js`, `ui.js`, `src/render/frame.js`, `src/audio/synth.js`, `score.js`, `songs.js`, `songs-industrie.js`, `songs-decharge.js`, `songs-nucleaire.js`, `sequencer.js`, `music.js`, `sfx.js`, `audio.js`, `src/debug/perf.js`, `flydebug.js`, `src/core/loop.js`, `src/ui/input.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` (pour le catalogue).
+`index.html` charge : `assets/obstacles/manifest.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `coins.js`, `boss.js`, `hazards.js`, `src/play/plant.js`, `src/world/collision.js`, `src/play/flow.js`, `graze.js`, `scoring.js`, `powerups.js`, `boss.js` (play), `src/play/camera.js`, `src/render/palette.js`, `decor-tube.js`, `decor-friche.js`, `decor-industrie.js`, `decor-decharge.js`, `decor-nucleaire.js`, `px.js`, `boss.js` (rendu), `view.js`, `sprites.js`, `soil.js`, `sky.js`, `obstacles.js`, `hazards.js`, `powerups.js`, `faces.js`, `cast.js`, `cast2.js`, `hero.js`, `plant.js`, `effects.js`, `flowers.js`, `particles.js`, `drillfx.js`, `mound.js`, `src/ui/font.js`, `hud.js`, `shout.js`, `cheer.js`, `cards.js`, `logo.js`, `title.js`, `certificate.js`, `ui.js`, `src/render/frame.js`, `src/audio/synth.js`, `score.js`, `songs.js`, `songs-industrie.js`, `songs-decharge.js`, `songs-nucleaire.js`, `sequencer.js`, `music.js`, `sfx.js`, `audio.js`, `src/debug/perf.js`, `flydebug.js`, `src/core/loop.js`, `src/ui/input.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` (pour le catalogue).
 
 `dev/check.html` charge aussi les fichiers `src/audio/*`, `src/debug/perf.js`, `flydebug.js` et `src/ui/input.js` (sans canvas ni paramètre d'URL : `FP.perf` et `FP.flydebug` valent `null`, le son reste muet, le pointeur n'est pas écouté).
 
@@ -174,6 +178,12 @@ Spec : `docs/superpowers/specs/2026-10-22-interface-pixel-design.md` ; maquettes
 - `world/level.js` tire les obstacles dans les tables de bande restreintes aux familles du milieu (`FP.level.tableFor`) et écrit `world.milieu` ; le T-Rex ne vit qu'au site nucléaire.
 - Les couleurs d'un milieu (ciel, strates, pelouse) sont dans `FP.palette.milieux[id]`, ses dessins dans `FP.decor[id]` (`render/decor-*.js`, v4.11.0, spec `docs/superpowers/specs/2026-10-28-decors-milieux-design.md`) : `sky.js` peint son astre et son horizon, `soil.js` ses accessoires et son décor enterré (placements tirés de la graine du niveau) ; `render/sky.js`, `soil.js`, `mound.js`, `plant.js` et `obstacles.js` lisent `world.milieu` (les caches du ciel, de la terre et des anciennes tiges l'ont dans leur clé).
 - `ui/cards.js` dessine les cartons (`state.run.card` : `milieu`, `boss`, `victory`) et l'écran de fin ; le HUD montre le milieu et le multiplicateur de saison, le certificat les sites réhabilités, le titre le record de progression (`FP.scoring.records.reach`).
+
+## Le boss (v4.12.0)
+
+Spec `docs/superpowers/specs/2026-10-28-moteur-boss-design.md`. Le niveau de boss (`state.run.boss`) est généré par `FP.bossLevel.generate` (appelé par `FP.level.generate`) : 4 tronçons de 53 % de la largeur (`segWidth`), minces (`thickK`), du bas vers le haut, accrochés tour à tour à gauche et à droite : ils dépassent le milieu, le couloir sûr zigzague d'un flanc à l'autre (la verticale du centre ne frôle pas les points faibles) ; le reste de la zone va aux intervalles, où le couloir change de flanc par une montée droite au-dessus du coin quitté (`crossUp`), une diagonale douce (`crossK` × `level.safePath.maxSlope`) et une montée droite sous le coin suivant, pour qu'une tige qui anticipe comme une tige en retard suive (`dev/tests/bosspath.test.js` le vérifie par les vrais systèmes) ; une colonne le long de chaque bord utilisé (`spineW` de la largeur, du bas du tronçon le plus bas au haut du plus haut de ce flanc) relie les tronçons en une seule structure, sans jamais approcher le couloir ; un point faible par tronçon, au milieu de sa face côté couloir ; une défense (piston, jet ou bras, selon le milieu : `config.boss.pairs`) à `mountK` du haut de la même face ; une trappe sous la pelouse, fermée tant que les 4 points ne sont pas percés. Tout est dans `world.bossLevel` (`{ segments, spines: [{ side, x0, x1, y0, y1, solid }], weak, defenses, trap }`) ; la portée d'une défense est `reach` × (largeur − tronçon − colonne) ; les tronçons, colonnes, défenses et la trappe sont aussi des solides (`kind: 'boss' | 'defense' | 'trap'`) pour la collision, ceux au repos portant `off`.
+`FP.boss.update` (entre `hazards` et `collision`) anime les défenses : une phase continue (`state.bossFight.phase`, en cycles) avance de dt / période, la période raccourcissant de 20 % par point percé — un perçage accélère le cycle sans faire sauter une défense en coup ; `FP.boss.stageAt(i, phase)` en déduit l'étape (pur, lu aussi par le rendu). Il perce un point quand la pointe arrive à `weakHit`, ouvre la trappe au 4ᵉ (`events` : `bossPierce`, `bossTrap`). La trappe fermée tue toujours : ni le bouclier (membrane) ni sa grâce ne l'absorbent (`play/powerups.js`). Avant et pendant un boss (`state.run.boss`), la boutique ne tire ni Lobbying ni Bière anti-limaces, sans effet sur ce niveau. Les points percés vivent dans `state.bossFight.pierced` : ils survivent à une mort, `FP.boss.reset` les efface au milieu suivant. L'éclosion sous la pelouse bat le boss (`bossDown`, carton « BOSS VAINCU »).
+Le rendu (`render/boss.js`) est provisoire : blocs dessinés par le code, aux couleurs de `FP.palette.boss`. Sa flèche vise le prochain point non percé au-dessus de la pointe quand l'écran zoomé ne le montre pas ; son ancre est en pixels d'écran, par le cadrage de `FP.camera.zoomFrame` / `toScreen` / `toWorld` — le même que `render/frame.js` applique. Un perçage fait jaillir étincelles (`render/particles.js`) et jetons (`render/coins.js`), en plus du gain flottant. Les vraies images sont décrites dans `docs/art/prompts-boss.md`, non générées.
 
 ## Dangers diffus
 

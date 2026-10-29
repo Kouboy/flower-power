@@ -2,7 +2,7 @@
 // Lit     : rien.
 // Écrit   : rien.
 // Expose  : FP.palette.{milieux (décor par milieu : sky, strata, lawn), strataBounds, strataTone(d, k, milieu), stem, seed, hero, cast, coin, flowers,
-//           toxic, slug, danger, decor()}.
+//           toxic, slug, danger, boss, decor()}.
 // Les teintes de `danger` (violet chimique) signalent les dangers : interdites au décor, distinctes de la pousse.
 (function () {
   'use strict';
@@ -95,6 +95,20 @@
   // Teintes vives qui signalent un danger : interdites au décor, loin des verts de la pousse (tests dans dev/tests/px.test.js).
   const danger = [toxic.mid, toxic.light, toxic.glow, slug.body, slug.clear, slug.spot, slug.flash];
 
+  // Boss provisoire (v4.12.0, render/boss.js) : blocs par milieu (corps, reflet, ombre, contour, rouille, coulure, rivet), plus ce qui est commun.
+  // weak : blanc-jaune incandescent réservé aux points faibles (aucun décor, aucun obstacle ne l'emploie) ; trap : rayures jaune / noir ;
+  // jet : jet de liquide de refroidissement (ni vert de pousse, ni violet de danger) ; glow : lueur d'avertissement ; smoke : fumée des trous.
+  const boss = {
+    milieux: {
+      friche: { body: '#6e6b66', light: '#8d8a84', dark: '#43403c', edge: '#24211f', rust: '#8a4a2a', drip: '#aaa69e', rivet: '#b4b0a8' },
+      industrie: { body: '#5e5048', light: '#86705c', dark: '#3a2e28', edge: '#1e1713', rust: '#a0522a', drip: '#c49068', rivet: '#c8a888' },
+      decharge: { body: '#585c38', light: '#7a7e4c', dark: '#34381f', edge: '#1a1c0e', rust: '#7a4a24', drip: '#9c9c5c', rivet: '#b0b070' },
+      nucleaire: { body: '#5a6862', light: '#7c8c84', dark: '#34403c', edge: '#161c1a', rust: '#6a5a3a', drip: '#9ab0a4', rivet: '#b0c4b8' }
+    },
+    weak: ['#ffff80', '#ffe838'], trap: ['#f0c000', '#14100a'], plate: ['#d8c8a0', '#14100a'],
+    jet: ['#a8d8e8', '#5a9cc0'], glow: ['#e86a28', '#ff9a3a'], smoke: ['#5a5650', '#8a867e'], hole: '#0c0806'
+  };
+
   // Teinte de terre du milieu id à une profondeur relative d (0 = surface, 1 = fond) ; k de 0 (claire) à 3 (sombre).
   function strataTone(d, k, id) {
     const s = milieux[id].strata, t = d < strataBounds.humus ? s.humus : (d < strataBounds.clay ? s.clay : s.stone);
@@ -104,5 +118,5 @@
   // Toutes les teintes de décor de tous les milieux (test : aucune n'approche une teinte de danger).
   const decor = () => Object.values(milieux).flatMap(m => [...m.sky.flat(), ...m.strata.humus, ...m.strata.clay, ...m.strata.stone, ...m.lawn.flat()]);
 
-  FP.palette = { milieux, strataBounds, strataTone, stem, seed, hero, cast, coin, flowers, toxic, slug, danger, decor };
+  FP.palette = { milieux, strataBounds, strataTone, stem, seed, hero, cast, coin, flowers, toxic, slug, danger, boss, decor };
 })();

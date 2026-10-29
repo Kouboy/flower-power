@@ -139,3 +139,9 @@ FP.test('audio: lâcher fait retomber le grondement, le pop le coupe net', () =>
   const r = strainAt(.5, false); FP.assert(!r || (r[1] === false && r[2] !== true), 'retombe : ' + r);
   const p = strainAt(1, true, [{ type: 'germPop' }]); FP.assert(p && p[1] === false && p[2] === true, 'net : ' + p);
 });
+// Boss (v4.12.0) : perçage, trappe et victoire ont chacun leur son FM.
+FP.test('audio: perçage, trappe et victoire du boss ont leur son', () => {
+  for (const type of ['bossPierce', 'bossTrap', 'bossDown']) withBackend(b => {
+    FP.audio.consume([{ type, i: 1, x: 100, y: 200 }], auRun(), 0); FP.assert(sounding(b).length > 0, type);
+  });
+});
