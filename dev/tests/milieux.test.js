@@ -22,7 +22,7 @@ FP.test('palette: la friche garde les palettes de la v4.8', () => {
   FP.assertEqual(p.sky[0][0], '#2e1452'); FP.assertEqual(p.sky.length, 4);
   FP.assertEqual(p.strata.humus[0], '#130d0e'); FP.assertEqual(p.lawn[0][0], '#1c2e14');
 });
-const genIn = (seed, level, milieu) => { const s = FP.state.createRun(seed, { W: 440, H: 783 }); s.level = level; s.run.milieu = milieu; FP.level.generate(s); return s; };
+const genIn = (seed, level, milieu) => { const s = FP.state.createRun(seed, { W: 440, H: 783 }); s.level = level; s.difficulty = level; s.run.milieu = milieu; FP.level.generate(s); return s; };
 FP.test('level: chaque milieu ne pose que ses familles', () => {
   FP.config.milieux.forEach((m, i) => {
     for (const level of [0, 8]) for (let seed = 1; seed <= 20; seed++) {
@@ -47,7 +47,7 @@ FP.test('level: tableFor reprend les poids d’origine, ou toutes les familles d
 FP.test('level: le T-Rex signature n’apparaît qu’au site nucléaire', () => {
   let friche = 0, nucleaire = 0;
   for (let seed = 1; seed <= 40; seed++) for (const [milieu, add] of [[0, () => friche++], [3, () => nucleaire++]]) {
-    const s = FP.state.createRun(seed, { W: 440, H: 783 }); s.run.milieu = milieu; s.level = 1;
+    const s = FP.state.createRun(seed, { W: 440, H: 783 }); s.run.milieu = milieu; s.level = 1; s.difficulty = 1;
     s.signature = { armed: true, spawned: false, targetLevel: 0 };
     FP.level.generate(s);
     if (s.world.solids.some(o => o.kind === 'trex_signature')) add();

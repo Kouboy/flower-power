@@ -2,6 +2,13 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.13.0 — Version playtest et difficulté en dents de scie
+
+- `?sansboss=1` ouvre la version playtest : 6 pousses par milieu, bon de commande toutes les 3, jamais de boss ; après la 6ᵉ pousse du site nucléaire, le certificat « SITE RÉHABILITÉ » (sites traversés 4/4) ; « VERSION PLAYTEST » sous le titre ;
+- la difficulté suit l'avancée dans les milieux, dans les deux versions : chaque milieu monte de son départ à son sommet, le suivant repart un peu plus bas (0 → 0,25 ; 0,10 → 0,50 ; 0,35 → 0,75 ; 0,60 → 1), le boss se joue au sommet ; le maximum arrive au site nucléaire au lieu de la zone industrielle ;
+- le pollen fait monter la difficulté d'une pousse par fleur en plus, dans le milieu en cours ; une mort ne la fait jamais monter ;
+- banc : 552 tests.
+
 ## v4.12.0 — Moteur de boss
 
 - le niveau de boss est un vrai combat : 4 tronçons de machine accrochés tour à tour aux flancs, un point faible par tronçon à percer de bas en haut, une trappe sous la pelouse qui ne s'ouvre qu'après le quatrième ;

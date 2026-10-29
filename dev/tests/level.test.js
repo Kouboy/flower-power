@@ -1,5 +1,5 @@
 const gen = (seed, W = 440, H = 783, level = 0) => {
-  const s = FP.state.createRun(seed, { W, H }); s.level = level; FP.level.generate(s); return s;
+  const s = FP.state.createRun(seed, { W, H }); s.level = level; s.difficulty = level; FP.level.generate(s); return s;
 };
 FP.test('level: déterministe', () => {
   const pick = s => JSON.stringify(s.world.solids.map(o => [o.kind, o.x, o.y, o.a, o.flip]));
@@ -120,7 +120,7 @@ FP.test('level: des trajets de limaces peuvent dépasser du cadre', () => {
   FP.assert(out > 0, 'aucun trajet ne dépasse');
 });
 // Difficulté v4.1.0 : plus dense dès le premier passage, et une rampe qui se sent (moyenne sur 12 graines, fenêtre 440 × 783).
-const meanSolids = (level) => { let n = 0; for (let seed = 1; seed <= 12; seed++) { const s = FP.state.createRun(seed, { W: 440, H: 783 }); s.level = level; FP.level.startRun(s); n += s.world.solids.length; } return n / 12; };
+const meanSolids = (level) => { let n = 0; for (let seed = 1; seed <= 12; seed++) { const s = FP.state.createRun(seed, { W: 440, H: 783 }); s.level = level; s.difficulty = level; FP.level.startRun(s); n += s.world.solids.length; } return n / 12; };
 FP.test('level: premier niveau plus dense', () => { const m = meanSolids(0); FP.assert(m >= 14, 'moyenne ' + m); });
 FP.test('level: la densité monte nettement avec les niveaux', () => { const a = meanSolids(0), b = meanSolids(4); FP.assert(b >= a + 2.5, a + ' → ' + b); });   // le terrain plafonne vers 20 obstacles
 FP.test('level: les obstacles d’un niveau n’ont pas tous la même taille', () => {
@@ -132,7 +132,7 @@ FP.test('level: les obstacles d’un niveau n’ont pas tous la même taille', (
 const toxicCover = (level) => {
   let n = 0, cov = 0;
   for (let seed = 1; seed <= 12; seed++) {
-    const s = FP.state.createRun(seed, { W: 440, H: 783 }); s.level = level; FP.level.startRun(s);
+    const s = FP.state.createRun(seed, { W: 440, H: 783 }); s.level = level; s.difficulty = level; FP.level.startRun(s);
     n += s.world.toxics.length; cov += s.world.toxics.reduce((a, o) => a + Math.PI * o.rx * o.ry, 0) / (s.world.width * (s.world.height - s.world.surfaceY));
   }
   return { n: n / 12, cov: cov / 12 };
@@ -148,7 +148,7 @@ FP.test('level: les nappes toxiques se multiplient vite avec les niveaux', () =>
 FP.test('level: les nappes toxiques se répartissent sur toute la hauteur, surface comprise', () => {
   const area = [0, 0, 0];
   for (let seed = 1; seed <= 12; seed++) {
-    const s = FP.state.createRun(seed, { W: 440, H: 783 }); s.level = 3; FP.level.startRun(s);
+    const s = FP.state.createRun(seed, { W: 440, H: 783 }); s.level = 3; s.difficulty = 3; FP.level.startRun(s);
     const w = s.world;
     for (const o of w.toxics) area[Math.min(2, Math.floor((o.y - w.surfaceY) / (w.height - w.surfaceY) * 3))] += Math.PI * o.rx * o.ry;
   }
@@ -157,11 +157,11 @@ FP.test('level: les nappes toxiques se répartissent sur toute la hauteur, surfa
   FP.assert(area[2] / total <= .42, 'tiers du fond : ' + Math.round(area[2] / total * 100) + ' %');
 });
 FP.test('level: le chemin sûr se resserre avec les niveaux, jusqu’à presque la largeur de la tête', () => {
-  const r = (level) => { const s = FP.state.createRun(3, { W: 440, H: 783 }); s.level = level; FP.level.generate(s); return s.world.safeRadius; };
+  const r = (level) => { const s = FP.state.createRun(3, { W: 440, H: 783 }); s.level = level; s.difficulty = level; FP.level.generate(s); return s.world.safeRadius; };
   FP.assertEqual(r(0), 25); FP.assert(r(4) < 20 && r(4) > 17, String(r(4))); FP.assertEqual(r(8), 12); FP.assertEqual(r(20), 12);
 });
 // Franchissabilité à tous les niveaux (le chemin sûr se resserre) : géométrie réelle, pas la formule de placement.
-const genAt = (seed, level, milieu = 0) => { const s = FP.state.createRun(seed, { W: 440, H: 783 }); s.level = level; s.run.milieu = milieu; FP.level.generate(s); return s.world; };
+const genAt = (seed, level, milieu = 0) => { const s = FP.state.createRun(seed, { W: 440, H: 783 }); s.level = level; s.difficulty = level; s.run.milieu = milieu; FP.level.generate(s); return s.world; };
 const pathPoints = (w) => { const pts = [], P = w.safePath; for (let i = 1; i < P.length; i++) { const a = P[i - 1], b = P[i], n = Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 4); for (let k = 0; k <= n; k++) pts.push({ x: a.x + (b.x - a.x) * k / n, y: a.y + (b.y - a.y) * k / n }); } return pts; };
 const LEVELS = [0, 4, 8, 12], SEEDS = [...Array(30).keys()].map(i => i + 1);
 FP.test('level: à tous les niveaux, aucune nappe toxique ne recouvre le chemin sûr', () => {
@@ -213,4 +213,8 @@ FP.test('level: dangers et déchets se rapprochent du chemin avec les niveaux', 
   FP.assertEqual(w0.hazardRadius, FP.config.level.safePath.radiusBase); FP.assertEqual(w10.hazardRadius, hard.hazardRadius); FP.assertEqual(w20.hazardRadius, hard.hazardRadius);
   FP.assertEqual(w0.solidExtra, FP.config.level.fit.safeExtra); FP.assertEqual(w10.solidExtra, hard.solidExtra);
   for (const seed of SEEDS) { const w = genAt(seed, 10); for (const o of w.toxics) FP.assert(FP.level.distToSafePath(w, o.x, o.y) > w.hazardRadius + Math.max(o.rx, o.ry) * FP.config.level.toxics.safeK + FP.config.level.toxics.safeExtra, `graine ${seed}`); }
+});
+FP.test('level: la difficulté règle le chemin, pas le compteur de niveaux', () => {
+  const at = (level, difficulty) => { const s = FP.state.createRun(5, { W: 440, H: 783 }); s.level = level; s.difficulty = difficulty; FP.level.generate(s); return s.world.safeRadius; };
+  FP.assertEqual(at(10, 0), 25); FP.assertEqual(at(0, 10), 12);
 });

@@ -2,7 +2,7 @@
 // Robot naturel : le doigt sur l'abscisse du prochain nœud du couloir, défenses retirées (le couloir seul est jugé ici).
 const bossFollow = (W, level, milieu) => {
   const s = FP.state.createRun(21, { W, H: Math.round(W * 16 / 9) });
-  FP.level.startRun(s); s.level = level; s.run.milieu = milieu; s.run.boss = true; s.run.step = FP.config.run.steps;
+  FP.level.startRun(s); s.level = level; s.difficulty = level; s.run.milieu = milieu; s.run.boss = true; s.run.step = FP.config.run.steps;
   FP.level.generate(s); FP.plant.launch(s); s.mode = 'playing'; s.run.card = null; s.events.length = 0;
   const bl = s.world.bossLevel;
   bl.defenses.forEach(d => { d.solid.off = true; }); bl.defenses.length = 0;
@@ -23,7 +23,7 @@ FP.test('bossLevel: changements de flanc doux, loin des coins, du niveau 3 au ni
   const c = FP.config.boss, max = c.crossK * FP.config.level.safePath.maxSlope;
   for (const W of [300, 360, 440]) for (let level = 3; level <= 10; level++) {
     const s = FP.state.createRun(7, { W, H: Math.round(W * 16 / 9) });
-    FP.level.startRun(s); s.level = level; s.run.boss = true; FP.level.generate(s);
+    FP.level.startRun(s); s.level = level; s.difficulty = level; s.run.boss = true; FP.level.generate(s);
     const P = s.world.safePath, r = s.world.safeRadius, at = `W=${W} niveau ${level}`;
     for (let i = 1; i < P.length; i++) FP.assert(Math.abs(P[i].x - P[i - 1].x) / (P[i - 1].y - P[i].y) <= max + 1e-9, `pente au segment ${i} ` + at);
     for (const seg of s.world.bossLevel.segments) for (const [x, y] of [[seg.x0, seg.y0], [seg.x1, seg.y0], [seg.x0, seg.y1], [seg.x1, seg.y1]]) {
@@ -45,7 +45,7 @@ FP.test('bossLevel: un doigt qui suit le couloir perce les 4 points et atteint l
 FP.test('bossLevel: une colonne le long de chaque bord relie les tronçons', () => {
   for (const W of [300, 440]) {
     const s = FP.state.createRun(7, { W, H: Math.round(W * 16 / 9) });
-    FP.level.startRun(s); s.level = 5; s.run.boss = true; FP.level.generate(s);
+    FP.level.startRun(s); s.level = 5; s.difficulty = 5; s.run.boss = true; FP.level.generate(s);
     const bl = s.world.bossLevel, sp = bl.spines;
     FP.assertEqual(sp.length, 2, 'deux colonnes');
     for (const side of [-1, 1]) {
@@ -63,7 +63,7 @@ FP.test('bossLevel: une colonne le long de chaque bord relie les tronçons', () 
 FP.test('bossLevel: le couloir reste loin des colonnes', () => {
   for (const W of [300, 360, 440]) for (const level of [3, 6, 10]) for (let milieu = 0; milieu < 4; milieu++) {
     const s = FP.state.createRun(7, { W, H: Math.round(W * 16 / 9) });
-    FP.level.startRun(s); s.level = level; s.run.milieu = milieu; s.run.boss = true; FP.level.generate(s);
+    FP.level.startRun(s); s.level = level; s.difficulty = level; s.run.milieu = milieu; s.run.boss = true; FP.level.generate(s);
     const P = s.world.safePath, r = s.world.safeRadius, at = `W=${W} niveau ${level} milieu ${milieu}`;
     for (const c of s.world.bossLevel.spines) for (let i = 1; i < P.length; i++) for (let k = 0; k <= 20; k++) {
       const x = P[i - 1].x + (P[i].x - P[i - 1].x) * k / 20, y = P[i - 1].y + (P[i].y - P[i - 1].y) * k / 20;
@@ -75,7 +75,7 @@ FP.test('bossLevel: le couloir reste loin des colonnes', () => {
 FP.test('bossLevel: avec le zoom de cadrage, chaque colonne garde au moins 5 % de la largeur visible', () => {
   for (const W of [300, 440]) for (const mode of ['ready', 'playing']) {
     const s = FP.state.createRun(7, { W, H: Math.round(W * 16 / 9) });
-    FP.level.startRun(s); s.level = 5; s.run.boss = true; FP.level.generate(s); s.mode = mode;
+    FP.level.startRun(s); s.level = 5; s.difficulty = 5; s.run.boss = true; FP.level.generate(s); s.mode = mode;
     s.plant.tip = { x: W / 2, y: s.world.height / 2 }; s.camera.y = s.plant.tip.y - s.world.viewH / 2;   // point focal au centre de l'écran
     for (const c of s.world.bossLevel.spines) {
       const inner = FP.camera.toScreen(s, c.side < 0 ? c.x1 : c.x0, s.plant.tip.y).x, shown = c.side < 0 ? inner : W - inner;

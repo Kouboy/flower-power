@@ -1,5 +1,5 @@
 // world/level.js — génération d'un niveau à partir de la graine du run.
-// Lit     : state.rng, state.level, state.run.{milieu,boss}, FP.config.shop.lobbyingK (option lobbying), state.world.{width,height,viewH,surfaceY}, state.signature,
+// Lit     : state.rng, state.difficulty (niveau équivalent : réglages par niveau), state.level (réveil du T-Rex), state.run.{milieu,boss}, FP.config.shop.lobbyingK (option lobbying), state.world.{width,height,viewH,surfaceY}, state.signature,
 //           FP.config.{level,spawnTables,signature,milieux}, FP.catalog, FP.geom, FP.bossLevel.generate (niveau de boss).
 // Écrit   : state.world.{milieu,boss,bossLevel,skyVariant,lawnVariant,safePath,safeRadius,hazardRadius,solidExtra,solids,toxics,leaks,bonuses}, state.signature ;
 //           puis FP.coins.place écrit state.world.{coins,chains}.
@@ -199,7 +199,7 @@
   function placeSolids(state, grid, k = 1) {
     const world = state.world, rng = state.rng, s = FP.config.level.solids;
     const worldScale = worldScaleOf(world);
-    const count = Math.round((s.base + Math.min(s.maxExtra, Math.floor(state.level * s.perLevel))) * worldScale * s.scale * s.framing * k);
+    const count = Math.round((s.base + Math.min(s.maxExtra, Math.floor(state.difficulty * s.perLevel))) * worldScale * s.scale * s.framing * k);
     const bands = ['upper', 'middle', 'deep'];
     let misses = 0;
     for (let i = 0; i < count && misses < s.giveUpAfter; i++) {
@@ -237,7 +237,7 @@
   }
 
   function countFor(c, state) {
-    return Math.round((c.base + Math.min(c.maxExtra, Math.floor(state.level * c.perLevel))) * worldScaleOf(state.world) * c.scale);
+    return Math.round((c.base + Math.min(c.maxExtra, Math.floor(state.difficulty * c.perLevel))) * worldScaleOf(state.world) * c.scale);
   }
 
 
@@ -324,7 +324,7 @@
         const angle = rng.next() < c.angledChance
           ? Math.PI * c.shape.angles[Math.floor(rng.next() * c.shape.angles.length)] + rng.range(-c.angleJitter, c.angleJitter)
           : (rng.next() < .5 ? 0 : Math.PI * .5);
-        const len = rng.range(c.len[0], c.len[1]) + Math.min(c.lenLevelMax, state.level * c.lenPerLevel) * rng.next() + k * c.lenDepth;
+        const len = rng.range(c.len[0], c.len[1]) + Math.min(c.lenLevelMax, state.difficulty * c.lenPerLevel) * rng.next() + k * c.lenDepth;
         const leak = {
           x: pos.x, y: pos.y, len, angle, phase: rng.range(0, 6.28), rate: rng.range(c.rate[0], c.rate[1]), r: rng.range(c.r[0], c.r[1]),
           hitFlash: 0, morph: c.shape.morphs[Math.floor(rng.next() * c.shape.morphs.length)], debrisSeed: Math.floor(rng.next() * 99),
@@ -362,7 +362,7 @@
     world.bossLevel = null;
     if (state.run.boss) { FP.bossLevel.generate(state); return; }   // v4.12.0 : le niveau de boss a sa propre génération (world/boss.js)
     const grid = makeGrid(world.width, world.surfaceY + g.topPad, world.height - g.bottomPad);
-    generateSafePath(world, rng, state.level);
+    generateSafePath(world, rng, state.difficulty);
     placeSignature(state, grid);
     placeSolids(state, grid, opts.lobbying ? FP.config.shop.lobbyingK : 1);
     placeToxics(state, grid);

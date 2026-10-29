@@ -1,7 +1,7 @@
 // play/flow.js — déroulé de partie : mort, éclosion, transitions, fin de partie.
 // Lit     : state.mode, state.query, state.plant, state.input.pressed, state.events, state.rng, state.boosts.filter, state.world.{surfaceY,width},
-//           FP.config.{flow,text,toxic,garden,soil,boss}.
-// Écrit   : state.mode, state.flow, state.run (seul à l'écrire : milieu, pousses, boss, saison, carton), state.garden.flowers (création, croissance), state.plant.{reserves,oldTrails,corruption,toxicTimer,recentToxic}, state.score.flowers,
+//           FP.config.{flow,text,toxic,garden,soil,boss,run,milieux}, FP.difficulty.level.
+// Écrit   : state.mode, state.flow, state.run (seul à l'écrire : milieu, pousses, boss, saison, carton, avance du pollen, playtest terminé), state.difficulty, state.garden.flowers (création, croissance), state.plant.{reserves,oldTrails,corruption,toxicTimer,recentToxic}, state.score.flowers,
 //           state.level, state.camera.shake, state.score.eco et state.events (death, bloom, blossom, toxicEnter, ready, bossDown) ; appelle FP.level.generate, FP.plant.prepare/launch,
 //           FP.scoring.awardFlat (bonus du boss) et FP.boss.reset (milieu suivant).
 // Expose  : FP.flow.update(state, dt), FP.flow.simplifyTrail(points, minStep), FP.flow.afterShop(state, after) (fin du bon de commande),
@@ -42,7 +42,7 @@
     }
   }
 
-  // Chaque pollen ramassé ajoute une fleur (et fait avancer d'autant de niveaux, comme en v3).
+  // Chaque pollen ramassé ajoute une fleur (le compteur de niveaux avance d'autant, comme en v3 ; la difficulté, d'autant de pousses).
   function bloom(state) {
     const cfg = FP.config.flow, p = state.plant, count = 1 + state.score.flowerBonus;
     state.boosts = {};   // fin de pousse : les achats de la boutique s'arrêtent là
@@ -57,7 +57,12 @@
       FP.scoring.awardFlat(state, p.tip.x, state.world.surfaceY, FP.config.boss.bonus);
       state.events.push({ type: 'bossDown', x: p.tip.x, y: state.world.surfaceY });
     }
-    else if ((r.step += 1) >= FP.config.run.steps) { r.boss = true; state.flow.next = 'boss'; }
+    else {
+      r.step += 1; r.push += count - 1;   // v4.13.0 : chaque fleur en plus avance la difficulté d'une pousse dans le milieu
+      state.flow.next = r.playtest ? playtestNext(r) : (r.step >= FP.config.run.steps ? 'boss' : null);
+      if (state.flow.next === 'boss') r.boss = true;
+    }
+    state.difficulty = FP.difficulty.level(r);
     p.oldTrails.push(simplifyTrail(p.trail, cfg.trailSimplifyPx));
     if (p.oldTrails.length > cfg.oldTrailsMax) p.oldTrails.shift();
     // bloom : la motte se fend (terre projetée) ; blossom, hatchDelay plus tard : la fleur sort (anneau doré, pétales).
@@ -68,6 +73,14 @@
     state.mode = 'bloom';
     state.flow.timer = cfg.bloomTime;
     state.flow.stage = 'show'; state.flow.fade = 0;
+  }
+
+  // Version playtest (v4.13.0) : bon de commande toutes les `shopEvery` pousses ; après la dernière du milieu, bon puis
+  // milieu suivant ; après la dernière du dernier milieu, l'écran de résultats.
+  function playtestNext(r) {
+    const c = FP.config.run.playtest;
+    if (r.step >= c.steps) return r.milieu === FP.config.milieux.length - 1 ? 'end' : 'milieu';
+    return r.step % c.shopEvery === 0 ? 'shop' : null;
   }
 
   // cause : 'solid' | 'leak' | 'toxic' ; kind : famille de l'obstacle (cause solid uniquement).
@@ -92,7 +105,8 @@
     } else if (f.stage === 'fadeOut') {
       f.fade = clamp(1 - f.timer / cfg.fadeOutTime, 0, 1);
       if (f.timer <= 0) {
-        if (f.next === 'milieu') nextMilieu(state);   // boss vaincu : le nouveau niveau est celui du milieu suivant
+        if (f.next === 'end') { state.run.done = true; f.next = null; f.stage = 'show'; f.fade = 0; state.mode = 'over'; return; }   // playtest terminé : résultats sur le parterre
+        if (f.next === 'milieu') nextMilieu(state);   // boss vaincu ou playtest : le nouveau niveau est celui du milieu suivant
         FP.level.generate(state);
         FP.plant.prepare(state);
         f.stage = 'fadeIn'; f.timer = cfg.fadeInTime; f.fade = 1;
@@ -103,7 +117,7 @@
         f.fade = 0; f.stage = 'show';
         const next = f.next; f.next = null;
         if (f.won) { f.won = false; state.mode = 'won'; f.timer = cfg.wonDelay; }   // première saison terminée : écran de fin
-        else if (next === 'boss') FP.shop.open(state, { after: 'bloom' });       // bon de commande avant le boss, puis « prête »
+        else if (next === 'boss' || next === 'shop' || (next === 'milieu' && state.run.playtest)) FP.shop.open(state, { after: 'bloom' });   // bon de commande, puis « prête »
         else afterShop(state, 'bloom');
       }
     }
@@ -112,13 +126,14 @@
   // Milieu suivant (après un boss) ; après le dernier, saison suivante au premier milieu, et l'écran de fin la toute première fois.
   function nextMilieu(state) {
     const r = state.run;
-    r.milieu += 1; r.step = 0; r.boss = false;
+    r.milieu += 1; r.step = 0; r.boss = false; r.push = 0;
     FP.boss.reset(state);
     if (r.milieu >= FP.config.milieux.length) {
       r.milieu = 0; r.saison += 1;
       if (!r.won) { r.won = true; state.flow.won = true; }
     }
     r.card = { kind: 'milieu', t0: state.time };
+    state.difficulty = FP.difficulty.level(r);
   }
 
   // Nappe toxique : pas de choc mais une exposition qui dévie la croissance, puis brûle la pointe.

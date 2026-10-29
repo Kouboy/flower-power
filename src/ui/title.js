@@ -1,9 +1,9 @@
 // ui/title.js — écran titre arcade. Au lancement, il est figé sous « PRESS TO START » (écran d'accueil) : le premier appui
 // débloque le son, passe en plein écran sur écran tactile et réveille le titre (logo animé, « TOUCHER POUR POUSSER »).
-// Lit     : state.mode, state.time, FP.config.text.{ready,pressStart,footer,record,saison}, FP.config.milieux, FP.scoring.records, FP.logo, FP.font, FP.view.ui.
+// Lit     : state.mode, state.time, FP.config.text.{ready,pressStart,footer,record,saison,playtest}, FP.config.milieux, FP.params.sansboss, FP.scoring.records, FP.logo, FP.font, FP.view.ui.
 // Écrit   : wake() — appelé par ui/menu.js au premier appui — passe state.mode de 'splash' à 'menu' et note state.fx.ui.awakeAt.
 // Expose  : FP.title.draw(g, state), FP.title.clock(state), FP.title.wake(state), FP.title.wantsFullscreen(pointerType),
-//           FP.title.iconRect(w, h), FP.title.hitIcon(artX, artY, w, h) (icône du réglage du son ; purs, testés),
+//           FP.title.iconRect(w, h), FP.title.hitIcon(artX, artY, w, h) (icône du réglage du son ; purs, testés), FP.title.playtestLine(params),
 //           FP.title.recordLine(records) (progression la plus lointaine, pure, testée).
 // Lit aussi : FP.audio.setting() (état de l'icône).
 (function () {
@@ -52,6 +52,9 @@
     return text.record + ' ' + (r.saison > 1 ? text.saison + ' ' + r.saison : FP.config.milieux[r.milieu].name);
   }
 
+  // Repère de la version playtest (v4.13.0) : affiché sous le logo quand l'adresse porte ?sansboss=1.
+  const playtestLine = (params) => (params && params.sansboss ? FP.config.text.playtest : null);
+
   function draw(g, state) {
     const { w, h } = FP.view.ui, t = state.time, text = FP.config.text, L = FP.logo.layout(), splash = state.mode === 'splash';
     // ×2 quand il tient dans 90 % de la largeur (écran d'ordinateur) ; sur téléphone, ×1 est déjà le maximum.
@@ -59,6 +62,8 @@
     g.save(); g.translate(Math.round(w / 2 - L.width * s / 2), Math.round(h * .3 - (s - 1) * L.height / 2)); g.scale(s, s);
     FP.logo.draw(g, 0, 0, clock(state));
     g.restore();
+    const tag = playtestLine(FP.params);
+    if (tag) FP.font.draw(g, tag, w / 2, Math.round(h * .3 + (s + 1) * L.height / 2 + 6), { align: 'center', color: FOOTER });
     if (Math.floor(t * 1.8) % 2 === 0) FP.font.draw(g, splash ? text.pressStart : text.ready, w / 2, h - 46, { align: 'center' });
     const record = splash ? null : recordLine(FP.scoring.records);
     if (record) FP.font.draw(g, record, w / 2, h - 60, { align: 'center', color: FP.font.COLORS.gold });
@@ -67,5 +72,5 @@
     if (!splash) drawIcon(g, w, h, FP.audio.setting());
   }
 
-  FP.title = { draw, clock, wake, wantsFullscreen, iconRect, hitIcon, recordLine };
+  FP.title = { draw, clock, wake, wantsFullscreen, iconRect, hitIcon, recordLine, playtestLine };
 })();

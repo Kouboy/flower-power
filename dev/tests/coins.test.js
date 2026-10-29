@@ -1,5 +1,5 @@
 // Chapelets de pièces (world/coins.js) : posés à la génération du niveau, avec leur propre tirage.
-const coinRun = (seed, level = 0) => { const s = FP.state.createRun(seed, { W: 440, H: 783 }); s.level = level; FP.level.generate(s); return s; };
+const coinRun = (seed, level = 0) => { const s = FP.state.createRun(seed, { W: 440, H: 783 }); s.level = level; s.difficulty = level; FP.level.generate(s); return s; };
 const chainCoins = (w, i) => w.coins.filter(c => c.chain === i).sort((a, b) => a.rank - b.rank);
 FP.test('coins: chaque tranche a un chapelet facile', () => {
   for (let seed = 1; seed <= 20; seed++) {
@@ -87,7 +87,7 @@ FP.test('coins: au moins trois sortes d’appâts sur 30 graines', () => {
 FP.test('coins: deux chapelets ne se chevauchent jamais', () => {
   const k = FP.config.coins;
   for (const [W, H] of [[440, 783], [412, 915]]) for (const level of [0, 4, 8]) for (let seed = 1; seed <= 15; seed++) {
-    const s = FP.state.createRun(seed, { W, H }); s.level = level; FP.level.generate(s);
+    const s = FP.state.createRun(seed, { W, H }); s.level = level; s.difficulty = level; FP.level.generate(s);
     const cs = s.world.coins;
     for (let i = 0; i < cs.length; i++) for (let j = i + 1; j < cs.length; j++)
       if (cs[i].chain !== cs[j].chain) FP.assert(Math.hypot(cs[i].x - cs[j].x, cs[i].y - cs[j].y) > 2 * k.radius + 1, W + ' n' + level + ' g' + seed);

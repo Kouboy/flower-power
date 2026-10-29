@@ -49,7 +49,7 @@ FP.test('bossLevel: le couloir est franchissable et longe chaque point faible', 
 FP.test('bossLevel: le couloir zigzague d’un flanc à l’autre, suivable, franchissable du niveau 3 au niveau 10', () => {
   const max = FP.config.level.safePath.maxSlope;
   for (const W of [300, 440]) for (let milieu = 0; milieu < 4; milieu++) for (let level = 3; level <= 10; level++) {
-    const s = bossRun(W, milieu); s.level = level; FP.level.generate(s);
+    const s = bossRun(W, milieu); s.level = level; s.difficulty = level; FP.level.generate(s);
     const w = s.world, bl = w.bossLevel, P = w.safePath, at = `W=${W} milieu ${milieu} niveau ${level}`;
     // Pas de victoire gratuite tout droit : la verticale du centre passe loin d'au moins deux points faibles.
     FP.assert(bl.weak.filter(k => Math.abs(k.x - W / 2) > B().weakHit).length >= 2, 'couloir droit au centre ' + at);
@@ -336,4 +336,8 @@ FP.test('boss: saison 2, le boss de la friche est intact', () => {
   FP.assert(s.run.boss && s.run.milieu === 0 && s.run.saison === 2, JSON.stringify(s.run));
   FP.assertEqual(JSON.stringify(s.bossFight.pierced), '[false,false,false,false]');
   FP.assertEqual(s.world.bossLevel.trap.solid.off, false);
+});
+FP.test('boss: le couloir suit la difficulté', () => {
+  const at = (difficulty) => { const s = bossRun(440, 0); s.level = 5; s.difficulty = difficulty; FP.level.generate(s); return s.world.safeRadius; };
+  FP.assert(at(10) < at(0), at(0) + ' → ' + at(10));
 });
