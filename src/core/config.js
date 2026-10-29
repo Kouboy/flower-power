@@ -209,7 +209,11 @@
         kinds: ['nuclear', 'sarcophagus', 'battery', 'server'],
         boss: { name: 'LE RÉACTEUR « NEUTRE EN CARBONE »', order: 'PERCE SES 4 BARRES DE CONTRÔLE' } }
     ],
-    run: { steps: 3 },   // pousses réussies par milieu avant son boss
+    run: { steps: 3,   // pousses réussies par milieu avant son boss
+      playtest: { steps: 6, shopEvery: 3 } },   // v4.13.0, ?sansboss=1 : 6 pousses par milieu, bon de commande toutes les 3, pas de boss
+    // Difficulté en dents de scie (v4.13.0) : chaque milieu monte de son départ à son sommet ((milieu + 1) / 4) ; le suivant
+    // repart `drop` sous ce sommet. d = 1 vaut le niveau `levelAtMax` des réglages par niveau (fin de la rampe safePath.hard).
+    difficulty: { drop: .15, levelAtMax: 10 },
 
     // Moteur de boss (v4.12.0) : 4 tronçons accrochés tour à tour aux flancs, un point faible par tronçon, une trappe sous la pelouse.
     // segWidth : largeur d'un tronçon (part de l'écran, > .5 : le couloir zigzague) ; spineW : largeur de la colonne qui les relie le long de chaque bord ; thickK : épaisseur d'un tronçon (part de la zone / segments),

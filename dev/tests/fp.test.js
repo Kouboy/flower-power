@@ -49,3 +49,7 @@ FP.test('fp: graine hors 32 bits refusée', () => {
   FP.assertEqual(FP.parseParams('?seed=4294967295').seed, 4294967295);
   FP.assertEqual(FP.parseParams('?seed=4294967296').seed, null);
 });
+FP.test('fp: sansboss=1 active le mode playtest', () => {
+  FP.assertEqual(FP.parseParams('?sansboss=1').sansboss, true);
+  for (const q of ['', '?sansboss=0', '?sansboss=oui']) FP.assertEqual(FP.parseParams(q).sansboss, false, q);
+});

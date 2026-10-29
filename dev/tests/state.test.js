@@ -27,7 +27,7 @@ FP.test('config: version et clé de record', () => {
 });
 FP.test('state: une partie commence en friche, saison 1, carton d’entrée', () => {
   const s = FP.state.createRun(1, { W: 440, H: 783 });
-  FP.assertEqual(JSON.stringify(s.run), JSON.stringify({ milieu: 0, step: 0, saison: 1, bosses: 0, boss: false, card: { kind: 'milieu', t0: 0 }, won: false }));
+  FP.assertEqual(JSON.stringify(s.run), JSON.stringify({ milieu: 0, step: 0, saison: 1, bosses: 0, boss: false, card: { kind: 'milieu', t0: 0 }, won: false, playtest: false, push: 0, done: false }));
   FP.assertEqual(s.world.milieu, 'friche');
   FP.assertEqual(FP.config.run.steps, 3);
 });
@@ -57,3 +57,9 @@ FP.test('state: applyView suit la nouvelle hauteur de vue et borne la caméra', 
   FP.assertEqual(s.camera.y, 840);                       // toujours dans les bornes, inchangée
 });
 FP.test('state: la requête initiale a sa liste de frôlements', () => FP.assert(Array.isArray(FP.state.createRun(1, { W: 440, H: 783 }).query.grazes)));
+FP.test('state: une partie neuve part à difficulté 0, sans avance ni fin', () => {
+  const s = FP.state.createRun(1, { W: 440, H: 783 });
+  FP.assertEqual(s.difficulty, 0); FP.assertEqual(s.run.push, 0); FP.assertEqual(s.run.done, false); FP.assertEqual(s.run.playtest, false);
+  const keep = FP.params.sansboss; FP.params.sansboss = true;   // une partie relancée garde le mode
+  try { FP.assertEqual(FP.state.createRun(1, { W: 440, H: 783 }).run.playtest, true); } finally { FP.params.sansboss = keep; }
+});
