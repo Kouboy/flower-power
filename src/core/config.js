@@ -214,6 +214,8 @@
     // Difficulté en dents de scie (v4.13.0) : chaque milieu monte de son départ à son sommet ((milieu + 1) / 4) ; le suivant
     // repart `drop` sous ce sommet. d = 1 vaut le niveau `levelAtMax` des réglages par niveau (fin de la rampe safePath.hard).
     difficulty: { drop: .15, levelAtMax: 10 },
+    // Obstacles dessinés (v4.14.0, ?obstacles=dessin) : pixels d'art retirés à la silhouette avant le calcul de la collision.
+    obstacles: { drawnInset: 1 },
 
     // Moteur de boss (v4.12.0) : 4 tronçons accrochés tour à tour aux flancs, un point faible par tronçon, une trappe sous la pelouse.
     // segWidth : largeur d'un tronçon (part de l'écran, > .5 : le couloir zigzague) ; spineW : largeur de la colonne qui les relie le long de chaque bord ; thickK : épaisseur d'un tronçon (part de la zone / segments),
