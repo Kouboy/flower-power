@@ -60,6 +60,10 @@ FP.test('fp: ?obstacles=dessin ouvre la version dessinée', () => {
   const p = FP.parseParams('?sansboss=1&obstacles=dessin');
   FP.assertEqual(p.sansboss, true); FP.assertEqual(p.obstacles, 'dessin');
 });
+FP.test('fp: ?obstacles=pixel ouvre la version PixelLab (v4.15.0)', () => {
+  FP.assertEqual(FP.parseParams('?obstacles=pixel').obstacles, 'pixel');
+  FP.assertEqual(FP.parseParams('?sansboss=1&obstacles=pixel').obstacles, 'pixel');
+});
 FP.test('config: marge de collision des obstacles dessinés', () => {
   FP.assertEqual(FP.config.obstacles.drawnInset, 1);
 });

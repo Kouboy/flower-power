@@ -1,10 +1,11 @@
 // world/catalog.js — obstacles authorés : JSON de l'Asset Editor → solides prêts à placer.
 // Lit     : window.FLOWER_POWER_AUTHORED_ASSETS (assets/obstacles/manifest.js), FP.config.level.padding, FP.geom.toWorld ;
-//           avec ?obstacles=dessin (FP.params.obstacles) : FP.drawn (assets/obstacles/dessin/*), FP.silhouette, FP.config.obstacles.drawnInset.
+//           avec ?obstacles=dessin (FP.params.obstacles) : FP.drawn (assets/obstacles/dessin/*), FP.silhouette, FP.config.obstacles.drawnInset ;
+//           avec ?obstacles=pixel : window.FLOWER_POWER_PIXEL_ASSETS (assets/obstacles/pixel/manifest.js).
 // Écrit   : rien.
 // Expose  : FP.catalog.assets, FP.catalog.has(kind), FP.catalog.makeSolid({kind,x,y,a,flip,scale}),
 //           FP.catalog.visibleFootprint(solid), FP.catalog.filterAssets(raw), FP.catalog.drawnAssets(families, png),
-//           FP.catalog.select(mode) (null : PNG ; 'dessin' : obstacles dessinés).
+//           FP.catalog.pixelAssets(raw, png), FP.catalog.select(mode) (null : PNG ; 'dessin' : dessinés ; 'pixel' : PixelLab).
 // Le JSON est la source de vérité : worldWidth, pivot, mirrorSafe, polygone, grazeRadius, flyoverEligible.
 (function () {
   'use strict';
@@ -46,11 +47,30 @@
     return out;
   }
 
-  // Remplit les fiches en service (même objet, partagé) : PNG (null) ou dessinées ('dessin').
+  // Fiches des obstacles PixelLab (v4.15.0) : PNG recadrés et collision précalculés par dev/tools/import-pixel.js ; un pixel
+  // de l'image = `zoom` pixels d'art, pour que la réduction sur la grille ne rééchantillonne rien. Pivot centré.
+  function pixelAssets(raw, png) {
+    const out = {};
+    for (const [kind, r] of Object.entries(raw || {})) {
+      const p = png[kind];
+      if (!p) continue;
+      out[kind] = {
+        id: kind, kind: 'obstacle',
+        source: { width: r.width, height: r.height },
+        render: { worldWidth: r.width * ART * r.zoom, pivot: [.5, .5], mirrorSafe: p.render.mirrorSafe },
+        collision: { type: 'polygon', points: r.points, grazeRadius: p.collision.grazeRadius, flyoverEligible: p.collision.flyoverEligible },
+        spawn: p.spawn, runtime: Object.assign({}, p.runtime, { src: r.src, metadata: undefined })
+      };
+    }
+    return out;
+  }
+
+  // Remplit les fiches en service (même objet, partagé) : PNG (null), dessinées ('dessin') ou PixelLab ('pixel').
   function select(mode) {
     for (const k of Object.keys(assets)) delete assets[k];
     const png = filterAssets(window.FLOWER_POWER_AUTHORED_ASSETS);
-    Object.assign(assets, mode === 'dessin' ? drawnAssets(FP.drawn.families, png) : png);
+    Object.assign(assets, mode === 'dessin' ? drawnAssets(FP.drawn.families, png)
+      : mode === 'pixel' ? pixelAssets(window.FLOWER_POWER_PIXEL_ASSETS, png) : png);
   }
 
   // Rectangle rendu en coordonnées locales (pivot pris en compte, miroir appliqué), élargi de pad.
@@ -105,6 +125,7 @@
     visibleFootprint,
     filterAssets,
     drawnAssets,
+    pixelAssets,
     select
   };
   select(FP.params && FP.params.obstacles);

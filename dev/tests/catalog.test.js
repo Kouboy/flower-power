@@ -105,3 +105,36 @@ FP.test('catalog: échelle qui suit le réel (la batterie, la plus petite, garde
     } finally { FP.catalog.select(null); }
   });
 })();
+// Version PixelLab (v4.15.0, ?obstacles=pixel) : PNG recadrés, un pixel de l'image = zoom pixels d'art.
+(function () {
+  const PNG = () => FP.catalog.filterAssets(window.FLOWER_POWER_AUTHORED_ASSETS);
+  const RAW = () => window.FLOWER_POWER_PIXEL_ASSETS;
+
+  FP.test('catalog: les 14 familles en PixelLab', () => {
+    FP.assertEqual(Object.keys(RAW()).sort().join(), Object.keys(PNG()).sort().join());
+  });
+  FP.test('catalog: une fiche PixelLab reprend les réglages de la fiche PNG, avec son image', () => {
+    const d = FP.catalog.pixelAssets(RAW(), PNG());
+    for (const [k, a] of Object.entries(d)) {
+      const p = PNG()[k], r = RAW()[k];
+      FP.assertEqual(a.render.worldWidth, r.width * 2 * r.zoom, k);
+      FP.assertEqual(a.render.mirrorSafe, p.render.mirrorSafe, k);
+      FP.assertEqual(a.collision.grazeRadius, p.collision.grazeRadius, k);
+      FP.assertEqual(JSON.stringify(a.spawn), JSON.stringify(p.spawn), k);
+      FP.assertEqual(a.runtime.gameKind, p.runtime.gameKind, k);
+      FP.assertEqual(a.runtime.src, 'assets/obstacles/pixel/' + k + '.png', k);
+    }
+  });
+  FP.test('catalog: collision PixelLab dans le cadre de l’image, centrée', () => {
+    for (const [k, r] of Object.entries(RAW())) {
+      FP.assert(r.points.length >= 3 && r.points.length <= 48, k);
+      for (const [x, y] of r.points) FP.assert(Math.abs(x) <= r.width / 2 && Math.abs(y) <= r.height / 2, k + ' ' + x + ',' + y);
+    }
+  });
+  FP.test('catalog: select("pixel") met les fiches PixelLab en service', () => {
+    try {
+      FP.catalog.select('pixel');
+      FP.assertEqual(FP.catalog.assets.cone.runtime.src, 'assets/obstacles/pixel/cone.png');
+    } finally { FP.catalog.select(null); }
+  });
+})();
