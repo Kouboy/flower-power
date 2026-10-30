@@ -51,8 +51,9 @@ FP.test('catalog: nouveaux déchets importés (trottinette, borne d’arcade), p
     FP.assert(FP.config.text.death[k], k + ' sans message de mort');
     FP.assert(['upper', 'middle', 'deep'].some(b => FP.config.spawnTables[b].some(e => e.kind === k)), k + ' absent des tables d’apparition');
   }
-  // tout ce que les tables peuvent tirer existe au catalogue et a son message
-  for (const b of ['upper', 'middle', 'deep']) for (const e of FP.config.spawnTables[b]) FP.assert(FP.catalog.has(e.kind) && FP.config.text.death[e.kind], e.kind);
+  // tout ce que les tables peuvent tirer existe au catalogue (ou en PixelLab, v4.16.0) et a son message
+  for (const b of ['upper', 'middle', 'deep']) for (const e of FP.config.spawnTables[b])
+    FP.assert((FP.catalog.has(e.kind) || window.FLOWER_POWER_PIXEL_ASSETS[e.kind]) && FP.config.text.death[e.kind], e.kind);
 });
 FP.test('catalog: échelle qui suit le réel (la batterie, la plus petite, garde 80 de large)', () => {
   const kinds = ['battery', 'drone', 'extinguisher', 'microwave', 'cone', 'trashbag', 'tire', 'nuclear', 'server', 'scooter', 'solar', 'sarcophagus', 'arcade'];
@@ -110,13 +111,26 @@ FP.test('catalog: échelle qui suit le réel (la batterie, la plus petite, garde
   const PNG = () => FP.catalog.filterAssets(window.FLOWER_POWER_AUTHORED_ASSETS);
   const RAW = () => window.FLOWER_POWER_PIXEL_ASSETS;
 
-  FP.test('catalog: les 14 familles en PixelLab', () => {
-    FP.assertEqual(Object.keys(RAW()).sort().join(), Object.keys(PNG()).sort().join());
+  FP.test('catalog: les 14 familles PNG existent en PixelLab', () => {
+    for (const k of Object.keys(PNG())) FP.assert(RAW()[k], k);
+  });
+  FP.test('catalog: chaque famille de milieu existe en PixelLab, avec son cri de mort (v4.16.0)', () => {
+    for (const m of FP.config.milieux) for (const k of m.kinds) {
+      FP.assert(RAW()[k], m.id + ' ' + k);
+      FP.assert(FP.config.text.death[k], 'cri ' + k);
+    }
+  });
+  FP.test('catalog: une famille propre à PixelLab prend les réglages courants', () => {
+    const a = FP.catalog.pixelAssets(RAW(), PNG()).duck;
+    FP.assertEqual(a.render.mirrorSafe, true); FP.assertEqual(a.collision.grazeRadius, 16);
+    FP.assertEqual(a.collision.flyoverEligible, true); FP.assertEqual(a.spawn.signature, false);
+    FP.assertEqual(a.runtime.src, 'assets/obstacles/pixel/duck.png');
   });
   FP.test('catalog: une fiche PixelLab reprend les réglages de la fiche PNG, avec son image', () => {
     const d = FP.catalog.pixelAssets(RAW(), PNG());
     for (const [k, a] of Object.entries(d)) {
       const p = PNG()[k], r = RAW()[k];
+      if (!p) continue;
       FP.assertEqual(a.render.worldWidth, r.width * 2 * r.zoom, k);
       FP.assertEqual(a.render.mirrorSafe, p.render.mirrorSafe, k);
       FP.assertEqual(a.collision.grazeRadius, p.collision.grazeRadius, k);

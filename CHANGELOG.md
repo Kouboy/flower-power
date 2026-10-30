@@ -2,6 +2,13 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.16.0 — Nouveaux obstacles par milieu (version PixelLab)
+
+- avec `?obstacles=pixel`, trois obstacles inédits par milieu, dans le même style : friche (caddie, matelas, palette), zone industrielle (bidon d’huile, engrenage, tuyau), décharge (frigo, télé cathodique, canapé), site nucléaire (combinaison vide, masque à gaz, canard mutant) ; chacun a son cri de mort ;
+- les versions PNG et dessinée ignorent ces familles : leurs niveaux restent identiques ;
+- matelas, palette et combinaison, les plus larges, ont un poids d’apparition relevé pour se placer aussi souvent que les autres ;
+- banc : 704 tests.
+
 ## v4.15.0 — Obstacles PixelLab (version test)
 
 - `?obstacles=pixel` ouvre une version test où les 14 obstacles sont des sprites PixelLab simples et cartoon (aplats, contour noir, coulures vert acide), plus raccord avec la pousse, la graine et la tige ; combinable avec `?sansboss=1`. Sans le paramètre, rien ne change ;

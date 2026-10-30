@@ -34,7 +34,7 @@ FP.test('level: chaque milieu ne pose que ses familles', () => {
 });
 FP.test('level: tableFor reprend les poids d’origine, ou toutes les familles du milieu à poids égaux si la bande n’en a aucune', () => {
   const T = FP.config.spawnTables, deep = FP.level.tableFor(0, 'deep'), friche = FP.config.milieux[0].kinds;
-  FP.assertEqual(JSON.stringify(FP.level.tableFor(1, 'middle')), JSON.stringify(T.middle.filter(e => FP.config.milieux[1].kinds.includes(e.kind))));
+  FP.assertEqual(JSON.stringify(FP.level.tableFor(1, 'middle')), JSON.stringify(T.middle.filter(e => FP.config.milieux[1].kinds.includes(e.kind) && FP.catalog.has(e.kind))));
   const original = Object.fromEntries(['upper', 'middle', 'deep'].flatMap(b => T[b]).reverse().map(e => [e.kind, e.a]));
   if (T.deep.some(e => friche.includes(e.kind))) FP.assert(deep.every(e => friche.includes(e.kind)));
   const fake = { ...FP.config.milieux[0] }, keep = FP.config.milieux[0];
@@ -43,6 +43,14 @@ FP.test('level: tableFor reprend les poids d’origine, ou toutes les familles d
     const t = FP.level.tableFor(0, 'deep');
     FP.assertEqual(t.map(e => e.kind).join(), 'scooter,drone'); FP.assert(t.every(e => e.w === 1 && e.a === original[e.kind]), JSON.stringify(t));
   } finally { FP.config.milieux[0] = keep; }
+});
+FP.test('level: tableFor ignore les familles absentes du catalogue, présentes avec ?obstacles=pixel (v4.16.0)', () => {
+  const kinds = (t) => t.map(e => e.kind);
+  FP.assert(!kinds(FP.level.tableFor(3, 'middle')).includes('duck'), 'canard sans PixelLab');
+  try {
+    FP.catalog.select('pixel');
+    FP.assert(kinds(FP.level.tableFor(3, 'middle')).includes('duck'), 'canard avec PixelLab');
+  } finally { FP.catalog.select(null); }
 });
 FP.test('level: le T-Rex signature n’apparaît qu’au site nucléaire', () => {
   let friche = 0, nucleaire = 0;

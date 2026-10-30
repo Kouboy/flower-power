@@ -3,7 +3,7 @@
 //           FP.config.{level,spawnTables,signature,milieux}, FP.catalog, FP.geom, FP.bossLevel.generate (niveau de boss).
 // Écrit   : state.world.{milieu,level,boss,bossLevel,skyVariant,lawnVariant,safePath,safeRadius,hazardRadius,solidExtra,solids,toxics,leaks,bonuses}, state.signature ;
 //           puis FP.coins.place écrit state.world.{coins,chains}.
-// Expose  : FP.level.startRun(state), FP.level.generate(state), FP.level.tableFor(milieu, band) (pur, testé),
+// Expose  : FP.level.startRun(state), FP.level.generate(state), FP.level.tableFor(milieu, band) (testé ; lit FP.catalog.has),
 //           FP.level.makeToxic(rng, x, y, big),
 //           FP.level.distToSafePath(world,x,y), FP.level.pathXAt(world,y), FP.level.depthK(world,y), FP.level.depthBand(world,y).
 // Porté de la v3.43.16 (generateSoil, generateSafePath, objectFits…) sans les familles vectorielles ni les portes.
@@ -162,8 +162,10 @@
 
   // Table d'apparition d'une bande, restreinte aux familles du milieu (v4.9.0), poids d'origine. Si la bande n'en a aucune :
   // toutes les familles du milieu, à poids égaux, avec l'angle de leur première entrée dans les tables.
+  // Les familles absentes du catalogue en service (propres à ?obstacles=pixel, v4.16.0) sont ignorées : les autres versions
+  // gardent exactement leurs tables.
   function tableFor(milieu, band) {
-    const kinds = FP.config.milieux[milieu].kinds, T = FP.config.spawnTables;
+    const kinds = FP.config.milieux[milieu].kinds.filter(FP.catalog.has), T = FP.config.spawnTables;
     const table = T[band].filter(e => kinds.includes(e.kind));
     if (table.length) return table;
     const all = [...T.upper, ...T.middle, ...T.deep];
