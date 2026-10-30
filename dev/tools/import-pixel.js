@@ -1,4 +1,4 @@
-// dev/tools/import-pixel.js — importe les obstacles PixelLab (v4.15.0, ?obstacles=pixel) : un PNG transparent par famille.
+// dev/tools/import-pixel.js — importe les obstacles PixelLab (v4.15.0, ?obstacles=pixel ; nouvelles familles v4.16.0) : un PNG transparent par famille.
 // Usage : node dev/tools/import-pixel.js <dossier des PNG bruts>
 //   ex.   node dev/tools/import-pixel.js "../pixellab-test"
 // Étapes : recadre chaque PNG sur ses pixels opaques, écrit assets/obstacles/pixel/<kind>.png, calcule la collision comme
@@ -14,7 +14,12 @@ const OUT = path.join(ROOT, 'assets', 'obstacles', 'pixel');
 const FILES = {
   tire: 'pneu', trashbag: 'sac', cone: 'cone', nuclear: 'fut', battery: 'batterie', microwave: 'microondes',
   extinguisher: 'extincteur', server: 'serveur', solar: 'solaire-v2', scooter: 'trottinette', drone: 'drone',
-  arcade: 'arcade', sarcophagus: 'sarcophage', trex_signature: 'trex'
+  arcade: 'arcade', sarcophagus: 'sarcophage', trex_signature: 'trex',
+  // Familles propres à la version PixelLab (v4.16.0), trois par milieu.
+  cart: 'nouveaux/caddie', mattress: 'nouveaux/matelas', pallet: 'nouveaux/palette',
+  oildrum: 'nouveaux/bidon', gear: 'nouveaux/engrenage', pipe: 'nouveaux/tuyau',
+  fridge: 'nouveaux/frigo-v2', crt: 'nouveaux/tele', sofa: 'nouveaux/canape',
+  hazmat: 'nouveaux/combinaison', gasmask: 'nouveaux/masque', duck: 'nouveaux/canard-v2'
 };
 const ZOOM = { trex_signature: 2 };
 

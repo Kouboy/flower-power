@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '4.15.0',
+    version: '4.16.0',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -90,7 +90,9 @@
         { kind: 'cone', w: .07, a: 1.05 }, { kind: 'extinguisher', w: .08, a: .95 },
         { kind: 'solar', w: .10, a: 1.22 }, { kind: 'drone', w: .10, a: 1.05 },
         { kind: 'trashbag', w: .09, a: .95 }, { kind: 'battery', w: .08, a: .78 },
-        { kind: 'scooter', w: .08, a: .9 }                                                      // v4.1.0
+        { kind: 'scooter', w: .08, a: .9 },                                                     // v4.1.0
+        { kind: 'cart', w: .08, a: .9 }, { kind: 'pallet', w: .14, a: .8 }, { kind: 'pipe', w: .08, a: 1.0 },   // v4.16.0, ?obstacles=pixel ; grands : poids relevés
+        { kind: 'gear', w: .08, a: 1.2 }, { kind: 'mattress', w: .16, a: .6 }
       ],
       middle: [
         { kind: 'microwave', w: .09, a: .85 }, { kind: 'extinguisher', w: .08, a: 1.05 },
@@ -99,14 +101,21 @@
         { kind: 'drone', w: .08, a: 1.08 }, { kind: 'trashbag', w: .08, a: .98 },
         { kind: 'battery', w: .07, a: .82 }, { kind: 'sarcophagus', w: .07, a: .62, noFlip: true },
         { kind: 'nuclear', w: .06, a: .68 },
-        { kind: 'scooter', w: .07, a: .95 }, { kind: 'arcade', w: .08, a: .7 }                 // v4.1.0
+        { kind: 'scooter', w: .07, a: .95 }, { kind: 'arcade', w: .08, a: .7 },                // v4.1.0
+        { kind: 'cart', w: .07, a: .9 }, { kind: 'mattress', w: .16, a: .6 }, { kind: 'pallet', w: .14, a: .8 },   // v4.16.0, ?obstacles=pixel
+        { kind: 'oildrum', w: .08, a: .8 }, { kind: 'gear', w: .07, a: 1.2 }, { kind: 'pipe', w: .07, a: 1.0 },
+        { kind: 'fridge', w: .08, a: .7 }, { kind: 'crt', w: .08, a: .8 }, { kind: 'sofa', w: .07, a: .55 },
+        { kind: 'hazmat', w: .16, a: .6 }, { kind: 'gasmask', w: .07, a: .9 }, { kind: 'duck', w: .07, a: .8 }
       ],
       deep: [
         { kind: 'microwave', w: .09, a: .95 }, { kind: 'extinguisher', w: .08, a: 1.08 },
         { kind: 'cone', w: .08, a: 1.15 }, { kind: 'tire', w: .10, a: 1.55 },
         { kind: 'server', w: .09, a: .75 }, { kind: 'trashbag', w: .08, a: 1.0 },
         { kind: 'nuclear', w: .08, a: .72 }, { kind: 'sarcophagus', w: .08, a: .65, noFlip: true },
-        { kind: 'arcade', w: .09, a: .75 }                                                      // v4.1.0
+        { kind: 'arcade', w: .09, a: .75 },                                                     // v4.1.0
+        { kind: 'oildrum', w: .08, a: .8 }, { kind: 'fridge', w: .09, a: .7 }, { kind: 'crt', w: .08, a: .8 },   // v4.16.0, ?obstacles=pixel
+        { kind: 'sofa', w: .08, a: .55 }, { kind: 'hazmat', w: .16, a: .6 }, { kind: 'gasmask', w: .08, a: .9 },
+        { kind: 'duck', w: .08, a: .8 }
       ]
     },
 
@@ -194,19 +203,20 @@
     },
 
     // Milieux (v4.9.0) : une partie traverse les quatre dans l'ordre ; chacun dure `run.steps` pousses réussies, puis son boss.
-    // kinds : familles d'obstacles du milieu (identifiants de spawnTables) ; palettes de décor : FP.palette.milieux[id].
+    // kinds : familles d'obstacles du milieu (identifiants de spawnTables) ; les trois dernières n'existent qu'avec ?obstacles=pixel
+    // (v4.16.0) : les autres versions les ignorent ; palettes de décor : FP.palette.milieux[id].
     milieux: [
       { id: 'friche', name: 'FRICHE URBAINE', line: 'Futur éco-quartier. Livraison prévue : jamais.',
-        kinds: ['cone', 'scooter', 'tire', 'trashbag', 'drone'],
+        kinds: ['cone', 'scooter', 'tire', 'trashbag', 'drone', 'cart', 'mattress', 'pallet'],
         boss: { name: 'LA BÉTONNEUSE DU GRAND PROJET', order: 'PERCE SES 4 VANNES À BÉTON' } },
       { id: 'industrie', name: 'ZONE INDUSTRIELLE', line: 'Taux d\'emploi local : 0,3 robot par habitant.',
-        kinds: ['server', 'battery', 'solar', 'extinguisher', 'drone'],
+        kinds: ['server', 'battery', 'solar', 'extinguisher', 'drone', 'oildrum', 'gear', 'pipe'],
         boss: { name: 'RAFFINERIE ÉCO-RESPONSABLE™', order: 'PERCE SES 4 VANNES' } },
       { id: 'decharge', name: 'DÉCHARGE', line: 'Tri sélectif : la décharge choisit qui elle garde.',
-        kinds: ['microwave', 'arcade', 'trashbag', 'tire', 'scooter'],
+        kinds: ['microwave', 'arcade', 'trashbag', 'tire', 'scooter', 'fridge', 'crt', 'sofa'],
         boss: { name: 'L\'INCINÉRATEUR À ÉNERGIE VERTE', order: 'PERCE SES 4 BRÛLEURS' } },
       { id: 'nucleaire', name: 'SITE NUCLÉAIRE', line: 'Énergie décarbonée. Déchets : à voir dans 24 000 ans.',
-        kinds: ['nuclear', 'sarcophagus', 'battery', 'server'],
+        kinds: ['nuclear', 'sarcophagus', 'battery', 'server', 'hazmat', 'gasmask', 'duck'],
         boss: { name: 'LE RÉACTEUR « NEUTRE EN CARBONE »', order: 'PERCE SES 4 BARRES DE CONTRÔLE' } }
     ],
     run: { steps: 3,   // pousses réussies par milieu avant son boss
@@ -313,6 +323,10 @@
         battery: 'rupture : batterie', cone: 'rupture : cône mou', trashbag: 'rupture : sac gonflé',
         extinguisher: 'rupture : extincteur vide', microwave: 'rupture : micro-ondes', trex_signature: 'rupture : dinosaure militant',
         scooter: 'rupture : trottinette fossile', arcade: 'rupture : borne d’arcade',
+        cart: 'rupture : caddie abandonné', mattress: 'rupture : matelas moisi', pallet: 'rupture : palette clouée',   // v4.16.0
+        oildrum: 'rupture : bidon d’huile', gear: 'rupture : engrenage rouillé', pipe: 'rupture : tuyau percé',
+        fridge: 'rupture : frigo aux CFC', crt: 'rupture : télé cathodique', sofa: 'rupture : canapé défoncé',
+        hazmat: 'rupture : combinaison vide', gasmask: 'rupture : masque à gaz', duck: 'rupture : canard mutant',
         boss: 'écrasée par le boss', defense: 'fauchée par une défense', trap: 'la trappe est fermée'
       }
     },

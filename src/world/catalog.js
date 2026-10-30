@@ -49,11 +49,15 @@
 
   // Fiches des obstacles PixelLab (v4.15.0) : PNG recadrés et collision précalculés par dev/tools/import-pixel.js ; un pixel
   // de l'image = `zoom` pixels d'art, pour que la réduction sur la grille ne rééchantillonne rien. Pivot centré.
+  // Une famille sans fiche PNG (propre à PixelLab, v4.16.0) prend les réglages courants des fiches PNG.
+  const PIXEL_DEFAULT = {
+    render: { mirrorSafe: true }, collision: { grazeRadius: 16, flyoverEligible: true },
+    spawn: { signature: false, maxPerRun: null, weight: 1 }, runtime: {}
+  };
   function pixelAssets(raw, png) {
     const out = {};
     for (const [kind, r] of Object.entries(raw || {})) {
-      const p = png[kind];
-      if (!p) continue;
+      const p = png[kind] || Object.assign({}, PIXEL_DEFAULT, { runtime: { gameKind: kind } });
       out[kind] = {
         id: kind, kind: 'obstacle',
         source: { width: r.width, height: r.height },
