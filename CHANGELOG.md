@@ -2,6 +2,13 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.17.0 — Retours de playtest : parterre, enfouissement, limaces
+
+- le parterre repart vierge à chaque nouveau site : les fleurs d’un milieu ne s’entassent plus sur la pelouse du suivant (le compte des fleurs du run et le certificat ne changent pas) ;
+- obstacles PixelLab (`?obstacles=pixel`) : la moitié sont enfouis, sous 36 à 50 % de leur hauteur (au lieu d’un tiers sous 28 %, que leur flaque au pied rendait invisible) ;
+- limaces de lixiviat : à partir du niveau équivalent 6, une part croissante d’entre elles (jusqu’à 45 % au niveau 10) barre le chemin sûr ; au bout de sa course, chacune laisse le passage libre : on attend son moment pour passer. Avant le niveau 6, rien ne change ;
+- banc : 707 tests.
+
 ## v4.16.0 — Nouveaux obstacles par milieu (version PixelLab)
 
 - avec `?obstacles=pixel`, trois obstacles inédits par milieu, dans le même style : friche (caddie, matelas, palette), zone industrielle (bidon d’huile, engrenage, tuyau), décharge (frigo, télé cathodique, canapé), site nucléaire (combinaison vide, masque à gaz, canard mutant) ; chacun a son cri de mort ;

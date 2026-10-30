@@ -95,7 +95,7 @@ FP.test('level: chemin sûr hors des toxiques', () => {
 FP.test('level: limaces n’obstruent pas le chemin', () => {
   for (const seed of [1, 2, 3, 1234, 99999]) {
     const w = gen(seed).world;
-    for (const l of w.leaks) for (let i = 0; i <= 8; i++) {
+    for (const l of w.leaks.filter(l => !l.crossing)) for (let i = 0; i <= 8; i++) {
       const k = -.5 + i / 8, x = l.x + Math.cos(l.angle) * l.len * k, y = l.y + Math.sin(l.angle) * l.len * k;
       FP.assert(FP.level.distToSafePath(w, x, y) >= w.safeRadius * .58 + l.r, `${seed}`);
     }
@@ -185,11 +185,27 @@ FP.test('level: à tous les niveaux, aucune limace ne touche le chemin sûr', ()
   const h = FP.config.hazards;
   for (const level of LEVELS) for (const seed of SEEDS) {
     const w = genAt(seed, level, seed % 4), pts = pathPoints(w);   // les quatre milieux, tour à tour
-    for (const l of w.leaks) {
+    for (const l of w.leaks.filter(l => !l.crossing)) {   // celles qui barrent le chemin (v4.17.0) : test suivant
       const ax = l.x - Math.cos(l.angle) * l.len / 2, ay = l.y - Math.sin(l.angle) * l.len / 2, bx = l.x + Math.cos(l.angle) * l.len / 2, by = l.y + Math.sin(l.angle) * l.len / 2;
       for (const p of pts) FP.assert(FP.geom.distPointToSegment(p.x, p.y, ax, ay, bx, by) > l.r + h.leakWobble + h.leakHitPad, `niveau ${level}, graine ${seed}`);
     }
   }
+});
+// Limaces qui barrent le chemin sûr (v4.17.0) : jamais avant le niveau cross.fromLevel ; ensuite, au bout de sa course,
+// chacune laisse le chemin libre (on passe en attendant son moment).
+FP.test('level: des limaces barrent le chemin dans les derniers niveaux, jamais avant', () => {
+  const c = FP.config.level.leaks.cross, h = FP.config.hazards;
+  let late = 0;
+  for (const seed of SEEDS) {
+    FP.assert(genAt(seed, c.fromLevel, seed % 4).leaks.every(l => !l.crossing), 'niveau ' + c.fromLevel + ', graine ' + seed);
+    const w = genAt(seed, 10, seed % 4), pts = pathPoints(w);
+    for (const l of w.leaks.filter(l => l.crossing)) {
+      late++;
+      const ends = [-.5, .5].map(k => ({ x: l.x + Math.cos(l.angle) * l.len * k, y: l.y + Math.sin(l.angle) * l.len * k }));
+      FP.assert(ends.some(e => pts.every(p => Math.hypot(p.x - e.x, p.y - e.y) > l.r + h.leakWobble + h.leakHitPad)), 'passage libre, graine ' + seed);
+    }
+  }
+  FP.assert(late >= 5, 'limaces sur le chemin au niveau 10 : ' + late);
 });
 FP.test('level: à tous les niveaux, aucun déchet ne mord sur le chemin sûr', () => {
   for (const level of LEVELS) for (const seed of SEEDS) {

@@ -1,7 +1,7 @@
 // world/level.js — génération d'un niveau à partir de la graine du run.
 // Lit     : state.rng, state.difficulty (niveau équivalent : réglages par niveau), state.level (réveil du T-Rex), state.run.{milieu,boss}, FP.config.shop.lobbyingK (option lobbying), state.world.{width,height,viewH,surfaceY}, state.signature,
 //           FP.config.{level,spawnTables,signature,milieux}, FP.catalog, FP.geom, FP.bossLevel.generate (niveau de boss).
-// Écrit   : state.world.{milieu,level,boss,bossLevel,skyVariant,lawnVariant,safePath,safeRadius,hazardRadius,solidExtra,solids,toxics,leaks,bonuses}, state.signature ;
+// Écrit   : state.world.{milieu,level,boss,bossLevel,skyVariant,lawnVariant,safePath,safeRadius,hazardRadius,solidExtra,solids,toxics,leaks (crossing : barre le chemin sûr, v4.17.0),bonuses}, state.signature ;
 //           puis FP.coins.place écrit state.world.{coins,chains}.
 // Expose  : FP.level.startRun(state), FP.level.generate(state), FP.level.tableFor(milieu, band) (testé ; lit FP.catalog.has),
 //           FP.level.makeToxic(rng, x, y, big),
@@ -309,11 +309,14 @@
   function placeLeaks(state, grid) {
     const world = state.world, rng = state.rng, c = FP.config.level.leaks, W = world.width;
     const count = countFor(c, state);
+    // v4.17.0 : dans les derniers niveaux, une part des limaces peut barrer le chemin sûr (on passe en attendant son moment).
+    const x = c.cross, crossK = clamp((state.difficulty - x.fromLevel) / (FP.config.difficulty.levelAtMax - x.fromLevel), 0, 1);
     for (let i = 0; i < count; i++) {
       let placed = false;
+      const crossing = crossK > 0 && rng.next() < crossK * x.chanceAtMax;   // aucun tirage en plus avant fromLevel
       for (let tries = 0; tries < c.tries && !placed; tries++) {
         let pos;
-        if (rng.next() < c.nearRouteChance) {
+        if (crossing || rng.next() < c.nearRouteChance) {
           const y = rng.range(world.surfaceY + c.routeTop, world.height - c.routeBottom);
           const side = rng.next() < .5 ? -1 : 1;
           pos = { x: clamp(pathXAt(world, y) + side * rng.range(c.routeOffset[0], c.routeOffset[1]), c.routeMarginX, W - c.routeMarginX), y };
@@ -330,7 +333,7 @@
         const leak = {
           x: pos.x, y: pos.y, len, angle, phase: rng.range(0, 6.28), rate: rng.range(c.rate[0], c.rate[1]), r: rng.range(c.r[0], c.r[1]),
           hitFlash: 0, morph: c.shape.morphs[Math.floor(rng.next() * c.shape.morphs.length)], debrisSeed: Math.floor(rng.next() * 99),
-          s: 0, cx: 0, cy: 0, cr: 0
+          s: 0, cx: 0, cy: 0, cr: 0, crossing
         };
         // Position de départ = celle de la première frame (pas de saut visible).
         const k0 = (Math.sin(leak.phase) + 1) * .5 - .5;
@@ -344,7 +347,11 @@
         const breathing = !nearLeak(world, pos.x, pos.y, c.spacingCenter) && pts.every(p => !nearLeak(world, p.x, p.y, c.spacingPath));
         // Une limace peut mettre la pression près du chemin, jamais le condamner.
         const ca = Math.cos(angle) * len / 2, sa = Math.sin(angle) * len / 2;
-        const pathOpen = segmentToSafePath(world, pos.x - ca, pos.y - sa, pos.x + ca, pos.y + sa) >= world.hazardRadius * c.safeK + leak.r;
+        const clear = world.hazardRadius * c.safeK + leak.r;
+        // Limace qui barre le chemin : à un bout de sa course au moins, elle doit le laisser libre (avec de la marge).
+        const pathOpen = crossing
+          ? Math.max(distToSafePath(world, pos.x - ca, pos.y - sa), distToSafePath(world, pos.x + ca, pos.y + sa)) >= clear + x.clearPad
+          : segmentToSafePath(world, pos.x - ca, pos.y - sa, pos.x + ca, pos.y + sa) >= clear;
         if (inBounds && notBuried && breathing && pathOpen) { world.leaks.push(leak); placed = true; }
       }
     }

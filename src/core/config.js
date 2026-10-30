@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '4.16.0',
+    version: '4.17.0',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -78,6 +78,9 @@
         angledChance: .90, angleJitter: .24, len: [42, 176], lenPerLevel: 3.2, lenLevelMax: 54, lenDepth: 22,
         rate: [.24, .92], r: [11, 16.2], marginX: 24, top: 48, bottom: 116,
         solidPad: 20, toxicPad: 8, spacingCenter: 46, spacingPath: 28, safeK: .58,
+        // v4.17.0 : limaces qui barrent le chemin sûr, à partir du niveau équivalent fromLevel ; jusqu'à chanceAtMax d'entre elles
+        // au niveau levelAtMax ; clearPad : marge en plus quand, au bout de sa course, la limace libère le chemin.
+        cross: { fromLevel: 6, chanceAtMax: .45, clearPad: 14 },
         // Angles inclinés (en fractions de π) et allures des limaces.
         shape: { angles: [1 / 8, 1 / 5, 1 / 3, 2 / 5, 3 / 5, 2 / 3, 4 / 5, 7 / 8], morphs: ['clear', 'fat', 'debris'] },
         minVisible: .5            // part minimale du trajet dans l'écran ; le centre du trajet reste dans [marginX, W − marginX]
@@ -225,7 +228,8 @@
     // repart `drop` sous ce sommet. d = 1 vaut le niveau `levelAtMax` des réglages par niveau (fin de la rampe safePath.hard).
     difficulty: { drop: .15, levelAtMax: 10 },
     // Obstacles dessinés (v4.14.0, ?obstacles=dessin) : pixels d'art retirés à la silhouette avant le calcul de la collision.
-    obstacles: { drawnInset: 1 },
+    // Obstacles PixelLab (v4.17.0, ?obstacles=pixel) : part d'enfouis et hauteur de terre (part du sprite, tirée entre les deux bornes).
+    obstacles: { drawnInset: 1, pixelBury: { chance: .5, depth: [.36, .5] } },
 
     // Moteur de boss (v4.12.0) : 4 tronçons accrochés tour à tour aux flancs, un point faible par tronçon, une trappe sous la pelouse.
     // segWidth : largeur d'un tronçon (part de l'écran, > .5 : le couloir zigzague) ; spineW : largeur de la colonne qui les relie le long de chaque bord ; thickK : épaisseur d'un tronçon (part de la zone / segments),

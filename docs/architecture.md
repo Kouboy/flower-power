@@ -204,7 +204,7 @@ Version test ouverte par `?obstacles=pixel`. Les 14 familles sont des PNG géné
 ## Dangers diffus
 
 - Nappes toxiques (`world.toxics`) : pas de choc. La requête de pointe renvoie leur intensité cumulée ; `flow` augmente `plant.toxicTimer` (×.72/s), pose `plant.corruption` (croissance déviée lue par `plant`), et brûle la pointe au-delà de .82 ; hors nappe, le compteur redescend ×3,6/s.
-- Limaces (`world.leaks`) : `hazards.update` calcule leur position courante (`cx, cy, cr`) ; un contact tue (cause `leak`) et pose `hitFlash` ; la couronne de frôlement alimente `query.danger` (zoom).
+- Limaces (`world.leaks`) : `hazards.update` calcule leur position courante (`cx, cy, cr`) ; à partir de `config.level.leaks.cross.fromLevel` (v4.17.0), une part d’entre elles (`crossing`) barre le chemin sûr, mais le laisse libre au bout de sa course ; un contact tue (cause `leak`) et pose `hitFlash` ; la couronne de frôlement alimente `query.danger` (zoom).
 - Ordre de dessin (v3) : sol, nappes, limaces, obstacles, plante, pellicule toxique, anneau d'exposition, puis HUD.
 
 ## Frôlement et score
