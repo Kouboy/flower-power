@@ -53,3 +53,13 @@ FP.test('fp: sansboss=1 active le mode playtest', () => {
   FP.assertEqual(FP.parseParams('?sansboss=1').sansboss, true);
   for (const q of ['', '?sansboss=0', '?sansboss=oui']) FP.assertEqual(FP.parseParams(q).sansboss, false, q);
 });
+// Version test des obstacles dessinés (v4.14.0).
+FP.test('fp: ?obstacles=dessin ouvre la version dessinée', () => {
+  FP.assertEqual(FP.parseParams('?obstacles=dessin').obstacles, 'dessin');
+  for (const q of ['', '?obstacles=png', '?obstacles=1']) FP.assertEqual(FP.parseParams(q).obstacles, null, q);
+  const p = FP.parseParams('?sansboss=1&obstacles=dessin');
+  FP.assertEqual(p.sansboss, true); FP.assertEqual(p.obstacles, 'dessin');
+});
+FP.test('config: marge de collision des obstacles dessinés', () => {
+  FP.assertEqual(FP.config.obstacles.drawnInset, 1);
+});

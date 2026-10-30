@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Galerie des obstacles dessinés</title>
+<!-- Galerie de développement (v4.14.0) : chaque famille dessinée, ses 4 variantes, sur la terre de chaque milieu ;
+     collision affichable. À ouvrir par le serveur local (ou en double-clic : tout est dessiné, rien n'est relu). -->
+<style>
+  body { margin: 0; padding: 16px; background: #120c10; color: #e8dcc8; font: 14px/1.4 system-ui, sans-serif; }
+  h1 { font-size: 18px; margin: 0 0 8px; }
+  label { margin-right: 16px; cursor: pointer; }
+  canvas { image-rendering: pixelated; display: block; margin-top: 12px; max-width: 100%; }
+</style>
+</head>
+<body>
+<h1>Obstacles dessinés</h1>
+<label><input type="checkbox" id="hit"> collision (rouge)</label>
+<label>zoom <select id="zoom"><option>2</option><option selected>4</option><option>6</option></select></label>
+<canvas id="c"></canvas>
+<script src="../assets/obstacles/manifest.js"></script>
+<script src="../assets/obstacles/dessin/kit.js"></script>
+<script src="../assets/obstacles/dessin/pneu.js"></script>
+<script src="../assets/obstacles/dessin/cone.js"></script>
+<script src="../assets/obstacles/dessin/fut.js"></script>
+<script src="../assets/obstacles/dessin/serveur.js"></script>
+<script src="../assets/obstacles/dessin/microondes.js"></script>
+<script src="../assets/obstacles/dessin/arcade.js"></script>
+<script src="../assets/obstacles/dessin/batterie.js"></script>
+<script src="../assets/obstacles/dessin/sarcophage.js"></script>
+<script src="../assets/obstacles/dessin/solaire.js"></script>
+<script src="../assets/obstacles/dessin/drone.js"></script>
+<script src="../assets/obstacles/dessin/trottinette.js"></script>
+<script src="../assets/obstacles/dessin/sac.js"></script>
+<script src="../assets/obstacles/dessin/extincteur.js"></script>
+<script src="../assets/obstacles/dessin/trex.js"></script>
+<script src="../src/core/fp.js"></script>
+<script src="../src/core/geom.js"></script>
+<script src="../src/core/config.js"></script>
+<script src="../src/world/silhouette.js"></script>
+<script src="../src/world/catalog.js"></script>
+<script src="../src/render/palette.js"></script>
+<script>
+'use strict';
+const MILIEUX = ['friche', 'industrie', 'decharge', 'nucleaire'], GAP = 8;
+
+// Une ligne par famille : ses 4 variantes répétées sur la terre de chaque milieu.
+function draw() {
+  const kinds = Object.keys(FP.drawn.families), zoom = +document.getElementById('zoom').value, hit = document.getElementById('hit').checked;
+  const fiches = FP.catalog.drawnAssets(FP.drawn.families, FP.catalog.filterAssets(window.FLOWER_POWER_AUTHORED_ASSETS));
+  const grids = kinds.map(k => [0, 1, 2, 3].map(v => FP.drawn.render(k, v)));
+  const cellW = Math.max(40, ...grids.map(g => g[0].w)) + GAP, rowH = kinds.map((k, i) => grids[i][0].h + 2 * GAP);
+  const W = cellW * 16 + GAP, H = rowH.reduce((a, b) => a + b, 0) || 40;
+  const cv = document.getElementById('c'), g = cv.getContext('2d');
+  cv.width = W * zoom; cv.height = H * zoom; g.setTransform(zoom, 0, 0, zoom, 0, 0);
+  let y0 = 0;
+  kinds.forEach((k, i) => {
+    MILIEUX.forEach((m, mi) => {
+      const S = FP.palette.milieux[m].strata.clay;
+      for (let y = y0; y < y0 + rowH[i]; y++) for (let x = mi * 4 * cellW; x < (mi + 1) * 4 * cellW; x++) { g.fillStyle = S[(x * 7 + y * 13) % 4]; g.fillRect(x, y, 1, 1); }
+      grids[i].forEach((grid, v) => {
+        const ox = (mi * 4 + v) * cellW + GAP, oy = y0 + GAP;
+        for (let yy = 0; yy < grid.h; yy++) for (let xx = 0; xx < grid.w; xx++) { const c = grid.get(xx, yy); if (c) { g.fillStyle = c; g.fillRect(ox + xx, oy + yy, 1, 1); } }
+        const f = fiches[k];
+        if (hit && f) {
+          g.strokeStyle = '#ff3030'; g.lineWidth = 1 / zoom; g.beginPath();
+          f.collision.points.forEach(([px, py], j) => (j ? g.lineTo : g.moveTo).call(g, ox + px + f.render.pivot[0] * grid.w, oy + py + f.render.pivot[1] * grid.h));
+          g.closePath(); g.stroke();
+        }
+      });
+    });
+    y0 += rowH[i];
+  });
+}
+document.getElementById('hit').onchange = draw;
+document.getElementById('zoom').onchange = draw;
+draw();
+</script>
+</body>
+</html>

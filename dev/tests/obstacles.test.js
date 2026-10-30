@@ -7,3 +7,15 @@ FP.test('obstacles: environ un tiers à moitié enfouis', () => {
   for (let i = 0; i < n; i++) b += FP.obstacles.look({ kind: 'tire', x: r.range(0, 440), y: r.range(0, 2000) }).buried ? 1 : 0;
   FP.assert(b / n >= .2 && b / n <= .45, String(b / n));
 });
+// Obstacles dessinés (v4.14.0) : une variante par obstacle, une case de grille par pixel peint.
+FP.test('obstacles: la variante d’un obstacle est stable et dans 0..3', () => {
+  const seen = new Set();
+  for (const o of sameKind(40)) { const v = FP.obstacles.variantOf(o); FP.assert(v >= 0 && v <= 3 && v === FP.obstacles.variantOf({ ...o })); seen.add(v); }
+  FP.assert(seen.size >= 3, String(seen.size));
+});
+FP.test('obstacles: cells liste chaque case peinte de la grille', () => {
+  const g = FP.drawn.grid(3, 3);
+  for (const [x, y] of [[0, 0], [1, 1], [2, 2], [0, 2], [2, 0]]) g.set(x, y, '#123456');
+  const c = FP.obstacles.cells(g);
+  FP.assertEqual(c.length, 5); FP.assertEqual(JSON.stringify(c[0]), JSON.stringify([0, 0, '#123456']));
+});

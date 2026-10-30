@@ -30,7 +30,8 @@
       perf: q.get('perf') === '1',
       flydebug: q.get('flydebug') === '1',
       freecam: q.get('freecam') === '1',
-      sansboss: q.get('sansboss') === '1'   // v4.13.0 : version playtest sans boss
+      sansboss: q.get('sansboss') === '1',   // v4.13.0 : version playtest sans boss
+      obstacles: q.get('obstacles') === 'dessin' ? 'dessin' : null   // v4.14.0 : version test des obstacles dessinés
     };
   };
 
