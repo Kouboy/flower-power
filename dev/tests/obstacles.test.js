@@ -7,6 +7,17 @@ FP.test('obstacles: environ un tiers à moitié enfouis', () => {
   for (let i = 0; i < n; i++) b += FP.obstacles.look({ kind: 'tire', x: r.range(0, 440), y: r.range(0, 2000) }).buried ? 1 : 0;
   FP.assert(b / n >= .2 && b / n <= .45, String(b / n));
 });
+// Obstacles PixelLab (v4.17.0) : enfouis plus souvent et plus profond ; la hauteur de terre est tirée dans 0..1.
+FP.test('obstacles: profondeur d’enfouissement stable, dans 0..1, variée', () => {
+  const ds = sameKind(20).map(o => FP.obstacles.look(o).depth);
+  FP.assert(ds.every(d => d >= 0 && d <= 1), ds.join());
+  FP.assert(new Set(ds).size >= 10, 'variée');
+});
+FP.test('config: les obstacles PixelLab sont plus enfouis que le tiers des PNG', () => {
+  const b = FP.config.obstacles.pixelBury;
+  FP.assert(b.chance > .33 && b.depth[0] > .28 && b.depth[0] < b.depth[1] && b.depth[1] < .6, JSON.stringify(b));
+  FP.assertEqual(FP.catalog.pixelAssets(window.FLOWER_POWER_PIXEL_ASSETS, FP.catalog.filterAssets(window.FLOWER_POWER_AUTHORED_ASSETS)).duck.pixel, true);
+});
 // Obstacles dessinés (v4.14.0) : une variante par obstacle, une case de grille par pixel peint.
 FP.test('obstacles: la variante d’un obstacle est stable et dans 0..3', () => {
   const seen = new Set();

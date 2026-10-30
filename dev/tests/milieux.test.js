@@ -99,6 +99,8 @@ FP.test('flow: battre le boss passe au milieu suivant', () => {
   const s = flowRun(); for (let i = 0; i < 4; i++) nextBloom(s);
   FP.assertEqual(JSON.stringify([s.run.bosses, s.run.milieu, s.run.step, s.run.boss]), JSON.stringify([1, 1, 0, false]));
   FP.assertEqual(s.world.milieu, 'industrie'); FP.assertEqual(s.run.card && s.run.card.kind, 'milieu');
+  FP.assertEqual(s.garden.flowers.length, 0, 'parterre vierge au nouveau site (v4.17.0)');
+  FP.assert(s.score.flowers >= 4, 'le compte des fleurs du run reste');
 });
 FP.test('flow: après le 4ᵉ boss, écran de fin puis saison 2 en friche', () => {
   const s = flowRun();

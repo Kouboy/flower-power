@@ -1,11 +1,12 @@
 // render/obstacles.js — obstacles PNG ramenés sur la grille de pixels d'art, avec contour et ancrage sombre.
 // Lit     : world.solids (hors solides `boss`, dessinés par render/boss.js) (x, y, a, flip, w, h, pivot, collision, grazeRadius, broadR, assetKey), FP.sprites, FP.px, FP.catalog.assets, FP.drawn.render (obstacles dessinés),
-//           FP.view.art.h, FP.palette.strataTone, FP.soil.surfaceTop.
+//           FP.view.art.h, FP.palette.strataTone, FP.soil.surfaceTop, FP.config.obstacles.pixelBury (enfouissement des obstacles PixelLab).
 // Écrit   : o._anchor, o._look sur chaque solide — caches de rendu uniquement, jamais lus par la simulation.
 // Expose  : FP.obstacles.draw(actx, world, cameraY) — repère d'art, la caméra est appliquée ici ; FP.obstacles.look(o),
 //           FP.obstacles.variantOf(o), FP.obstacles.cells(grid) (purs) ;
 //           FP.obstacles.prewarm() — prépare une famille par appel, hors des moments de jeu.
-// Chaque obstacle a son apparence : teinte, luminosité, usure, et pour un tiers d'entre eux le bas enfoui dans la terre.
+// Chaque obstacle a son apparence : teinte, luminosité, usure, et pour un tiers d'entre eux le bas enfoui dans la terre
+// (obstacles PixelLab, v4.17.0 : plus souvent et plus profond, leur pied est une flaque que 28 % de terre ne font que recouvrir).
 // Chaque sprite est réduit une seule fois par (sprite, miroir) : moyenne, 8 niveaux par canal, contour d'un pixel.
 (function () {
   'use strict';
@@ -156,7 +157,8 @@
     for (const ch of String(o.kind)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
     for (const v of [Math.round(o.x), Math.round(o.y)]) { h = Math.imul(h ^ (v & 0xffff), 16777619); h = Math.imul(h ^ (v >>> 16), 16777619); }
     h ^= h >>> 15; h = Math.imul(h, 0x2c1b3c6d); h ^= h >>> 12; h = Math.imul(h, 0x297a2d39); h ^= h >>> 15; h >>>= 0;
-    return { hue: (h % 31) - 15, light: 82 + ((h >>> 5) % 31), wear: (h >>> 10) % 4, buried: (h >>> 12) % 100 < 33 };
+    const bury = (h >>> 12) % 100;
+    return { hue: (h % 31) - 15, light: 82 + ((h >>> 5) % 31), wear: (h >>> 10) % 4, buried: bury < 33, bury, depth: ((h >>> 20) % 101) / 100 };
   }
 
   // Cache par obstacle : sprite de sa famille retouché (filtre, sans relecture de pixels : sûr en file://),
@@ -176,10 +178,12 @@
       const k = (i * 2654435761 + L.light * 97) >>> 0;
       px.rect(g, 2 + k % Math.max(1, c.width - 4), 2 + (k >>> 8) % Math.max(1, c.height - 4), 1 + (k >>> 16) % 2, 1, RUST[(k >>> 20) % 3]);
     }
-    if (L.buried) {                                    // la terre ne recouvre que la silhouette (source-atop)
+    const pb = FP.catalog.assets[o.assetKey] && FP.catalog.assets[o.assetKey].pixel ? FP.config.obstacles.pixelBury : null;
+    const buried = pb ? L.bury < pb.chance * 100 : L.buried, depth = pb ? pb.depth[0] + (pb.depth[1] - pb.depth[0]) * L.depth : .28;
+    if (buried) {                                      // la terre ne recouvre que la silhouette (source-atop)
       g.globalCompositeOperation = 'source-atop';
       const d = Math.max(0, Math.min(.999, (o.y - FP.soil.surfaceTop(world)) / (world.height - FP.soil.surfaceTop(world))));
-      const base = c.height - Math.round(c.height * .28);
+      const base = c.height - Math.round(c.height * depth);
       for (let x = 0; x < c.width; x++) {
         const top = base + Math.round(Math.sin(x * .7 + L.hue) * 1.5 + Math.sin(x * .23) * 1.5);
         px.rect(g, x, top, 1, c.height - top, palette.strataTone(d, 1 + (x % 3 === 0 ? 1 : 0), world.milieu));

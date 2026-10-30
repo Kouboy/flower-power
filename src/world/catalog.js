@@ -59,7 +59,7 @@
     for (const [kind, r] of Object.entries(raw || {})) {
       const p = png[kind] || Object.assign({}, PIXEL_DEFAULT, { runtime: { gameKind: kind } });
       out[kind] = {
-        id: kind, kind: 'obstacle',
+        id: kind, kind: 'obstacle', pixel: true,
         source: { width: r.width, height: r.height },
         render: { worldWidth: r.width * ART * r.zoom, pivot: [.5, .5], mirrorSafe: p.render.mirrorSafe },
         collision: { type: 'polygon', points: r.points, grazeRadius: p.collision.grazeRadius, flyoverEligible: p.collision.flyoverEligible },

@@ -1,7 +1,7 @@
 // play/flow.js — déroulé de partie : mort, éclosion, transitions, fin de partie.
 // Lit     : state.mode, state.query, state.plant, state.input.pressed, state.events, state.rng, state.boosts.filter, state.world.{surfaceY,width},
 //           FP.config.{flow,text,toxic,garden,soil,boss,run,milieux}, FP.difficulty.level.
-// Écrit   : state.mode, state.flow, state.run (seul à l'écrire : milieu, pousses, boss, saison, carton, avance du pollen, playtest terminé), state.difficulty, state.garden.flowers (création, croissance), state.plant.{reserves,oldTrails,corruption,toxicTimer,recentToxic}, state.score.flowers,
+// Écrit   : state.mode, state.flow, state.run (seul à l'écrire : milieu, pousses, boss, saison, carton, avance du pollen, playtest terminé), state.difficulty, state.garden.flowers (création, croissance, remise à zéro au milieu suivant), state.plant.{reserves,oldTrails,corruption,toxicTimer,recentToxic}, state.score.flowers,
 //           state.level, state.camera.shake, state.score.eco et state.events (death, bloom, blossom, toxicEnter, ready, bossDown) ; appelle FP.level.generate, FP.plant.prepare/launch,
 //           FP.scoring.awardFlat (bonus du boss) et FP.boss.reset (milieu suivant).
 // Expose  : FP.flow.update(state, dt), FP.flow.simplifyTrail(points, minStep), FP.flow.afterShop(state, after) (fin du bon de commande),
@@ -127,6 +127,7 @@
   function nextMilieu(state) {
     const r = state.run;
     r.milieu += 1; r.step = 0; r.boss = false; r.push = 0;
+    state.garden.flowers = [];   // v4.17.0 : nouveau site, parterre vierge (le compte des fleurs du run reste dans score.flowers)
     FP.boss.reset(state);
     if (r.milieu >= FP.config.milieux.length) {
       r.milieu = 0; r.saison += 1;
