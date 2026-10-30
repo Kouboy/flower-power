@@ -2,6 +2,14 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.18.0 — Retouches des obstacles PixelLab
+
+- caddie régénéré, bien plus grand (158 × 152 au lieu de 120 × 82) ;
+- panneau solaire régénéré : grille de cellules bleues sur deux pieds, reconnaissable, et plus d’herbe dessous ;
+- pneu plus sombre ; matelas jauni, taché et moisi au lieu de blanc pur ;
+- retouches reproductibles : `dev/tools/retouche-pixel.js`, à lancer avant `dev/tools/import-pixel.js` ;
+- banc : 707 tests.
+
 ## v4.17.0 — Retours de playtest : parterre, enfouissement, limaces
 
 - le parterre repart vierge à chaque nouveau site : les fleurs d’un milieu ne s’entassent plus sur la pelouse du suivant (le compte des fleurs du run et le certificat ne changent pas) ;

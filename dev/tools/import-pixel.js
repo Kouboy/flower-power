@@ -10,13 +10,13 @@ const png = require('./png.js');
 
 const ROOT = path.join(__dirname, '..', '..');
 const OUT = path.join(ROOT, 'assets', 'obstacles', 'pixel');
-// Famille du jeu → fichier brut ; zoom entier pour les obstacles que la taille d'origine rendrait trop petits.
+// Famille du jeu → fichier brut (-sombre, -sale, -sans-herbe, -sans-flaque : retouchés par dev/tools/retouche-pixel.js, à lancer avant) ; zoom entier pour les obstacles que la taille d'origine rendrait trop petits.
 const FILES = {
-  tire: 'pneu', trashbag: 'sac', cone: 'cone', nuclear: 'fut', battery: 'batterie', microwave: 'microondes',
-  extinguisher: 'extincteur', server: 'serveur', solar: 'solaire-v2', scooter: 'trottinette', drone: 'drone',
+  tire: 'pneu-sombre', trashbag: 'sac', cone: 'cone', nuclear: 'fut', battery: 'batterie', microwave: 'microondes',
+  extinguisher: 'extincteur', server: 'serveur', solar: 'solaire-sans-herbe', scooter: 'trottinette', drone: 'drone',
   arcade: 'arcade', sarcophagus: 'sarcophage', trex_signature: 'trex',
   // Familles propres à la version PixelLab (v4.16.0), trois par milieu.
-  cart: 'nouveaux/caddie', mattress: 'nouveaux/matelas', pallet: 'nouveaux/palette',
+  cart: 'nouveaux/caddie-sans-flaque', mattress: 'nouveaux/matelas-sale', pallet: 'nouveaux/palette',
   oildrum: 'nouveaux/bidon', gear: 'nouveaux/engrenage', pipe: 'nouveaux/tuyau',
   fridge: 'nouveaux/frigo-v2', crt: 'nouveaux/tele', sofa: 'nouveaux/canape',
   hazmat: 'nouveaux/combinaison', gasmask: 'nouveaux/masque', duck: 'nouveaux/canard-v2'

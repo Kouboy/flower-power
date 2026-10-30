@@ -22,7 +22,7 @@ FP.test('state: graine aléatoire si absente', () => {
   FP.assert(Number.isInteger(s.seed) && s.seed >= 0 && s.seed < 999999, String(s.seed));
 });
 FP.test('config: version et clé de record', () => {
-  FP.assertEqual(FP.config.version, '4.17.0');
+  FP.assertEqual(FP.config.version, '4.18.0');
   FP.assertEqual(FP.config.storageKey, 'flower_power_v4_best');
 });
 FP.test('state: une partie commence en friche, saison 1, carton d’entrée', () => {
