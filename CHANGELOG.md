@@ -2,6 +2,13 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v4.15.0 — Obstacles PixelLab (version test)
+
+- `?obstacles=pixel` ouvre une version test où les 14 obstacles sont des sprites PixelLab simples et cartoon (aplats, contour noir, coulures vert acide), plus raccord avec la pousse, la graine et la tige ; combinable avec `?sansboss=1`. Sans le paramètre, rien ne change ;
+- un pixel de l’image = un pixel d’art (deux pour le T-Rex) : aucun rééchantillonnage ; tailles proches des PNG actuels, plus petites pour le panneau solaire, la borne et le cercueil, plus grandes pour le pneu et le drone ;
+- collisions calculées depuis les silhouettes (`dev/tools/import-pixel.js`) ;
+- banc : 701 tests.
+
 ## v4.14.0 — Obstacles dessinés (version test)
 
 - `?obstacles=dessin` ouvre une version test où les 14 obstacles sont dessinés pixel par pixel par le code, dans le style de la pousse : 4 teintes par matière, contour teinté, formes rondes et cabossées, usure, coulures vert acide ; 4 variantes par obstacle ; combinable avec `?sansboss=1`. Sans le paramètre, rien ne change ;
