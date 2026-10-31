@@ -55,10 +55,15 @@
     return { kind: 'shot', boss: true, x, y, a: 0, flip: 1, collision, broadR: r, flyoverEligible: false, grazeRadius: 0, off: false };
   }
 
+  function dropShot(state, k) {
+    const th = state.bossThreats, i = state.world.solids.indexOf(th.shots[k].solid);
+    if (i >= 0) state.world.solids.splice(i, 1);
+    th.shots.splice(k, 1);
+  }
+
   function clearShots(state) {
-    const th = state.bossThreats;
-    for (const s of th.shots) { const i = state.world.solids.indexOf(s.solid); if (i >= 0) state.world.solids.splice(i, 1); }
-    th.shots.length = 0; th.aim = null;
+    while (state.bossThreats.shots.length) dropShot(state, 0);
+    state.bossThreats.aim = null;
   }
 
   function fire(state, tur, to) {
@@ -75,17 +80,16 @@
     const cfg = FP.config.boss.shot, th = state.bossThreats, w = state.world;
     for (let i = th.shots.length - 1; i >= 0; i--) {
       const s = th.shots[i]; s.x += s.vx * dt; s.y += s.vy * dt; s.solid.x = s.x; s.solid.y = s.y;
-      if (s.x < -cfg.r || s.x > w.width + cfg.r || s.y < -cfg.r || s.y > w.height + cfg.r) {
-        const k = w.solids.indexOf(s.solid); if (k >= 0) w.solids.splice(k, 1);
-        th.shots.splice(i, 1);
-      }
+      if (s.x < -cfg.r || s.x > w.width + cfg.r || s.y < -cfg.r || s.y > w.height + cfg.r) dropShot(state, i);
     }
     th.cooldown = Math.max(0, th.cooldown - dt);
     if (!FP.config.boss.shooters.includes(FP.config.milieux[state.run.milieu].id)) return;
     const room = tip ? roomAt(bl, tip.x, tip.y) : null, a = th.aim;
     if (a) {
       const tur = bl.turrets.find(q => q.id === a.turret);
-      if (!room || room.id !== tur.room) { th.aim = null; return; }   // la pointe a quitté la salle : visée annulée sans tir
+      const st = state.bossThreats.rooms[tur.room];
+      // pointe sortie de la salle, ou coup de la défense qui commence : visée annulée sans tir (un tir déjà parti continue)
+      if (!room || room.id !== tur.room || (st && st.stage === 'strike')) { th.aim = null; return; }
       a.t += dt;
       if (!a.lockedAt && a.t >= cfg.track - cfg.lock) { a.lockedAt = { x: tip.x, y: tip.y }; state.events.push({ type: 'bossLock', turret: tur.id }); }
       if (a.t >= cfg.track) fire(state, tur, a.lockedAt);

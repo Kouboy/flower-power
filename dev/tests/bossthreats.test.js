@@ -224,3 +224,39 @@ FP.test('shots: un projectile sorti du cadre est retiré ; un tir touche et tue 
   const d = s2.events.find(e => e.type === 'death');
   FP.assert(d && d.kind === 'shot', 'mort par un tir'); FP.assertEqual(s2.flow.overReason, 'touchée par un tir');
 });
+
+FP.test('shots: aucun tir ne part pendant un coup de la défense (plusieurs cycles, pointe dans la salle)', () => {
+  for (const m of [1, 2, 3]) {
+    const s = shotRun(m), r = shotRoom(s); s.plant.tip = thrIn(r, .4);
+    let shots = 0, cancelled = false;
+    for (let i = 0; i < 60 * 40; i++) {
+      const was = s.bossThreats.aim; s.events.length = 0; thrStep(s);
+      if (thrStage(s, r) === 'strike') {
+        FP.assertEqual(shotEvents(s, 'bossShot').length, 0, 'tir pendant le coup, milieu ' + m);
+        if (was && !s.bossThreats.aim) cancelled = true;
+      }
+      shots += shotEvents(s, 'bossShot').length;
+    }
+    FP.assert(shots > 0, 'des tirs en dehors des coups, milieu ' + m);
+    FP.assert(cancelled || m !== 1, 'visée annulée au début d’un coup');
+  }
+});
+
+FP.test('shots: rien ne progresse pendant le gel (visée, délai, projectiles)', () => {
+  const s = shotRun(1), r = shotRoom(s); s.plant.tip = thrIn(r, .4);
+  for (let i = 0; i < 200 && !s.bossThreats.shots.length; i++) thrStep(s);
+  s.plant.tip = thrIn(r, .4); s.bossThreats.aim = { turret: r.turrets[0], t: .2, lockedAt: null };
+  const before = JSON.stringify([s.bossThreats.aim, s.bossThreats.cooldown, s.bossThreats.shots.map(q => [q.x, q.y])]);
+  s.flow.freeze = 1; shotTick(s, 120);
+  FP.assertEqual(JSON.stringify([s.bossThreats.aim, s.bossThreats.cooldown, s.bossThreats.shots.map(q => [q.x, q.y])]), before);
+});
+
+FP.test('shots: avec plusieurs tourelles, la plus proche de la pointe vise', () => {
+  const s = shotRun(1), r = shotRoom(s), bl = s.world.bossLevel, first = bl.turrets.find(q => q.room === r.id);
+  const far = { id: 'tourelle-test', x: first.x + 5000, y: first.y, room: r.id };   // plus loin que toute pointe de la salle
+  bl.turrets.unshift(far); r.turrets = [far.id, ...r.turrets];
+  s.plant.tip = { x: first.x + 1, y: first.y + 1 }; thrStep(s);
+  FP.assertEqual(s.bossThreats.aim && s.bossThreats.aim.turret, first.id);
+  s.bossThreats.aim = null; far.x = first.x + 2; far.y = first.y + 2; s.bossThreats.cooldown = 0; thrStep(s);
+  FP.assertEqual(s.bossThreats.aim && s.bossThreats.aim.turret, 'tourelle-test');
+});
