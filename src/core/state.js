@@ -44,7 +44,7 @@
       // v4.13.0 : version playtest sans boss (?sansboss=1), avance du pollen dans le milieu, playtest terminé.
       run: { milieu: 0, step: 0, saison: 1, bosses: 0, boss: false, card: { kind: 'milieu', t0: 0 }, won: false,
         playtest: !!(FP.params && FP.params.sansboss), push: 0, done: false },
-      bossThreats: { rooms: {}, shots: [] },   // v5.1.0 : défense de chaque salle de boss (play/boss-threats.js) ; remis à zéro par world/boss.js
+      bossThreats: { rooms: {}, shots: [], aim: null, cooldown: 0 },   // v5.1.0 : défense de chaque salle de boss (play/boss-threats.js) ; remis à zéro par world/boss.js
       bossFight: { destroyed: [false, false, false], headOpen: false },   // v5.1.0 : une case par cible, gardée après une mort ; tête à nu
       camera: { y: Math.max(0, height - dims.H), manual: false, near: 0, zoom: 1, shake: 0 },
       input: { x: 0, screenX: 0, y: 0, down: false, active: false, pressed: false, touch: false, key: false },   // instantané du pointeur (x monde, y écran)

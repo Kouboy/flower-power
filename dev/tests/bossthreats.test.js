@@ -99,13 +99,13 @@ FP.test('threats: tout se vide à la régénération du niveau', () => {
   for (let i = 0; i < 400 && thrStage(s, r) !== 'strike'; i++) thrStep(s);
   s.bossThreats.shots.push({ x: 1, y: 2 });
   FP.level.generate(s);
-  FP.assertEqual(JSON.stringify(s.bossThreats), '{"rooms":{},"shots":[]}');
+  FP.assertEqual(JSON.stringify(s.bossThreats), '{"rooms":{},"shots":[],"aim":null,"cooldown":0}');
   FP.assert(s.world.bossLevel.rooms.every(q => q.zone.off), 'zones éteintes');
 });
 
 FP.test('threats: hors niveau de boss, rien', () => {
   const s = FP.state.createRun(5, { W: 360, H: 640 }); FP.level.startRun(s); FP.level.generate(s); s.mode = 'playing';
-  FP.bossThreats.update(s, .1); FP.assertEqual(JSON.stringify(s.bossThreats), '{"rooms":{},"shots":[]}');
+  FP.bossThreats.update(s, .1); FP.assertEqual(JSON.stringify(s.bossThreats), '{"rooms":{},"shots":[],"aim":null,"cooldown":0}');
 });
 
 FP.test('threats: un coup sur la pointe tue (kind defense, « emportée par la défense »)', () => {
@@ -145,4 +145,82 @@ FP.test('coins: les salles de boss ne sont pas vides de jetons (zones au repos i
     const n = w.bossLevel.rooms.reduce((a, r) => a + w.coins.filter(c => c.x >= r.x0 && c.x <= r.x1 && c.y >= r.y0 && c.y <= r.y1).length, 0);
     FP.assert(n > 0, 'jetons dans les salles, milieu ' + m);
   }
+});
+
+// Tirs visés (boss 2 à 4) : la tourelle suit la pointe, la ligne se fige, le projectile part le long de la ligne figée.
+const shotRun = (milieu = 1) => thrRun(milieu);
+const shotRoom = (s) => s.world.bossLevel.rooms.find(r => r.turrets.length);
+const shotTick = (s, n) => { for (let i = 0; i < n; i++) thrStep(s); };
+const shotEvents = (s, type) => s.events.filter(e => e.type === type);
+
+FP.test('shots: pas de tir à la Bétonneuse', () => {
+  const s = shotRun(0); s.plant.tip = thrIn(thrRoom(s), .5);
+  shotTick(s, 600); FP.assertEqual(s.bossThreats.shots.length, 0); FP.assertEqual(s.bossThreats.aim, null);
+  FP.assert(!s.world.solids.some(o => o.kind === 'shot'), 'aucun solide de tir');
+});
+
+FP.test('shots: la ligne se fige 0,3 s avant le tir, le projectile suit la ligne figée', () => {
+  const s = shotRun(1), r = shotRoom(s), cfg = FP.config.boss.shot, tur = s.world.bossLevel.turrets.find(q => q.room === r.id);
+  s.plant.tip = thrIn(r, .3); s.events.length = 0;
+  let t = 0, lockT = null, shotT = null, locked = null;
+  for (let i = 0; i < 600 && shotT === null; i++, t += 1 / 60) {
+    if (lockT === null) s.plant.tip = thrIn(r, .3 + .001 * i);
+    else s.plant.tip = thrIn(r, .9);   // après le figement, la pointe s'éloigne
+    thrStep(s);
+    if (lockT === null && shotEvents(s, 'bossLock').length) { lockT = t; locked = { ...s.bossThreats.aim.lockedAt }; }
+    if (shotEvents(s, 'bossShot').length) shotT = t;
+  }
+  FP.assert(shotEvents(s, 'bossAim').length === 1 && lockT !== null && shotT !== null, 'aim, lock, shot');
+  FP.assert(Math.abs((shotT - lockT) - cfg.lock) < .03, 'figé ' + (shotT - lockT) + ' s avant le tir');
+  FP.assert(Math.abs(shotT - cfg.track) < .03, 'tir après track');
+  const sh = s.bossThreats.shots[0], len = Math.hypot(locked.x - tur.x, locked.y - tur.y);
+  FP.assert(Math.abs(sh.vx - cfg.speed * (locked.x - tur.x) / len) < 1e-6 && Math.abs(sh.vy - cfg.speed * (locked.y - tur.y) / len) < 1e-6, 'direction figée');
+  const x0 = sh.x, y0 = sh.y; thrStep(s);
+  FP.assert(Math.abs(sh.x - x0 - sh.vx / 60) < 1e-6 && Math.abs(sh.y - y0 - sh.vy / 60) < 1e-6, 'avance à la vitesse');
+  FP.assert(s.world.solids.some(o => o.kind === 'shot'), 'solide de tir dans world.solids');
+});
+
+FP.test('shots: au moins 3 s entre deux tirs', () => {
+  const s = shotRun(2), r = shotRoom(s); s.plant.tip = thrIn(r, .4);
+  let t = 0; const at = [];
+  for (let i = 0; i < 60 * 14; i++, t += 1 / 60) { s.events.length = 0; thrStep(s); if (shotEvents(s, 'bossShot').length) at.push(t); }
+  FP.assert(at.length >= 2, 'plusieurs tirs : ' + at.length);
+  for (let i = 1; i < at.length; i++) FP.assert(at[i] - at[i - 1] >= FP.config.boss.shot.gap - 1e-6, 'écart ' + (at[i] - at[i - 1]));
+});
+
+FP.test('shots: pas de visée pendant un coup de la défense', () => {
+  const s = shotRun(1), r = shotRoom(s); s.plant.tip = thrIn(r, .4);
+  for (let i = 0; i < 400 && thrStage(s, r) !== 'strike'; i++) thrStep(s);
+  FP.assertEqual(thrStage(s, r), 'strike'); s.bossThreats.aim = null; s.bossThreats.cooldown = 0; s.events.length = 0;
+  thrStep(s); FP.assertEqual(s.bossThreats.aim, null); FP.assertEqual(shotEvents(s, 'bossAim').length, 0);
+});
+
+FP.test('shots: pas de visée sur une pointe hors des salles', () => {
+  const s = shotRun(1), r = shotRoom(s); s.plant.tip = { x: r.x0 - 60, y: r.y0 - 60 };
+  shotTick(s, 400); FP.assertEqual(s.bossThreats.aim, null); FP.assertEqual(s.bossThreats.shots.length, 0);
+  s.plant.tip = thrIn(r, .5); shotTick(s, 10); FP.assert(s.bossThreats.aim !== null, 'visée dans la salle');
+  s.plant.tip = { x: r.x0 - 60, y: r.y0 - 60 }; s.events.length = 0; thrStep(s);
+  FP.assertEqual(s.bossThreats.aim, null); FP.assertEqual(shotEvents(s, 'bossShot').length, 0);
+});
+
+FP.test('shots: les projectiles disparaissent à la mort', () => {
+  const s = shotRun(1), r = shotRoom(s); s.plant.tip = thrIn(r, .4);
+  for (let i = 0; i < 200 && !s.bossThreats.shots.length; i++) thrStep(s);
+  FP.assert(s.bossThreats.shots.length === 1 && s.world.solids.some(o => o.kind === 'shot'), 'un tir en vol');
+  s.mode = 'dying'; thrStep(s);
+  FP.assertEqual(s.bossThreats.shots.length, 0); FP.assertEqual(s.bossThreats.aim, null);
+  FP.assert(!s.world.solids.some(o => o.kind === 'shot'), 'solide retiré');
+});
+
+FP.test('shots: un projectile sorti du cadre est retiré ; un tir touche et tue (« touchée par un tir »)', () => {
+  const s = shotRun(1), r = shotRoom(s); s.plant.tip = thrIn(r, .4);
+  for (let i = 0; i < 200 && !s.bossThreats.shots.length; i++) thrStep(s);
+  const sh = s.bossThreats.shots[0]; sh.x = -500; thrStep(s);
+  FP.assert(!s.bossThreats.shots.includes(sh) && !s.world.solids.includes(sh.solid), 'retiré hors cadre');
+  const s2 = bossRun(440, 1); FP.plant.launch(s2); const r2 = shotRoom(s2); s2.plant.tip = thrIn(r2, .4);
+  for (let i = 0; i < 200 && !s2.bossThreats.shots.length; i++) thrStep(s2);
+  const q = s2.bossThreats.shots[0]; q.solid.x = s2.plant.tip.x; q.solid.y = s2.plant.tip.y; s2.events.length = 0;
+  FP.collision.update(s2); FP.flow.update(s2, 0);
+  const d = s2.events.find(e => e.type === 'death');
+  FP.assert(d && d.kind === 'shot', 'mort par un tir'); FP.assertEqual(s2.flow.overReason, 'touchée par un tir');
 });
