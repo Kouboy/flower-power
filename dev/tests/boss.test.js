@@ -351,3 +351,13 @@ FP.test('boss: après la tête, la pousse éclot, bonus et milieu suivant', () =
   FP.assertEqual(s.run.milieu, 2);
   FP.assertEqual(JSON.stringify(s.bossFight), '{"destroyed":[false,false,false],"headOpen":false}');
 });
+
+FP.test('boss: la tête à nu prime sur une paroi touchée dans la même frame', () => {
+  const s = headRun(true), h = s.world.bossLevel.head.solid;
+  s.world.solids.push(FP.catalog.makeSolid({ kind: 'server', x: h.x, y: h.y, a: 0, flip: 1 }));
+  touchHead(s);
+  FP.assert(s.query.solid && s.query.head === h, 'les deux sont vus');
+  FP.flow.update(s, 0);
+  FP.assertEqual(s.mode, 'playing'); FP.assertEqual(s.plant.reserves, 3); FP.assertEqual(h.off, true);
+  FP.assertEqual(s.events.filter(e => e.type === 'death').length, 0);
+});

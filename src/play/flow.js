@@ -178,8 +178,8 @@
         const q = state.query, text = FP.config.text;
         if (state.plant.tip.y <= state.world.surfaceY) bloom(state);
         else if (q.target) assault(state, q.target);   // l'assaut prime sur une paroi touchée dans la même frame
+        else if (q.head) FP.boss.pierceHead(state);   // tête à nu : transpercée, la pousse continue (gel de l'image) ; prime sur une paroi touchée dans la même frame
         else if (q.solid) die(state, 'solid', q.solid.kind, text.death[q.solid.kind] || text.deathDefault);
-        else if (q.head) FP.boss.pierceHead(state);   // tête à nu : transpercée, la pousse continue (gel de l'image)
         else if (q.leak > 0) die(state, 'leak', null, text.deathLeak);
         else expose(state, dt);
         break;
