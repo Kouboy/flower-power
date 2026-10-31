@@ -107,3 +107,42 @@ FP.test('threats: hors niveau de boss, rien', () => {
   const s = FP.state.createRun(5, { W: 360, H: 640 }); FP.level.startRun(s); FP.level.generate(s); s.mode = 'playing';
   FP.bossThreats.update(s, .1); FP.assertEqual(JSON.stringify(s.bossThreats), '{"rooms":{},"shots":[]}');
 });
+
+FP.test('threats: un coup sur la pointe tue (kind defense, « emportée par la défense »)', () => {
+  const s = bossRun(440, 1); FP.plant.launch(s); s.events.length = 0;
+  const r = thrRoom(s); s.plant.tip = thrIn(r, .2);
+  for (let i = 0; i < 400 && thrStage(s, r) !== 'strike'; i++) thrStep(s);
+  s.events.length = 0; FP.collision.update(s); FP.flow.update(s, 0);
+  const d = s.events.find(e => e.type === 'death');
+  FP.assert(d && d.cause === 'solid' && d.kind === 'defense', 'mort par la défense');
+  FP.assertEqual(s.mode, 'dying'); FP.assertEqual(s.flow.overReason, 'emportée par la défense');
+});
+
+FP.test('threats: de la salle A à la salle B pendant l’avertissement → pas de coup en A, avertissement complet en B', () => {
+  let s = null, a = null, b = null;
+  for (const m of [0, 1, 2, 3]) { const t = thrRun(m); if (t.world.bossLevel.rooms.length >= 2) { s = t; break; } }
+  if (!s) return;   // aucun plan à deux salles : rien à vérifier
+  [a, b] = s.world.bossLevel.rooms;
+  const warn = FP.bossThreats.timing(0).warn;
+  s.plant.tip = thrIn(a, .3); for (let i = 0; i < 30; i++) thrStep(s);
+  FP.assertEqual(thrStage(s, a), 'warn');
+  s.plant.tip = thrIn(b, .7); let t = 0, warnB = null, strikeA = 0, strikeB = null;
+  for (let i = 0; i < 400; i++, t += 1 / 60) {
+    s.events.length = 0; thrStep(s);
+    for (const e of s.events) {
+      if (e.type === 'bossWarn' && e.room === b.id && warnB === null) warnB = t;
+      if (e.type === 'bossStrike' && e.room === a.id) strikeA++;
+      if (e.type === 'bossStrike' && e.room === b.id && strikeB === null) strikeB = t;
+    }
+  }
+  FP.assertEqual(strikeA, 0); FP.assert(warnB !== null && strikeB !== null && strikeB - warnB >= warn - 1e-6, 'B : avertissement complet ');
+});
+
+FP.test('coins: les salles de boss ne sont pas vides de jetons (zones au repos ignorées)', () => {
+  for (let m = 0; m < 4; m++) {
+    const s = bossRun(360, m), w = s.world;
+    FP.assert(w.bossLevel.rooms.every(r => r.zone.off), 'zones au repos');
+    const n = w.bossLevel.rooms.reduce((a, r) => a + w.coins.filter(c => c.x >= r.x0 && c.x <= r.x1 && c.y >= r.y0 && c.y <= r.y1).length, 0);
+    FP.assert(n > 0, 'jetons dans les salles, milieu ' + m);
+  }
+});

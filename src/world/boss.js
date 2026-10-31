@@ -49,7 +49,7 @@
       else if (p.role === 'target') { const i = bl.targets.length; bl.targets.push({ id: p.id, i, plate: p.plate, solid: makeSolid(KIND.target, p.poly, !!destroyed[i]) }); }
       else { const i = targetOf[p.id]; bl.plates.push({ id: p.id, target: i, solid: makeSolid(KIND.plate, p.poly, !!destroyed[i]) }); }
     }
-    // zone : le solide de la défense de la salle, éteint (off) ; play/boss-threats.js le règle sur la moitié visée pendant le coup.
+    // zone (≠ la chaîne `defense`, le type de défense) : le solide de la défense de la salle, éteint (off) ; play/boss-threats.js le règle sur la moitié visée pendant le coup.
     for (const r of placed.rooms) {
       const [x0, y0, x1, y1] = r.rect;
       bl.rooms.push({ id: r.id, x0, y0, x1, y1, defense: r.defense, turrets: r.turrets, zone: makeSolid(KIND.defense, [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], true) });
