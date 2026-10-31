@@ -1,7 +1,8 @@
 // world/collision.js — requête unique de la pointe contre les dangers, une fois par frame.
 // Lit     : state.mode, state.plant.tip, state.world.{solids (ceux marqués `off` sont ignorés),toxics,leaks} (leak.cx/cy/cr calculés par world/hazards.js),
-//           FP.hazards.toxicIntensityAt, FP.config.{hazards,graze}.
-// Écrit   : state.query = { solid, danger, near, toxic, leak, leakHit, grazes } ; leak.hitFlash de chaque limace touchée.
+//           FP.hazards.toxicIntensityAt, FP.config.{hazards,graze}. Un solide de kind 'target' non détruit va dans query.target, jamais dans query.solid.
+// Écrit   : state.query = { solid, target, danger, near, toxic, leak, leakHit, grazes } ; leak.hitFlash de chaque limace touchée.
+//           target : la cible de boss intacte touchée (assaut, play/flow.js), prioritaire sur solid.
 //           grazes : un élément { obj, kind:'solid'|'leak', intensity, x, y } par frôlement en cours (play/graze.js).
 // Expose  : FP.collision.update(state), FP.collision.queryPoint(world, x, y), FP.collision.grazeBand(solid),
 //           FP.collision.distanceTo(solid, x, y) (distance signée au polygone).
@@ -10,7 +11,7 @@
   'use strict';
   const FP = window.FP = window.FP || {};
 
-  const EMPTY = () => ({ solid: null, danger: 0, near: null, toxic: 0, leak: 0, leakHit: null, grazes: [] });
+  const EMPTY = () => ({ solid: null, target: null, danger: 0, near: null, toxic: 0, leak: 0, leakHit: null, grazes: [] });
 
   // Bande de frôlement autour du polygone : seulement si l'obstacle accepte le flyover.
   const grazeBand = (o) => (o.flyoverEligible ? o.grazeRadius : 0);
@@ -29,7 +30,11 @@
       const dx = x - o.x, dy = y - o.y;
       if (dx * dx + dy * dy > br * br) continue;             // broad phase
       const d = distanceTo(o, x, y);
-      if (d <= 0) { if (!q.solid) q.solid = o; continue; }
+      if (d <= 0) {
+        if (o.kind === 'target') { if (!q.target) q.target = o; }   // v5.1.0 : une cible n'est pas une paroi, c'est un assaut
+        else if (!q.solid) q.solid = o;
+        continue;
+      }
       if (d < band) {
         const intensity = Math.max(0, Math.min(1, 1 - d / band));
         if (intensity > FP.config.graze.minIntensity) {

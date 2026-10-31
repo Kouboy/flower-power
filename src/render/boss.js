@@ -1,9 +1,9 @@
 // render/boss.js — le boss, provisoire (v5.1.0 : formes simples dessinées par le code, sans image) : parois, cibles, tête, plaques du blindage.
-// Lit     : state.{time,camera.y,run.milieu}, state.world.{viewH,bossLevel.{walls,targets,head,plates}} (x, y, collision, off de chaque solide),
+// Lit     : state.{time,camera.y,run.milieu,bossFight.headOpen}, state.world.{viewH,bossLevel.{walls,targets,head,plates}} (x, y, collision, off de chaque solide),
 //           FP.config.milieux, FP.palette.boss, FP.px.
 // Écrit   : rien dans l'état (la toile reçue uniquement).
 // Expose  : FP.bossRender.draw(g, state) — repère d'art, la caméra est appliquée ici ; rien hors niveau de boss.
-// Cible détruite (off) : épave sombre qui fume ; plaque tombée (off) : rien ; tête à nu (plus aucune plaque) : lueur qui pulse.
+// Cible détruite (off) : épave sombre qui fume ; plaque tombée (off) : rien ; tête à nu (bossFight.headOpen) : lueur qui pulse.
 // Ne touche pas au DOM au chargement : chargeable dans dev/check.html.
 (function () {
   'use strict';
@@ -90,7 +90,7 @@
     const seen = (o) => o.y + o.broadR >= top && o.y - o.broadR <= top + H;
     for (const o of bl.walls) if (seen(o)) wall(g, artPoly(o, cam), M);
     for (const tg of bl.targets) if (seen(tg.solid)) target(g, artPoly(tg.solid, cam), tg.solid.off, t, M);
-    const open = bl.plates.every(p => p.solid.off);
+    const open = state.bossFight.headOpen;
     if (seen(bl.head.solid)) head(g, artPoly(bl.head.solid, cam), open, t, M);
     for (const p of bl.plates) if (!p.solid.off && seen(p.solid)) plate(g, artPoly(p.solid, cam));
   }

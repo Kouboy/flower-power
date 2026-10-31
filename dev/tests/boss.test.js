@@ -86,6 +86,8 @@ FP.test('hud: icônes de cibles et de tête', () => {
   s.bossFight.destroyed[0] = s.bossFight.destroyed[2] = true;
   FP.assertEqual(JSON.stringify(FP.hud.items(s).boss), '{"targets":[true,false,true],"head":"armored"}');
   s.bossFight.destroyed[1] = true;
+  FP.assertEqual(JSON.stringify(FP.hud.items(s).boss), '{"targets":[true,true,true],"head":"armored"}');   // la tête s'ouvre par FP.boss.destroy, pas par les cases seules
+  s.bossFight.headOpen = true;
   FP.assertEqual(JSON.stringify(FP.hud.items(s).boss), '{"targets":[true,true,true],"head":"open"}');
 });
 
@@ -111,8 +113,8 @@ const steerAlong = (s, path, goal) => {
     s.input = { ...s.input, down: true, touch: false, key: false, active: true, x: p.x, screenX: 0, y };
     s.time += dt;
     FP.plant.update(s, dt); FP.collision.update(s);
+    if (s.query.solid && s.query.solid !== goal) return `touche ${s.query.solid.kind} en (${tip.x | 0}, ${tip.y | 0}), point ${i}`;   // une paroi touchée à l'arrivée compte comme un échec
     if (FP.collision.distanceTo(goal, tip.x, tip.y) <= 12) return null;
-    if (s.query.solid && s.query.solid !== goal) return `touche ${s.query.solid.kind} en (${tip.x | 0}, ${tip.y | 0}), point ${i}`;
     if (tip.y < path[path.length - 1].y - 40) return `passe au-dessus du but en (${tip.x | 0}, ${tip.y | 0})`;
   }
   return 'jamais arrivée';
@@ -127,7 +129,7 @@ FP.test('bossLevel: une pousse pilotée atteint chaque cible sans toucher de par
       FP.assert(!err, `W=${W} ${MILIEUX[milieu]} → ${t.id} : ${err}`);
     }
     const s = bossRun(W, milieu);
-    s.bossFight.destroyed = [true, true, true]; FP.level.generate(s);
+    s.bossFight.destroyed = [true, true, true]; s.bossFight.headOpen = true; FP.level.generate(s);
     FP.assert(s.world.bossLevel.plates.every(p => p.solid.off), 'plaques tombées');
     const err = steerAlong(s, placed.paths.head, s.world.bossLevel.head.solid);
     FP.assert(!err, `W=${W} ${MILIEUX[milieu]} → tête : ${err}`);
@@ -169,7 +171,7 @@ FP.test('bossRender: dessine chaque plan sans erreur ni écriture dans l’état
     FP.bossRender.draw(g, s);
     FP.assertEqual(JSON.stringify(bl), snap, 'le dessin n’écrit rien');
     FP.assert(g.rects.length > 50, 'rien dessiné (milieu ' + milieu + ')');
-    s.bossFight.destroyed = [true, true, true]; FP.level.generate(s);
+    s.bossFight.destroyed = [true, true, true]; s.bossFight.headOpen = true; FP.level.generate(s);
     s.camera.y = s.world.bossLevel.head.solid.y - s.world.viewH / 2; FP.bossRender.draw(recCtx(), s);   // tête à nu, cibles détruites
   }
   FP.bossRender.draw(recCtx(), FP.state.createRun(3, { W: 440, H: 783 }));   // niveau normal : rien, sans erreur
@@ -179,4 +181,107 @@ FP.test('palette: les teintes du boss restent à 60 de toute teinte de danger', 
   const rgb = (h) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)), dist = (a, b) => Math.hypot(...rgb(a).map((v, i) => v - rgb(b)[i]));
   const B = FP.palette.boss, all = [...B.weak, ...B.plate, ...B.glow, ...B.smoke, B.hole, ...Object.values(B.milieux).flatMap(m => Object.values(m))];
   for (const c of all) for (const d of FP.palette.danger) FP.assert(dist(c, d) >= 60, c + ' trop proche du danger ' + d);
+});
+
+// --- Assaut d'une cible (v5.1.0) : la pointe qui touche une cible intacte la détruit et meurt, la graine est rendue.
+const assaultRun = (reserves = 3) => {
+  const s = bossRun(440, 1); FP.plant.launch(s); s.events.length = 0; s.plant.reserves = reserves; s.camera.shake = 0;
+  return s;
+};
+const hitTarget = (s, i) => { const o = s.world.bossLevel.targets[i].solid; s.plant.tip = { x: o.x, y: o.y }; FP.collision.update(s); FP.flow.update(s, 0); };
+const hitWall = (s) => {
+  s.plant.tip = { x: 220, y: 900 }; s.world.solids.push(FP.catalog.makeSolid({ kind: 'server', x: 220, y: 900, a: 0, flip: 1 }));
+  FP.collision.update(s); FP.flow.update(s, 0);
+};
+const plateOf = (s, i) => s.world.bossLevel.plates.find(p => p.target === i).solid;
+
+FP.test('boss: percuter une cible la détruit et fait tomber sa plaque', () => {
+  const s = assaultRun(), t = s.world.bossLevel.targets[0].solid, eco = s.score.eco;
+  hitTarget(s, 0);
+  FP.assertEqual(s.mode, 'dying');
+  FP.assertEqual(JSON.stringify(s.bossFight.destroyed), '[true,false,false]');
+  FP.assertEqual(t.off, true); FP.assertEqual(plateOf(s, 0).off, true);
+  FP.assertEqual(plateOf(s, 1).off, false); FP.assertEqual(s.bossFight.headOpen, false);
+  FP.assert(s.score.eco > eco, 'bonus de la cible');
+  FP.assert(s.camera.shake >= FP.config.boss.assaultShake, 'secousse');
+  const ev = (type) => s.events.filter(e => e.type === type);
+  FP.assertEqual(ev('bossTarget').length, 1); FP.assertEqual(ev('bossTarget')[0].i, 0);
+  FP.assertEqual(ev('bossSeed').length, 1);
+  FP.assertEqual(ev('death')[0].cause, 'assault');
+  FP.assert(s.events.findIndex(e => e.type === 'bossTarget') < s.events.findIndex(e => e.type === 'bossSeed'), 'bossTarget puis bossSeed');
+});
+
+FP.test('boss: l’assaut laisse la réserve de graines inchangée', () => {
+  const s = assaultRun(3); hitTarget(s, 1);
+  FP.assertEqual(s.plant.reserves, 3);
+  const w = assaultRun(3); hitWall(w);
+  FP.assertEqual(w.plant.reserves, 2, 'une paroi coûte toujours une graine');
+});
+
+FP.test('boss: la cible prime sur une paroi touchée dans la même frame', () => {
+  const s = assaultRun(), o = s.world.bossLevel.targets[2].solid;
+  s.world.solids.push(FP.catalog.makeSolid({ kind: 'server', x: o.x, y: o.y, a: 0, flip: 1 }));
+  s.plant.tip = { x: o.x, y: o.y }; FP.collision.update(s);
+  FP.assert(s.query.solid && s.query.target === o, 'les deux sont vus');
+  FP.flow.update(s, 0);
+  FP.assertEqual(s.plant.reserves, 3); FP.assertEqual(s.bossFight.destroyed[2], true);
+});
+
+FP.test('boss: la membrane n’avale pas un assaut', () => {
+  const s = assaultRun(); s.power.shield = true;
+  const o = s.world.bossLevel.targets[0].solid; s.plant.tip = { x: o.x, y: o.y };
+  FP.collision.update(s); FP.powerups.update(s, 0); FP.flow.update(s, 0);
+  FP.assertEqual(s.bossFight.destroyed[0], true); FP.assertEqual(s.mode, 'dying'); FP.assertEqual(s.plant.reserves, 3);
+});
+
+FP.test('boss: assaut avec la dernière graine — pas de dernière chance, la pousse suivante est prête', () => {
+  const s = assaultRun(1); hitTarget(s, 0);
+  FP.assertEqual(s.plant.reserves, 1);
+  advance(s, 3);
+  FP.assertEqual(s.mode, 'ready', s.mode);
+  FP.assertEqual(s.plant.reserves, 1);
+  FP.assertEqual(s.world.bossLevel.targets[0].solid.off, true);
+  const w = assaultRun(1); hitWall(w); advance(w, 3);
+  FP.assertEqual(w.mode, 'shop', 'une paroi avec la dernière graine ouvre toujours la dernière chance');
+});
+
+FP.test('boss: une tige d’assaut ne compte pas parmi les tiges sacrifiées', () => {
+  const s = assaultRun(); hitTarget(s, 0);
+  FP.assertEqual(s.plant.assaults, 1);
+  s.flow.overReason = ''; s.mode = 'over';
+  FP.assertEqual(FP.certificate.lines(s).rows[2].value, String(s.plant.stemCount - 1));
+  FP.assertEqual(FP.state.createRun(4, { W: 440, H: 783 }).plant.assaults, 0);
+});
+
+FP.test('boss: après trois assauts, la tête s’ouvre', () => {
+  const s = assaultRun();
+  for (let i = 0; i < 3; i++) {
+    FP.assertEqual(s.bossFight.headOpen, false);
+    hitTarget(s, i); advance(s, 3); FP.assertEqual(s.mode, 'ready'); FP.plant.launch(s);
+  }
+  FP.assertEqual(s.bossFight.headOpen, true);
+  FP.assert(s.world.bossLevel.plates.every(p => p.solid.off), 'plaques toutes tombées');
+  FP.assertEqual(FP.hud.items(s).boss.head, 'open');
+  FP.assertEqual(s.plant.reserves, 3);
+});
+
+FP.test('boss: une cible déjà détruite ne déclenche plus rien', () => {
+  const s = assaultRun(); hitTarget(s, 0); advance(s, 3); FP.plant.launch(s); s.events.length = 0;
+  const eco = s.score.eco, o = s.world.bossLevel.targets[0].solid;
+  s.plant.tip = { x: o.x, y: o.y }; FP.collision.update(s);
+  FP.assertEqual(s.query.target, null); FP.flow.update(s, 0);
+  FP.assertEqual(s.mode, 'playing'); FP.assertEqual(s.score.eco, eco); FP.assertEqual(s.events.length, 0);
+  FP.boss.destroy(s, 0);   // appel direct : sans effet non plus
+  FP.assertEqual(s.events.length, 0); FP.assertEqual(s.score.eco, eco);
+});
+
+FP.test('boss: les cibles détruites survivent à une mort ordinaire (flux réel)', () => {
+  const s = assaultRun(3); FP.boss.destroy(s, 1);
+  hitWall(s);
+  FP.assertEqual(s.mode, 'dying'); FP.assertEqual(s.plant.reserves, 2);
+  advance(s, 3);
+  FP.assertEqual(s.mode, 'ready');
+  FP.assertEqual(JSON.stringify(s.bossFight.destroyed), '[false,true,false]');
+  FP.assertEqual(s.world.bossLevel.targets[1].solid.off, true); FP.assertEqual(plateOf(s, 1).off, true);
+  FP.assertEqual(s.world.bossLevel.targets[0].solid.off, false);
 });

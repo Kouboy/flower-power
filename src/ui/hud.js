@@ -1,6 +1,6 @@
 // ui/hud.js — HUD en pixels d'art, dans les coins du bas : graines restantes, ÉcoCrédits™, et seulement quand ils sont actifs,
 // le pollen et le combo ; « TOUCHER POUR POUSSER » entre deux niveaux.
-// Lit     : state.mode, state.time, state.plant.reserves, state.score.{eco,flowerBonus,combo}, state.run.{milieu,saison}, state.world.bossLevel, state.bossFight.destroyed, FP.config.{plant.seeds,text.ready,milieux},
+// Lit     : state.mode, state.time, state.plant.reserves, state.score.{eco,flowerBonus,combo}, state.run.{milieu,saison}, state.world.bossLevel, state.bossFight.{destroyed,headOpen}, FP.config.{plant.seeds,text.ready,milieux},
 //           FP.palette.{seed,boss}, FP.font, FP.px, FP.view.ui.
 // Écrit   : state.fx.ui.hud uniquement (animations : score affiché, graines perdues, rebonds).
 // Expose  : FP.hud.items(state) (… boss : { targets: [bool ×3] (vrai une fois détruite), head: 'armored' | 'open' }, ou null hors boss), FP.hud.layout(h) (purs, testés), FP.hud.draw(g, state) (toile d'interface), FP.hud.{MARGIN, SEED_SCALE, SEED_STEP}.
@@ -12,8 +12,8 @@
   const BOSS_STEP = 11;             // écart des icônes du boss (trois cibles, puis la tête)
   const EMPTY = '#3a2a1e', SPROUT = '#7fb04a', MILIEU = '#c9a87a';
 
-  // La tête est à nu quand ses trois cibles sont détruites (leurs plaques sont tombées).
-  const bossItem = (destroyed) => ({ targets: destroyed.slice(), head: destroyed.every(Boolean) ? 'open' : 'armored' });
+  // La tête est à nu quand ses trois cibles sont détruites : state.bossFight.headOpen (play/boss.js) en est l'unique source.
+  const bossItem = (fight) => ({ targets: fight.destroyed.slice(), head: fight.headOpen ? 'open' : 'armored' });
 
   // Ce que le HUD affiche : pas de fleurs (le parterre en tient lieu), pas d'élan.
   function items(state) {
@@ -23,7 +23,7 @@
       pollen: sc.flowerBonus > 0 ? sc.flowerBonus : null, combo: sc.combo > 1 ? sc.combo : null,
       ready: state.mode === 'ready',
       milieu: FP.config.milieux[state.run.milieu].name, mult: state.run.saison,   // v4.9.0 : milieu en cours, multiplicateur de saison
-      boss: state.world.bossLevel ? bossItem(state.bossFight.destroyed) : null   // v5.1.0 : cibles détruites, tête blindée ou à nu
+      boss: state.world.bossLevel ? bossItem(state.bossFight) : null   // v5.1.0 : cibles détruites, tête blindée ou à nu
     };
   }
 

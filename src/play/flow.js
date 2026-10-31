@@ -1,9 +1,9 @@
 // play/flow.js — déroulé de partie : mort, éclosion, transitions, fin de partie.
-// Lit     : state.mode, state.query, state.plant, state.input.pressed, state.events, state.rng, state.boosts.filter, state.world.{surfaceY,width},
+// Lit     : state.mode, state.query.{solid,target,leak,toxic}, state.plant, state.input.pressed, state.events, state.rng, state.boosts.filter, state.world.{surfaceY,width,bossLevel.targets},
 //           FP.config.{flow,text,toxic,garden,soil,boss,run,milieux}, FP.difficulty.level.
-// Écrit   : state.mode, state.flow, state.run (seul à l'écrire : milieu, pousses, boss, saison, carton, avance du pollen, playtest terminé), state.difficulty, state.garden.flowers (création, croissance, remise à zéro au milieu suivant), state.plant.{reserves,oldTrails,corruption,toxicTimer,recentToxic}, state.score.flowers,
+// Écrit   : state.mode, state.flow, state.run (seul à l'écrire : milieu, pousses, boss, saison, carton, avance du pollen, playtest terminé), state.difficulty, state.garden.flowers (création, croissance, remise à zéro au milieu suivant), state.plant.{reserves,assaults,oldTrails,corruption,toxicTimer,recentToxic}, state.score.flowers,
 //           state.level, state.camera.shake, state.score.eco et state.events (death, bloom, blossom, toxicEnter, ready, bossDown) ; appelle FP.level.generate, FP.plant.prepare/launch,
-//           FP.scoring.awardFlat (bonus du boss) et FP.boss.reset (milieu suivant).
+//           FP.scoring.awardFlat (bonus du boss), FP.boss.destroy (assaut d'une cible) et FP.boss.reset (milieu suivant).
 // Expose  : FP.flow.update(state, dt), FP.flow.simplifyTrail(points, minStep), FP.flow.afterShop(state, after) (fin du bon de commande),
 //           FP.flow.continueAfterWin(state) (écran de fin → saison suivante).
 //           Entre deux pousses (et après la dernière mort), FP.shop.open ouvre le bon de commande (mode shop). Les textes à l'écran sont l'affaire de ui/*.
@@ -95,6 +95,20 @@
     state.flow.timer = cfg.dyingTime;
   }
 
+  // Assaut (v5.1.0) : la pointe a touché une cible intacte. Même mort que die (le minuteur de mort fait la suite), mais la graine
+  // est rendue : la réserve ne baisse pas, donc jamais de dernière chance ; la tige n'est pas comptée comme sacrifiée.
+  function assault(state, target) {
+    const p = state.plant;
+    state.boosts = {};
+    p.assaults += 1;
+    FP.boss.destroy(state, state.world.bossLevel.targets.findIndex(t => t.solid === target));
+    state.events.push({ type: 'death', cause: 'assault', kind: 'target', x: p.tip.x, y: p.tip.y });
+    state.camera.shake = Math.max(state.camera.shake, FP.config.flow.deathShake);
+    state.flow.overReason = '';
+    state.mode = 'dying';
+    state.flow.timer = FP.config.flow.dyingTime;
+  }
+
   // Éclosion (v3 : bloom → fadeOut → fadeIn → ready) : on admire, fondu au noir, nouveau niveau sous le noir,
   // puis retour sur la graine. Le niveau n'est régénéré qu'au passage fadeOut → fadeIn.
   function bloomStages(state, cfg) {
@@ -163,6 +177,7 @@
       case 'playing': {
         const q = state.query, text = FP.config.text;
         if (state.plant.tip.y <= state.world.surfaceY) bloom(state);
+        else if (q.target) assault(state, q.target);   // l'assaut prime sur une paroi touchée dans la même frame
         else if (q.solid) die(state, 'solid', q.solid.kind, text.death[q.solid.kind] || text.deathDefault);
         else if (q.leak > 0) die(state, 'leak', null, text.deathLeak);
         else expose(state, dt);

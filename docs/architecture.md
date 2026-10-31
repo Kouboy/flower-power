@@ -107,9 +107,9 @@ L'état de la partie en cours est `FP.state.current`, créé par `FP.state.creat
   run:    { milieu, step, saison, bosses, boss, card, won, playtest, push, done },   // milieux (v4.9.0), écrit par play/flow.js seul
   input:  { x, screenX, y, down, active, pressed },
   camera: { y, manual, near, zoom, shake },
-  plant:  { seed, tip, dir, guide, trail, oldTrails, stemAge, stemCount, reserves, corruption, toxicTimer, recentToxic, scrapeTimer, cast, castRng, character },
+  plant:  { seed, tip, dir, guide, trail, oldTrails, stemAge, stemCount, assaults, reserves, corruption, toxicTimer, recentToxic, scrapeTimer, cast, castRng, character },
   world:  { width, height, viewH, surfaceY, milieu, boss, bossLevel, skyVariant, lawnVariant, safePath, safeRadius, solids, toxics, leaks, bonuses, coins, chains },
-  query:  { solid, danger, near, toxic, leak, leakHit, grazes },
+  query:  { solid, target, danger, near, toxic, leak, leakHit, grazes },
   flow:   { timer, stage, fade, overReason, blossom, next, won },
   bossFight: { destroyed, headOpen },   // v5.1.0 : une case par cible, gardée après une mort ; tête à nu ; remis à zéro par FP.boss.reset (seul play/boss.js l'écrit)
   garden: { flowers },
