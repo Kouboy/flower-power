@@ -44,14 +44,6 @@ FP.test('level: tableFor reprend les poids d’origine, ou toutes les familles d
     FP.assertEqual(t.map(e => e.kind).join(), 'scooter,drone'); FP.assert(t.every(e => e.w === 1 && e.a === original[e.kind]), JSON.stringify(t));
   } finally { FP.config.milieux[0] = keep; }
 });
-FP.test('level: tableFor ignore les familles absentes du catalogue, présentes avec ?obstacles=pixel (v4.16.0)', () => {
-  const kinds = (t) => t.map(e => e.kind);
-  FP.assert(!kinds(FP.level.tableFor(3, 'middle')).includes('duck'), 'canard sans PixelLab');
-  try {
-    FP.catalog.select('pixel');
-    FP.assert(kinds(FP.level.tableFor(3, 'middle')).includes('duck'), 'canard avec PixelLab');
-  } finally { FP.catalog.select(null); }
-});
 FP.test('level: le T-Rex signature n’apparaît qu’au site nucléaire', () => {
   let friche = 0, nucleaire = 0;
   for (let seed = 1; seed <= 40; seed++) for (const [milieu, add] of [[0, () => friche++], [3, () => nucleaire++]]) {

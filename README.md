@@ -44,7 +44,7 @@ flower-power/
 ├── index.html, style.css
 ├── AGENTS.md, README.md, CHANGELOG.md
 ├── src/          code du jeu (core, world, play, render, audio, ui, debug)
-├── assets/       PNG + JSON authorés + manifest.js
+├── assets/       obstacles PixelLab (PNG + manifest.js, générés par dev/tools/import-pixel.js)
 ├── dev/          banc d'assertions
 ├── docs/         design.md, architecture.md, specs et plans
 └── archive/      v3.43.16 jouable + docs v3

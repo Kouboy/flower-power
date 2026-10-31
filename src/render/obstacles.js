@@ -1,12 +1,11 @@
-// render/obstacles.js — obstacles PNG ramenés sur la grille de pixels d'art, avec contour et ancrage sombre.
-// Lit     : world.solids (hors solides `boss`, dessinés par render/boss.js) (x, y, a, flip, w, h, pivot, collision, grazeRadius, broadR, assetKey), FP.sprites, FP.px, FP.catalog.assets, FP.drawn.render (obstacles dessinés),
-//           FP.view.art.h, FP.palette.strataTone, FP.soil.surfaceTop, FP.config.obstacles.pixelBury (enfouissement des obstacles PixelLab).
+// render/obstacles.js — obstacles (PNG PixelLab) ramenés sur la grille de pixels d'art, avec contour et ancrage sombre.
+// Lit     : world.solids (hors solides `boss`, dessinés par render/boss.js) (x, y, a, flip, w, h, pivot, collision, grazeRadius, broadR, assetKey), FP.sprites, FP.px, FP.catalog.assets,
+//           FP.view.art.h, FP.palette.strataTone, FP.soil.surfaceTop, FP.config.obstacles.bury (enfouissement).
 // Écrit   : o._anchor, o._look sur chaque solide — caches de rendu uniquement, jamais lus par la simulation.
-// Expose  : FP.obstacles.draw(actx, world, cameraY) — repère d'art, la caméra est appliquée ici ; FP.obstacles.look(o),
-//           FP.obstacles.variantOf(o), FP.obstacles.cells(grid) (purs) ;
+// Expose  : FP.obstacles.draw(actx, world, cameraY) — repère d'art, la caméra est appliquée ici ; FP.obstacles.look(o) (pur) ;
 //           FP.obstacles.prewarm() — prépare une famille par appel, hors des moments de jeu.
-// Chaque obstacle a son apparence : teinte, luminosité, usure, et pour un tiers d'entre eux le bas enfoui dans la terre
-// (obstacles PixelLab, v4.17.0 : plus souvent et plus profond, leur pied est une flaque que 28 % de terre ne font que recouvrir).
+// Chaque obstacle a son apparence : teinte, luminosité, usure, et pour une part d'entre eux le bas enfoui dans la terre
+// (assez profond : le pied des sprites PixelLab est une flaque qu'une mince couche de terre ne ferait que recouvrir).
 // Chaque sprite est réduit une seule fois par (sprite, miroir) : moyenne, 8 niveaux par canal, contour d'un pixel.
 (function () {
   'use strict';
@@ -49,7 +48,6 @@
   // est appliquée ensuite, par une simple copie mise à l'échelle (lookFor).
   function spriteFor(o) {
     const { px } = FP, asset = FP.catalog.assets[o.assetKey], nomW = (asset && asset.render && asset.render.worldWidth) || o.w;
-    if (asset && asset.drawn) return drawnSprite(o, nomW);
     const aw = Math.max(2, px.toArt(nomW)), ah = Math.max(2, px.toArt(nomW * o.h / o.w));
     const key = `${o.assetKey}|${aw}|${ah}|${o.flip}`;
     if (sprites.has(key)) return sprites.get(key);
@@ -61,24 +59,6 @@
     const entry = { canvas: c, nomW };
     sprites.set(key, entry);
     return entry;
-  }
-
-  // Obstacles dessinés (v4.14.0) : la grille peinte de la variante, déjà à la taille nominale, contour compris ; miroir par copie.
-  const variantOf = (o) => look(o).wear % 4;
-  function cells(grid) {
-    const out = [];
-    for (let y = 0; y < grid.h; y++) for (let x = 0; x < grid.w; x++) { const c = grid.get(x, y); if (c) out.push([x, y, c]); }
-    return out;
-  }
-  function gridCanvas(grid, flip) {
-    const c = canvasOf(grid.w, grid.h), g = c.getContext('2d');
-    for (const [x, y, col] of cells(grid)) { g.fillStyle = col; g.fillRect(flip < 0 ? grid.w - 1 - x : x, y, 1, 1); }
-    return c;
-  }
-  function drawnSprite(o, nomW, v = variantOf(o)) {
-    const key = `${o.assetKey}|v${v}|${o.flip}`;
-    if (!sprites.has(key)) sprites.set(key, { canvas: gridCanvas(FP.drawn.render(o.assetKey, v), o.flip), nomW, drawn: true });
-    return sprites.get(key);
   }
 
   // Ancrage : un halo sombre tramé autour du polygone de collision, plus dense près du bord. Calculé une fois par obstacle,
@@ -157,8 +137,7 @@
     for (const ch of String(o.kind)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
     for (const v of [Math.round(o.x), Math.round(o.y)]) { h = Math.imul(h ^ (v & 0xffff), 16777619); h = Math.imul(h ^ (v >>> 16), 16777619); }
     h ^= h >>> 15; h = Math.imul(h, 0x2c1b3c6d); h ^= h >>> 12; h = Math.imul(h, 0x297a2d39); h ^= h >>> 15; h >>>= 0;
-    const bury = (h >>> 12) % 100;
-    return { hue: (h % 31) - 15, light: 82 + ((h >>> 5) % 31), wear: (h >>> 10) % 4, buried: bury < 33, bury, depth: ((h >>> 20) % 101) / 100 };
+    return { hue: (h % 31) - 15, light: 82 + ((h >>> 5) % 31), wear: (h >>> 10) % 4, bury: (h >>> 12) % 100, depth: ((h >>> 20) % 101) / 100 };
   }
 
   // Cache par obstacle : sprite de sa famille retouché (filtre, sans relecture de pixels : sûr en file://),
@@ -170,17 +149,16 @@
     c.width = Math.max(3, Math.round(sp.canvas.width * sc)); c.height = Math.max(3, Math.round(sp.canvas.height * sc));
     const g = c.getContext('2d');
     g.imageSmoothingEnabled = false;
-    if (!sp.drawn) g.filter = 'hue-rotate(' + L.hue + 'deg) brightness(' + L.light + '%)';   // dessinés : couleurs et usure dans le dessin
+    g.filter = 'hue-rotate(' + L.hue + 'deg) brightness(' + L.light + '%)';
     g.drawImage(sp.canvas, 0, 0, c.width, c.height);
     g.filter = 'none';
     g.globalCompositeOperation = 'source-atop';
-    for (let i = 0; i < (sp.drawn ? 0 : L.wear * 4); i++) {
+    for (let i = 0; i < L.wear * 4; i++) {
       const k = (i * 2654435761 + L.light * 97) >>> 0;
       px.rect(g, 2 + k % Math.max(1, c.width - 4), 2 + (k >>> 8) % Math.max(1, c.height - 4), 1 + (k >>> 16) % 2, 1, RUST[(k >>> 20) % 3]);
     }
-    const pb = FP.catalog.assets[o.assetKey] && FP.catalog.assets[o.assetKey].pixel ? FP.config.obstacles.pixelBury : null;
-    const buried = pb ? L.bury < pb.chance * 100 : L.buried, depth = pb ? pb.depth[0] + (pb.depth[1] - pb.depth[0]) * L.depth : .28;
-    if (buried) {                                      // la terre ne recouvre que la silhouette (source-atop)
+    const B = FP.config.obstacles.bury, depth = B.depth[0] + (B.depth[1] - B.depth[0]) * L.depth;
+    if (L.bury < B.chance * 100) {                                      // la terre ne recouvre que la silhouette (source-atop)
       g.globalCompositeOperation = 'source-atop';
       const d = Math.max(0, Math.min(.999, (o.y - FP.soil.surfaceTop(world)) / (world.height - FP.soil.surfaceTop(world))));
       const base = c.height - Math.round(c.height * depth);
@@ -195,18 +173,17 @@
     return o._look;
   }
 
-  // Préparation à l'avance : réduit une famille (et un sens ; une variante pour les dessinés) par appel, hors des moments de jeu, pour que le premier
+  // Préparation à l'avance : réduit une famille (et un sens) par appel, hors des moments de jeu, pour que le premier
   // obstacle de chaque famille n'ait pas à payer sa réduction (20 à 80 ms) en pleine partie.
   const warmed = new Set();   // familles et sens déjà préparés (`kind|flip`)
   function prewarm() {
     for (const [kind, a] of Object.entries(FP.catalog.assets)) {
-      for (const flip of a.render && a.render.mirrorSafe === false ? [1] : [1, -1]) for (const v of a.drawn ? [0, 1, 2, 3] : [0]) {
-        const key = kind + '|' + flip + '|' + v;   // dessinés : chaque variante aussi
+      for (const flip of a.render && a.render.mirrorSafe === false ? [1] : [1, -1]) {
+        const key = kind + '|' + flip;
         if (warmed.has(key)) continue;
         const o = FP.catalog.makeSolid({ kind, x: 0, y: 0, a: 0, flip });
         if (!o) continue;
-        if (a.drawn) drawnSprite(o, a.render.worldWidth, v);
-        else if (FP.sprites.get(o.assetKey)) spriteFor(o);
+        if (FP.sprites.get(o.assetKey)) spriteFor(o);
         else continue;   // image pas encore chargée : on réessaiera
         warmed.add(key);
         return true;
@@ -215,5 +192,5 @@
     return false;
   }
 
-  FP.obstacles = { draw, look, prewarm, variantOf, cells };
+  FP.obstacles = { draw, look, prewarm };
 })();
