@@ -30,7 +30,7 @@
     FP.hazardsRender.drawBase(g, state);
     FP.hazardsRender.drawLeaks(g, state);
     FP.obstacles.draw(g, world, camY);
-    FP.bossRender.draw(g, state);     // boss : tronçons, points faibles, défenses, trappe, flèche (rien hors niveau de boss)
+    FP.bossRender.draw(g, state);     // boss : parois, cibles, tête, plaques (rien hors niveau de boss)
     FP.coinsRender.draw(g, state);    // pièces : devant les déchets, sous la tige
     if (perf) t = perf.mark('hazards', t);
     FP.powerupsRender.drawBonuses(g, state);

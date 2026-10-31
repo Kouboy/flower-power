@@ -1,9 +1,8 @@
-// render/coins.js — jetons ÉcoCrédits™ rouillés (v4.5.0) : ils tournent sur place, et lâchent un éclat cuivré quand on les prend ;
-// un point faible du boss percé en fait jaillir une poignée (v4.12.0), purement visuels.
-// Lit     : state.world.coins, state.time, state.camera.y, state.world.viewH, state.events (coin, bossPierce), state.boosts.magnet, state.plant.tip, state.mode,
+// render/coins.js — jetons ÉcoCrédits™ rouillés (v4.5.0) : ils tournent sur place, et lâchent un éclat cuivré quand on les prend.
+// Lit     : state.world.coins, state.time, state.camera.y, state.world.viewH, state.events (coin), state.boosts.magnet, state.plant.tip, state.mode,
 //           FP.config.coins.spinFps,
 //           FP.px, FP.palette.coin.
-// Écrit   : state.fx.coinSparks et state.fx.coinBursts uniquement (éclats et jetons jaillis en cours).
+// Écrit   : state.fx.coinSparks uniquement (éclats en cours).
 // Expose  : FP.coinsRender.token(g, x, y, frame) (coin haut-gauche, 11 × 11, 6 images par tour, testé), FP.coinsRender.draw(g, state),
 //           FP.coinsRender.pop(g, x, y, k) (effet de ramassage, testé), FP.coinsRender.FRAMES.
 // Ne touche pas au DOM au chargement : testable sous Node.
@@ -11,7 +10,6 @@
   'use strict';
   const FP = window.FP = window.FP || {};
   const SIZE = 11, R = 5, SPARK_LIFE = .3;
-  const BURST = 8, BURST_LIFE = .9, BURST_G = 420;   // jetons jaillis d'un point faible : nombre, durée (s), gravité (px/s²)
   const E = ['####', '#.#.', '###.', '##..', '###.'];   // petit Ɇ gravé (la barre dépasse en haut à droite)
   const half = (dy) => { let h = 0; while ((h + 1) * (h + 1) + dy * dy <= R * R + R) h++; return h; };
 
@@ -78,22 +76,6 @@
     else token(g, x - R, y - R, frame);
   }
 
-  // Jetons jaillis : un éventail vers le haut, qui retombe en tournant et clignote avant de s'éteindre.
-  function bursts(g, state, oy) {
-    const list = state.fx.coinBursts || (state.fx.coinBursts = []), { px } = FP;
-    for (const e of state.events) if (e.type === 'bossPierce') list.push({ x: e.x, y: e.y, t0: state.time });
-    for (let i = list.length - 1; i >= 0; i--) {
-      const b = list[i], t = state.time - b.t0;
-      if (t >= BURST_LIFE) { list.splice(i, 1); continue; }
-      if (t > BURST_LIFE * .7 && Math.floor(state.time * 20) % 2) continue;
-      for (let j = 0; j < BURST; j++) {
-        const a = -Math.PI / 2 + (j - (BURST - 1) / 2) * .34, v = 150 + (j % 3) * 35;
-        const x = b.x + Math.cos(a) * v * t, y = b.y + Math.sin(a) * v * t + BURST_G * t * t / 2;
-        drawToken(g, px.toArt(x), px.toArt(y) - oy, Math.floor(state.time * FP.config.coins.spinFps * 2 + j) % FRAMES);
-      }
-    }
-  }
-
   function draw(g, state) {
     const { px } = FP, w = state.world, oy = px.toArt(state.camera.y), top = state.camera.y - 20, bottom = state.camera.y + w.viewH + 20;
     const sparks = state.fx.coinSparks || (state.fx.coinSparks = []);
@@ -119,7 +101,6 @@
       }
       pop(g, px.toArt(s.x), px.toArt(s.y) - oy, k);
     }
-    bursts(g, state, oy);
   }
 
   FP.coinsRender = { token, pop, draw, FRAMES };

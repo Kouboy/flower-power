@@ -10,7 +10,7 @@ FP.test('cards: chaque carton a son texte', () => {
   const t = (s) => JSON.stringify(FP.cards.textFor(s));
   FP.assertEqual(t(cardRun('milieu', 1)), JSON.stringify({ title: 'MILIEU 2/4', lines: ['ZONE INDUSTRIELLE', 'Taux d\'emploi local : 0,3 robot par habitant.'] }));
   FP.assertEqual(t(cardRun('milieu', 0, 2)), JSON.stringify({ title: 'SAISON 2 — MILIEU 1/4', lines: ['FRICHE URBAINE', 'Futur éco-quartier. Livraison prévue : jamais.'] }));
-  FP.assertEqual(t(cardRun('boss', 3)), JSON.stringify({ title: 'BOSS', lines: ['LE RÉACTEUR « NEUTRE EN CARBONE »', 'PERCE SES 4 BARRES DE CONTRÔLE'] }));
+  FP.assertEqual(t(cardRun('boss', 3)), JSON.stringify({ title: 'BOSS', lines: ['LE RÉACTEUR « NEUTRE EN CARBONE »', 'DÉTRUIS SES 3 BARRES, PUIS SON CŒUR'] }));
   FP.assertEqual(t(cardRun('victory', 2)), JSON.stringify({ title: 'BOSS VAINCU', lines: ['L\'INCINÉRATEUR À ÉNERGIE VERTE'] }));
   const won = cardRun(null, 0, 2); won.mode = 'won';
   FP.assertEqual(t(won), JSON.stringify({ title: 'SITE RÉHABILITÉ', lines: ['Le site est officiellement déclaré réhabilité.', 'Les actionnaires vous remercient.', 'Toucher pour la saison 2'] }));

@@ -1,7 +1,7 @@
 // core/state.js — l'unique objet d'état d'une partie.
 // Lit     : FP.params.{seed (graine imposée par l'URL), sansboss (version playtest)}, FP.createRng, FP.config.view, FP.config.world, FP.view.
 // Écrit   : FP.state.current (via ui/menu.js et core/loop.js).
-//           state.bossFight (points faibles percés du boss en cours, phase du cycle des défenses ; écrit ensuite par play/boss.js).
+//           state.bossFight (cibles détruites du boss en cours, tête à nu ; écrit ensuite par play/boss.js).
 // Expose  : FP.state.createRun(seed?, dims?), FP.state.applyView(state, dims), FP.state.current.
 (function () {
   'use strict';
@@ -44,7 +44,7 @@
       // v4.13.0 : version playtest sans boss (?sansboss=1), avance du pollen dans le milieu, playtest terminé.
       run: { milieu: 0, step: 0, saison: 1, bosses: 0, boss: false, card: { kind: 'milieu', t0: 0 }, won: false,
         playtest: !!(FP.params && FP.params.sansboss), push: 0, done: false },
-      bossFight: { pierced: Array(FP.config.boss.segments).fill(false), phase: 0 },   // points faibles percés (v4.12.0), gardés après une mort ; phase des défenses (cycles)
+      bossFight: { destroyed: [false, false, false], headOpen: false },   // v5.1.0 : une case par cible, gardée après une mort ; tête à nu
       camera: { y: Math.max(0, height - dims.H), manual: false, near: 0, zoom: 1, shake: 0 },
       input: { x: 0, screenX: 0, y: 0, down: false, active: false, pressed: false, touch: false, key: false },   // instantané du pointeur (x monde, y écran)
       plant: {

@@ -1,16 +1,19 @@
 // ui/hud.js — HUD en pixels d'art, dans les coins du bas : graines restantes, ÉcoCrédits™, et seulement quand ils sont actifs,
 // le pollen et le combo ; « TOUCHER POUR POUSSER » entre deux niveaux.
-// Lit     : state.mode, state.time, state.plant.reserves, state.score.{eco,flowerBonus,combo}, state.run.{milieu,saison}, state.world.bossLevel, state.bossFight.pierced, FP.config.{plant.seeds,text.ready,milieux},
+// Lit     : state.mode, state.time, state.plant.reserves, state.score.{eco,flowerBonus,combo}, state.run.{milieu,saison}, state.world.bossLevel, state.bossFight.destroyed, FP.config.{plant.seeds,text.ready,milieux},
 //           FP.palette.{seed,boss}, FP.font, FP.px, FP.view.ui.
 // Écrit   : state.fx.ui.hud uniquement (animations : score affiché, graines perdues, rebonds).
-// Expose  : FP.hud.items(state) (… boss : booléens des points percés, ou null), FP.hud.layout(h) (purs, testés), FP.hud.draw(g, state) (toile d'interface), FP.hud.{MARGIN, SEED_SCALE, SEED_STEP}.
+// Expose  : FP.hud.items(state) (… boss : { targets: [bool ×3] (vrai une fois détruite), head: 'armored' | 'open' }, ou null hors boss), FP.hud.layout(h) (purs, testés), FP.hud.draw(g, state) (toile d'interface), FP.hud.{MARGIN, SEED_SCALE, SEED_STEP}.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
   const MARGIN = 4;                 // pixels d'art depuis les bords
   const SEED_SCALE = 2, SEED_STEP = 16, LOST_TIME = .4, CRACK_TIME = .25;   // graines ×2 : lisibles sur téléphone
-  const BOSS_STEP = 11;             // écart des icônes de points faibles
+  const BOSS_STEP = 11;             // écart des icônes du boss (trois cibles, puis la tête)
   const EMPTY = '#3a2a1e', SPROUT = '#7fb04a', MILIEU = '#c9a87a';
+
+  // La tête est à nu quand ses trois cibles sont détruites (leurs plaques sont tombées).
+  const bossItem = (destroyed) => ({ targets: destroyed.slice(), head: destroyed.every(Boolean) ? 'open' : 'armored' });
 
   // Ce que le HUD affiche : pas de fleurs (le parterre en tient lieu), pas d'élan.
   function items(state) {
@@ -20,7 +23,7 @@
       pollen: sc.flowerBonus > 0 ? sc.flowerBonus : null, combo: sc.combo > 1 ? sc.combo : null,
       ready: state.mode === 'ready',
       milieu: FP.config.milieux[state.run.milieu].name, mult: state.run.saison,   // v4.9.0 : milieu en cours, multiplicateur de saison
-      boss: state.world.bossLevel ? state.bossFight.pierced.slice() : null   // v4.12.0 : un booléen par point faible, vrai une fois percé
+      boss: state.world.bossLevel ? bossItem(state.bossFight.destroyed) : null   // v5.1.0 : cibles détruites, tête blindée ou à nu
     };
   }
 
@@ -54,14 +57,17 @@
     g.fillStyle = FP.font.COLORS.gold; g.fillRect(x + 2, y + 2, 2, 2);
   }
 
-  // Points faibles du boss : une cible par point, jaune pleine une fois percée, creuse et sombre sinon ; sous le nom du milieu.
+  // Boss : trois cibles (carré plein, éteint et fumant une fois détruite), puis la tête (blindée : plaque grise ; à nu : lueur) ; sous le nom du milieu.
   function bossIcons(g, boss, w) {
-    const P = FP.palette.boss, x0 = Math.round(w / 2 - (boss.length - 1) * BOSS_STEP / 2), y = MARGIN + FP.font.HEIGHT + 7;
-    boss.forEach((hit, i) => {
+    const P = FP.palette.boss, { px } = FP, n = boss.targets.length + 1, x0 = Math.round(w / 2 - (n - 1) * BOSS_STEP / 2), y = MARGIN + FP.font.HEIGHT + 7;
+    boss.targets.forEach((done, i) => {
       const x = x0 + i * BOSS_STEP;
-      FP.px.disc(g, x, y, 4, FP.font.INK);
-      if (hit) { FP.px.disc(g, x, y, 3, P.weak[1]); FP.px.disc(g, x, y, 1, P.weak[0]); } else { FP.px.disc(g, x, y, 3, P.hole); FP.px.ring(g, x, y, 3, P.smoke[1]); }
+      px.rect(g, x - 4, y - 4, 9, 9, FP.font.INK);
+      if (done) { px.rect(g, x - 3, y - 3, 7, 7, P.hole); px.rect(g, x - 1, y - 1, 3, 3, P.smoke[1]); } else { px.rect(g, x - 3, y - 3, 7, 7, P.weak[1]); px.rect(g, x - 1, y - 1, 3, 3, P.weak[0]); }
     });
+    const hx = x0 + boss.targets.length * BOSS_STEP;
+    px.disc(g, hx, y, 4, FP.font.INK);
+    if (boss.head === 'open') { px.disc(g, hx, y, 3, P.glow[1]); px.disc(g, hx, y, 1, P.weak[0]); } else { px.disc(g, hx, y, 3, P.plate[0]); px.ring(g, hx, y, 3, P.smoke[0]); }
   }
 
   function draw(g, state) {

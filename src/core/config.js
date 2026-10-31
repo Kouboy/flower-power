@@ -210,16 +210,16 @@
     milieux: [
       { id: 'friche', name: 'FRICHE URBAINE', line: 'Futur éco-quartier. Livraison prévue : jamais.',
         kinds: ['cone', 'scooter', 'tire', 'trashbag', 'drone', 'cart', 'mattress', 'pallet'],
-        boss: { name: 'LA BÉTONNEUSE DU GRAND PROJET', order: 'PERCE SES 4 VANNES À BÉTON' } },
+        boss: { name: 'LA BÉTONNEUSE DU GRAND PROJET', order: 'DÉTRUIS SES 3 VANNES, PUIS SA TOUPIE' } },
       { id: 'industrie', name: 'ZONE INDUSTRIELLE', line: 'Taux d\'emploi local : 0,3 robot par habitant.',
         kinds: ['server', 'battery', 'solar', 'extinguisher', 'drone', 'oildrum', 'gear', 'pipe'],
-        boss: { name: 'RAFFINERIE ÉCO-RESPONSABLE™', order: 'PERCE SES 4 VANNES' } },
+        boss: { name: 'RAFFINERIE ÉCO-RESPONSABLE™', order: 'DÉTRUIS SES 3 CUVES, PUIS SA TORCHÈRE' } },
       { id: 'decharge', name: 'DÉCHARGE', line: 'Tri sélectif : la décharge choisit qui elle garde.',
         kinds: ['microwave', 'arcade', 'trashbag', 'tire', 'scooter', 'fridge', 'crt', 'sofa'],
-        boss: { name: 'L\'INCINÉRATEUR À ÉNERGIE VERTE', order: 'PERCE SES 4 BRÛLEURS' } },
+        boss: { name: 'L\'INCINÉRATEUR À ÉNERGIE VERTE', order: 'DÉTRUIS SES 3 BRÛLEURS, PUIS SA GUEULE' } },
       { id: 'nucleaire', name: 'SITE NUCLÉAIRE', line: 'Énergie décarbonée. Déchets : à voir dans 24 000 ans.',
         kinds: ['nuclear', 'sarcophagus', 'battery', 'server', 'hazmat', 'gasmask', 'duck'],
-        boss: { name: 'LE RÉACTEUR « NEUTRE EN CARBONE »', order: 'PERCE SES 4 BARRES DE CONTRÔLE' } }
+        boss: { name: 'LE RÉACTEUR « NEUTRE EN CARBONE »', order: 'DÉTRUIS SES 3 BARRES, PUIS SON CŒUR' } }
     ],
     run: { steps: 3,   // pousses réussies par milieu avant son boss
       playtest: { steps: 6, shopEvery: 3 } },   // v4.13.0, ?sansboss=1 : 6 pousses par milieu, bon de commande toutes les 3, pas de boss
@@ -229,22 +229,19 @@
     // Obstacles (v4.17.0) : part d'enfouis et hauteur de terre (part du sprite, tirée entre les deux bornes).
     obstacles: { bury: { chance: .5, depth: [.36, .5] } },
 
-    // Moteur de boss (v4.12.0) : 4 tronçons accrochés tour à tour aux flancs, un point faible par tronçon, une trappe sous la pelouse.
-    // segWidth : largeur d'un tronçon (part de l'écran, > .5 : le couloir zigzague) ; spineW : largeur de la colonne qui les relie le long de chaque bord ; thickK : épaisseur d'un tronçon (part de la zone / segments),
-    // le reste va aux intervalles ; crossK : pente d'un changement de flanc (part de maxSlope) ; crossUp : part de la montée droite d'un intervalle
-    // gardée au-dessus du coin quitté (le reste sous le coin suivant) ; corridorK : élargissement du couloir sûr ; weakR / weakHit / weakOut : rayon dessiné,
-    // rayon de perçage, saillie hors du flanc, marge de la flèche au bord de l'écran ; top / bottom : zone du boss, de surfaceY + top à height - bottom ; trap : sous la pelouse.
-    // defense : cycle (s), avertissement, coup, accélération par point percé, portée (part de la largeur libre), épaisseur, attache (part du haut du tronçon).
-    // pierceBonus / bonus : points par point percé / par boss vaincu ; pierceShake : secousse au perçage.
+    // Boss (v5.1.0) : niveau construit depuis le plan du milieu (assets/boss/plans.js, world/boss.js).
+    // channelMin : largeur minimale d'un canal des plans, en px de monde à 360 px de large (× W / 360 ailleurs) ; top / bottom : zone du boss,
+    // de surfaceY + top à height - bottom ; toxics : nappes au plus, aux emplacements du plan.
+    // targetBonus / bonus : points par cible détruite / par boss vaincu ; tempoPerTarget : BPM du thème par cible détruite ;
+    // assaultShake : secousse d'un assaut ; freeze : arrêt sur image de l'assaut final (s).
+    // defense : avertissement, coup, repos (s), accélération par cible détruite, plancher de l'avertissement ;
+    // shot : suivi de la visée, ligne figée avant le tir (s), vitesse (px/s), espacement des tirs (s), rayon du projectile ; shooters : milieux à tourelles.
     boss: {
-      segments: 4, segWidth: .53, spineW: .12, thickK: .225, crossK: .8, crossUp: .6, corridorK: 1.3,
-      weakR: 14, weakHit: 20, weakOut: 12, arrowMargin: 14,
-      top: 70, bottom: 160,
-      channelMin: 60,   // v5.1.0 : largeur minimale d'un canal des plans de boss, en px de monde à 360 px de large (× W / 360 ailleurs)
-      trap: { gap: 30, thick: 14 }, trapSlide: .6,
-      defense: { period: 2.6, warn: .7, strike: .6, speedup: .2, reach: .5, thick: 14, mountK: .25 },
-      toxics: 2, pierceBonus: 200, bonus: 1500, tempoPerPierce: 6, pierceShake: .2,
-      pairs: { friche: ['piston', 'jet'], industrie: ['jet', 'arm'], decharge: ['arm', 'jet'], nucleaire: ['piston', 'arm'] }
+      channelMin: 60, top: 70, bottom: 160, toxics: 2,
+      targetBonus: 200, bonus: 1500, tempoPerTarget: 6, assaultShake: .3, freeze: .35,
+      defense: { warn: 1.2, strike: .8, rest: 1.5, speedup: .1, warnMin: 1 },
+      shot: { track: 1, lock: .3, speed: 420, gap: 3, r: 5 },
+      shooters: ['industrie', 'decharge', 'nucleaire']
     },
 
     // Boutique de fin de pousse (v4.6.0) : 3 articles tirés (un à −50 %), achetés au score ; effets sur la pousse suivante.
@@ -330,7 +327,7 @@
         oildrum: 'rupture : bidon d’huile', gear: 'rupture : engrenage rouillé', pipe: 'rupture : tuyau percé',
         fridge: 'rupture : frigo aux CFC', crt: 'rupture : télé cathodique', sofa: 'rupture : canapé défoncé',
         hazmat: 'rupture : combinaison vide', gasmask: 'rupture : masque à gaz', duck: 'rupture : canard mutant',
-        boss: 'écrasée par le boss', defense: 'fauchée par une défense', trap: 'la trappe est fermée'
+        head: 'la tête est blindée', boss: 'écrasée par le boss', defense: 'emportée par la défense', shot: 'touchée par un tir'
       }
     },
 
