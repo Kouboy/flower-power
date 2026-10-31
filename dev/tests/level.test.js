@@ -6,8 +6,6 @@ FP.test('level: déterministe', () => {
   FP.assertEqual(pick(gen(1234)), pick(gen(1234)));
   FP.assert(pick(gen(1234)) !== pick(gen(1235)));
 });
-// Rejoués avec le catalogue dessiné (v4.14.0, ?obstacles=dessin) : mêmes règles de placement.
-const withDrawn = (fn) => () => { FP.catalog.select('dessin'); try { fn(); } finally { FP.catalog.select(null); } };
 function noOverlap() {
   for (const seed of [1, 2, 3, 1234, 99999]) {
     const so = gen(seed).world.solids;
@@ -16,7 +14,6 @@ function noOverlap() {
   }
 }
 FP.test('level: aucun chevauchement visuel', noOverlap);
-FP.test('level (dessin): aucun chevauchement visuel', withDrawn(noOverlap));
 function safePathClear() {
   for (const seed of [1, 2, 3, 1234, 99999]) {
     const s = gen(seed), w = s.world;
@@ -25,7 +22,6 @@ function safePathClear() {
   }
 }
 FP.test('level: chemin sûr dégagé', safePathClear);
-FP.test('level (dessin): chemin sûr dégagé', withDrawn(safePathClear));
 FP.test('level: obstacles identifiables (rognés de quelques px au plus)', () => {
   for (const seed of [1, 2, 3, 1234]) {
     const s = gen(seed), w = s.world;
@@ -44,8 +40,7 @@ function trexFits() {
   FP.assert(placed >= 15, `placé ${placed}/20`);
 }
 FP.test('level: le T-Rex signature trouve sa place sur écran étroit', trexFits);
-FP.test('level (dessin): le T-Rex signature trouve sa place sur écran étroit', withDrawn(trexFits));
-FP.test('level: densité plausible, familles PNG uniquement', () => {
+FP.test('level: densité plausible, familles du catalogue', () => {
   const s = gen(1234);
   FP.assert(s.world.solids.length >= 12 && s.world.solids.length <= 22, String(s.world.solids.length));   // v4.1.0 : plus dense
   for (const o of s.world.solids) FP.assert(FP.catalog.has(o.kind) && o.kind !== 'trex_signature', o.kind);
@@ -129,7 +124,8 @@ FP.test('level: des trajets de limaces peuvent dépasser du cadre', () => {
 });
 // Difficulté v4.1.0 : plus dense dès le premier passage, et une rampe qui se sent (moyenne sur 12 graines, fenêtre 440 × 783).
 const meanSolids = (level) => { let n = 0; for (let seed = 1; seed <= 12; seed++) { const s = FP.state.createRun(seed, { W: 440, H: 783 }); s.level = level; s.difficulty = level; FP.level.startRun(s); n += s.world.solids.length; } return n / 12; };
-FP.test('level: premier niveau plus dense', () => { const m = meanSolids(0); FP.assert(m >= 14, 'moyenne ' + m); });
+// v5.0.0 : 13,5 au lieu de 14, les obstacles PixelLab de la friche (matelas, palette, caddie) sont plus larges : 13,9 en moyenne.
+FP.test('level: premier niveau plus dense', () => { const m = meanSolids(0); FP.assert(m >= 13.5, 'moyenne ' + m); });
 FP.test('level: la densité monte nettement avec les niveaux', () => { const a = meanSolids(0), b = meanSolids(4); FP.assert(b >= a + 2.5, a + ' → ' + b); });   // le terrain plafonne vers 20 obstacles
 FP.test('level: les obstacles d’un niveau n’ont pas tous la même taille', () => {
   const s = FP.state.createRun(21, { W: 440, H: 783 }); FP.level.startRun(s);

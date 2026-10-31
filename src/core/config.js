@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '4.18.0',
+    version: '5.0.0',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -94,7 +94,7 @@
         { kind: 'solar', w: .10, a: 1.22 }, { kind: 'drone', w: .10, a: 1.05 },
         { kind: 'trashbag', w: .09, a: .95 }, { kind: 'battery', w: .08, a: .78 },
         { kind: 'scooter', w: .08, a: .9 },                                                     // v4.1.0
-        { kind: 'cart', w: .08, a: .9 }, { kind: 'pallet', w: .14, a: .8 }, { kind: 'pipe', w: .08, a: 1.0 },   // v4.16.0, ?obstacles=pixel ; grands : poids relevés
+        { kind: 'cart', w: .08, a: .9 }, { kind: 'pallet', w: .14, a: .8 }, { kind: 'pipe', w: .08, a: 1.0 },   // v4.16.0 ; grands : poids relevés
         { kind: 'gear', w: .08, a: 1.2 }, { kind: 'mattress', w: .16, a: .6 }
       ],
       middle: [
@@ -105,7 +105,7 @@
         { kind: 'battery', w: .07, a: .82 }, { kind: 'sarcophagus', w: .07, a: .62, noFlip: true },
         { kind: 'nuclear', w: .06, a: .68 },
         { kind: 'scooter', w: .07, a: .95 }, { kind: 'arcade', w: .08, a: .7 },                // v4.1.0
-        { kind: 'cart', w: .07, a: .9 }, { kind: 'mattress', w: .16, a: .6 }, { kind: 'pallet', w: .14, a: .8 },   // v4.16.0, ?obstacles=pixel
+        { kind: 'cart', w: .07, a: .9 }, { kind: 'mattress', w: .16, a: .6 }, { kind: 'pallet', w: .14, a: .8 },   // v4.16.0
         { kind: 'oildrum', w: .08, a: .8 }, { kind: 'gear', w: .07, a: 1.2 }, { kind: 'pipe', w: .07, a: 1.0 },
         { kind: 'fridge', w: .08, a: .7 }, { kind: 'crt', w: .08, a: .8 }, { kind: 'sofa', w: .07, a: .55 },
         { kind: 'hazmat', w: .16, a: .6 }, { kind: 'gasmask', w: .07, a: .9 }, { kind: 'duck', w: .07, a: .8 }
@@ -116,7 +116,7 @@
         { kind: 'server', w: .09, a: .75 }, { kind: 'trashbag', w: .08, a: 1.0 },
         { kind: 'nuclear', w: .08, a: .72 }, { kind: 'sarcophagus', w: .08, a: .65, noFlip: true },
         { kind: 'arcade', w: .09, a: .75 },                                                     // v4.1.0
-        { kind: 'oildrum', w: .08, a: .8 }, { kind: 'fridge', w: .09, a: .7 }, { kind: 'crt', w: .08, a: .8 },   // v4.16.0, ?obstacles=pixel
+        { kind: 'oildrum', w: .08, a: .8 }, { kind: 'fridge', w: .09, a: .7 }, { kind: 'crt', w: .08, a: .8 },   // v4.16.0
         { kind: 'sofa', w: .08, a: .55 }, { kind: 'hazmat', w: .16, a: .6 }, { kind: 'gasmask', w: .08, a: .9 },
         { kind: 'duck', w: .08, a: .8 }
       ]
@@ -206,8 +206,7 @@
     },
 
     // Milieux (v4.9.0) : une partie traverse les quatre dans l'ordre ; chacun dure `run.steps` pousses réussies, puis son boss.
-    // kinds : familles d'obstacles du milieu (identifiants de spawnTables) ; les trois dernières n'existent qu'avec ?obstacles=pixel
-    // (v4.16.0) : les autres versions les ignorent ; palettes de décor : FP.palette.milieux[id].
+    // kinds : familles d'obstacles du milieu (identifiants de spawnTables ; les trois dernières depuis la v4.16.0) ; palettes de décor : FP.palette.milieux[id].
     milieux: [
       { id: 'friche', name: 'FRICHE URBAINE', line: 'Futur éco-quartier. Livraison prévue : jamais.',
         kinds: ['cone', 'scooter', 'tire', 'trashbag', 'drone', 'cart', 'mattress', 'pallet'],
@@ -227,9 +226,8 @@
     // Difficulté en dents de scie (v4.13.0) : chaque milieu monte de son départ à son sommet ((milieu + 1) / 4) ; le suivant
     // repart `drop` sous ce sommet. d = 1 vaut le niveau `levelAtMax` des réglages par niveau (fin de la rampe safePath.hard).
     difficulty: { drop: .15, levelAtMax: 10 },
-    // Obstacles dessinés (v4.14.0, ?obstacles=dessin) : pixels d'art retirés à la silhouette avant le calcul de la collision.
-    // Obstacles PixelLab (v4.17.0, ?obstacles=pixel) : part d'enfouis et hauteur de terre (part du sprite, tirée entre les deux bornes).
-    obstacles: { drawnInset: 1, pixelBury: { chance: .5, depth: [.36, .5] } },
+    // Obstacles (v4.17.0) : part d'enfouis et hauteur de terre (part du sprite, tirée entre les deux bornes).
+    obstacles: { bury: { chance: .5, depth: [.36, .5] } },
 
     // Moteur de boss (v4.12.0) : 4 tronçons accrochés tour à tour aux flancs, un point faible par tronçon, une trappe sous la pelouse.
     // segWidth : largeur d'un tronçon (part de l'écran, > .5 : le couloir zigzague) ; spineW : largeur de la colonne qui les relie le long de chaque bord ; thickK : épaisseur d'un tronçon (part de la zone / segments),

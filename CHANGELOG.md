@@ -2,6 +2,13 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v5.0.0 — Obstacles PixelLab officiels
+
+- les obstacles PixelLab deviennent les obstacles du jeu, sans paramètre : 26 familles, dont trois propres à chaque milieu ;
+- `?obstacles=pixel` et `?obstacles=dessin` disparaissent, avec les anciens PNG de l’Asset Editor, les obstacles dessinés par le code (kit, 14 familles) et leur galerie `dev/obstacles.html` ;
+- l’import écrit des fiches complètes (`assets/obstacles/manifest.js`) ; le calcul des collisions ne sert plus qu’à l’import (`dev/tools/silhouette.js`) ;
+- banc : 566 tests (les tests des versions retirées partent) ; le premier niveau de la friche compte 13,9 obstacles en moyenne au lieu de 14, les nouveaux sont plus larges.
+
 ## v4.18.0 — Retouches des obstacles PixelLab
 
 - caddie régénéré, bien plus grand (158 × 152 au lieu de 120 × 82) ;

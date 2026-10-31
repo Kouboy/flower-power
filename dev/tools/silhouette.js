@@ -1,4 +1,4 @@
-// world/silhouette.js — polygone de collision tiré de la silhouette d'un obstacle dessiné (v4.14.0, ?obstacles=dessin).
+// dev/tools/silhouette.js — polygone de collision tiré de la silhouette d'un sprite (v4.14.0 ; outil d'import depuis la v5.0.0).
 // Lit     : rien (fonctions pures sur des grilles et des masques).
 // Écrit   : rien.
 // Expose  : FP.silhouette.{mask(grid), erode(mask, n), components(mask), polygon(mask, maxPoints), coverage(mask, poly)} (purs, testés).
