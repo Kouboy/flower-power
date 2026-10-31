@@ -2,8 +2,10 @@
 // Chaque test passe les quatre milieux à trois largeurs d'écran ; channelMin est mis à l'échelle × W / 360 par toWorld.
 const PLAN_MILIEUX = ['friche', 'industrie', 'decharge', 'nucleaire'];
 const PLAN_FORMS = { friche: 'muraille', industrie: 'colosse', decharge: 'forteresse', nucleaire: 'reacteur' };
-const PLAN_WIDTHS = [300, 360, 440];
-const PLAN_END = 12;   // px de trajet juste avant la cible, dispensés de distance (la pointe s'y écrase)
+// Le jeu impose le 9:16 (render/view.js) : une seule proportion d'écran, seule la largeur varie.
+const PLAN_WIDTHS = [280, 300, 360, 440];
+// 12 px de trajet juste avant la cible, dispensés de distance : voulu (la pointe y touche sa cible), et pas mis à l'échelle de W.
+const PLAN_END = 12;
 
 const eachPlan = (fn) => {
   for (const W of PLAN_WIDTHS) for (const milieu of PLAN_MILIEUX) {
@@ -58,7 +60,7 @@ FP.test('bossPlan: toutes les pièces dans le cadre', () => {
 });
 
 FP.test('bossPlan: chaque trajet reste à distance sûre et atteint sa cible', () => {
-  eachPlan(({ s, W, plan, placed, at }) => {
+  eachPlan(({ s, W, placed, at }) => {
     const ids = placed.pieces.filter(p => p.role === 'target').map(p => p.id).concat('head');
     FP.assertEqual(Object.keys(placed.paths).length, ids.length, 'un trajet par cible et un vers la tête ' + at);
     const half = placed.channelMin / 2;
@@ -76,7 +78,6 @@ FP.test('bossPlan: chaque trajet reste à distance sûre et atteint sa cible', (
         FP.assert(c >= half, `${id} trop près d'une paroi en (${q.x | 0},${q.y | 0}) : ${c.toFixed(1)} < ${half.toFixed(1)} ` + at);
       }
     }
-    FP.assert(plan.paths.head, 'trajet de la tête ' + at);
   });
 });
 
