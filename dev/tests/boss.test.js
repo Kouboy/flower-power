@@ -285,3 +285,69 @@ FP.test('boss: les cibles détruites survivent à une mort ordinaire (flux réel
   FP.assertEqual(s.world.bossLevel.targets[1].solid.off, true); FP.assertEqual(plateOf(s, 1).off, true);
   FP.assertEqual(s.world.bossLevel.targets[0].solid.off, false);
 });
+
+// --- La tête (v5.1.0) : blindée tant qu'il reste une plaque, transpercée une fois à nu.
+const headRun = (open) => {
+  const s = bossRun(440, 1);
+  if (open) { s.bossFight.destroyed = [true, true, true]; s.bossFight.headOpen = true; FP.level.generate(s); }
+  FP.plant.launch(s); s.events.length = 0; s.plant.reserves = 3; s.camera.shake = 0;
+  return s;
+};
+const touchHead = (s) => { const o = s.world.bossLevel.head.solid; s.plant.tip = { x: o.x, y: o.y }; FP.collision.update(s); };
+
+FP.test('boss: la tête blindée tue (une graine perdue, cause solid, kind head)', () => {
+  const s = headRun(false); touchHead(s);
+  FP.assertEqual(s.query.head, null); FP.assert(s.query.solid && s.query.solid.kind === 'head', 'paroi');
+  FP.flow.update(s, 0);
+  FP.assertEqual(s.mode, 'dying'); FP.assertEqual(s.plant.reserves, 2);
+  const d = s.events.find(e => e.type === 'death');
+  FP.assertEqual(d.cause, 'solid'); FP.assertEqual(d.kind, 'head');
+  FP.assertEqual(s.flow.overReason, FP.config.text.death.head);
+});
+
+FP.test('boss: la tête à nu ne tue pas, elle s’ouvre et gèle l’image', () => {
+  const s = headRun(true), h = s.world.bossLevel.head.solid; touchHead(s);
+  FP.assertEqual(s.query.solid, null); FP.assertEqual(s.query.head, h);
+  FP.flow.update(s, 0);
+  FP.assertEqual(s.mode, 'playing'); FP.assertEqual(s.plant.reserves, 3);
+  FP.assertEqual(h.off, true); FP.assertEqual(s.flow.freeze, FP.config.boss.freeze);
+  FP.assertEqual(s.events.filter(e => e.type === 'bossHead').length, 1);
+  FP.assertEqual(s.events.filter(e => e.type === 'death').length, 0);
+  FP.assert(s.camera.shake >= FP.config.boss.assaultShake, 'secousse');
+  FP.collision.update(s); FP.flow.update(s, 0);
+  FP.assertEqual(s.events.filter(e => e.type === 'bossHead').length, 1, 'une seule fois');
+});
+
+FP.test('boss: la membrane n’avale pas la tête à nu, mais avale la tête blindée', () => {
+  const o = headRun(true); o.power.shield = true; touchHead(o); FP.powerups.update(o, 0); FP.flow.update(o, 0);
+  FP.assertEqual(o.world.bossLevel.head.solid.off, true); FP.assertEqual(o.power.shield, true, 'la membrane reste');
+  const a = headRun(false); a.power.shield = true; touchHead(a); FP.powerups.update(a, 0); FP.flow.update(a, 0);
+  FP.assertEqual(a.mode, 'playing'); FP.assertEqual(a.power.shield, false);
+});
+
+FP.test('boss: rien ne bouge pendant le gel', () => {
+  const s = headRun(true); touchHead(s); FP.flow.update(s, 0);
+  const tip = { ...s.plant.tip }, trail = s.plant.trail.length, age = s.plant.stemAge;
+  s.input = { ...s.input, down: true, active: true, x: tip.x, y: 300 };
+  for (let i = 0; i < 12; i++) { s.time += 1 / 60; FP.plant.update(s, 1 / 60); FP.flow.update(s, 1 / 60); }   // 0,2 s
+  FP.assertEqual(s.plant.tip.x, tip.x); FP.assertEqual(s.plant.tip.y, tip.y);
+  FP.assertEqual(s.plant.trail.length, trail); FP.assertEqual(s.plant.stemAge, age);
+  FP.assert(s.flow.freeze > 0, 'encore gelé');
+  for (let i = 0; i < 12; i++) { s.time += 1 / 60; FP.plant.update(s, 1 / 60); FP.flow.update(s, 1 / 60); }   // 0,4 s en tout
+  FP.assertEqual(s.flow.freeze, 0);
+  FP.plant.update(s, 1 / 60);
+  FP.assert(s.plant.tip.y !== tip.y, 'la pousse repart');
+});
+
+FP.test('boss: après la tête, la pousse éclot, bonus et milieu suivant', () => {
+  const s = headRun(true), eco = s.score.eco, bosses = s.run.bosses;
+  touchHead(s); FP.flow.update(s, 0);
+  advance(s, .4); FP.assertEqual(s.flow.freeze, 0);
+  s.plant.tip = { x: 220, y: s.world.surfaceY - 1 }; FP.collision.update(s); FP.flow.update(s, 0);
+  FP.assertEqual(s.mode, 'bloom'); FP.assertEqual(s.run.bosses, bosses + 1);
+  FP.assertEqual(s.score.eco - eco, FP.config.boss.bonus * s.run.saison);
+  FP.assertEqual(s.events.filter(e => e.type === 'bossDown').length, 1);
+  advance(s, 8); skipShop(s);
+  FP.assertEqual(s.run.milieu, 2);
+  FP.assertEqual(JSON.stringify(s.bossFight), '{"destroyed":[false,false,false],"headOpen":false}');
+});

@@ -1,9 +1,9 @@
 // play/flow.js — déroulé de partie : mort, éclosion, transitions, fin de partie.
-// Lit     : state.mode, state.query.{solid,target,leak,toxic}, state.plant, state.input.pressed, state.events, state.rng, state.boosts.filter, state.world.{surfaceY,width,bossLevel.targets},
+// Lit     : state.mode, state.query.{solid,target,head,leak,toxic}, state.plant, state.input.pressed, state.events, state.rng, state.boosts.filter, state.world.{surfaceY,width,bossLevel.targets},
 //           FP.config.{flow,text,toxic,garden,soil,boss,run,milieux}, FP.difficulty.level.
-// Écrit   : state.mode, state.flow, state.run (seul à l'écrire : milieu, pousses, boss, saison, carton, avance du pollen, playtest terminé), state.difficulty, state.garden.flowers (création, croissance, remise à zéro au milieu suivant), state.plant.{reserves,assaults,oldTrails,corruption,toxicTimer,recentToxic}, state.score.flowers,
+// Écrit   : state.mode, state.flow (dont freeze : décompté ici), state.run (seul à l'écrire : milieu, pousses, boss, saison, carton, avance du pollen, playtest terminé), state.difficulty, state.garden.flowers (création, croissance, remise à zéro au milieu suivant), state.plant.{reserves,assaults,oldTrails,corruption,toxicTimer,recentToxic}, state.score.flowers,
 //           state.level, state.camera.shake, state.score.eco et state.events (death, bloom, blossom, toxicEnter, ready, bossDown) ; appelle FP.level.generate, FP.plant.prepare/launch,
-//           FP.scoring.awardFlat (bonus du boss), FP.boss.destroy (assaut d'une cible) et FP.boss.reset (milieu suivant).
+//           FP.scoring.awardFlat (bonus du boss), FP.boss.destroy (assaut d'une cible), FP.boss.pierceHead (tête à nu) et FP.boss.reset (milieu suivant).
 // Expose  : FP.flow.update(state, dt), FP.flow.simplifyTrail(points, minStep), FP.flow.afterShop(state, after) (fin du bon de commande),
 //           FP.flow.continueAfterWin(state) (écran de fin → saison suivante).
 //           Entre deux pousses (et après la dernière mort), FP.shop.open ouvre le bon de commande (mode shop). Les textes à l'écran sont l'affaire de ui/*.
@@ -83,30 +83,29 @@
     return r.step % c.shopEvery === 0 ? 'shop' : null;
   }
 
-  // cause : 'solid' | 'leak' | 'toxic' ; kind : famille de l'obstacle (cause solid uniquement).
-  function die(state, cause, kind, reason) {
-    const cfg = FP.config.flow, p = state.plant;
+  // Entrée en mort, commune à die et à assault : achats arrêtés, événement, secousse, raison gardée, minuteur de mort.
+  function enterDying(state, event, reason) {
+    const cfg = FP.config.flow;
     state.boosts = {};   // fin de pousse : les achats de la boutique s'arrêtent là
-    p.reserves -= 1;
-    state.events.push({ type: 'death', cause, kind, x: p.tip.x, y: p.tip.y });
+    state.events.push({ type: 'death', ...event, x: state.plant.tip.x, y: state.plant.tip.y });
     state.camera.shake = Math.max(state.camera.shake, cfg.deathShake);   // .28 pour toute mort, comme en v3
     state.flow.overReason = reason;   // gardé pour le certificat si la dernière chance est refusée
     state.mode = 'dying';
     state.flow.timer = cfg.dyingTime;
   }
 
+  // cause : 'solid' | 'leak' | 'toxic' ; kind : famille de l'obstacle (cause solid uniquement).
+  function die(state, cause, kind, reason) {
+    state.plant.reserves -= 1;
+    enterDying(state, { cause, kind }, reason);
+  }
+
   // Assaut (v5.1.0) : la pointe a touché une cible intacte. Même mort que die (le minuteur de mort fait la suite), mais la graine
   // est rendue : la réserve ne baisse pas, donc jamais de dernière chance ; la tige n'est pas comptée comme sacrifiée.
   function assault(state, target) {
-    const p = state.plant;
-    state.boosts = {};
-    p.assaults += 1;
+    state.plant.assaults += 1;
     FP.boss.destroy(state, state.world.bossLevel.targets.findIndex(t => t.solid === target));
-    state.events.push({ type: 'death', cause: 'assault', kind: 'target', x: p.tip.x, y: p.tip.y });
-    state.camera.shake = Math.max(state.camera.shake, FP.config.flow.deathShake);
-    state.flow.overReason = '';
-    state.mode = 'dying';
-    state.flow.timer = FP.config.flow.dyingTime;
+    enterDying(state, { cause: 'assault', kind: 'target' }, '');
   }
 
   // Éclosion (v3 : bloom → fadeOut → fadeIn → ready) : on admire, fondu au noir, nouveau niveau sous le noir,
@@ -172,6 +171,7 @@
     for (const fl of state.garden.flowers) { fl.age += dt; if (fl.age > 0) fl.size = Math.min(fl.maxSize, fl.size + dt * gr * fl.maxSize); }
     p.corruption = Math.max(0, p.corruption - dt);
     p.recentToxic = Math.max(0, p.recentToxic - dt);
+    f.freeze = Math.max(0, f.freeze - dt);
 
     switch (state.mode) {
       case 'playing': {
@@ -179,6 +179,7 @@
         if (state.plant.tip.y <= state.world.surfaceY) bloom(state);
         else if (q.target) assault(state, q.target);   // l'assaut prime sur une paroi touchée dans la même frame
         else if (q.solid) die(state, 'solid', q.solid.kind, text.death[q.solid.kind] || text.deathDefault);
+        else if (q.head) FP.boss.pierceHead(state);   // tête à nu : transpercée, la pousse continue (gel de l'image)
         else if (q.leak > 0) die(state, 'leak', null, text.deathLeak);
         else expose(state, dt);
         break;

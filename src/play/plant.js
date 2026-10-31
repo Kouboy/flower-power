@@ -1,5 +1,5 @@
 // play/plant.js — croissance et pilotage de la pousse.
-// Lit     : state.input (dont touch : doigt → joystick), state.time, state.rng, state.boosts (boutique), FP.config.{cast,shop}, state.score.flowers, state.world.{width,height,viewH}, state.plant.corruption, FP.config.plant.
+// Lit     : state.flow.freeze (la pousse ne bouge pas pendant le gel), state.input (dont touch : doigt → joystick), state.time, state.rng, state.boosts (boutique), FP.config.{cast,shop}, state.score.flowers, state.world.{width,height,viewH}, state.plant.corruption, FP.config.plant.
 // Écrit   : state.plant, state.mode (lancement), state.camera.{y,shake}, state.events (stemStart, growthTick) ;
 //           remise à zéro par pousse de state.power.{shield,shieldGrace} et state.score.flowerBonus.
 // Expose  : FP.plant.prepare(state), FP.plant.launch(state), FP.plant.speed(state), FP.plant.update(state, dt), FP.plant.stickTurn(screenX, width).
@@ -75,7 +75,7 @@
   }
 
   function update(state, dt) {
-    if (state.mode !== 'playing') return;
+    if (state.mode !== 'playing' || state.flow.freeze > 0) return;   // arrêt sur image de la tête transpercée
     const p = state.plant, cfg = FP.config.plant, input = state.input, W = state.world.width;
     p.stemAge += dt;
     const v0 = speed(state);

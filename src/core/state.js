@@ -1,7 +1,7 @@
 // core/state.js — l'unique objet d'état d'une partie.
 // Lit     : FP.params.{seed (graine imposée par l'URL), sansboss (version playtest)}, FP.createRng, FP.config.view, FP.config.world, FP.view.
 // Écrit   : FP.state.current (via ui/menu.js et core/loop.js).
-//           state.bossFight (cibles détruites du boss en cours, tête à nu ; écrit ensuite par play/boss.js).
+//           state.bossFight (cibles détruites du boss en cours, tête à nu ; écrit ensuite par play/boss.js), state.flow.freeze (arrêt sur image, 0 au départ ; écrit par play/boss.js, décompté par play/flow.js).
 // Expose  : FP.state.createRun(seed?, dims?), FP.state.applyView(state, dims), FP.state.current.
 (function () {
   'use strict';
@@ -61,7 +61,7 @@
         coins: [], chains: []                               // circuits de pièces (world/coins.js)
       },
       query: { solid: null, danger: 0, near: null, toxic: 0, leak: 0, leakHit: null, grazes: [] },          // requête de pointe de la frame (world/collision.js)
-      flow: { timer: 0, stage: 'show', fade: 0, overReason: '', blossom: null, next: null, won: false },       // déroulé de partie (play/flow.js)
+      flow: { timer: 0, stage: 'show', fade: 0, overReason: '', blossom: null, next: null, won: false, freeze: 0 },       // déroulé de partie (play/flow.js)
       garden: { flowers: [] },                                // parterre : fleurs écloses pendant tout le run
       graze: { active: new Map() },                           // frôlements en cours (play/graze.js)
       power: { shield: false, shieldGrace: 0 },              // bouclier organique (play/powerups.js)

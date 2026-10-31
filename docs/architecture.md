@@ -30,7 +30,7 @@ src/
 │   ├── plant.js      ✅ croissance, pilotage, trace (prepare / launch / update)
 │   ├── difficulty.js ✅ difficulté en dents de scie d'après l'avancée dans les milieux (v4.13.0)
 │   ├── flow.js       ✅ morts (solide, lixiviat, brûlure toxique), exposition, éclosion, transitions (plus de messages texte : l'interface se déduit de l'état)
-│   ├── boss.js       ✅ le combat de boss (v5.1.0, FP.boss) : `state.bossFight` (cibles détruites, tête à nu), reset ; update vide pour l'instant
+│   ├── boss.js       ✅ le combat de boss (v5.1.0, FP.boss) : `state.bossFight` (cibles détruites, tête à nu), reset, assaut d’une cible, tête transpercée (`pierceHead`) ; update vide pour l'instant
 │   ├── camera.js     ✅ défilement, cadrage ×1,18 (zoomFrame, toScreen, toWorld), zoom de frôlement
 │   ├── graze.js      ✅ frôlement : suivi par objet, paiement à la sortie, annulation au contact, mesures du flyover
 │   ├── coins.js      ✅ ramassage des pièces (FP.coinPlay) : pièce au combo en cours, bonus du chapelet complet
@@ -109,8 +109,8 @@ L'état de la partie en cours est `FP.state.current`, créé par `FP.state.creat
   camera: { y, manual, near, zoom, shake },
   plant:  { seed, tip, dir, guide, trail, oldTrails, stemAge, stemCount, assaults, reserves, corruption, toxicTimer, recentToxic, scrapeTimer, cast, castRng, character },
   world:  { width, height, viewH, surfaceY, milieu, boss, bossLevel, skyVariant, lawnVariant, safePath, safeRadius, solids, toxics, leaks, bonuses, coins, chains },
-  query:  { solid, target, danger, near, toxic, leak, leakHit, grazes },
-  flow:   { timer, stage, fade, overReason, blossom, next, won },
+  query:  { solid, target, head, danger, near, toxic, leak, leakHit, grazes },
+  flow:   { timer, stage, fade, overReason, blossom, next, won, freeze },
   bossFight: { destroyed, headOpen },   // v5.1.0 : une case par cible, gardée après une mort ; tête à nu ; remis à zéro par FP.boss.reset (seul play/boss.js l'écrit)
   garden: { flowers },
   graze:  { active /* Map objet → frôlement */ },
@@ -183,7 +183,7 @@ Spec : `docs/superpowers/specs/2026-10-22-interface-pixel-design.md` ; maquettes
 
 ## Le boss (v5.1.0)
 
-Spec `docs/superpowers/specs/2026-10-31-boss-refonte-design.md` (remplace le moteur de la v4.12.0). Le niveau de boss (`state.run.boss`) est généré par `FP.bossLevel.generate` (appelé par `FP.level.generate`) depuis le plan du milieu, `window.FLOWER_POWER_BOSS_PLANS[id]` (`assets/boss/plans.js`, coordonnées en proportions), posé dans le monde par `FP.bossPlan.toWorld` (`world/boss-plan.js`). Tout est dans `world.bossLevel` (`{ plan, walls, targets: [{ id, i, plate, solid }], head: { solid }, plates: [{ id, target, solid }], rooms, turrets }`) ; parois, cibles, tête et plaques sont aussi des solides (`kind: 'boss' | 'target' | 'head' | 'plate'`, `boss: true`) ; une cible détruite et sa plaque portent `off` dès la génération (`state.bossFight.destroyed`, qui survit à une mort ; `FP.boss.reset` l'efface au milieu suivant). Le chemin sûr (caméra, jetons) est le trajet de référence vers la tête ; les nappes sont aux emplacements du plan (`config.boss.toxics` au plus). `dev/tests/boss.test.js` pilote une vraie pousse le long de chaque trajet jusqu'à sa cible. L'éclosion sous la pelouse bat le boss (`bossDown`, carton « BOSS VAINCU »). Avant et pendant un boss, la boutique ne tire ni Lobbying ni Bière anti-limaces.
+Spec `docs/superpowers/specs/2026-10-31-boss-refonte-design.md` (remplace le moteur de la v4.12.0). Le niveau de boss (`state.run.boss`) est généré par `FP.bossLevel.generate` (appelé par `FP.level.generate`) depuis le plan du milieu, `window.FLOWER_POWER_BOSS_PLANS[id]` (`assets/boss/plans.js`, coordonnées en proportions), posé dans le monde par `FP.bossPlan.toWorld` (`world/boss-plan.js`). Tout est dans `world.bossLevel` (`{ plan, walls, targets: [{ id, i, plate, solid }], head: { solid }, plates: [{ id, target, solid }], rooms, turrets }`) ; parois, cibles, tête et plaques sont aussi des solides (`kind: 'boss' | 'target' | 'head' | 'plate'`, `boss: true`) ; une cible détruite et sa plaque portent `off` dès la génération (`state.bossFight.destroyed`, qui survit à une mort ; `FP.boss.reset` l'efface au milieu suivant). Le chemin sûr (caméra, jetons) est le trajet de référence vers la tête ; les nappes sont aux emplacements du plan (`config.boss.toxics` au plus). `dev/tests/boss.test.js` pilote une vraie pousse le long de chaque trajet jusqu'à sa cible. La tête est une paroi (cause `solid`, kind `head`) tant qu'une plaque reste ; à nu (`bossFight.headOpen`), `collision` la range dans `query.head` (la membrane n'y touche pas) et `flow` appelle `FP.boss.pierceHead` : tête `off`, événement `bossHead`, secousse, `flow.freeze` (`config.boss.freeze`, décompté par `flow.update`, `plant.update` sort tôt) puis la tige continue. L'éclosion sous la pelouse bat le boss (`bossDown`, bonus × saison, carton « BOSS VAINCU »). Avant et pendant un boss, la boutique ne tire ni Lobbying ni Bière anti-limaces.
 Le rendu (`render/boss.js`) est provisoire : formes simples dessinées par le code, aux couleurs de `FP.palette.boss` ; le HUD montre trois icônes de cibles et une de tête (blindée, à nu).
 
 ## Difficulté et version playtest (v4.13.0)
