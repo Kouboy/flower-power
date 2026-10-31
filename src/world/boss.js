@@ -2,18 +2,19 @@
 // salles et tourelles ; nappes aux emplacements du plan ; chemin sûr = trajet de référence vers la tête.
 // Lit     : state.{seed,rng (non consommé)}, state.run.{saison,milieu}, state.bossFight.destroyed, state.world.{width,height,surfaceY},
 //           FP.config.{boss.toxics,milieux}, window.FLOWER_POWER_BOSS_PLANS, FP.bossPlan.toWorld, FP.createRng, FP.level.makeToxic, FP.coins.place.
-// Écrit   : state.world.{bossLevel,solids,toxics,leaks,bonuses,safePath,safeRadius} ; puis FP.coins.place écrit state.world.{coins,chains}.
+// Écrit   : state.bossThreats, state.world.{bossLevel,solids,toxics,leaks,bonuses,safePath,safeRadius} ; puis FP.coins.place écrit state.world.{coins,chains}.
 //           bossLevel = { plan, walls: [solid], targets: [{ id, i, plate (id de sa plaque), solid }], head: { solid },
-//             plates: [{ id, target (indice i de sa cible), solid }], rooms: [{ id, x0, y0, x1, y1, defense, turrets }], turrets: [{ id, x, y, room }] }.
+//             plates: [{ id, target (indice i de sa cible), solid }], rooms: [{ id, x0, y0, x1, y1, defense, turrets, zone (solide 'defense', off) }], turrets: [{ id, x, y, room }] }.
+//           state.bossThreats remis à { rooms: {}, shots: [] } (écrit ensuite par play/boss-threats.js).
 // Expose  : FP.bossLevel.generate(state).
 // Graine propre : empreinte de (state.seed, saison, milieu), jamais state.rng : le niveau est le même d'une tentative à l'autre.
-// Solides du boss : { kind: 'boss' (paroi) | 'target' | 'head' | 'plate', boss: true, x, y, a: 0, flip: 1, collision (local), broadR,
+// Solides du boss : { kind: 'boss' (paroi) | 'target' | 'head' | 'plate' | 'defense' (zone d'une salle, off hors coup), boss: true, x, y, a: 0, flip: 1, collision (local), broadR,
 //           flyoverEligible: false, grazeRadius: 0, off } ; `off` (ignoré par la collision) : cible détruite ou plaque tombée, dès la génération.
 // Cible i = i-ième pièce `target` du plan ; une tourelle (centre de sa pièce) n'est pas un solide.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
-  const KIND = { wall: 'boss', target: 'target', head: 'head', plate: 'plate' };
+  const KIND = { wall: 'boss', target: 'target', head: 'head', plate: 'plate', defense: 'defense' };
 
   // Solide centré sur la boîte du polygone (coordonnées du monde), polygone gardé en repère local.
   function makeSolid(kind, poly, off) {
@@ -48,7 +49,11 @@
       else if (p.role === 'target') { const i = bl.targets.length; bl.targets.push({ id: p.id, i, plate: p.plate, solid: makeSolid(KIND.target, p.poly, !!destroyed[i]) }); }
       else { const i = targetOf[p.id]; bl.plates.push({ id: p.id, target: i, solid: makeSolid(KIND.plate, p.poly, !!destroyed[i]) }); }
     }
-    for (const r of placed.rooms) bl.rooms.push({ id: r.id, x0: r.rect[0], y0: r.rect[1], x1: r.rect[2], y1: r.rect[3], defense: r.defense, turrets: r.turrets });
+    // zone : le solide de la défense de la salle, éteint (off) ; play/boss-threats.js le règle sur la moitié visée pendant le coup.
+    for (const r of placed.rooms) {
+      const [x0, y0, x1, y1] = r.rect;
+      bl.rooms.push({ id: r.id, x0, y0, x1, y1, defense: r.defense, turrets: r.turrets, zone: makeSolid(KIND.defense, [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], true) });
+    }
     return bl;
   }
 
@@ -57,7 +62,8 @@
     const plan = window.FLOWER_POWER_BOSS_PLANS[FP.config.milieux[state.run.milieu].id], placed = FP.bossPlan.toWorld(plan, world);
     const bl = build(plan, placed, state.bossFight.destroyed);
     world.bossLevel = bl;
-    world.solids = [...bl.walls, ...bl.targets.map(t => t.solid), bl.head.solid, ...bl.plates.map(p => p.solid)];
+    world.solids = [...bl.walls, ...bl.targets.map(t => t.solid), bl.head.solid, ...bl.plates.map(p => p.solid), ...bl.rooms.map(r => r.zone)];
+    state.bossThreats = { rooms: {}, shots: [] };   // les menaces repartent de zéro avec le niveau
     world.toxics = placed.toxics.slice(0, FP.config.boss.toxics).map(t => FP.level.makeToxic(rng, t.x, t.y, false));
     world.leaks = []; world.bonuses = [];
     world.safePath = placed.paths.head.map(p => ({ x: p.x, y: p.y }));
