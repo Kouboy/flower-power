@@ -134,3 +134,66 @@ FP.test('hud: la graine rendue quitte le compteur à l’assaut et le remplit à
     FP.assert(!hud().rects.some(r => r.c === FP.font.COLORS.gold && Math.abs(r.x - x) <= 2), 'éclat éteint');
   } finally { FP.view = savedView; FP.font.draw = savedDraw; }
 });
+
+// Revue finale (v5.1.0) : parois, plaques et cibles intactes peintes une fois dans un calque (FP.px.layer, simulé ici : pas de DOM sous Node).
+const bfxLayers = (fn) => {
+  const saved = FP.px.layer, made = [];
+  FP.px.layer = (w, h) => { const l = { canvas: { width: w, height: h }, g: recCtx() }; made.push(l); return l; };
+  try { fn(made); } finally { FP.px.layer = saved; }
+};
+const bfxBlitCtx = () => { const g = recCtx(); g.blits = []; g.drawImage = (img, sx, sy, sw, sh, dx, dy) => g.blits.push({ img, sy, sh, dx, dy }); return g; };
+
+FP.test('bossRender: parois, plaques et cibles dans un calque, recopié, refait après un assaut et à la génération', () => {
+  const s = bfxRun(1), bl = s.world.bossLevel;
+  const direct = recCtx(); FP.bossRender.draw(direct, s);   // sans calque : tout en direct
+  bfxLayers(made => {
+    const g = bfxBlitCtx(); FP.bossRender.draw(g, s);
+    FP.assertEqual(made.length, 1, 'un calque');
+    FP.assert(made[0].g.rects.length > 200, 'pièces peintes dans le calque : ' + made[0].g.rects.length);
+    FP.assert(g.blits.length >= 1 && g.blits.every(b => b.img === made[0].canvas && b.dx === 0), 'recopié tel quel');
+    FP.assert(g.rects.length * 3 < direct.rects.length, `bien moins de rectangles par frame : ${g.rects.length} / ${direct.rects.length}`);
+    for (let i = 0; i < 3; i++) { s.time += 1 / 60; FP.bossRender.draw(bfxBlitCtx(), s); }
+    FP.assertEqual(made.length, 1, 'gardé d’une frame à l’autre');
+    FP.boss.destroy(s, 0); FP.bossRender.draw(bfxBlitCtx(), s);
+    FP.assertEqual(made.length, 2, 'refait après un assaut');
+    const before = made[0].g.rects.length, after = made[1].g.rects.length;
+    FP.assert(after < before, 'la cible et sa plaque ne sont plus dans le calque');
+    FP.level.generate(s); FP.bossRender.draw(bfxBlitCtx(), s);
+    FP.assertEqual(made.length, 3, 'refait à la génération'); FP.assert(s.world.bossLevel !== bl);
+  });
+});
+
+FP.test('bossRender: la salle avertie tremble (calque et tourelles) d’un pixel, pas au repos', () => bfxLayers(() => {
+  const s = bfxRun(1), bl = s.world.bossLevel, r = bl.rooms[0], tur = bl.turrets.find(q => q.room === r.id);
+  const M = FP.palette.boss.milieux[s.world.milieu];
+  s.camera.y = (r.y0 + r.y1) / 2 - s.world.viewH / 2;
+  const frame = (stage, time) => { s.bossThreats.rooms[r.id] = { stage, t: .2, half: 1 }; s.time = time; const g = bfxBlitCtx(); FP.bossRender.draw(g, s); return g; };
+  const lens = (g) => { const q = g.rects.find(o => o.c === M.edge && o.w === 9 && Math.abs(o.x + 4 - FP.px.toArt(tur.x)) <= 1); return q && q.x + 4; };
+  const a = frame('warn', 0), b = frame('warn', 1.01 / 30);
+  FP.assert(a.blits.some(q => q.dx !== 0) && b.blits.some(q => q.dx !== 0), 'rangées de la salle décalées');
+  FP.assert(a.blits.every(q => Math.abs(q.dx) <= 1), '± 1 pixel');
+  FP.assertEqual(Math.abs(lens(a) - lens(b)), 2, 'la tourelle tremble');
+  const c = frame('idle', 0), d = frame('idle', 1.01 / 30);
+  FP.assert(c.blits.every(q => q.dx === 0), 'au repos : rien ne bouge'); FP.assertEqual(lens(c), lens(d));
+}));
+
+FP.test('bossRender: la tête transpercée est une épave, plus une lueur', () => {
+  const s = bfxRun(1); s.bossFight.destroyed = [true, true, true]; s.bossFight.headOpen = true; FP.level.generate(s);
+  const h = s.world.bossLevel.head.solid, P = FP.palette.boss; s.camera.y = h.y - s.world.viewH / 2;
+  const cam = FP.px.toArt(s.camera.y), xs = h.collision.map(v => FP.px.toArt(h.x + v[0])), ys = h.collision.map(v => FP.px.toArt(h.y + v[1]) - cam);
+  const inHead = () => { const g = recCtx(); FP.bossRender.draw(g, s); return new Set(g.rects.filter(r => r.x >= Math.min(...xs) && r.x <= Math.max(...xs) && r.y >= Math.min(...ys) && r.y <= Math.max(...ys)).map(r => r.c)); };
+  const open = inHead(); FP.assert(open.has(P.glow[0]) && !open.has(P.hole), 'à nu : lueur');
+  h.off = true; const wreck = inHead();
+  FP.assert(wreck.has(P.hole) && !wreck.has(P.glow[0]) && !wreck.has(P.glow[1]), 'transpercée : épave');
+});
+
+FP.test('audio: l’avertissement monte sur toute sa durée, à chaque rythme', () => {
+  for (const n of [0, 3]) withBackend(b => {
+    const s = auRun(); s.bossFight.destroyed = [0, 1, 2].map(k => k < n);
+    FP.audio.consume([{ type: 'bossWarn', room: 'salle', half: 1 }], s, 0);
+    const notes = sounding(b).filter(c => c[0] === 'note'), warn = FP.bossThreats.timing(n).warn, t0 = notes[0][3];
+    FP.assert(notes.length >= 6, 'notes : ' + notes.length);
+    FP.assert(notes[notes.length - 1][3] - t0 >= .85 * warn && notes[notes.length - 1][3] - t0 < warn, `couvre l’avertissement (${warn} s)`);
+    FP.assert(notes.every((c, i) => i === 0 || c[2] >= notes[i - 1][2]) && notes[notes.length - 1][2] > notes[0][2] + 8, 'monte');
+  });
+});

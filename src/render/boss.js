@@ -1,16 +1,21 @@
 // render/boss.js — le boss, provisoire (v5.1.0 : formes simples dessinées par le code, sans image) : parois, cibles, tête, plaques du blindage, et ses menaces (hachures de la défense, visée des tourelles, projectiles).
-// Lit     : state.{time,camera.y,run.milieu,plant.tip,bossFight.{headOpen,destroyed},bossThreats.{rooms,aim,shots}}, state.world.{viewH,bossLevel.{walls,targets,head,plates,rooms,turrets}} (x, y, collision, off de chaque solide),
-//           FP.config.milieux, FP.palette.boss, FP.bossThreats.timing, FP.px.
-// Écrit   : rien dans l'état (la toile reçue uniquement).
+// Lit     : state.{time,camera.y,run.milieu,plant.tip,bossFight.{headOpen,destroyed},bossThreats.{rooms,aim,shots}}, state.world.{width,height,viewH,bossLevel.{walls,targets,head,plates,rooms,turrets}} (x, y, collision, off de chaque solide),
+//           FP.config.milieux, FP.palette.boss, FP.bossThreats.timing, FP.px (dont layer et blit).
+// Écrit   : rien dans l'état (la toile reçue ; un calque en cache, créé à la première utilisation).
 // Expose  : FP.bossRender.draw(g, state) — repère d'art, la caméra est appliquée ici ; rien hors niveau de boss ; fillPoly, artPoly (pour boss-fx.js).
-// Cible détruite (off) : épave sombre qui fume ; plaque tombée (off) : rien ; tête à nu (bossFight.headOpen) : lueur qui pulse.
+// Cible détruite (off) : épave sombre qui fume ; plaque tombée (off) : rien ; tête à nu (bossFight.headOpen) : lueur qui pulse ; tête transpercée (off) : épave.
+// Calque (revue finale) : parois, plaques et cibles intactes (sans leur cœur qui pulse) sont peintes une fois, sur toute la hauteur du niveau,
+// puis recopiées ; le calque est refait à chaque génération et quand une cible ou une plaque change d'état. Sans DOM (sous Node), FP.px.layer
+// vaut null : tout est peint en direct, de la même façon.
+// Avertissement d'une défense : la salle tremble (ses rangées du calque et ses tourelles, ± 1 pixel d'art en x).
 // Ne touche pas au DOM au chargement : chargeable dans dev/check.html.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
+  const SHAKE_HZ = 30, SHAKE_PAD = 4;   // tremblement de la salle avertie : bascules par seconde, rangées en plus au-dessus et au-dessous
 
-  // Solide → polygone en pixels d'art (caméra appliquée).
-  const artPoly = (o, cam) => o.collision.map(([x, y]) => [FP.px.toArt(o.x + x), FP.px.toArt(o.y + y) - cam]);
+  // Solide → polygone en pixels d'art (caméra appliquée), décalé de dx en x.
+  const artPoly = (o, cam, dx = 0) => o.collision.map(([x, y]) => [FP.px.toArt(o.x + x) + dx, FP.px.toArt(o.y + y) - cam]);
 
   // Polygone quelconque (concave compris), rempli rangée par rangée (règle pair-impair) ; inset rogne chaque bout de rangée
   // et les rangées du haut et du bas (contour d'autant de pixels laissé à la couleur d'en dessous).
@@ -48,24 +53,24 @@
     for (let x = Math.ceil(b.x0) + 4; x < b.x1 - 4; x += 9) FP.px.rect(g, x, Math.ceil(b.y0) + 2, 1, 1, M.rivet);
   }
 
-  // Cible intacte : bloc incandescent qui pulse ; détruite : épave sombre d'où monte de la fumée.
-  function target(g, pts, off, t, M) {
+  // Épave (cible détruite, tête transpercée) : trou sombre d'où monte de la fumée.
+  function wreck(g, pts, t, M) {
     const P = FP.palette.boss, b = box(pts), cx = Math.round((b.x0 + b.x1) / 2);
     fillPoly(g, pts, M.edge);
-    if (off) {
-      fillPoly(g, pts, P.hole, 1);
-      for (let j = 0; j < 3; j++) {
-        const rise = Math.floor((t * 9 + j * 6) % 18);
-        FP.px.disc(g, cx + Math.round(Math.sin(t * 2 + j * 2.1) * 2), Math.round(b.y0) - rise, rise < 9 ? 1 : 2, P.smoke[rise < 9 ? 0 : 1]);
-      }
-      return;
+    fillPoly(g, pts, P.hole, 1);
+    for (let j = 0; j < 3; j++) {
+      const rise = Math.floor((t * 9 + j * 6) % 18);
+      FP.px.disc(g, cx + Math.round(Math.sin(t * 2 + j * 2.1) * 2) + (j - 1) * Math.round((b.x1 - b.x0) / 4), Math.round(b.y0) - rise, rise < 9 ? 1 : 2, P.smoke[rise < 9 ? 0 : 1]);
     }
-    fillPoly(g, pts, P.weak[1], 1);
-    fillPoly(g, pts, P.weak[0], 2 + Math.round((Math.sin(t * 6) + 1) / 2));
   }
 
-  // Tête : bloc sombre tant qu'elle est blindée ; à nu, une lueur pulse au centre.
-  function head(g, pts, open, t, M) {
+  // Cible intacte : bloc incandescent (fond peint dans le calque) dont le cœur pulse.
+  function targetBase(g, pts, M) { fillPoly(g, pts, M.edge); fillPoly(g, pts, FP.palette.boss.weak[1], 1); }
+  const targetCore = (g, pts, t) => fillPoly(g, pts, FP.palette.boss.weak[0], 2 + Math.round((Math.sin(t * 6) + 1) / 2));
+
+  // Tête : bloc sombre tant qu'elle est blindée ; à nu, une lueur pulse au centre ; transpercée, une épave.
+  function head(g, pts, open, off, t, M) {
+    if (off) { wreck(g, pts, t, M); return; }
     const P = FP.palette.boss, b = box(pts), cx = Math.round((b.x0 + b.x1) / 2), cy = Math.round((b.y0 + b.y1) / 2);
     fillPoly(g, pts, M.edge);
     fillPoly(g, pts, open ? P.glow[0] : M.dark, 1);
@@ -80,6 +85,51 @@
     fillPoly(g, pts, P.plate[1]);
     fillPoly(g, pts, P.plate[0], 1);
     if (b.x1 - b.x0 > 6 && b.y1 - b.y0 > 4) for (const x of [Math.ceil(b.x0) + 2, Math.floor(b.x1) - 3]) FP.px.rect(g, x, Math.ceil(b.y0) + 2, 1, 1, P.plate[1]);
+  }
+
+  // --- Pièces fixes : parois, fonds des cibles intactes, plaques en place ; peintes dans le calque, ou en direct sans DOM. ---
+
+  // shift(o) : décalage en x d'une pièce (le tremblement, en direct) ; seen(o) : pièce à peindre.
+  function still(g, bl, M, cam, shift, seen) {
+    for (const o of bl.walls) if (seen(o)) wall(g, artPoly(o, cam, shift(o)), M);
+    for (const tg of bl.targets) if (!tg.solid.off && seen(tg.solid)) targetBase(g, artPoly(tg.solid, cam, shift(tg.solid)), M);
+    for (const p of bl.plates) if (!p.solid.off && seen(p.solid)) plate(g, artPoly(p.solid, cam, shift(p.solid)));
+  }
+
+  let cache = null, cachedLevel = null, cachedKey = '';
+  const keyOf = (bl, milieu) => milieu + ':' + bl.targets.map(t => +t.solid.off).join('') + bl.plates.map(p => +p.solid.off).join('');
+
+  // Le calque du niveau (w × h pixels d'art, du haut du monde), refait si le niveau ou l'état d'une pièce a changé ; null sans DOM.
+  function layerFor(state, bl, M) {
+    const key = keyOf(bl, state.run.milieu);
+    if (cache && cachedLevel === bl && cachedKey === key) return cache;
+    const l = FP.px.layer(Math.ceil(state.world.width / FP.px.SCALE), Math.ceil(state.world.height / FP.px.SCALE));
+    if (!l) return null;
+    still(l.g, bl, M, 0, () => 0, () => true);
+    cache = l; cachedLevel = bl; cachedKey = key;
+    return l;
+  }
+
+  // Salles en avertissement : leurs rangées d'art absolues [ya, yb] et le décalage du moment (± 1).
+  function shaking(state, bl) {
+    const out = [], dx = Math.floor(state.time * SHAKE_HZ) % 2 ? 1 : -1;
+    for (const r of bl.rooms) {
+      const e = state.bossThreats.rooms[r.id];
+      if (e && e.stage === 'warn') out.push({ id: r.id, ya: FP.px.toArt(r.y0) - SHAKE_PAD, yb: FP.px.toArt(r.y1) + SHAKE_PAD, dx });
+    }
+    return out;
+  }
+
+  // Recopie de la tranche visible du calque, rangée par bande : les bandes des salles averties décalées de leur dx.
+  function blitShaken(g, l, oy, h, bands) {
+    let y = oy;
+    const cut = (to, dx) => {
+      const sy = Math.max(0, y), sh = Math.min(to, oy + h, l.canvas.height) - sy;
+      if (sh > 0) g.drawImage(l.canvas, 0, sy, l.canvas.width, sh, dx, sy - oy, l.canvas.width, sh);
+      y = Math.max(y, to);
+    };
+    for (const b of bands.slice().sort((p, q) => p.ya - q.ya)) { if (b.ya > y) cut(b.ya, 0); cut(b.yb + 1, b.dx); }
+    cut(oy + h, 0);
   }
 
   // --- Menaces : zone de la défense (hachures), visée des tourelles, projectiles. ---
@@ -132,16 +182,20 @@
     FP.px.disc(g, x, y, Math.max(1, FP.px.toArt(FP.config.boss.shot.r) - 2), P.shot[1]);
   }
 
-  // Tourelle : socle et lentille (rouge quand elle vise).
-  function turret(g, q, aiming, cam, M) {
-    const x = FP.px.toArt(q.x), y = FP.px.toArt(q.y) - cam;
+  // Tourelle : socle et lentille (rouge quand elle vise), décalée de dx quand sa salle tremble.
+  function turret(g, q, aiming, cam, M, dx) {
+    const x = FP.px.toArt(q.x) + dx, y = FP.px.toArt(q.y) - cam;
     FP.px.disc(g, x, y, 4, M.edge); FP.px.disc(g, x, y, 3, M.light); FP.px.disc(g, x, y, 1, aiming ? FP.palette.boss.weak[1] : M.dark);
   }
 
-  function threats(g, state, bl, cam, M) {
+  function threats(g, state, bl, cam, M, bands) {
     const th = state.bossThreats, top = state.camera.y, H = state.world.viewH;
     for (const r of bl.rooms) if (th.rooms[r.id] && r.y1 >= top && r.y0 <= top + H) danger(g, r, th.rooms[r.id], cam, state);
-    for (const q of bl.turrets) if (q.y >= top - 10 && q.y <= top + H + 10) turret(g, q, !!th.aim && th.aim.turret === q.id, cam, M);
+    for (const q of bl.turrets) {
+      if (q.y < top - 10 || q.y > top + H + 10) continue;
+      const b = bands.find(s => s.id === q.room);
+      turret(g, q, !!th.aim && th.aim.turret === q.id, cam, M, b ? b.dx : 0);
+    }
     const a = th.aim, tur = a && bl.turrets.find(q => q.id === a.turret), to = a && (a.lockedAt || state.plant.tip);
     if (tur && to) aimLine(g, tur, to, !!a.lockedAt, cam);
     for (const s of th.shots) shot(g, s, cam);
@@ -153,12 +207,17 @@
     const cam = FP.px.toArt(state.camera.y), top = state.camera.y, H = w.viewH, t = state.time;
     const M = FP.palette.boss.milieux[FP.config.milieux[state.run.milieu].id];
     const seen = (o) => o.y + o.broadR >= top && o.y - o.broadR <= top + H;
-    for (const o of bl.walls) if (seen(o)) wall(g, artPoly(o, cam), M);
-    for (const tg of bl.targets) if (seen(tg.solid)) target(g, artPoly(tg.solid, cam), tg.solid.off, t, M);
-    const open = state.bossFight.headOpen;
-    if (seen(bl.head.solid)) head(g, artPoly(bl.head.solid, cam), open, t, M);
-    for (const p of bl.plates) if (!p.solid.off && seen(p.solid)) plate(g, artPoly(p.solid, cam));
-    threats(g, state, bl, cam, M);
+    const bands = shaking(state, bl), l = layerFor(state, bl, M);
+    const shift = (o) => { const y = FP.px.toArt(o.y), b = bands.find(s => y >= s.ya && y <= s.yb); return b ? b.dx : 0; };
+    if (l) blitShaken(g, l, cam, Math.ceil(H / FP.px.SCALE) + 1, bands);
+    else still(g, bl, M, cam, shift, seen);
+    for (const tg of bl.targets) {
+      if (!seen(tg.solid)) continue;
+      const pts = artPoly(tg.solid, cam, shift(tg.solid));
+      if (tg.solid.off) wreck(g, pts, t, M); else targetCore(g, pts, t);
+    }
+    if (seen(bl.head.solid)) head(g, artPoly(bl.head.solid, cam), state.bossFight.headOpen, bl.head.solid.off, t, M);
+    threats(g, state, bl, cam, M, bands);
   }
 
   FP.bossRender = { draw, fillPoly, artPoly };

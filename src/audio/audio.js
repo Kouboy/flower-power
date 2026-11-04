@@ -1,6 +1,6 @@
 // audio/audio.js — chef d'orchestre du son (Web Audio, aucun fichier) : déblocage au premier geste, événements de la frame →
 // effets (FP.sfx, dont les sons du boss : bossTarget, bossSeed, bossWarn, bossLock, bossShot, bossHead ; un assaut ne joue ni impact ni jingle de mort) et musique (FP.music), pause quand l'onglet est caché.
-// Lit     : les événements de la frame, state (via FP.sfx.drone et FP.music.update), FP.synth, FP.state.current.
+// Lit     : les événements de la frame, state (via FP.sfx.drone et FP.music.update ; state.bossFight.destroyed pour la durée de bossWarn), FP.bossThreats.timing, FP.synth, FP.state.current.
 // Écrit   : rien dans l'état.
 // Expose  : FP.audio.consume(events, state, dt), FP.audio.sfx(name, intensity?), FP.audio.unlock(),
 //           FP.audio.setting() / cycleSetting() / loadSetting() (réglage 'all' | 'sfx' | 'mute', mémorisé sous flower_power_v4_sound),
@@ -56,8 +56,11 @@
     try { if (FP.songs.jingles[name]) FP.sfx.jingle(b, name); else FP.sfx.play(b, name, intensity); } catch (e) { /* un son raté ne doit jamais casser une frame */ }
   }
 
+  // Durée de l'avertissement d'une défense de boss au rythme du combat (FP.bossThreats.timing) : le son qui monte la couvre.
+  const warnTime = (state) => FP.bossThreats.timing(state && state.bossFight ? state.bossFight.destroyed.filter(Boolean).length : 0).warn;
+
   // Événements de la frame → effets.
-  function play(b, e) {
+  function play(b, e, state) {
     switch (e.type) {
       case 'runStart': return FP.sfx.play(b, 'start');
       case 'stemStart': return FP.sfx.play(b, 'growStart');
@@ -78,7 +81,8 @@
       case 'bomb': return FP.sfx.play(b, 'bomb');
       case 'death': if (e.cause === 'assault') return;   // l'assaut : l'explosion de la cible (bossTarget) tient lieu de son, pas de jingle de mort
         FP.sfx.play(b, e.cause === 'solid' ? 'hit' : 'acid'); return FP.sfx.jingle(b, 'death');
-      case 'bossTarget': case 'bossSeed': case 'bossWarn': case 'bossLock': case 'bossShot': case 'bossHead': return FP.sfx.play(b, e.type);
+      case 'bossWarn': return FP.sfx.play(b, 'bossWarn', warnTime(state));   // monte sur toute la durée de l'avertissement
+      case 'bossTarget': case 'bossSeed': case 'bossLock': case 'bossShot': case 'bossHead': return FP.sfx.play(b, e.type);
       case 'toxicEnter': return FP.sfx.play(b, 'contaminate');
       case 'bonusSpawn': case 'ready': return FP.sfx.play(b, 'ready');
       case 'bossDown': return FP.sfx.play(b, 'bossDown');
@@ -90,7 +94,7 @@
     const b = FP.audio._backend;
     if (!b) return;
     try {
-      for (const e of events) play(b, e);
+      for (const e of events) play(b, e, state);
       FP.sfx.drone(b, state, events);
       FP.sfx.hum(b, state, events);
       FP.music.update(state, events, b);
