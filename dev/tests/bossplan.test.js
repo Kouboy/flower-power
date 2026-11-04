@@ -148,3 +148,69 @@ FP.test('bossPlan: pas de tourelle à la Bétonneuse, au moins une ailleurs', ()
     else FP.assert(n >= 1, 'tourelle ' + milieu);
   }
 });
+
+// --- Plafond fermé (revue finale v5.1.0) : la surface ne s'atteint qu'à travers la tête, quelles que soient les plaques tombées.
+// Grille de FLOOD_CELL px de monde, de la surface au fond : la pointe est un point (world/collision.js : contact dès sdPoly ≤ 0), une
+// case est pleine si son centre touche une pièce solide (paroi, cible, tête, plaque) ; voisinage à 8, le plus permissif (un passage
+// en biais compte). Aides reprises par bossfight.test.js (entrées des salles).
+const FLOOD_CELL = 2;
+const floodGrid = (s, placed) => {
+  const w = s.world, y0 = w.surfaceY - FLOOD_CELL, nx = Math.ceil(w.width / FLOOD_CELL), ny = Math.ceil((w.height - y0) / FLOOD_CELL);
+  const cx = (i) => (i + .5) * FLOOD_CELL, cy = (j) => y0 + (j + .5) * FLOOD_CELL;
+  const cell = (x, y) => Math.max(0, Math.min(ny - 1, Math.floor((y - y0) / FLOOD_CELL))) * nx + Math.max(0, Math.min(nx - 1, Math.floor(x / FLOOD_CELL)));
+  const masks = {};
+  for (const p of placed.pieces) {
+    if (p.role === 'turret') continue;
+    const xs = p.poly.map(v => v[0]), ys = p.poly.map(v => v[1]), cells = [];
+    const i0 = Math.max(0, Math.floor(Math.min(...xs) / FLOOD_CELL) - 1), i1 = Math.min(nx - 1, Math.ceil(Math.max(...xs) / FLOOD_CELL) + 1);
+    const j0 = Math.max(0, Math.floor((Math.min(...ys) - y0) / FLOOD_CELL) - 1), j1 = Math.min(ny - 1, Math.ceil((Math.max(...ys) - y0) / FLOOD_CELL) + 1);
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) if (FP.geom.sdPoly(cx(i), cy(j), p.poly) <= 0) cells.push(j * nx + i);
+    masks[p.id] = cells;
+  }
+  return { nx, ny, cx, cy, masks, seed: cell(w.width / 2, w.height - FP.config.plant.seedOffset) };
+};
+// Cases pleines : chaque pièce que `gone(pièce)` ne dit pas tombée, plus les cases `extra` (une salle exclue, par exemple).
+const floodFull = (g, placed, gone, extra) => {
+  const full = new Uint8Array(g.nx * g.ny);
+  for (const p of placed.pieces) if (g.masks[p.id] && !gone(p)) for (const k of g.masks[p.id]) full[k] = 1;
+  if (extra) for (const k of extra) full[k] = 1;
+  return full;
+};
+const flood = (g, full, starts) => {
+  const seen = new Uint8Array(full.length), queue = [];
+  for (const k of starts) if (!full[k] && !seen[k]) { seen[k] = 1; queue.push(k); }
+  for (let q = 0; q < queue.length; q++) {
+    const k = queue[q], i = k % g.nx, j = (k - i) / g.nx;
+    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+      const a = i + di, b = j + dj, m = b * g.nx + a;
+      if (a >= 0 && b >= 0 && a < g.nx && b < g.ny && !full[m] && !seen[m]) { seen[m] = 1; queue.push(m); }
+    }
+  }
+  return seen;
+};
+const roomCells = (g, rect) => {
+  const out = [];
+  for (let j = 0; j < g.ny; j++) for (let i = 0; i < g.nx; i++) if (inRect(rect, g.cx(i), g.cy(j))) out.push(j * g.nx + i);
+  return out;
+};
+// Pièce tombée ? cible détruite (destroyed, dans l'ordre du plan), plaque d'une cible détruite, tête transpercée (headOff).
+const goneWith = (placed, destroyed, headOff) => {
+  const targets = placed.pieces.filter(p => p.role === 'target');
+  return (p) => (p.role === 'head' ? headOff : p.role === 'target' ? destroyed[targets.indexOf(p)]
+    : p.role === 'plate' ? destroyed[targets.findIndex(t => t.plate === p.id)] : false);
+};
+
+FP.test('bossPlan: la surface ne s’atteint qu’à travers la tête, quelles que soient les plaques tombées', () => {
+  eachPlan(({ s, placed, at }) => {
+    const g = floodGrid(s, placed), starts = [g.seed];
+    for (const r of placed.rooms) starts.push(...roomCells(g, r.rect));
+    const surface = (seen) => seen.subarray(0, g.nx).some(Boolean);   // première rangée : au-dessus de la surface
+    for (let m = 0; m < 8; m++) {
+      const destroyed = [0, 1, 2].map(k => !!(m & (1 << k)));
+      const seen = flood(g, floodFull(g, placed, goneWith(placed, destroyed, false)), starts);
+      FP.assert(!surface(seen), `surface atteinte sans la tête, cibles détruites ${JSON.stringify(destroyed)} ` + at);
+    }
+    const open = flood(g, floodFull(g, placed, goneWith(placed, [true, true, true], true)), [g.seed]);
+    FP.assert(surface(open), 'la tête transpercée ouvre la surface ' + at);
+  });
+});

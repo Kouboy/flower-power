@@ -361,3 +361,16 @@ FP.test('boss: la tête à nu prime sur une paroi touchée dans la même frame',
   FP.assertEqual(s.mode, 'playing'); FP.assertEqual(s.plant.reserves, 3); FP.assertEqual(h.off, true);
   FP.assertEqual(s.events.filter(e => e.type === 'death').length, 0);
 });
+
+// Revue finale (v5.1.0) : le plafond ne s'ouvre qu'à la tête — la surface atteinte sans l'avoir transpercée est une mort contre le boss.
+FP.test('boss: la surface sans la tête transpercée est une paroi, pas une éclosion', () => {
+  for (const open of [false, true]) {
+    const s = headRun(open), bosses = s.run.bosses, at = open ? 'tête à nu' : 'tête blindée';
+    s.plant.tip = { x: 220, y: s.world.surfaceY - 1 }; FP.collision.update(s); FP.flow.update(s, 0);
+    FP.assertEqual(s.mode, 'dying', at); FP.assertEqual(s.plant.reserves, 2, at); FP.assertEqual(s.run.bosses, bosses, at);
+    const d = s.events.find(e => e.type === 'death');
+    FP.assert(d && d.cause === 'solid' && d.kind === 'boss', at + ' ' + JSON.stringify(d));
+    FP.assertEqual(s.flow.overReason, FP.config.text.death.boss, at);
+    FP.assertEqual(s.events.filter(e => e.type === 'bloom' || e.type === 'bossDown').length, 0, at);
+  }
+});

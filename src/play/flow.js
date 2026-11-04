@@ -1,5 +1,5 @@
 // play/flow.js — déroulé de partie : mort, éclosion, transitions, fin de partie.
-// Lit     : state.mode, state.query.{solid,target,head,leak,toxic}, state.plant, state.input.pressed, state.events, state.rng, state.boosts.filter, state.world.{surfaceY,width,bossLevel.targets},
+// Lit     : state.mode, state.query.{solid,target,head,leak,toxic}, state.plant, state.input.pressed, state.events, state.rng, state.boosts.filter, state.world.{surfaceY,width,bossLevel.{targets,head.solid.off}},
 //           FP.config.{flow,text,toxic,garden,soil,boss,run,milieux}, FP.difficulty.level.
 // Écrit   : state.mode, state.flow (dont freeze : décompté ici), state.run (seul à l'écrire : milieu, pousses, boss, saison, carton, avance du pollen, playtest terminé), state.difficulty, state.garden.flowers (création, croissance, remise à zéro au milieu suivant), state.plant.{reserves,assaults,oldTrails,corruption,toxicTimer,recentToxic}, state.score.flowers,
 //           state.level, state.camera.shake, state.score.eco et state.events (death, bloom, blossom, toxicEnter, ready, bossDown) ; appelle FP.level.generate, FP.plant.prepare/launch,
@@ -94,6 +94,9 @@
     state.flow.timer = cfg.dyingTime;
   }
 
+  // Tête du boss encore là (pas transpercée) : la surface reste fermée.
+  const sealed = (state) => { const bl = state.world.bossLevel; return !!bl && !bl.head.solid.off; };
+
   // cause : 'solid' | 'leak' | 'toxic' ; kind : famille de l'obstacle (cause solid uniquement).
   function die(state, cause, kind, reason) {
     state.plant.reserves -= 1;
@@ -176,7 +179,8 @@
     switch (state.mode) {
       case 'playing': {
         const q = state.query, text = FP.config.text;
-        if (state.plant.tip.y <= state.world.surfaceY) bloom(state);
+        // Niveau de boss : le plafond ne s'ouvre qu'à la tête ; la surface atteinte sans l'avoir transpercée est une paroi du boss.
+        if (state.plant.tip.y <= state.world.surfaceY) { if (sealed(state)) die(state, 'solid', 'boss', text.death.boss); else bloom(state); }
         else if (q.target) assault(state, q.target);   // l'assaut prime sur une paroi touchée dans la même frame
         else if (q.head) FP.boss.pierceHead(state);   // tête à nu : transpercée, la pousse continue (gel de l'image) ; prime sur une paroi touchée dans la même frame
         else if (q.solid) die(state, 'solid', q.solid.kind, text.death[q.solid.kind] || text.deathDefault);
