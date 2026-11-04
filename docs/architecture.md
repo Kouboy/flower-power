@@ -30,7 +30,7 @@ src/
 │   ├── plant.js      ✅ croissance, pilotage, trace (prepare / launch / update)
 │   ├── difficulty.js ✅ difficulté en dents de scie d'après l'avancée dans les milieux (v4.13.0)
 │   ├── flow.js       ✅ morts (solide, lixiviat, brûlure toxique), exposition, éclosion, transitions (plus de messages texte : l'interface se déduit de l'état)
-│   ├── boss.js       ✅ le combat de boss (v5.1.0, FP.boss) : `state.bossFight` (cibles détruites, tête à nu), reset, assaut d’une cible, tête transpercée (`pierceHead`) ; update vide pour l'instant
+│   ├── boss.js       ✅ le combat de boss (v5.1.0, FP.boss) : `state.bossFight` (cibles détruites, tête à nu), reset, assaut d’une cible, tête transpercée (`pierceHead`) ; update vide
 │   ├── boss-threats.js ✅ les défenses signature des salles de boss (v5.1.0, FP.bossThreats) : la pointe entre → avertissement long, coup sur sa moitié de la salle, repos ; `timing`, `roomAt` purs ; événements `bossWarn`, `bossStrike` ; tirs visés des boss 2 à 4 (`bossAim`, `bossLock`, `bossShot`)
 │   ├── camera.js     ✅ défilement, cadrage ×1,18 (zoomFrame, toScreen, toWorld), zoom de frôlement
 │   ├── graze.js      ✅ frôlement : suivi par objet, paiement à la sortie, annulation au contact, mesures du flyover
@@ -46,6 +46,7 @@ src/
 │   ├── decor-tube.js  ✅ conduites usées (coudes, cassures, rouille, galeries effondrées) pour les décors enterrés (FP.decorTube)
 │   ├── decor-friche.js, decor-industrie.js, decor-decharge.js, decor-nucleaire.js ✅ décor de chaque milieu (v4.11.0) : astre et météo, horizon, accessoires de surface, décor enterré, petites animations (FP.decor[id], contrat commun)
 │   ├── boss.js       ✅ le boss provisoire (v5.1.0, FP.bossRender) : parois, cibles, tête, plaques en formes simples dessinées par le code
+│   ├── boss-fx.js    ✅ effets du combat de boss (v5.1.0, FP.bossFx) : explosions des cibles et de la tête, plaque qui tombe, graine rendue qui vole jusqu'au compteur du HUD avec « +1 GRAINE »
 │   ├── sky.js        ✅ ciel : bandes tramées de la nuance du niveau, puis le ciel et l'horizon du décor du milieu (deux caches)
 │   ├── soil.js       ✅ pelouse et trois strates tramées (humus, argile, pierre), détails clairsemés, accessoires et décor enterré du milieu, en cache ; petites animations du décor à l'écran
 │   ├── obstacles.js  ✅ sprites ramenés sur la grille (8 niveaux par canal, contour), ancrage tramé, enfouissement
@@ -88,6 +89,9 @@ src/
     ├── freecam.js    ✅ ?freecam=1 : molette / flèches / glisser
     ├── perf.js       ✅ ?perf=1 : FPS, update, render, tranches de dessin
     └── flydebug.js   ✅ ?flydebug=1 : bandeau des décisions de flyover
+
+assets/boss/plans.js  ✅ les quatre plans de boss, composés à la main (v5.1.0, window.FLOWER_POWER_BOSS_PLANS) : pièces, salles, trajets de référence, nappes, en proportions
+dev/boss.html         ✅ outil de réglage : dessine les quatre plans à 360 et 440 px (murs, cibles, tête, plaques, salles, tourelles, trajets), sans le banc ni la boucle
 ```
 
 ## Les 4 règles
@@ -186,10 +190,12 @@ Spec : `docs/superpowers/specs/2026-10-22-interface-pixel-design.md` ; maquettes
 ## Le boss (v5.1.0)
 
 Spec `docs/superpowers/specs/2026-10-31-boss-refonte-design.md` (remplace le moteur de la v4.12.0). Le niveau de boss (`state.run.boss`) est généré par `FP.bossLevel.generate` (appelé par `FP.level.generate`) depuis le plan du milieu, `window.FLOWER_POWER_BOSS_PLANS[id]` (`assets/boss/plans.js`, coordonnées en proportions), posé dans le monde par `FP.bossPlan.toWorld` (`world/boss-plan.js`). Tout est dans `world.bossLevel` (`{ plan, walls, targets: [{ id, i, plate, solid }], head: { solid }, plates: [{ id, target, solid }], rooms, turrets }`) ; parois, cibles, tête et plaques sont aussi des solides (`kind: 'boss' | 'target' | 'head' | 'plate'`, `boss: true`) ; une cible détruite et sa plaque portent `off` dès la génération (`state.bossFight.destroyed`, qui survit à une mort ; `FP.boss.reset` l'efface au milieu suivant). Le chemin sûr (caméra, jetons) est le trajet de référence vers la tête ; les nappes sont aux emplacements du plan (`config.boss.toxics` au plus). `dev/tests/boss.test.js` pilote une vraie pousse le long de chaque trajet jusqu'à sa cible. La tête est une paroi (cause `solid`, kind `head`) tant qu'une plaque reste ; à nu (`bossFight.headOpen`), `collision` la range dans `query.head` (la membrane n'y touche pas) et `flow` appelle `FP.boss.pierceHead` : tête `off`, événement `bossHead`, secousse, `flow.freeze` (`config.boss.freeze`, décompté par `flow.update`, `plant.update` sort tôt) puis la tige continue. L'éclosion sous la pelouse bat le boss (`bossDown`, bonus × saison, carton « BOSS VAINCU »). Avant et pendant un boss, la boutique ne tire ni Lobbying ni Bière anti-limaces.
-Défenses (`play/boss-threats.js`, `state.bossThreats`) : chaque salle a une zone (`room.zone`, solide `kind: 'defense'`, `off` hors coup, dans `world.solids`). Quand la pointe entre dans une salle : `warn` (1,2 s, événement `bossWarn { room, half }`, moitié = celle de la pointe à cet instant) → `strike` (0,8 s, `bossStrike`, la zone couvre exactement cette moitié, cause de mort `solid`/`defense`) → `rest` (1,5 s) → `warn` si la pointe est encore là, sinon `idle`. Chaque cible détruite raccourcit les durées de 10 % (avertissement jamais sous 1 s : `config.boss.defense`). Pointe sortie pendant `warn` : aucun coup. Rien ne progresse pendant `flow.freeze` ; hors mode `playing` tout repasse au repos. Le dessin et le son des événements sont à faire (rendu).
+Défenses (`play/boss-threats.js`, `state.bossThreats`) : chaque salle a une zone (`room.zone`, solide `kind: 'defense'`, `off` hors coup, dans `world.solids`). Quand la pointe entre dans une salle : `warn` (1,2 s, événement `bossWarn { room, half }`, moitié = celle de la pointe à cet instant) → `strike` (0,8 s, `bossStrike`, la zone couvre exactement cette moitié, cause de mort `solid`/`defense`) → `rest` (1,5 s) → `warn` si la pointe est encore là, sinon `idle`. Chaque cible détruite raccourcit les durées de 10 % (avertissement jamais sous 1 s : `config.boss.defense`). Pointe sortie pendant `warn` : aucun coup. Rien ne progresse pendant `flow.freeze` ; hors mode `playing` tout repasse au repos.
 Tirs visés (même module ; seulement si le milieu est dans `config.boss.shooters`, donc pas à la Bétonneuse) : une seule visée à la fois, par la tourelle la plus proche de la pointe dans sa salle (`bossAim { turret }`). La visée suit la pointe `shot.track` (1 s), la ligne se fige `shot.lock` (0,3 s) avant la fin (`bossLock`, `aim.lockedAt` = pointe à cet instant), puis un projectile part de la tourelle vers ce point à `shot.speed` px/s (`bossShot`). Le projectile est un solide `kind: 'shot'` (octogone de rayon `shot.r`) dans `world.solids`, mortel (« touchée par un tir »), retiré à la sortie du cadre, à la mort et à la génération. `cooldown` (`shot.gap`, 3 s) court après chaque tir ; pas de nouvelle visée tant qu'il court, pendant le `strike` de la salle, ni pointe hors des salles ; pointe sortie de la salle en visée : visée annulée sans tir.
 
-Le rendu (`render/boss.js`) est provisoire : formes simples dessinées par le code, aux couleurs de `FP.palette.boss` ; le HUD montre trois icônes de cibles et une de tête (blindée, à nu).
+Le rendu (`render/boss.js`, `render/boss-fx.js`) est provisoire : formes simples dessinées par le code, aux couleurs de `FP.palette.boss` ; trappes, lignes de visée et tirs (`render/boss.js`), explosions (`render/boss-fx.js`) lisibles (les vraies images viendront en v5.2.0) ; la graine rendue vole jusqu'au compteur du HUD avec « +1 GRAINE » (`FP.hud.seedCenter`), qui montre aussi trois icônes de cibles et une de tête (blindée, à nu).
+
+Vérifier : `dev/boss.html` (serveur statique, ou double-clic) affiche les quatre plans à 360 et 440 px ; `dev/tests/bossfight.test.js` joue un combat complet par boss à travers les vrais systèmes (une tige pilotée par cible puis vers la tête, esquive des défenses) jusqu'à la victoire et au milieu suivant.
 
 ## Difficulté et version playtest (v4.13.0)
 

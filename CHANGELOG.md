@@ -2,6 +2,17 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v5.1.0 — Refonte des boss
+
+- les quatre boss sont refaits d'après un plan composé à la main (`assets/boss/plans.js` : muraille à meurtrières, colosse traversé, forteresse, circuit puis cœur) : canaux étroits sans menace, salles larges où agissent les défenses ;
+- trois cibles par boss, chacune reliée à une plaque du blindage de la tête : la pointe qui en touche une la détruit, meurt dans l'explosion (un assaut, pas un échec), la plaque tombe, et la graine est rendue (« +1 GRAINE », la réserve ne baisse pas) ;
+- la tête, blindée tant qu'il reste une plaque (la percuter est une mort normale), s'allume une fois les trois cibles détruites : la tige la transperce sans mourir (arrêt sur image, explosion), puis la fleur éclot ;
+- les défenses regardent la tige : avertissement long, coup sur la moitié de la salle où elle se trouvait, repos ; on les évite en se décalant, jamais en attendant (plus de loterie des pistons) ; à partir du boss 2, des tourelles visent la pointe, ligne de visée figée avant le tir ;
+- plus de points faibles effleurés, de couloir en zigzag, de trappe sous la pelouse ni de panneau de texte ; rendu provisoire en formes simples (les images viennent en v5.2.0) ;
+- outil de réglage `dev/boss.html` : les quatre plans à 360 et 440 px (parois, cibles, tête, plaques, salles, tourelles, trajets) ;
+- un combat complet par boss est joué par le banc (`dev/tests/bossfight.test.js`) à travers les vrais systèmes ;
+- banc : 596 tests.
+
 ## v5.0.0 — Obstacles PixelLab officiels
 
 - les obstacles PixelLab deviennent les obstacles du jeu, sans paramètre : 26 familles, dont trois propres à chaque milieu ;

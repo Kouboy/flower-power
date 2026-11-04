@@ -1,5 +1,5 @@
 // Plans des boss (v5.1.0) : quatre plans composés à la main (assets/boss/plans.js), posés dans le monde par FP.bossPlan.
-// Chaque test passe les quatre milieux à trois largeurs d'écran ; channelMin est mis à l'échelle × W / 360 par toWorld.
+// Chaque test passe les quatre milieux à quatre largeurs d'écran ; channelMin est mis à l'échelle × W / 360 par toWorld.
 const PLAN_MILIEUX = ['friche', 'industrie', 'decharge', 'nucleaire'];
 const PLAN_FORMS = { friche: 'muraille', industrie: 'colosse', decharge: 'forteresse', nucleaire: 'reacteur' };
 // Le jeu impose le 9:16 (render/view.js) : une seule proportion d'écran, seule la largeur varie.
