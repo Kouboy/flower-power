@@ -6,6 +6,7 @@
 // Expose  : FP.bossFx.update(state) (une fois par frame, avant le dessin : events → effets), FP.bossFx.draw(g, state) (toile d'art, monde),
 //           FP.bossFx.drawUi(g, state) (toile d'interface : graine en vol, « +1 GRAINE », éclat sur le compteur),
 //           FP.bossFx.seedFlight(t, from, to) → { x, y, scale } (pur : de l'épave au compteur, en FLIGHT secondes), FP.bossFx.counter(state) → { x, y } (la graine rendue dans le HUD),
+//           FP.bossFx.flying(state) → graines encore en vol (le HUD les retire du compteur jusqu'à l'atterrissage),
 //           FP.bossFx.FLIGHT. Tout en pixels d'art entiers.
 (function () {
   'use strict';
@@ -36,7 +37,11 @@
     fx.flights = fx.flights.filter(f => alive(f, FLIGHT + POP));
   }
 
-  // Position du compteur de graines où la graine rendue atterrit : la dernière graine pleine (toile d'interface, de hauteur FP.view.ui.h).
+  // Graines rendues encore en vol (pas encore atterries sur le compteur).
+  const flying = (state) => { const fx = state.fx.boss; return fx ? fx.flights.filter(f => state.time - f.t0 < FLIGHT).length : 0; };
+
+  // Position du compteur de graines où la graine rendue atterrit : la case que le HUD a vidée pour elle, la dernière de la réserve
+  // (toile d'interface, de hauteur FP.view.ui.h).
   const counter = (state) => FP.hud.seedCenter(Math.max(0, state.plant.reserves - 1), Math.ceil(state.world.viewH / FP.px.SCALE));
 
   // Vol (pur) : la graine monte de l'épave en grossissant, puis file vers le compteur en rétrécissant à la taille du HUD.
@@ -104,5 +109,5 @@
     }
   }
 
-  FP.bossFx = { update, draw, drawUi, seedFlight, counter, FLIGHT };
+  FP.bossFx = { update, draw, drawUi, seedFlight, counter, flying, FLIGHT };
 })();

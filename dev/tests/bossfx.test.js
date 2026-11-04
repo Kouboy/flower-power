@@ -110,3 +110,27 @@ FP.test('audio: chaque événement du boss fait un son FM', () => {
   for (const type of ['bossTarget', 'bossSeed', 'bossWarn', 'bossLock', 'bossShot', 'bossHead'])
     withBackend(b => { FP.audio.consume([{ type }], auRun(), 0); FP.assert(sounding(b).length > 0, type); });
 });
+
+// Revue finale (v5.1.0) : la graine rendue se voit au compteur — sa case se vide à l'assaut, se remplit (petit éclat) quand elle atterrit.
+FP.test('hud: la graine rendue quitte le compteur à l’assaut et le remplit à l’atterrissage', () => {
+  const s = bfxRun(); s.plant.reserves = 3;
+  FP.assertEqual(FP.hud.items(s).seeds, 3, 'avant l’assaut');
+  bfxAssault(s); const t0 = s.time;
+  for (const age of [0, .3, FP.bossFx.FLIGHT - .02]) {
+    s.time = t0 + age; FP.bossFx.update(s);
+    FP.assertEqual(FP.hud.items(s).seeds, 2, 'en vol à ' + age); FP.assertEqual(s.plant.reserves, 3, 'la réserve ne baisse pas');
+  }
+  FP.assertEqual(JSON.stringify(FP.bossFx.counter(s)), JSON.stringify(FP.hud.seedCenter(2, bfxUi(s).h)), 'elle vise la case vidée');
+  const savedView = FP.view, savedDraw = FP.font.draw, hud = () => { const g = recCtx(); FP.hud.draw(g, s); return g; };
+  FP.view = { ui: bfxUi(s) }; FP.font.draw = () => 0;
+  try {
+    hud();
+    s.time = t0 + FP.bossFx.FLIGHT + .01; FP.bossFx.update(s);
+    FP.assertEqual(FP.hud.items(s).seeds, 3, 'atterrie');
+    const g = hud(), x = FP.hud.MARGIN + 2 * FP.hud.SEED_STEP;
+    FP.assert(g.rects.some(r => r.c === FP.font.COLORS.gold && Math.abs(r.x - x) <= 2), 'éclat sur la case remplie');
+    FP.assertEqual(s.fx.ui.hud.lostAt[2], undefined, 'la case vidée par le vol ne s’est pas fendue');
+    s.time += 1; FP.bossFx.update(s);
+    FP.assert(!hud().rects.some(r => r.c === FP.font.COLORS.gold && Math.abs(r.x - x) <= 2), 'éclat éteint');
+  } finally { FP.view = savedView; FP.font.draw = savedDraw; }
+});
