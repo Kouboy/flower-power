@@ -230,18 +230,24 @@
     obstacles: { bury: { chance: .5, depth: [.36, .5] } },
 
     // Boss (v5.1.0) : niveau construit depuis le plan du milieu (assets/boss/plans.js, world/boss.js).
-    // channelMin : largeur minimale d'un canal des plans, en px de monde à 360 px de large (× W / 360 ailleurs) ; top / bottom : zone du boss,
-    // de surfaceY + top à height - bottom ; toxics : nappes au plus, aux emplacements du plan.
+    // top / bottom : zone du boss, de surfaceY + top à height - bottom ; toxics : nappes au plus, aux emplacements du plan.
     // targetBonus / bonus : points par cible détruite / par boss vaincu ; tempoPerTarget : BPM du thème par cible détruite ;
     // assaultShake : secousse d'un assaut ; freeze : arrêt sur image de l'assaut final (s).
-    // defense : avertissement, coup, repos (s), accélération par cible détruite, plancher de l'avertissement ;
-    // shot : suivi de la visée, ligne figée avant le tir (s), vitesse (px/s), espacement des tirs (s), rayon du projectile ; shooters : milieux à tourelles.
+    // ramp (retours de playtest) : un cran de difficulté par boss, du boss 1 (friche) au boss 4 (nucléaire) — channelMin : largeur minimale
+    // d'un canal de son plan, en px de monde à 360 px de large (× W / 360 ailleurs) ; strike, rest : coup et repos de la défense (s) ;
+    // speedup : accélération par cible détruite ; shot : vitesse (px/s) et espacement (s) des tirs visés, null sans tourelles.
+    // defense : avertissement (s) et son plancher, communs à tous les boss ; shot : suivi de la visée, ligne figée avant le tir (s), rayon du projectile.
     boss: {
-      channelMin: 60, top: 70, bottom: 160, toxics: 2,
+      top: 70, bottom: 160, toxics: 2,
       targetBonus: 200, bonus: 1500, tempoPerTarget: 6, assaultShake: .3, freeze: .35,
-      defense: { warn: 1.2, strike: .8, rest: 1.5, speedup: .1, warnMin: 1 },
-      shot: { track: 1, lock: .3, speed: 420, gap: 3, r: 5 },
-      shooters: ['industrie', 'decharge', 'nucleaire']
+      ramp: {
+        friche: { channelMin: 52, strike: .9, rest: 1.3, speedup: .12, shot: null },
+        industrie: { channelMin: 49, strike: .97, rest: 1.17, speedup: .14, shot: { speed: 440, gap: 2.6 } },
+        decharge: { channelMin: 47, strike: 1.03, rest: 1.03, speedup: .16, shot: { speed: 480, gap: 2.3 } },
+        nucleaire: { channelMin: 44, strike: 1.1, rest: .9, speedup: .18, shot: { speed: 520, gap: 2 } }
+      },
+      defense: { warn: 1.2, warnMin: 1 },
+      shot: { track: 1, lock: .3, r: 5 }
     },
 
     // Boutique de fin de pousse (v4.6.0) : 3 articles tirés (un à −50 %), achetés au score ; effets sur la pousse suivante.

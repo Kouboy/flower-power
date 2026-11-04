@@ -158,7 +158,7 @@
       FP.px.rect(g, xa, ya, xb - xa, 1, P.hatch[0]); FP.px.rect(g, xa, yb - 1, xb - xa, 1, P.hatch[0]);
       return;
     }
-    const W = FP.bossThreats.timing(state.bossFight.destroyed.filter(Boolean).length).warn;
+    const W = FP.bossThreats.timing(state.bossFight.destroyed.filter(Boolean).length, FP.config.milieux[state.run.milieu].id).warn;
     const phase = 2 * e.t + 5 * e.t * e.t / W;    // clignotement de 2 à 12 Hz
     if (Math.floor(phase * 2) % 2 === 0) hatches(g, xa, xb, ya, yb, 6, P.hatch[0]);
     FP.px.rect(g, xa, ya, xb - xa, 1, P.hatch[1]); FP.px.rect(g, xa, yb - 1, xb - xa, 1, P.hatch[1]);

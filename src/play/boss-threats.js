@@ -3,24 +3,27 @@
 // v5.1.0 (suite) : tirs visés — à partir du boss 2, une tourelle de la salle de la pointe la suit (ligne de visée), fige la ligne peu
 // avant de tirer, puis un projectile rapide part le long de la ligne figée : on l'évite en virant après le figement.
 // Lit     : state.{mode, flow.freeze, plant.tip, run.milieu, bossFight.destroyed}, state.world.{width,height,bossLevel.{rooms[].{x0,y0,x1,y1,zone,turrets},turrets[],walls,targets,plates,head}},
-//           FP.config.{boss.defense, boss.shot, boss.shooters, milieux}, FP.collision.distanceTo.
+//           FP.config.{boss.defense, boss.shot, boss.ramp[id].{strike,rest,speedup,shot}, milieux}, FP.collision.distanceTo.
 // Écrit   : state.bossThreats.{aim: { turret, t, lockedAt: null | { x, y } } | null, cooldown (s), shots: [{ x, y, vx, vy, solid }]} ; solides 'shot'
 //           (octogone de rayon shot.r) ajoutés à state.world.solids tant que le tir vole, retirés à la sortie du cadre, dans une pièce du boss
 //           (paroi, cible, plaque ou tête qui n'est pas tombée), à la mort et à la génération ;
 //           state.bossThreats.rooms[id] = { stage: 'idle'|'warn'|'strike'|'rest', t, half: -1 (gauche) | 1 (droite) } (seul ; vidé par
 //           world/boss.js à chaque génération), la zone (solide 'defense') de chaque salle : off sauf pendant le coup, polygone = moitié visée ;
 //           state.events (bossWarn { room, half } à chaque avertissement, bossStrike { room, half } à chaque coup ; bossAim / bossLock / bossShot { turret } : le dessin et le son sont ailleurs).
-// Expose  : FP.bossThreats.update(state, dt), FP.bossThreats.timing(destroyedCount) → { warn, strike, rest } (pur),
+// Expose  : FP.bossThreats.update(state, dt), FP.bossThreats.timing(destroyedCount, id) → { warn, strike, rest } (pur ; id : milieu du boss,
+//             coup, repos et accélération propres à chaque boss — config.boss.ramp —, avertissement commun),
 //           FP.bossThreats.roomAt(bossLevel, x, y) → salle | null (pur).
 // Hors niveau de boss, hors mode playing : tout repasse au repos ; pendant l'arrêt sur image (flow.freeze) rien ne progresse.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
 
-  function timing(n) {
-    const d = FP.config.boss.defense, k = Math.pow(1 - d.speedup, n);
-    return { warn: Math.max(d.warnMin, d.warn * k), strike: d.strike * k, rest: d.rest * k };
+  function timing(n, id) {
+    const d = FP.config.boss.defense, r = FP.config.boss.ramp[id], k = Math.pow(1 - r.speedup, n);
+    return { warn: Math.max(d.warnMin, d.warn * k), strike: r.strike * k, rest: r.rest * k };
   }
+
+  const bossId = (state) => FP.config.milieux[state.run.milieu].id;
 
   const inside = (r, x, y) => x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1;
 
@@ -78,7 +81,7 @@
   }
 
   function fire(state, tur, to) {
-    const cfg = FP.config.boss.shot, dx = to.x - tur.x, dy = to.y - tur.y, len = Math.hypot(dx, dy) || 1, th = state.bossThreats;
+    const cfg = FP.config.boss.ramp[bossId(state)].shot, dx = to.x - tur.x, dy = to.y - tur.y, len = Math.hypot(dx, dy) || 1, th = state.bossThreats;
     const solid = shotSolid(tur.x, tur.y);
     th.shots.push({ x: tur.x, y: tur.y, vx: cfg.speed * dx / len, vy: cfg.speed * dy / len, solid });
     state.world.solids.push(solid);
@@ -94,7 +97,7 @@
       if (s.x < -cfg.r || s.x > w.width + cfg.r || s.y < -cfg.r || s.y > w.height + cfg.r || blocked(bl, s.x, s.y)) dropShot(state, i);
     }
     th.cooldown = Math.max(0, th.cooldown - dt);
-    if (!FP.config.boss.shooters.includes(FP.config.milieux[state.run.milieu].id)) return;
+    if (!FP.config.boss.ramp[bossId(state)].shot) return;   // boss sans tourelles (la Bétonneuse)
     const room = tip ? roomAt(bl, tip.x, tip.y) : null, a = th.aim;
     if (a) {
       const tur = bl.turrets.find(q => q.id === a.turret);
@@ -123,7 +126,7 @@
     if (!bl) return;
     if (state.mode !== 'playing') { quiet(state, bl); clearShots(state); return; }
     if (state.flow.freeze > 0) return;
-    const tip = state.plant.tip, tm = timing(state.bossFight.destroyed.filter(Boolean).length);
+    const tip = state.plant.tip, tm = timing(state.bossFight.destroyed.filter(Boolean).length, bossId(state));
     for (const r of bl.rooms) {
       const e = state.bossThreats.rooms[r.id] || (state.bossThreats.rooms[r.id] = { stage: 'idle', t: 0, half: 1 });
       const here = !!tip && inside(r, tip.x, tip.y);

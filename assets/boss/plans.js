@@ -5,7 +5,8 @@
 // rooms  : { id, rect: [x0, y0, x1, y1] (où agissent les menaces), defense, turrets } ;
 // paths  : un trajet par cible et un vers la tête ('head') ; la graine (sous la zone) est ajoutée devant par toWorld ;
 // toxics : centres des nappes.
-// Composés sur un monde de 360 px de large : canaux d'au moins config.boss.channelMin, trajets toujours montants, en pente plutôt
+// Composés sur un monde de 360 px de large : canaux d'au moins config.boss.ramp[milieu].channelMin (52 px au boss 1 … 44 au boss 4 ; le plus
+// serré de chaque plan l'approche à 4 px près, retours de playtest), trajets toujours montants, en pente plutôt
 // qu'à plat ; salles larges, tourelles sur leurs parois ; rien au-dessus de la tête jusqu'à la surface.
 // Revue finale : le plafond est fermé d'un bord à l'autre, la tête comprise (un ergot de chaque paroi mord dans la tête, sous son
 // sommet) ; chaque plaque est adossée à une paroi : tombée, elle ne laisse qu'une niche. On n'entre dans une salle que par une
@@ -19,8 +20,8 @@ window.FLOWER_POWER_BOSS_PLANS = {
     pieces: [
       { id: 'mur-g', role: 'wall', poly: [[0, .451], [.039, .451], [.039, .608], [0, .608]] },   // muraille : bord gauche
       { id: 'mur-1', role: 'wall', poly: [[.306, .451], [.4, .451], [.367, .469], [.45, .521], [.367, .573], [.4, .608], [.306, .608]] },   // muraille : entre la meurtrière large et la sinueuse
-      { id: 'mur-2', role: 'wall', poly: [[.656, .451], [.767, .451], [.767, .608], [.656, .608], [.622, .573], [.706, .521], [.622, .469]] },   // muraille : entre la sinueuse et l'étroite
-      { id: 'mur-d', role: 'wall', poly: [[.956, .451], [1, .451], [1, .608], [.956, .608]] },   // muraille : bord droit
+      { id: 'mur-2', role: 'wall', poly: [[.656, .451], [.78, .451], [.78, .608], [.656, .608], [.622, .573], [.706, .521], [.622, .469]] },   // muraille : entre la sinueuse et l'étroite
+      { id: 'mur-d', role: 'wall', poly: [[.942, .451], [1, .451], [1, .608], [.942, .608]] },   // muraille : bord droit
       { id: 'parapet-g', role: 'wall', poly: [[0, .26], [.348, .26], [.348, .3], [0, .3]] },   // parapet au-dessus de la galerie, à gauche de l'ouverture
       { id: 'parapet-d', role: 'wall', poly: [[.708, .26], [1, .26], [1, .3], [.708, .3]] },   // parapet, à droite de l'ouverture
       { id: 'plafond-g', role: 'wall', poly: [[0, 0], [.359, 0], [.359, .025], [.392, .025], [.392, .06], [.355, .06], [.355, .03], [0, .03]] },   // plafond gauche, ergot dans la toupie
@@ -34,6 +35,11 @@ window.FLOWER_POWER_BOSS_PLANS = {
       { id: 'plaque-d', role: 'plate', poly: [[.639, .03], [.722, .03], [.722, .082], [.639, .082]] }    // blindage droit, sous le plafond
     ],
     rooms: [
+      // la galerie des vannes, défendue en trois sections, chacune centrée sur le débouché de sa meurtrière (une seule salle d'un bord à
+      // l'autre ne s'esquivait pas depuis les meurtrières des bords : la moitié épargnée était trop loin)
+      { id: 'galerie-g', rect: [.056, .3, .348, .4], defense: 'beton', turrets: [] },
+      { id: 'galerie-c', rect: [.348, .3, .708, .4], defense: 'beton', turrets: [] },
+      { id: 'galerie-d', rect: [.708, .3, 1, .4], defense: 'beton', turrets: [] },
       { id: 'salle', rect: [.056, .13, 1, .26], defense: 'beton', turrets: [] }   // milieu à .528, celui de l'ouverture du parapet
     ],
     paths: {
@@ -49,8 +55,8 @@ window.FLOWER_POWER_BOSS_PLANS = {
   industrie: {
     form: 'colosse',
     pieces: [
-      { id: 'pied-g', role: 'wall', poly: [[0, .781], [.32, .781], [.4, .86], [.4, .955], [0, .955]] },   // pied du colosse, à gauche du tuyau qui s'évase
-      { id: 'pied-d', role: 'wall', poly: [[1, .781], [.68, .781], [.6, .86], [.6, .955], [1, .955]] },   // pied du colosse, à droite du tuyau
+      { id: 'pied-g', role: 'wall', poly: [[0, .781], [.345, .781], [.425, .86], [.425, .955], [0, .955]] },   // pied du colosse, à gauche du tuyau qui s'évase
+      { id: 'pied-d', role: 'wall', poly: [[1, .781], [.655, .781], [.575, .86], [.575, .955], [1, .955]] },   // pied du colosse, à droite du tuyau
       { id: 'flanc-g', role: 'wall', poly: [[0, .434], [.056, .434], [.056, .781], [0, .781]] },   // flanc gauche de la chambre basse
       { id: 'flanc-d', role: 'wall', poly: [[.944, .434], [1, .434], [1, .781], [.944, .781]] },   // flanc droit de la chambre basse
       { id: 'niche-g', role: 'wall', poly: [[.056, .4], [.278, .4], [.278, .451], [.056, .451]] },   // dessus de la niche de la cuve gauche, plancher de la chambre haute
@@ -87,8 +93,8 @@ window.FLOWER_POWER_BOSS_PLANS = {
   decharge: {
     form: 'forteresse',
     pieces: [
-      { id: 'socle-g', role: 'wall', poly: [[0, .66], [.31, .66], [.31, .729], [.394, .729], [.436, .777], [.353, .829], [.394, .868], [0, .868]] },   // pied du four, à gauche de la grille
-      { id: 'socle-d', role: 'wall', poly: [[.69, .66], [1, .66], [1, .868], [.606, .868], [.564, .829], [.647, .777], [.606, .729], [.69, .729]] },   // pied du four, à droite de la grille
+      { id: 'socle-g', role: 'wall', poly: [[0, .66], [.31, .66], [.31, .729], [.416, .729], [.458, .777], [.375, .829], [.416, .868], [0, .868]] },   // pied du four, à gauche de la grille
+      { id: 'socle-d', role: 'wall', poly: [[.69, .66], [1, .66], [1, .868], [.584, .868], [.542, .829], [.625, .777], [.584, .729], [.69, .729]] },   // pied du four, à droite de la grille
       { id: 'four-g', role: 'wall', poly: [[0, .104], [.415, .104], [.415, .13], [.44, .13], [.44, .16], [.375, .16], [.375, .191], [.042, .191], [.042, .712], [0, .712]] },   // ventre et paroi gauche du four, ergot dans la gueule
       { id: 'four-d', role: 'wall', poly: [[1, .104], [.585, .104], [.585, .13], [.56, .13], [.56, .16], [.625, .16], [.625, .191], [.958, .191], [.958, .712], [1, .712]] },   // ventre et paroi droite du four, ergot dans la gueule
       { id: 'bruleur-bas', role: 'target', plate: 'plaque-g', poly: [[.217, .191], [.256, .191], [.256, .486], [.217, .486]] },   // brûleur pendu le plus bas
@@ -116,8 +122,8 @@ window.FLOWER_POWER_BOSS_PLANS = {
   nucleaire: {
     form: 'reacteur',
     pieces: [
-      { id: 'socle-g', role: 'wall', poly: [[0, .578], [.32, .578], [.32, .608], [.344, .608], [.344, .625], [.594, .686], [.594, .712], [.094, .833], [.094, .859], [.344, .929], [.344, .955], [0, .955]] },   // socle, à gauche du circuit
-      { id: 'socle-d', role: 'wall', poly: [[.68, .578], [1, .578], [1, .955], [.656, .955], [.656, .929], [.406, .859], [.406, .833], [.906, .712], [.906, .686], [.656, .625], [.656, .608], [.68, .608]] },   // socle, à droite du circuit
+      { id: 'socle-g', role: 'wall', poly: [[0, .578], [.32, .578], [.32, .608], [.344, .608], [.344, .6155], [.594, .6765], [.594, .7215], [.094, .8425], [.094, .8495], [.344, .9195], [.344, .955], [0, .955]] },   // socle, à gauche du circuit
+      { id: 'socle-d', role: 'wall', poly: [[.68, .578], [1, .578], [1, .955], [.656, .955], [.656, .9385], [.406, .8685], [.406, .8235], [.906, .7025], [.906, .6955], [.656, .6345], [.656, .608], [.68, .608]] },   // socle, à droite du circuit
       { id: 'dome-g', role: 'wall', poly: [[0, .087], [.415, .087], [.415, .095], [.44, .095], [.44, .125], [.375, .125], [.375, .13], [.167, .165], [.056, .226], [.056, .608], [0, .608]] },   // dôme et paroi gauche, ergot dans le cœur
       { id: 'dome-d', role: 'wall', poly: [[1, .087], [.585, .087], [.585, .095], [.56, .095], [.56, .125], [.625, .125], [.625, .13], [.833, .165], [.944, .226], [.944, .608], [1, .608]] },   // dôme et paroi droite, ergot dans le cœur
       { id: 'barre-g', role: 'target', plate: 'plaque-g', poly: [[.244, .148], [.283, .148], [.283, .399], [.244, .399]] },   // barre de contrôle gauche, la plus longue

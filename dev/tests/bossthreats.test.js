@@ -5,11 +5,31 @@ const thrIn = (r, fx) => ({ x: r.x0 + (r.x1 - r.x0) * fx, y: (r.y0 + r.y1) / 2 }
 const thrStage = (s, r) => (s.bossThreats.rooms[r.id] || { stage: 'idle' }).stage;
 const thrStep = (s, dt = 1 / 60) => { FP.bossThreats.update(s, dt); };
 
-FP.test('threats: timing — 1,2 / 0,8 / 1,5 s, −10 % par cible, avertissement ≥ 1 s', () => {
-  const t0 = FP.bossThreats.timing(0), t1 = FP.bossThreats.timing(1), t3 = FP.bossThreats.timing(3);
-  FP.assertEqual(t0.warn, 1.2); FP.assertEqual(t0.strike, .8); FP.assertEqual(t0.rest, 1.5);
-  FP.assert(Math.abs(t1.strike - .72) < 1e-9 && Math.abs(t1.rest - 1.35) < 1e-9 && Math.abs(t1.warn - 1.08) < 1e-9, 'une cible');
-  FP.assertEqual(t3.warn, 1); FP.assert(Math.abs(t3.strike - .8 * .729) < 1e-9, 'trois cibles');
+FP.test('threats: timing par boss — avertissement 1,2 s, coup et repos du boss, accélération par cible, avertissement ≥ 1 s', () => {
+  for (const id of MILIEUX) {
+    const R = FP.config.boss.ramp[id], k = 1 - R.speedup, t0 = FP.bossThreats.timing(0, id), t1 = FP.bossThreats.timing(1, id);
+    FP.assertEqual(t0.warn, 1.2, id); FP.assertEqual(t0.strike, R.strike, id); FP.assertEqual(t0.rest, R.rest, id);
+    FP.assert(Math.abs(t1.strike - R.strike * k) < 1e-9 && Math.abs(t1.rest - R.rest * k) < 1e-9 && Math.abs(t1.warn - Math.max(1, 1.2 * k)) < 1e-9, 'une cible ' + id);
+    for (let n = 0; n <= 3; n++) FP.assert(FP.bossThreats.timing(n, id).warn >= 1, `avertissement ≥ 1 s (${id}, ${n})`);
+    FP.assertEqual(FP.bossThreats.timing(3, id).warn, 1, 'plancher ' + id);
+  }
+});
+
+// v5.1.0 (retours de playtest) : un cran de difficulté par boss, de la friche (boss 1) au nucléaire (boss 4).
+FP.test('threats: un cran de difficulté par boss — canaux, coup, repos, accélération, tirs', () => {
+  const R = MILIEUX.map(id => FP.config.boss.ramp[id]), list = (f) => JSON.stringify(R.map(f));
+  FP.assertEqual(list(r => r.channelMin), '[52,49,47,44]');
+  FP.assertEqual(R[0].strike, .9); FP.assertEqual(R[3].strike, 1.1);
+  FP.assertEqual(R[0].rest, 1.3); FP.assertEqual(R[3].rest, .9);
+  FP.assertEqual(R[0].speedup, .12); FP.assertEqual(R[3].speedup, .18);
+  FP.assertEqual(R[0].shot, null, 'pas de tirs au boss 1');
+  FP.assertEqual(list(r => r.shot && [r.shot.speed, r.shot.gap]), '[null,[440,2.6],[480,2.3],[520,2]]');
+  for (let k = 0; k < 3; k++) {
+    const a = R[k], b = R[k + 1], at = MILIEUX[k] + ' → ' + MILIEUX[k + 1];
+    FP.assert(b.channelMin < a.channelMin && b.strike > a.strike && b.rest < a.rest && b.speedup > a.speedup, 'plus dur ' + at);
+    if (a.shot) FP.assert(b.shot.speed > a.shot.speed && b.shot.gap < a.shot.gap, 'tirs plus durs ' + at);
+  }
+  FP.assertEqual(FP.config.boss.defense.warn, 1.2); FP.assertEqual(FP.config.boss.defense.warnMin, 1);
 });
 
 FP.test('threats: roomAt trouve la salle sous un point', () => {
@@ -52,7 +72,7 @@ FP.test('threats: le coup touche la moitié visée, épargne l’autre', () => {
 });
 
 FP.test('threats: pas de coup sans avertissement complet', () => {
-  const s = thrRun(), r = thrRoom(s), warn = FP.bossThreats.timing(0).warn;
+  const s = thrRun(), r = thrRoom(s), warn = FP.bossThreats.timing(0, 'industrie').warn;
   let t = 0, warnAt = null, strikes = 0;
   for (let i = 0; i < 1200; i++, t += 1 / 60) {
     const fx = .5 + .45 * Math.sin(t * 1.3);   // la pointe va et vient dans la salle, parfois dehors
@@ -123,7 +143,7 @@ FP.test('threats: de la salle A à la salle B pendant l’avertissement → pas 
   for (const m of [0, 1, 2, 3]) { const t = thrRun(m); if (t.world.bossLevel.rooms.length >= 2) { s = t; break; } }
   if (!s) return;   // aucun plan à deux salles : rien à vérifier
   [a, b] = s.world.bossLevel.rooms;
-  const warn = FP.bossThreats.timing(0).warn;
+  const warn = FP.bossThreats.timing(0, FP.config.milieux[s.run.milieu].id).warn;
   s.plant.tip = thrIn(a, .3); for (let i = 0; i < 30; i++) thrStep(s);
   FP.assertEqual(thrStage(s, a), 'warn');
   s.plant.tip = thrIn(b, .7); let t = 0, warnB = null, strikeA = 0, strikeB = null;
@@ -160,7 +180,7 @@ FP.test('shots: pas de tir à la Bétonneuse', () => {
 });
 
 FP.test('shots: la ligne se fige 0,3 s avant le tir, le projectile suit la ligne figée', () => {
-  const s = shotRun(1), r = shotRoom(s), cfg = FP.config.boss.shot, tur = s.world.bossLevel.turrets.find(q => q.room === r.id);
+  const s = shotRun(1), r = shotRoom(s), cfg = { ...FP.config.boss.shot, ...FP.config.boss.ramp.industrie.shot }, tur = s.world.bossLevel.turrets.find(q => q.room === r.id);
   s.plant.tip = thrIn(r, .3); s.events.length = 0;
   let t = 0, lockT = null, shotT = null, locked = null;
   for (let i = 0; i < 600 && shotT === null; i++, t += 1 / 60) {
@@ -180,12 +200,12 @@ FP.test('shots: la ligne se fige 0,3 s avant le tir, le projectile suit la ligne
   FP.assert(s.world.solids.some(o => o.kind === 'shot'), 'solide de tir dans world.solids');
 });
 
-FP.test('shots: au moins 3 s entre deux tirs', () => {
+FP.test('shots: au moins l’espacement du boss entre deux tirs', () => {
   const s = shotRun(2), r = shotRoom(s); s.plant.tip = thrIn(r, .4);
   let t = 0; const at = [];
   for (let i = 0; i < 60 * 14; i++, t += 1 / 60) { s.events.length = 0; thrStep(s); if (shotEvents(s, 'bossShot').length) at.push(t); }
   FP.assert(at.length >= 2, 'plusieurs tirs : ' + at.length);
-  for (let i = 1; i < at.length; i++) FP.assert(at[i] - at[i - 1] >= FP.config.boss.shot.gap - 1e-6, 'écart ' + (at[i] - at[i - 1]));
+  for (let i = 1; i < at.length; i++) FP.assert(at[i] - at[i - 1] >= FP.config.boss.ramp.decharge.shot.gap - 1e-6, 'écart ' + (at[i] - at[i - 1]));
 });
 
 FP.test('shots: pas de visée pendant un coup de la défense', () => {

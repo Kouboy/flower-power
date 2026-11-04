@@ -6,20 +6,30 @@ const fightStep = (s, dt) => { s.time += dt; for (const n of FIGHT_ORDER) if (FP
 
 // Esquive : la pointe passe dans la moitié épargnée d'une salle (14 px au-delà du milieu, en virant à fond tant qu'elle n'y est pas) si le trajet reste dans l'autre. Elle attend le dernier
 // moment (le temps de traverser, avant le coup) pour ne pas s'écarter du trajet plus que nécessaire, et ne bouge pas si elle sort de la salle avant le coup ;
-// à moins de DODGE_REACH px de sa cible, elle fonce dessus. Constantes réglées sur les plans et les menaces actuels : à revoir si l'un ou l'autre change.
-const DODGE_SPEED = 40, DODGE_SLACK = .6, DODGE_REACH = 50;   // vitesse latérale supposée (px/s), marge (s), portée de l'assaut (px)
-const dodge = (s, placed, p, goal) => {
-  const tip = s.plant.tip;
-  if (FP.collision.distanceTo(goal, tip.x, tip.y) < DODGE_REACH) return p;
+// à moins de DODGE_REACH px de sa cible, elle fonce dessus. v5.1.0 (boss plus durs, repos plus court) : pendant le repos, elle attend dans
+// la moitié opposée à celle de son trajet le prochain avertissement (le coup tombera loin de sa cible), sauf si
+// elle atteint la cible avant ce coup (DODGE_ETA fois le temps en ligne droite ; l'assaut finit la tige). Sans cela, elle esquivait deux
+// fois de suite du même côté et dépassait sa cible. Constantes réglées sur les plans et les menaces actuels : à revoir si l'un ou l'autre change.
+const DODGE_SPEED = 40, DODGE_SLACK = .6, DODGE_REACH = 50, DODGE_ETA = 1.25;   // vitesse latérale supposée (px/s), marge (s), portée de l'assaut (px), marge sur le temps d'arrivée
+const dodge = (s, placed, p, target) => {
+  const tip = s.plant.tip, reach = FP.collision.distanceTo(target, tip.x, tip.y);
+  if (reach < DODGE_REACH) return p;
+  const tm = FP.bossThreats.timing(s.bossFight.destroyed.filter(Boolean).length, FP.config.milieux[s.run.milieu].id);
   for (const r of placed.rooms) {
     const st = s.bossThreats.rooms[r.id];
-    if (!st || (st.stage !== 'warn' && st.stage !== 'strike') || tip.y < r.rect[1] || tip.y > r.rect[3]) continue;
+    if (!st || tip.y < r.rect[1] || tip.y > r.rect[3]) continue;
     const mid = (r.rect[0] + r.rect[2]) / 2;
+    if (st.stage === 'rest') {
+      const side = p.x < mid ? -1 : 1;
+      if (DODGE_ETA * reach / FP.plant.speed(s) < tm.rest - st.t + tm.warn) continue;
+      return { x: mid - side * 14, y: tip.y - 30 };   // de l'autre côté du milieu jusqu'au prochain avertissement
+    }
+    if (st.stage !== 'warn' && st.stage !== 'strike') continue;
     const safe = mid - st.half * 14;   // abscisse limite de la moitié épargnée
     if ((tip.x - safe) * st.half <= 0 && (p.x - safe) * st.half <= 0) continue;   // déjà du bon côté, et le trajet y reste
     const goal = { x: (p.x - safe) * st.half > 0 ? safe : p.x, y: tip.y - 30 };
     if (st.stage === 'warn') {
-      const left = FP.bossThreats.timing(s.bossFight.destroyed.filter(Boolean).length).warn - st.t;
+      const left = tm.warn - st.t;
       if (left > Math.abs(tip.x - goal.x) / DODGE_SPEED + DODGE_SLACK || (tip.y - r.rect[1]) / FP.plant.speed(s) < left) continue;
     }
     if ((tip.x - safe) * st.half > 0) goal.turn = -st.half;   // encore dans la moitié visée : virage à fond (au doigt)

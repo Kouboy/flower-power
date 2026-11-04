@@ -1,6 +1,6 @@
 // audio/audio.js — chef d'orchestre du son (Web Audio, aucun fichier) : déblocage au premier geste, événements de la frame →
 // effets (FP.sfx, dont les sons du boss : bossTarget, bossSeed, bossWarn, bossLock, bossShot, bossHead ; un assaut ne joue ni impact ni jingle de mort) et musique (FP.music), pause quand l'onglet est caché.
-// Lit     : les événements de la frame, state (via FP.sfx.drone et FP.music.update ; state.bossFight.destroyed pour la durée de bossWarn), FP.bossThreats.timing, FP.synth, FP.state.current.
+// Lit     : les événements de la frame, state (via FP.sfx.drone et FP.music.update ; state.bossFight.destroyed et state.run.milieu pour la durée de bossWarn), FP.bossThreats.timing, FP.synth, FP.state.current.
 // Écrit   : rien dans l'état.
 // Expose  : FP.audio.consume(events, state, dt), FP.audio.sfx(name, intensity?), FP.audio.unlock(),
 //           FP.audio.setting() / cycleSetting() / loadSetting() (réglage 'all' | 'sfx' | 'mute', mémorisé sous flower_power_v4_sound),
@@ -57,7 +57,7 @@
   }
 
   // Durée de l'avertissement d'une défense de boss au rythme du combat (FP.bossThreats.timing) : le son qui monte la couvre.
-  const warnTime = (state) => FP.bossThreats.timing(state && state.bossFight ? state.bossFight.destroyed.filter(Boolean).length : 0).warn;
+  const warnTime = (state) => FP.bossThreats.timing(state.bossFight.destroyed.filter(Boolean).length, FP.config.milieux[state.run.milieu].id).warn;
 
   // Événements de la frame → effets.
   function play(b, e, state) {

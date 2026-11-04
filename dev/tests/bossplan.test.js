@@ -1,5 +1,5 @@
 // Plans des boss (v5.1.0) : quatre plans composés à la main (assets/boss/plans.js), posés dans le monde par FP.bossPlan.
-// Chaque test passe les quatre milieux à quatre largeurs d'écran ; channelMin est mis à l'échelle × W / 360 par toWorld.
+// Chaque test passe les quatre milieux à quatre largeurs d'écran ; channelMin, propre à chaque boss (config.boss.ramp), est mis à l'échelle × W / 360 par toWorld.
 const PLAN_MILIEUX = ['friche', 'industrie', 'decharge', 'nucleaire'];
 const PLAN_FORMS = { friche: 'muraille', industrie: 'colosse', decharge: 'forteresse', nucleaire: 'reacteur' };
 // Le jeu impose le 9:16 (render/view.js) : une seule proportion d'écran, seule la largeur varie.
@@ -60,11 +60,11 @@ FP.test('bossPlan: toutes les pièces dans le cadre', () => {
 });
 
 FP.test('bossPlan: chaque trajet reste à distance sûre et atteint sa cible', () => {
-  eachPlan(({ s, W, placed, at }) => {
+  eachPlan(({ s, W, milieu, placed, at }) => {
     const ids = placed.pieces.filter(p => p.role === 'target').map(p => p.id).concat('head');
     FP.assertEqual(Object.keys(placed.paths).length, ids.length, 'un trajet par cible et un vers la tête ' + at);
     const half = placed.channelMin / 2;
-    FP.assert(Math.abs(placed.channelMin - FP.config.boss.channelMin * W / 360) < 1e-9, 'channelMin à l\'échelle ' + at);
+    FP.assert(Math.abs(placed.channelMin - FP.config.boss.ramp[milieu].channelMin * W / 360) < 1e-9, 'channelMin du boss, à l\'échelle ' + at);
     for (const id of ids) {
       const pts = placed.paths[id], piece = placed.pieces.find(p => (id === 'head' ? p.role === 'head' : p.id === id));
       FP.assert(pts && pts.length >= 2, `trajet ${id} ` + at);
@@ -77,6 +77,36 @@ FP.test('bossPlan: chaque trajet reste à distance sûre et atteint sa cible', (
         const c = FP.bossPlan.clearance(others, q.x, q.y);
         FP.assert(c >= half, `${id} trop près d'une paroi en (${q.x | 0},${q.y | 0}) : ${c.toFixed(1)} < ${half.toFixed(1)} ` + at);
       }
+    }
+  });
+});
+
+// v5.1.0 (retours de playtest) : les plans sont resserrés à la main ; le canal le plus serré de chaque plan approche la largeur du boss,
+// à la largeur où ils sont composés (360 px : la zone du boss n'est pas exactement proportionnelle à W, ses marges sont en px).
+const PLAN_TIGHT = 4;   // px au plus entre le trajet le plus serré et la demi-largeur minimale
+FP.test('bossPlan: chaque plan a un canal resserré près de la largeur minimale de son boss', () => {
+  eachPlan(({ W, placed, at }) => {
+    if (W !== 360) return;
+    let tight = Infinity;
+    for (const [id, pts] of Object.entries(placed.paths)) {
+      const piece = placed.pieces.find(p => (id === 'head' ? p.role === 'head' : p.id === id)), others = withoutPiece(placed, piece.id);
+      for (const q of pathSamples(pts)) if (q.left >= PLAN_END) tight = Math.min(tight, FP.bossPlan.clearance(others, q.x, q.y));
+    }
+    FP.assert(tight <= placed.channelMin / 2 + PLAN_TIGHT, `canal le plus serré ${tight.toFixed(1)} > ${(placed.channelMin / 2).toFixed(1)} + ${PLAN_TIGHT} ` + at);
+  });
+});
+
+// La galerie est défendue en trois sections, une par vanne, chacune centrée sur le débouché de sa meurtrière : d'un bord à l'autre,
+// une seule salle ne s'esquivait pas depuis les meurtrières des bords (bossfight.test.js).
+FP.test('bossPlan: la galerie des vannes de la Bétonneuse est défendue (coulée de béton), une section par vanne', () => {
+  eachPlan(({ milieu, placed, at }) => {
+    if (milieu !== 'friche') return;
+    const sections = placed.rooms.filter(r => r.id.startsWith('galerie'));
+    FP.assertEqual(sections.length, 3, 'sections ' + at);
+    for (const t of placed.pieces.filter(p => p.role === 'target')) {
+      const xs = t.poly.map(v => v[0]), ys = t.poly.map(v => v[1]), cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+      const in_ = sections.filter(r => inRect(r.rect, cx, cy));
+      FP.assert(in_.length === 1 && in_[0].defense === 'beton', `${t.id} dans une section défendue ` + at);
     }
   });
 });

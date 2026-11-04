@@ -191,7 +191,7 @@ FP.test('audio: l’avertissement monte sur toute sa durée, à chaque rythme', 
   for (const n of [0, 3]) withBackend(b => {
     const s = auRun(); s.bossFight.destroyed = [0, 1, 2].map(k => k < n);
     FP.audio.consume([{ type: 'bossWarn', room: 'salle', half: 1 }], s, 0);
-    const notes = sounding(b).filter(c => c[0] === 'note'), warn = FP.bossThreats.timing(n).warn, t0 = notes[0][3];
+    const notes = sounding(b).filter(c => c[0] === 'note'), warn = FP.bossThreats.timing(n, FP.config.milieux[s.run.milieu].id).warn, t0 = notes[0][3];
     FP.assert(notes.length >= 6, 'notes : ' + notes.length);
     FP.assert(notes[notes.length - 1][3] - t0 >= .85 * warn && notes[notes.length - 1][3] - t0 < warn, `couvre l’avertissement (${warn} s)`);
     FP.assert(notes.every((c, i) => i === 0 || c[2] >= notes[i - 1][2]) && notes[notes.length - 1][2] > notes[0][2] + 8, 'monte');

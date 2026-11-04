@@ -13,6 +13,7 @@ Une entrée par version (voir `AGENTS.md`).
 - le plafond n'est ouvert qu'à la tête : chaque plan le ferme d'un bord à l'autre (les plaques tombées ne laissent qu'une niche), et la surface atteinte sans avoir transpercé la tête est une mort contre le boss ; on n'entre dans une salle que près de son milieu, d'où l'on a toujours le temps de passer dans l'autre moitié avant le coup ;
 - la graine rendue quitte le compteur pendant son vol et le remplit d'un éclat en arrivant ; la salle avertie tremble et son avertissement monte jusqu'au coup ; les tirs s'arrêtent sur le boss ; parois peintes une fois dans un calque ;
 - un combat complet par boss est joué par le banc (`dev/tests/bossfight.test.js`) à travers les vrais systèmes ;
+- retours de playtest, boss trop faciles : un cran de difficulté par boss (`config.boss.ramp`) — canaux resserrés à la main (52 px au boss 1, 49, 47, 44 au boss 4), coup de la défense plus long (0,9 → 1,1 s), repos plus court (1,3 → 0,9 s), accélération par cible plus forte (12 → 18 %), tirs plus rapides et plus serrés (440 px/s toutes les 2,6 s au boss 2, 520 toutes les 2 s au boss 4) ; à la Bétonneuse, la galerie des vannes est défendue (coulée de béton, trois sections) ;
 - banc : 606 tests.
 
 ## v5.0.0 — Obstacles PixelLab officiels
