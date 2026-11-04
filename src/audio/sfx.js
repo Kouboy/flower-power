@@ -63,7 +63,13 @@
     hit: (n, z, d) => { d('kick', 0, 1.4); z(0, .18, .1, 520, 'bandpass'); n('slap', 40, 0, .2, 1, .55); },
     acid: (n, z) => { z(0, .3, .09, 2400, 'highpass'); n('clav', 46, 0, .25, 2, .66); },
     crack: (n, z, d) => { z(0, .12, .12, 300, 'lowpass'); z(.05, .08, .08, 900, 'bandpass'); d('snare', .02, .6); },
-    // Boss : boss battu (impact et fanfare qui monte).
+    // Boss : explosion d'une cible, graine rendue, avertissement qui monte, clic de la visée figée, tir, explosion de la tête ; boss battu (impact et fanfare qui monte).
+    bossTarget: (n, z, d) => { d('kick', 0, 1.6); z(0, .5, .14, 900, 'lowpass'); n('sub', 33, 0, .45, 1.3); n('slap', 38, 0, .25, 1, .5); },
+    bossSeed: (n) => { n('bell', 76, .08, .14, .8); n('bell', 83, .16, .14, .9); n('bell', 88, .24, .35, 1); },
+    bossWarn: (n) => { for (let i = 0; i < 6; i++) n('organ', 52 + i * 2, i * .09, .12, .9 + i * .05); },
+    bossLock: (n, z) => { n('clav', 88, 0, .04, 1.3); z(0, .04, .1, 3200, 'highpass'); },
+    bossShot: (n, z) => { z(0, .16, .12, 1800, 'bandpass'); n('pluck', 60, 0, .1, 1, .5); },
+    bossHead: (n, z, d) => { d('kick', 0, 1.8); d('snare', .05, 1); z(0, .8, .16, 300, 'lowpass'); n('sub', 31, 0, .8, 1.5); for (const [m, at] of [[52, .1], [59, .18], [64, .26]]) n('brass', m, at, .3, 1.1); },
     bossDown: (n, z, d) => { d('kick', 0, 1.6); z(0, .4, .12, 350, 'lowpass'); n('sub', 33, 0, .5, 1.2); for (const [m, at] of [[64, .12], [71, .2], [76, .28], [83, .36]]) n('brass', m, at, .3, 1.1); n('bell', 88, .36, .6, .9); },
     ready: (n) => { n('organ', 52, 0, .3, 1.5); n('organ', 59, .12, .3, 1.3); },
     // Interface.

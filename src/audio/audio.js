@@ -1,5 +1,5 @@
 // audio/audio.js — chef d'orchestre du son (Web Audio, aucun fichier) : déblocage au premier geste, événements de la frame →
-// effets (FP.sfx) et musique (FP.music), pause quand l'onglet est caché.
+// effets (FP.sfx, dont les sons du boss : bossTarget, bossSeed, bossWarn, bossLock, bossShot, bossHead ; un assaut ne joue ni impact ni jingle de mort) et musique (FP.music), pause quand l'onglet est caché.
 // Lit     : les événements de la frame, state (via FP.sfx.drone et FP.music.update), FP.synth, FP.state.current.
 // Écrit   : rien dans l'état.
 // Expose  : FP.audio.consume(events, state, dt), FP.audio.sfx(name, intensity?), FP.audio.unlock(),
@@ -76,7 +76,9 @@
       case 'pickup': return FP.sfx.play(b, e.kind === 'water' ? 'water' : 'bud');
       case 'shieldBreak': return FP.sfx.play(b, 'shieldBreak');
       case 'bomb': return FP.sfx.play(b, 'bomb');
-      case 'death': FP.sfx.play(b, e.cause === 'solid' ? 'hit' : 'acid'); return FP.sfx.jingle(b, 'death');
+      case 'death': if (e.cause === 'assault') return;   // l'assaut : l'explosion de la cible (bossTarget) tient lieu de son, pas de jingle de mort
+        FP.sfx.play(b, e.cause === 'solid' ? 'hit' : 'acid'); return FP.sfx.jingle(b, 'death');
+      case 'bossTarget': case 'bossSeed': case 'bossWarn': case 'bossLock': case 'bossShot': case 'bossHead': return FP.sfx.play(b, e.type);
       case 'toxicEnter': return FP.sfx.play(b, 'contaminate');
       case 'bonusSpawn': case 'ready': return FP.sfx.play(b, 'ready');
       case 'bossDown': return FP.sfx.play(b, 'bossDown');

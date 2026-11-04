@@ -38,7 +38,7 @@
           // v3 : le lixiviat et la brûlure ajoutaient leur propre gerbe acide avant celle de la mort.
           if (e.cause === 'leak') burst(state, e.x, e.y, 'acid', 28);
           if (e.cause === 'toxic') burst(state, e.x, e.y, 'acid', 30);
-          burst(state, e.x, e.y, e.cause === 'solid' ? 'impact' : 'acid', 38);
+          burst(state, e.x, e.y, e.cause === 'solid' || e.cause === 'assault' ? 'impact' : 'acid', 38);   // v5.1.0 : l'assaut éclate en gerbe orange, pas en acide
           break;
         case 'bloom': clods(state, e.x); break;
         case 'blossom': burst(state, e.x, e.y, 'petal', Math.min(92, 58 + 12 * (e.bonus || 0))); break;

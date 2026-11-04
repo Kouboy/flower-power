@@ -3,7 +3,7 @@
 // Lit     : state.mode, state.time, state.plant.reserves, state.score.{eco,flowerBonus,combo}, state.run.{milieu,saison}, state.world.bossLevel, state.bossFight.{destroyed,headOpen}, FP.config.{plant.seeds,text.ready,milieux},
 //           FP.palette.{seed,boss}, FP.font, FP.px, FP.view.ui.
 // Écrit   : state.fx.ui.hud uniquement (animations : score affiché, graines perdues, rebonds).
-// Expose  : FP.hud.items(state) (… boss : { targets: [bool ×3] (vrai une fois détruite), head: 'armored' | 'open' }, ou null hors boss), FP.hud.layout(h) (purs, testés), FP.hud.draw(g, state) (toile d'interface), FP.hud.{MARGIN, SEED_SCALE, SEED_STEP}.
+// Expose  : FP.hud.items(state) (… boss : { targets: [bool ×3] (vrai une fois détruite), head: 'armored' | 'open' }, ou null hors boss), FP.hud.layout(h), FP.hud.seedCenter(i, h) (purs, testés), FP.hud.draw(g, state) (toile d'interface), FP.hud.{MARGIN, SEED_SCALE, SEED_STEP}.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
@@ -32,6 +32,9 @@
     const seedY = h - MARGIN - 7 * SEED_SCALE, scoreY = h - MARGIN - FP.font.HEIGHT * 2, comboY = scoreY - 11;
     return { seedY, scoreY, comboY, pollenY: seedY - 13, textY: comboY - 13 };
   }
+
+  // Centre de la graine i (pixels de la toile d'interface de hauteur h) : là où atterrit la graine rendue par un assaut (render/boss-fx.js).
+  const seedCenter = (i, h) => ({ x: MARGIN + i * SEED_STEP + 3 * SEED_SCALE, y: layout(h).seedY + 3.5 * SEED_SCALE });
 
   function memo(state, it) {
     const ui = state.fx.ui || (state.fx.ui = {});
@@ -107,5 +110,5 @@
     if (it.ready && Math.floor(t * 2) % 2 === 0) font.draw(g, FP.config.text.ready, w / 2, L.textY, { align: 'center' });
   }
 
-  FP.hud = { items, layout, draw, MARGIN, SEED_SCALE, SEED_STEP };
+  FP.hud = { items, layout, seedCenter, draw, MARGIN, SEED_SCALE, SEED_STEP };
 })();
