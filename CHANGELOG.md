@@ -10,8 +10,10 @@ Une entrée par version (voir `AGENTS.md`).
 - les défenses regardent la tige : avertissement long, coup sur la moitié de la salle où elle se trouvait, repos ; on les évite en se décalant, jamais en attendant (plus de loterie des pistons) ; à partir du boss 2, des tourelles visent la pointe, ligne de visée figée avant le tir ;
 - plus de points faibles effleurés, de couloir en zigzag, de trappe sous la pelouse ni de panneau de texte ; rendu provisoire en formes simples (les images viennent en v5.2.0) ;
 - outil de réglage `dev/boss.html` : les quatre plans à 360 et 440 px (parois, cibles, tête, plaques, salles, tourelles, trajets) ;
+- le plafond n'est ouvert qu'à la tête : chaque plan le ferme d'un bord à l'autre (les plaques tombées ne laissent qu'une niche), et la surface atteinte sans avoir transpercé la tête est une mort contre le boss ; on n'entre dans une salle que près de son milieu, d'où l'on a toujours le temps de passer dans l'autre moitié avant le coup ;
+- la graine rendue quitte le compteur pendant son vol et le remplit d'un éclat en arrivant ; la salle avertie tremble et son avertissement monte jusqu'au coup ; les tirs s'arrêtent sur le boss ; parois peintes une fois dans un calque ;
 - un combat complet par boss est joué par le banc (`dev/tests/bossfight.test.js`) à travers les vrais systèmes ;
-- banc : 596 tests.
+- banc : 606 tests.
 
 ## v5.0.0 — Obstacles PixelLab officiels
 

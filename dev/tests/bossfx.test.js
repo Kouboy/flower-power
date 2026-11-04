@@ -1,4 +1,4 @@
-// Rendu du boss (v5.1.0) : graine rendue, « +1 GRAINE », menaces lisibles, assaut = explosion, sons. Aides : bossRun (boss.test.js), recCtx (decor.test.js), auRun / withBackend / sounding (audio.test.js).
+// Rendu du boss (v5.1.0) : graine rendue, « +1 GRAINE », menaces lisibles, assaut = explosion, sons. Aides : bossRun, bossDirect (boss.test.js), recCtx (decor.test.js), auRun / withBackend / sounding (audio.test.js).
 const bfxRun = (milieu = 1) => { const s = bossRun(440, milieu); s.mode = 'playing'; s.camera.y = s.world.bossLevel.targets[0].solid.y - s.world.viewH / 2; s.time = 2; return s; };
 const bfxUi = (s) => ({ w: Math.round(s.world.width / FP.px.SCALE), h: Math.ceil(s.world.viewH / FP.px.SCALE) });
 // Espionne FP.font.draw (pas de toile sous Node) : les textes demandés, avec leur échelle.
@@ -145,7 +145,7 @@ const bfxBlitCtx = () => { const g = recCtx(); g.blits = []; g.drawImage = (img,
 
 FP.test('bossRender: parois, plaques et cibles dans un calque, recopié, refait après un assaut et à la génération', () => {
   const s = bfxRun(1), bl = s.world.bossLevel;
-  const direct = recCtx(); FP.bossRender.draw(direct, s);   // sans calque : tout en direct
+  const direct = recCtx(); bossDirect(() => FP.bossRender.draw(direct, s));   // sans calque : tout en direct
   bfxLayers(made => {
     const g = bfxBlitCtx(); FP.bossRender.draw(g, s);
     FP.assertEqual(made.length, 1, 'un calque');

@@ -30,7 +30,7 @@ src/
 │   ├── plant.js      ✅ croissance, pilotage, trace (prepare / launch / update)
 │   ├── difficulty.js ✅ difficulté en dents de scie d'après l'avancée dans les milieux (v4.13.0)
 │   ├── flow.js       ✅ morts (solide, lixiviat, brûlure toxique), exposition, éclosion, transitions (plus de messages texte : l'interface se déduit de l'état)
-│   ├── boss.js       ✅ le combat de boss (v5.1.0, FP.boss) : `state.bossFight` (cibles détruites, tête à nu), reset, assaut d’une cible, tête transpercée (`pierceHead`) ; update vide
+│   ├── boss.js       ✅ le combat de boss (v5.1.0, FP.boss) : `state.bossFight` (cibles détruites, tête à nu), reset, assaut d’une cible, tête transpercée (`pierceHead`)
 │   ├── boss-threats.js ✅ les défenses signature des salles de boss (v5.1.0, FP.bossThreats) : la pointe entre → avertissement long, coup sur sa moitié de la salle, repos ; `timing`, `roomAt` purs ; événements `bossWarn`, `bossStrike` ; tirs visés des boss 2 à 4 (`bossAim`, `bossLock`, `bossShot`)
 │   ├── camera.js     ✅ défilement, cadrage ×1,18 (zoomFrame, toScreen, toWorld), zoom de frôlement
 │   ├── graze.js      ✅ frôlement : suivi par objet, paiement à la sortie, annulation au contact, mesures du flyover
@@ -45,7 +45,7 @@ src/
 │   ├── sprites.js    ✅ chargement des PNG, FP.sprites.get(clé)
 │   ├── decor-tube.js  ✅ conduites usées (coudes, cassures, rouille, galeries effondrées) pour les décors enterrés (FP.decorTube)
 │   ├── decor-friche.js, decor-industrie.js, decor-decharge.js, decor-nucleaire.js ✅ décor de chaque milieu (v4.11.0) : astre et météo, horizon, accessoires de surface, décor enterré, petites animations (FP.decor[id], contrat commun)
-│   ├── boss.js       ✅ le boss provisoire (v5.1.0, FP.bossRender) : parois, cibles, tête, plaques en formes simples dessinées par le code
+│   ├── boss.js       ✅ le boss provisoire (v5.1.0, FP.bossRender) : parois, cibles, tête, plaques en formes simples dessinées par le code (pièces fixes dans un calque), menaces, salle avertie qui tremble
 │   ├── boss-fx.js    ✅ effets du combat de boss (v5.1.0, FP.bossFx) : explosions des cibles et de la tête, plaque qui tombe, graine rendue qui vole jusqu'au compteur du HUD avec « +1 GRAINE »
 │   ├── sky.js        ✅ ciel : bandes tramées de la nuance du niveau, puis le ciel et l'horizon du décor du milieu (deux caches)
 │   ├── soil.js       ✅ pelouse et trois strates tramées (humus, argile, pierre), détails clairsemés, accessoires et décor enterré du milieu, en cache ; petites animations du décor à l'écran

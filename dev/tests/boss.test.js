@@ -6,6 +6,8 @@ const bossRun = (W, milieu, seed = 7) => {
   return s;
 };
 const MILIEUX = ['friche', 'industrie', 'decharge', 'nucleaire'];
+// Dessin du boss sans calque (FP.px.layer → null, comme sous Node) : dans dev/check.html aussi, chaque pièce est peinte sur la toile reçue.
+const bossDirect = (fn) => { const saved = FP.px.layer; FP.px.layer = () => null; try { return fn(); } finally { FP.px.layer = saved; } };
 const worldPoly = (o) => o.collision.map(([x, y]) => [o.x + x, o.y + y]);
 
 FP.test('bossLevel: construit depuis le plan du milieu', () => {
@@ -163,7 +165,7 @@ FP.test('boss: victoire — bonus × saison, carton BOSS VAINCU, milieu suivant 
   FP.assertEqual(JSON.stringify(s.bossFight.destroyed), '[false,false,false]');
 });
 
-FP.test('bossRender: dessine chaque plan sans erreur ni écriture dans l’état', () => {
+FP.test('bossRender: dessine chaque plan sans erreur ni écriture dans l’état', () => bossDirect(() => {
   for (let milieu = 0; milieu < 4; milieu++) {
     const s = bossRun(440, milieu), bl = s.world.bossLevel;
     s.camera.y = bl.targets[0].solid.y - s.world.viewH / 2; s.time = 1.3;
@@ -175,7 +177,7 @@ FP.test('bossRender: dessine chaque plan sans erreur ni écriture dans l’état
     s.camera.y = s.world.bossLevel.head.solid.y - s.world.viewH / 2; FP.bossRender.draw(recCtx(), s);   // tête à nu, cibles détruites
   }
   FP.bossRender.draw(recCtx(), FP.state.createRun(3, { W: 440, H: 783 }));   // niveau normal : rien, sans erreur
-});
+}));
 
 FP.test('palette: les teintes du boss restent à 60 de toute teinte de danger', () => {
   const rgb = (h) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)), dist = (a, b) => Math.hypot(...rgb(a).map((v, i) => v - rgb(b)[i]));
