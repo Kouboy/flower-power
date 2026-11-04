@@ -197,3 +197,9 @@ FP.test('audio: l’avertissement monte sur toute sa durée, à chaque rythme', 
     FP.assert(notes.every((c, i) => i === 0 || c[2] >= notes[i - 1][2]) && notes[notes.length - 1][2] > notes[0][2] + 8, 'monte');
   });
 });
+
+FP.test('bossfx: la graine part de l’épave telle qu’elle était à l’écran, même si la caméra bouge pendant le vol', () => {
+  const s = bfxRun(); bfxAssault(s); s.time += .5;
+  const frame = () => { const g = recCtx(); const t = bfxTexts(() => FP.bossFx.drawUi(g, s)); return JSON.stringify([g.rects, t]); };
+  const a = frame(); s.camera.y += 400; FP.assertEqual(frame(), a, 'rien ne saute quand la caméra bouge (pousse suivante préparée)');
+});

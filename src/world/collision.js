@@ -27,7 +27,7 @@
 
   function querySolids(q, solids, x, y, headOpen) {
     for (const o of solids) {
-      if (o.off) continue;                                   // défense au repos, trappe ouverte
+      if (o.off) continue;                                   // défense au repos, cible détruite, plaque tombée, tête transpercée
       const band = grazeBand(o), br = o.broadR + band + FP.config.graze.broadPad;
       const dx = x - o.x, dy = y - o.y;
       if (dx * dx + dy * dy > br * br) continue;             // broad phase

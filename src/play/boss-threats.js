@@ -2,10 +2,11 @@
 // avertissement, puis un coup sur la moitié de la salle où elle se trouvait ; on l'évite en se déplaçant (la tige ne s'arrête jamais).
 // v5.1.0 (suite) : tirs visés — à partir du boss 2, une tourelle de la salle de la pointe la suit (ligne de visée), fige la ligne peu
 // avant de tirer, puis un projectile rapide part le long de la ligne figée : on l'évite en virant après le figement.
-// Lit     : state.{mode, flow.freeze, plant.tip, run.milieu, bossFight.destroyed}, state.world.{width,height,bossLevel.{rooms[].{x0,y0,x1,y1,zone,turrets},turrets[]}},
-//           FP.config.{boss.defense, boss.shot, boss.shooters, milieux}.
+// Lit     : state.{mode, flow.freeze, plant.tip, run.milieu, bossFight.destroyed}, state.world.{width,height,bossLevel.{rooms[].{x0,y0,x1,y1,zone,turrets},turrets[],walls,targets,plates,head}},
+//           FP.config.{boss.defense, boss.shot, boss.shooters, milieux}, FP.collision.distanceTo.
 // Écrit   : state.bossThreats.{aim: { turret, t, lockedAt: null | { x, y } } | null, cooldown (s), shots: [{ x, y, vx, vy, solid }]} ; solides 'shot'
-//           (octogone de rayon shot.r) ajoutés à state.world.solids tant que le tir vole, retirés à la sortie du cadre / mort / génération ;
+//           (octogone de rayon shot.r) ajoutés à state.world.solids tant que le tir vole, retirés à la sortie du cadre, dans une pièce du boss
+//           (paroi, cible, plaque ou tête qui n'est pas tombée), à la mort et à la génération ;
 //           state.bossThreats.rooms[id] = { stage: 'idle'|'warn'|'strike'|'rest', t, half: -1 (gauche) | 1 (droite) } (seul ; vidé par
 //           world/boss.js à chaque génération), la zone (solide 'defense') de chaque salle : off sauf pendant le coup, polygone = moitié visée ;
 //           state.events (bossWarn { room, half } à chaque avertissement, bossStrike { room, half } à chaque coup ; bossAim / bossLock / bossShot { turret } : le dessin et le son sont ailleurs).
@@ -61,6 +62,16 @@
     th.shots.splice(k, 1);
   }
 
+  // Un projectile s'arrête dans une pièce du boss (paroi, cible, plaque, tête) qui n'est pas tombée : il ne traverse rien.
+  function blocked(bl, x, y) {
+    const hit = (o) => !o.off && (x - o.x) * (x - o.x) + (y - o.y) * (y - o.y) <= o.broadR * o.broadR && FP.collision.distanceTo(o, x, y) <= 0;
+    if (hit(bl.head.solid)) return true;
+    for (const o of bl.walls) if (hit(o)) return true;
+    for (const t of bl.targets) if (hit(t.solid)) return true;
+    for (const p of bl.plates) if (hit(p.solid)) return true;
+    return false;
+  }
+
   function clearShots(state) {
     while (state.bossThreats.shots.length) dropShot(state, 0);
     state.bossThreats.aim = null;
@@ -80,7 +91,7 @@
     const cfg = FP.config.boss.shot, th = state.bossThreats, w = state.world;
     for (let i = th.shots.length - 1; i >= 0; i--) {
       const s = th.shots[i]; s.x += s.vx * dt; s.y += s.vy * dt; s.solid.x = s.x; s.solid.y = s.y;
-      if (s.x < -cfg.r || s.x > w.width + cfg.r || s.y < -cfg.r || s.y > w.height + cfg.r) dropShot(state, i);
+      if (s.x < -cfg.r || s.x > w.width + cfg.r || s.y < -cfg.r || s.y > w.height + cfg.r || blocked(bl, s.x, s.y)) dropShot(state, i);
     }
     th.cooldown = Math.max(0, th.cooldown - dt);
     if (!FP.config.boss.shooters.includes(FP.config.milieux[state.run.milieu].id)) return;

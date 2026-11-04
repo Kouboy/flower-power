@@ -260,3 +260,20 @@ FP.test('shots: avec plusieurs tourelles, la plus proche de la pointe vise', () 
   s.bossThreats.aim = null; far.x = first.x + 2; far.y = first.y + 2; s.bossThreats.cooldown = 0; thrStep(s);
   FP.assertEqual(s.bossThreats.aim && s.bossThreats.aim.turret, 'tourelle-test');
 });
+
+// Revue finale (v5.1.0) : un tir ne traverse ni paroi, ni cible, ni plaque, ni tête ; une pièce tombée ne l'arrête plus.
+FP.test('shots: un projectile qui entre dans une pièce du boss disparaît, pas dans une pièce tombée', () => {
+  const s = shotRun(1), r = shotRoom(s), bl = s.world.bossLevel, th = s.bossThreats; s.plant.tip = thrIn(r, .4);
+  for (let i = 0; i < 200 && !th.shots.length; i++) thrStep(s);
+  const sh = th.shots[0];
+  FP.assert(sh, 'un tir en vol'); thrStep(s); FP.assert(th.shots.includes(sh), 'il vole d’abord librement');
+  const into = (o) => {
+    th.shots = [sh]; if (!s.world.solids.includes(sh.solid)) s.world.solids.push(sh.solid);
+    sh.x = o.x - sh.vx / 60; sh.y = o.y - sh.vy / 60; th.aim = null; th.cooldown = 99;   // au centre de la pièce à la frame suivante
+    thrStep(s); return th.shots.includes(sh);
+  };
+  for (const o of [bl.walls[0], bl.targets[0].solid, bl.plates[0].solid, bl.head.solid]) {
+    FP.assert(!into(o), 'arrêté par ' + o.kind); FP.assert(!s.world.solids.includes(sh.solid), 'solide retiré (' + o.kind + ')');
+  }
+  bl.targets[1].solid.off = true; FP.assert(into(bl.targets[1].solid), 'une cible détruite ne l’arrête plus');
+});

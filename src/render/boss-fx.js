@@ -2,7 +2,7 @@
 // au compteur du HUD avec un gros « +1 GRAINE ».
 // Lit     : state.{events, time, camera.y, plant.reserves}, state.world.{viewH, width, bossLevel.plates} (solid, target), FP.palette.{boss,seed}, FP.px, FP.font, FP.hud.{seedCenter, SEED_SCALE},
 //           FP.bossRender.{fillPoly, artPoly}.
-// Écrit   : state.fx.boss uniquement { bursts, flights, plates } (effets horodatés avec state.time, éteints d'eux-mêmes).
+// Écrit   : state.fx.boss uniquement { bursts, flights (départ { from } en pixels de la toile d'interface, pris à l'assaut), plates } (effets horodatés avec state.time, éteints d'eux-mêmes).
 // Expose  : FP.bossFx.update(state) (une fois par frame, avant le dessin : events → effets), FP.bossFx.draw(g, state) (toile d'art, monde),
 //           FP.bossFx.drawUi(g, state) (toile d'interface : graine en vol, « +1 GRAINE », éclat sur le compteur),
 //           FP.bossFx.seedFlight(t, from, to) → { x, y, scale } (pur : de l'épave au compteur, en FLIGHT secondes), FP.bossFx.counter(state) → { x, y } (la graine rendue dans le HUD),
@@ -18,6 +18,9 @@
   const BOOM = { target: { life: .7, size: 1 }, head: { life: 1.05, size: 2 } }, PLATE_LIFE = .7, FALL = 260;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
+  // Point du monde → toile d'interface (pixels d'art, caméra du moment), gardé dans le cadre.
+  const onScreen = (state, p) => ({ x: FP.px.toArt(p.x), y: clamp(FP.px.toArt(p.y) - FP.px.toArt(state.camera.y), 12, Math.ceil(state.world.viewH / FP.px.SCALE) - 12) });
+
   const store = (state) => state.fx.boss || (state.fx.boss = { bursts: [], flights: [], plates: [] });
 
   // Événements de la frame → effets ; ceux qui ont fini sont retirés.
@@ -29,7 +32,7 @@
         const p = bl && bl.plates.find(q => q.target === e.i);
         if (p) fx.plates.push({ solid: p.solid, t0 });
       } else if (e.type === 'bossHead') fx.bursts.push({ x: e.x, y: e.y, t0, kind: 'head' });
-      else if (e.type === 'bossSeed') fx.flights.push({ x: e.x, y: e.y, t0 });
+      else if (e.type === 'bossSeed') fx.flights.push({ from: onScreen(state, e), t0 });   // départ figé à l'écran : la caméra peut bouger pendant le vol
     }
     const alive = (f, life) => state.time - f.t0 < life;
     fx.bursts = fx.bursts.filter(b => alive(b, BOOM[b.kind].life));
@@ -93,10 +96,9 @@
   function drawUi(g, state) {
     const fx = state.fx.boss;
     if (!fx || !fx.flights.length) return;
-    const font = FP.font, w = Math.ceil(state.world.width / FP.px.SCALE), h = Math.ceil(state.world.viewH / FP.px.SCALE), to = counter(state);
+    const font = FP.font, w = Math.ceil(state.world.width / FP.px.SCALE), to = counter(state);
     for (const f of fx.flights) {
-      const age = state.time - f.t0;
-      const from = { x: FP.px.toArt(f.x), y: clamp(FP.px.toArt(f.y) - FP.px.toArt(state.camera.y), 12, h - 12) };
+      const age = state.time - f.t0, from = f.from;
       if (age >= FLIGHT) {
         const k = (age - FLIGHT) / POP;
         FP.px.ring(g, to.x, to.y, Math.round(4 + 10 * k), k < .5 ? font.COLORS.gold : FP.palette.boss.weak[1], 2);

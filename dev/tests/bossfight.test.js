@@ -28,7 +28,7 @@ const dodge = (s, placed, p, goal) => {
   return p;
 };
 
-// Rend { stems, retries, minReserves, bosses, milieu, saison, mode } ; stems = pousses lancées, retries = mortes ailleurs que sur une cible.
+// Rend { stems, retries, minReserves, bosses, milieu, saison, mode, destroyed, headOpen } ; stems = pousses lancées, retries = mortes ailleurs que sur une cible.
 const playBossFight = (milieu) => {
   const s = bossRun(360, milieu), dt = 1 / 60, c = FP.config.plant.control, H = s.world.viewH;
   const placed = FP.bossPlan.toWorld(s.world.bossLevel.plan, s.world), ids = s.world.bossLevel.targets.map(t => t.id);
@@ -45,16 +45,16 @@ const playBossFight = (milieu) => {
       s.input = { ...s.input, down: true, touch: !!p.turn, key: false, active: true, x: p.x, screenX: p.turn > 0 ? s.world.width : 0, pressed: false,
         y: p.turn ? H : (c.lookAheadTop - look) / (c.lookAheadTop - c.lookAheadBottom) * H };
     } else s.input = { ...s.input, down: s.mode === 'ready', pressed: false, key: false, active: true, x: s.plant.seed.x, y: H / 2 };
-    const reservesBefore = s.plant.reserves, modeBefore = s.mode, destroyedBefore = bf.destroyed.filter(Boolean).length;
+    const modeBefore = s.mode, destroyedBefore = bf.destroyed.filter(Boolean).length;
     fightStep(s, dt);
     if (modeBefore === 'playing' && s.mode === 'dying' && s.bossFight.destroyed.filter(Boolean).length === destroyedBefore) out.retries++;
     out.minReserves = Math.min(out.minReserves, s.plant.reserves);
     if (s.mode === 'shop') skipShop(s);
     if (s.run.bosses > 0 && (s.mode === 'ready' || s.mode === 'won')) won = true;
     was = modeBefore;
-    if (reservesBefore < 0) break;
+    if (s.mode === 'over') break;   // partie perdue : le combat s'arrête là (les assertions le diront)
   }
-  Object.assign(out, { bosses: s.run.bosses, milieu: s.run.milieu, saison: s.run.saison, mode: s.mode, fight: JSON.stringify(s.bossFight) });
+  Object.assign(out, { bosses: s.run.bosses, milieu: s.run.milieu, saison: s.run.saison, mode: s.mode, destroyed: s.bossFight.destroyed.slice(), headOpen: s.bossFight.headOpen });
   return out;
 };
 
@@ -64,7 +64,7 @@ FP.test('bossFight: un combat complet par boss, de la première cible à la vict
     FP.assertEqual(r.bosses, 1, name + ' : boss vaincu ' + JSON.stringify(r));
     FP.assertEqual(r.milieu, next, name + ' : milieu suivant ' + JSON.stringify(r));
     FP.assertEqual(r.saison, m === 3 ? 2 : 1, name + ' : saison ' + JSON.stringify(r));
-    FP.assertEqual(r.fight, '{"destroyed":[false,false,false],"headOpen":false}', name + ' : combat remis à zéro');
+    FP.assert(r.destroyed.length === 3 && r.destroyed.every(d => d === false) && r.headOpen === false, name + ' : combat remis à zéro ' + JSON.stringify(r));
     FP.assert(r.stems >= 4 && r.stems <= 10, name + ' : ' + r.stems + ' pousses ' + JSON.stringify(r));
     FP.assert(r.minReserves > 0, name + ' : réserve à zéro ' + JSON.stringify(r));
     console.log('bossFight ' + name + ' : ' + JSON.stringify(r));
