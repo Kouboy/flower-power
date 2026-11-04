@@ -3,9 +3,10 @@
 //           FP.config.milieux, FP.palette.boss, FP.bossThreats.timing, FP.px (dont layer et blit).
 // Écrit   : rien dans l'état (la toile reçue ; un calque en cache, créé à la première utilisation).
 // Expose  : FP.bossRender.draw(g, state) — repère d'art, la caméra est appliquée ici ; rien hors niveau de boss ; fillPoly, artPoly (pour boss-fx.js).
-// Cible détruite (off) : épave sombre qui fume ; plaque tombée (off) : rien ; tête à nu (bossFight.headOpen) : lueur qui pulse ; tête transpercée (off) : épave.
+// Cible détruite (off) : épave sombre qui fume ; plaque tombée ou paroi effondrée (off) : rien ; tête à nu (bossFight.headOpen) : lueur qui pulse ; tête transpercée (off) : épave.
 // Calque (revue finale) : parois, plaques et cibles intactes (sans leur cœur qui pulse) sont peintes une fois, sur toute la hauteur du niveau,
-// puis recopiées ; le calque est refait à chaque génération et quand une cible ou une plaque change d'état. Sans DOM (sous Node), FP.px.layer
+// puis recopiées ; le calque est refait à chaque génération et quand une cible, une plaque ou une paroi (effondrée à la mort du boss : off,
+// plus dessinée) change d'état. Sans DOM (sous Node), FP.px.layer
 // vaut null : tout est peint en direct, de la même façon.
 // Avertissement d'une défense : la salle tremble (ses rangées du calque et ses tourelles, ± 1 pixel d'art en x).
 // Ne touche pas au DOM au chargement : chargeable dans dev/check.html.
@@ -91,13 +92,13 @@
 
   // shift(o) : décalage en x d'une pièce (le tremblement, en direct) ; seen(o) : pièce à peindre.
   function still(g, bl, M, cam, shift, seen) {
-    for (const o of bl.walls) if (seen(o)) wall(g, artPoly(o, cam, shift(o)), M);
+    for (const o of bl.walls) if (!o.off && seen(o)) wall(g, artPoly(o, cam, shift(o)), M);
     for (const tg of bl.targets) if (!tg.solid.off && seen(tg.solid)) targetBase(g, artPoly(tg.solid, cam, shift(tg.solid)), M);
     for (const p of bl.plates) if (!p.solid.off && seen(p.solid)) plate(g, artPoly(p.solid, cam, shift(p.solid)));
   }
 
   let cache = null, cachedLevel = null, cachedKey = '';
-  const keyOf = (bl, milieu) => milieu + ':' + bl.targets.map(t => +t.solid.off).join('') + bl.plates.map(p => +p.solid.off).join('');
+  const keyOf = (bl, milieu) => milieu + ':' + bl.targets.map(t => +t.solid.off).join('') + bl.plates.map(p => +p.solid.off).join('') + bl.walls.map(w => +w.off).join('');
 
   // Le calque du niveau (w × h pixels d'art, du haut du monde), refait si le niveau ou l'état d'une pièce a changé ; null sans DOM.
   function layerFor(state, bl, M) {

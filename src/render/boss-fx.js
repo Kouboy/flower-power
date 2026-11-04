@@ -1,7 +1,8 @@
-// render/boss-fx.js — les effets du combat de boss (v5.1.0) : explosion d'une cible et de la tête, graine qui revient au compteur du HUD
+// render/boss-fx.js — les effets du combat de boss (v5.1.0) : explosion d'une cible, de la tête et des parois à la mort du boss (bossBlast),
+// graine qui revient au compteur du HUD
 // avec un gros « +1 GRAINE ». Retours de playtest : le point faible détruit éclate (éclair blanc 2 images, éclats tirés de son polygone qui
 // retombent, gerbe d'étincelles et de jetons), sa plaque se détache en tournoyant et tombe.
-// Lit     : state.{events, time, camera.y, plant.reserves}, state.world.{viewH, width, bossLevel.{targets,plates}} (solid, target), FP.config.boss.hit,
+// Lit     : state.{events, time, camera.y, plant.reserves}, state.world.{viewH, width, bossLevel.{targets,plates,walls}} (solid, target), FP.config.boss.hit,
 //           FP.palette.{boss,seed,coin}, FP.px, FP.font, FP.hud.{seedCenter, SEED_SCALE}, FP.bossRender.{fillPoly, artPoly}.
 // Écrit   : state.fx.boss uniquement { bursts, flights (départ { from } en pixels de la toile d'interface, pris à l'assaut), plates, shards, sparks,
 //           flash: { t0, frames } | null } (effets horodatés avec state.time, éteints d'eux-mêmes ; l'éclair compte ses images).
@@ -19,7 +20,7 @@
   const FLIGHT = .9, POP = .25;                 // vol de la graine ; éclat à l'arrivée (s)
   const RISE = .35, LIFT = 14, START = 2, PEAK = 5;   // montée (part du vol), hauteur gagnée (px), taille au départ et au sommet (× pixel d'art)
   const LABEL = '+1 GRAINE', LABEL_SCALE = 3;
-  const BOOM = { target: { life: .7, size: 1.4 }, head: { life: 1.05, size: 2 } };
+  const BOOM = { target: { life: .7, size: 1.4 }, head: { life: 1.05, size: 2 }, blast: { life: .8, size: 1.2 } };
   const FLASH_FRAMES = 2, FLASH_MAX = .25;      // l'éclair : deux images, jamais plus d'un quart de seconde de jeu
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
@@ -64,6 +65,14 @@
     }
   }
 
+  // Mort du boss : une paroi explose — trois explosions, au centre et vers deux de ses coins, décalées d'un instant.
+  function blast(fx, state, e, t0) {
+    const w = state.world.bossLevel && state.world.bossLevel.walls[e.i];
+    if (!w) return;
+    const pts = worldPoly(w), a = pts[e.i % pts.length], b = pts[(e.i + Math.ceil(pts.length / 2)) % pts.length];
+    fx.bursts.push({ x: w.x, y: w.y, t0, kind: 'blast' }, { x: (w.x + a[0]) / 2, y: (w.y + a[1]) / 2, t0: t0 + .08, kind: 'blast' }, { x: (w.x + b[0]) / 2, y: (w.y + b[1]) / 2, t0: t0 + .16, kind: 'blast' });
+  }
+
   // Événements de la frame → effets ; ceux qui ont fini sont retirés. L'éclair perd une image à chaque frame.
   function update(state) {
     const fx = store(state), t0 = state.time, H = FP.config.boss.hit;
@@ -71,6 +80,7 @@
     for (const e of state.events) {
       if (e.type === 'bossTarget') hit(fx, state, e, t0);
       else if (e.type === 'bossHead') fx.bursts.push({ x: e.x, y: e.y, t0, kind: 'head' });
+      else if (e.type === 'bossBlast') blast(fx, state, e, t0);
       else if (e.type === 'bossSeed') fx.flights.push({ from: onScreen(state, e), t0 });   // départ figé à l'écran : la caméra peut bouger pendant le vol
     }
     const alive = (f, life) => state.time - f.t0 < life;
@@ -139,7 +149,10 @@
     for (const b of fx.bursts) burst(g, b, cam, t);
     for (const p of fx.shards) shard(g, p, cam, t, [P.weak[0], P.weak[1], P.boom[3]]);
     for (const p of fx.sparks) spark(g, p, cam, t);
-    if (fx.flash && t - fx.flash.t0 < FLASH_MAX) FP.px.rect(g, 0, 0, Math.ceil(state.world.width / FP.px.SCALE), Math.ceil(state.world.viewH / FP.px.SCALE), P.flash);
+    if (fx.flash && t - fx.flash.t0 < FLASH_MAX) {   // débordant d'un écran de chaque côté : le zoom de la caméra n'en montre jamais le bord
+      const w = Math.ceil(state.world.width / FP.px.SCALE), h = Math.ceil(state.world.viewH / FP.px.SCALE);
+      FP.px.rect(g, -w, -h, 3 * w, 3 * h, P.flash);
+    }
   }
 
   // Graine de k pixels par case (grille 6 × 8 du HUD), centrée sur (cx, cy).

@@ -15,7 +15,8 @@ Une entrée par version (voir `AGENTS.md`).
 - un combat complet par boss est joué par le banc (`dev/tests/bossfight.test.js`) à travers les vrais systèmes ;
 - retours de playtest, boss trop faciles : un cran de difficulté par boss (`config.boss.ramp`) — canaux resserrés à la main (52 px au boss 1, 49, 47, 44 au boss 4), coup de la défense plus long (0,9 → 1,1 s), repos plus court (1,3 → 0,9 s), accélération par cible plus forte (12 → 18 %), tirs plus rapides et plus serrés (440 px/s toutes les 2,6 s au boss 2, 520 toutes les 2 s au boss 4) ; à la Bétonneuse, la galerie des vannes est défendue (coulée de béton, trois sections) ;
 - point faible détruit bien plus spectaculaire : arrêt sur image puis ralenti d'une demi-seconde, éclair blanc, forte secousse, la cible éclate en éclats qui retombent, sa plaque se détache en tournoyant, gerbe d'étincelles et de jetons, explosion sonore à plusieurs couches ;
-- banc : 606 tests.
+- boss détruit : cinématique de 3,5 s au ralenti — la pousse se fige, les menaces se taisent, la musique coupe net ; explosions en chaîne de la tête vers les bords, chaque paroi se fissure puis s'effondre en gros morceaux ; au paroxysme, flash plein écran, jingle de victoire et pluie de jetons ; puis la pousse repart à travers les ruines et éclot ;
+- banc : 617 tests.
 
 ## v5.0.0 — Obstacles PixelLab officiels
 

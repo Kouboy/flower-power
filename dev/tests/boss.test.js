@@ -307,15 +307,16 @@ FP.test('boss: la tête blindée tue (une graine perdue, cause solid, kind head)
   FP.assertEqual(s.flow.overReason, FP.config.text.death.head);
 });
 
+const headGel = () => FP.config.boss.death.time * FP.config.boss.death.scale;   // la cinématique de mort du boss, en temps de jeu
 FP.test('boss: la tête à nu ne tue pas, elle s’ouvre et gèle l’image', () => {
   const s = headRun(true), h = s.world.bossLevel.head.solid; touchHead(s);
   FP.assertEqual(s.query.solid, null); FP.assertEqual(s.query.head, h);
   FP.flow.update(s, 0);
   FP.assertEqual(s.mode, 'playing'); FP.assertEqual(s.plant.reserves, 3);
-  FP.assertEqual(h.off, true); FP.assertEqual(s.flow.freeze, FP.config.boss.freeze);
+  FP.assertEqual(h.off, true); FP.assertEqual(s.flow.freeze, headGel());
   FP.assertEqual(s.events.filter(e => e.type === 'bossHead').length, 1);
   FP.assertEqual(s.events.filter(e => e.type === 'death').length, 0);
-  FP.assert(s.camera.shake >= FP.config.boss.assaultShake, 'secousse');
+  FP.assert(s.camera.shake >= FP.config.boss.death.shake, 'secousse');
   FP.collision.update(s); FP.flow.update(s, 0);
   FP.assertEqual(s.events.filter(e => e.type === 'bossHead').length, 1, 'une seule fois');
 });
@@ -331,11 +332,12 @@ FP.test('boss: rien ne bouge pendant le gel', () => {
   const s = headRun(true); touchHead(s); FP.flow.update(s, 0);
   const tip = { ...s.plant.tip }, trail = s.plant.trail.length, age = s.plant.stemAge;
   s.input = { ...s.input, down: true, active: true, x: tip.x, y: 300 };
-  for (let i = 0; i < 12; i++) { s.time += 1 / 60; FP.plant.update(s, 1 / 60); FP.flow.update(s, 1 / 60); }   // 0,2 s
+  const n = Math.ceil(headGel() * 60);
+  for (let i = 0; i < n >> 1; i++) { s.time += 1 / 60; FP.plant.update(s, 1 / 60); FP.flow.update(s, 1 / 60); }   // la moitié du gel
   FP.assertEqual(s.plant.tip.x, tip.x); FP.assertEqual(s.plant.tip.y, tip.y);
   FP.assertEqual(s.plant.trail.length, trail); FP.assertEqual(s.plant.stemAge, age);
   FP.assert(s.flow.freeze > 0, 'encore gelé');
-  for (let i = 0; i < 12; i++) { s.time += 1 / 60; FP.plant.update(s, 1 / 60); FP.flow.update(s, 1 / 60); }   // 0,4 s en tout
+  for (let i = n >> 1; i < n + 1; i++) { s.time += 1 / 60; FP.plant.update(s, 1 / 60); FP.flow.update(s, 1 / 60); }   // tout le gel
   FP.assertEqual(s.flow.freeze, 0);
   FP.plant.update(s, 1 / 60);
   FP.assert(s.plant.tip.y !== tip.y, 'la pousse repart');
@@ -344,7 +346,7 @@ FP.test('boss: rien ne bouge pendant le gel', () => {
 FP.test('boss: après la tête, la pousse éclot, bonus et milieu suivant', () => {
   const s = headRun(true), eco = s.score.eco, bosses = s.run.bosses;
   touchHead(s); FP.flow.update(s, 0);
-  advance(s, .4); FP.assertEqual(s.flow.freeze, 0);
+  advance(s, headGel() + .05); FP.assertEqual(s.flow.freeze, 0);
   s.plant.tip = { x: 220, y: s.world.surfaceY - 1 }; FP.collision.update(s); FP.flow.update(s, 0);
   FP.assertEqual(s.mode, 'bloom'); FP.assertEqual(s.run.bosses, bosses + 1);
   FP.assertEqual(s.score.eco - eco, FP.config.boss.bonus * s.run.saison);

@@ -10,12 +10,12 @@
 
   // Ordre de la spec §6. Chaque système expose update(state, dt) ; un système absent (pas encore porté) est sauté.
   // hazards avant collision (les limaces bougent avant la requête de pointe), camera en dernier (suit la pointe).
-  // flow (mort, éclosion, transitions) après le score, avant la caméra.
+  // flow (mort, éclosion, transitions) après le score, avant la caméra. boss (v5.1.0) : la cinématique de mort du boss, après ses menaces.
   // Les systèmes tournent dans tous les modes sauf 'splash' et 'menu' : chacun décide selon state.mode.
   // powerups après scoring : ramassage et bouclier interceptent un choc avant que flow ne décide d'une mort.
   // coinPlay (v4.5.0) après graze, avant scoring : une pièce relance le délai du combo avant qu'il ne s'écoule.
   // shop (v4.6.0) avant flow : à la fin du bon de commande, le déroulé reprend dans la même frame.
-  const UPDATE_ORDER = ['input', 'plant', 'hazards', 'bossThreats', 'collision', 'graze', 'coinPlay', 'scoring', 'powerups', 'shop', 'flow', 'camera'];
+  const UPDATE_ORDER = ['input', 'plant', 'hazards', 'bossThreats', 'boss', 'collision', 'graze', 'coinPlay', 'scoring', 'powerups', 'shop', 'flow', 'camera'];
 
   // Messages déjà signalés : une erreur qui se répète à chaque frame ne s'affiche qu'une fois (50 au plus).
   const reported = new Set();

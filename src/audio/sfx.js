@@ -11,7 +11,7 @@
   const SFX = { bus: 'sfx' };
 
   // Anti-rafale par type de son, propre à chaque moteur (une spore qui paie dix fois ne joue qu'un « kling »).
-  const GAPS = { grazeStart: .10, contaminate: .24, scrape: .032, letter: .02, type: .02 };
+  const GAPS = { bossBlast: .07, bossCrumble: .1, grazeStart: .10, contaminate: .24, scrape: .032, letter: .02, type: .02 };
   function allowed(b, kind) {
     const n = b.now(), cd = b.cooldowns || (b.cooldowns = {});
     if ((cd[kind] || 0) > n) return false;
@@ -76,6 +76,9 @@
     bossLock: (n, z) => { n('clav', 88, 0, .04, 1.3); z(0, .04, .1, 3200, 'highpass'); },
     bossShot: (n, z) => { z(0, .16, .12, 1800, 'bandpass'); n('pluck', 60, 0, .1, 1, .5); },
     bossHead: (n, z, d) => { d('kick', 0, 1.8); d('snare', .05, 1); z(0, .8, .16, 300, 'lowpass'); n('sub', 31, 0, .8, 1.5); for (const [m, at] of [[52, .1], [59, .18], [64, .26]]) n('brass', m, at, .3, 1.1); },
+    // Mort du boss : chaque paroi explose (coup sourd, souffle), puis s'effondre (grondement, ferraille qui tombe) ; le paroxysme lance le jingle (audio.js).
+    bossBlast: (n, z, d) => { d('kick', 0, 1.6); z(0, .5, .14, 500, 'lowpass'); n('sub', 33, 0, .4, 1.2, .8); n('clonk', 43, .02, .15, .7); },
+    bossCrumble: (n, z, d) => { z(0, .9, .1, 220, 'lowpass'); d('kick', .05, .9); for (let i = 0; i < 4; i++) n('clonk', 40 - i * 2, .08 + i * .09, .12, .6 - i * .1); },
     bossDown: (n, z, d) => { d('kick', 0, 1.6); z(0, .4, .12, 350, 'lowpass'); n('sub', 33, 0, .5, 1.2); for (const [m, at] of [[64, .12], [71, .2], [76, .28], [83, .36]]) n('brass', m, at, .3, 1.1); n('bell', 88, .36, .6, .9); },
     ready: (n) => { n('organ', 52, 0, .3, 1.5); n('organ', 59, .12, .3, 1.3); },
     // Interface.

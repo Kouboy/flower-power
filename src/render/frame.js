@@ -4,7 +4,7 @@
 // 3. L'interface (doigt, HUD, cri, titre, certificat) est dessinée dans la toile FP.view.ui, agrandie sans secousse ni zoom.
 // 4. Les outils de réglage et le fondu, à pleine résolution, par-dessus tout.
 // Lit     : state.world, state.camera.y, FP.view, FP.camera.zoomFrame,
-//           FP.view.art, FP.px.SCALE, state.flow.fade, FP.sky, FP.soil, FP.hazardsRender, FP.obstacles, FP.bossRender, FP.bossFx, FP.coinsRender, FP.powerupsRender, FP.plantRender, FP.flowersRender,
+//           FP.view.art, FP.px.SCALE, state.flow.fade, FP.sky, FP.soil, FP.hazardsRender, FP.obstacles, FP.bossRender, FP.bossFx, FP.bossDeath, FP.coinsRender, FP.powerupsRender, FP.plantRender, FP.flowersRender,
 //           FP.effects, FP.particles, FP.drillFx, FP.ui ; state.camera.shake (secousse) ; FP.perf, FP.flydebug (outils de réglage).
 // Écrit   : rien lui-même (le canvas) ; effects et particles, qu'il appelle, tiennent state.fx.
 // Expose  : FP.render.frame(state).
@@ -33,6 +33,8 @@
     FP.bossRender.draw(g, state);     // boss : parois, cibles, tête, plaques, menaces (rien hors niveau de boss)
     FP.bossFx.update(state);          // explosions, plaques qui tombent, graine rendue : nées des événements de la frame
     FP.bossFx.draw(g, state);
+    FP.bossDeath.update(state);       // mort du boss : fissures, parois qui s'effondrent, flash, pluie de jetons
+    FP.bossDeath.draw(g, state);
     FP.coinsRender.draw(g, state);    // pièces : devant les déchets, sous la tige
     if (perf) t = perf.mark('hazards', t);
     FP.powerupsRender.drawBonuses(g, state);

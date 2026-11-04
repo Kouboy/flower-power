@@ -182,11 +182,12 @@
 
     switch (state.mode) {
       case 'playing': {
+        if (f.freeze > 0) break;   // arrêt sur image (cinématique du boss) : la pousse figée ne meurt ni n'éclot
         const q = state.query, text = FP.config.text;
         // Niveau de boss : le plafond ne s'ouvre qu'à la tête ; la surface atteinte sans l'avoir transpercée est une paroi du boss.
         if (state.plant.tip.y <= state.world.surfaceY) { if (sealed(state)) die(state, 'solid', 'boss', text.death.boss); else bloom(state); }
         else if (q.target) assault(state, q.target);   // l'assaut prime sur une paroi touchée dans la même frame
-        else if (q.head) FP.boss.pierceHead(state);   // tête à nu : transpercée, la pousse continue (gel de l'image) ; prime sur une paroi touchée dans la même frame
+        else if (q.head) FP.boss.pierceHead(state);   // tête à nu : transpercée, cinématique de mort du boss, puis la pousse continue ; prime sur une paroi touchée dans la même frame
         else if (q.solid) die(state, 'solid', q.solid.kind, text.death[q.solid.kind] || text.deathDefault);
         else if (q.leak > 0) die(state, 'leak', null, text.deathLeak);
         else expose(state, dt);

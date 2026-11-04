@@ -2,7 +2,7 @@
 // avertissement, puis un coup sur la moitié de la salle où elle se trouvait ; on l'évite en se déplaçant (la tige ne s'arrête jamais).
 // v5.1.0 (suite) : tirs visés — à partir du boss 2, une tourelle de la salle de la pointe la suit (ligne de visée), fige la ligne peu
 // avant de tirer, puis un projectile rapide part le long de la ligne figée : on l'évite en virant après le figement.
-// Lit     : state.{mode, flow.freeze, plant.tip, run.milieu, bossFight.destroyed}, state.world.{width,height,bossLevel.{rooms[].{x0,y0,x1,y1,zone,turrets},turrets[],walls,targets,plates,head}},
+// Lit     : state.{mode, flow.freeze, world.bossLevel.head.solid.off, plant.tip, run.milieu, bossFight.destroyed}, state.world.{width,height,bossLevel.{rooms[].{x0,y0,x1,y1,zone,turrets},turrets[],walls,targets,plates,head}},
 //           FP.config.{boss.defense, boss.shot, boss.ramp[id].{strike,rest,speedup,shot}, milieux}, FP.collision.distanceTo.
 // Écrit   : state.bossThreats.{aim: { turret, t, lockedAt: null | { x, y } } | null, cooldown (s), shots: [{ x, y, vx, vy, solid }]} ; solides 'shot'
 //           (octogone de rayon shot.r) ajoutés à state.world.solids tant que le tir vole, retirés à la sortie du cadre, dans une pièce du boss
@@ -13,7 +13,8 @@
 // Expose  : FP.bossThreats.update(state, dt), FP.bossThreats.timing(destroyedCount, id) → { warn, strike, rest } (pur ; id : milieu du boss,
 //             coup, repos et accélération propres à chaque boss — config.boss.ramp —, avertissement commun),
 //           FP.bossThreats.roomAt(bossLevel, x, y) → salle | null (pur).
-// Hors niveau de boss, hors mode playing : tout repasse au repos ; pendant l'arrêt sur image (flow.freeze) rien ne progresse.
+// Hors niveau de boss, hors mode playing, et dès que la tête est transpercée (le boss meurt : sa cinématique, puis ses ruines) : tout repasse
+// au repos, visée et tirs effacés ; pendant l'arrêt sur image (flow.freeze) rien ne progresse.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
@@ -124,7 +125,7 @@
   function update(state, dt) {
     const bl = state.world.bossLevel;
     if (!bl) return;
-    if (state.mode !== 'playing') { quiet(state, bl); clearShots(state); return; }
+    if (state.mode !== 'playing' || bl.head.solid.off) { quiet(state, bl); clearShots(state); return; }
     if (state.flow.freeze > 0) return;
     const tip = state.plant.tip, tm = timing(state.bossFight.destroyed.filter(Boolean).length, bossId(state));
     for (const r of bl.rooms) {

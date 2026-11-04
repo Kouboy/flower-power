@@ -1,10 +1,11 @@
 // audio/music.js — direction musicale : quel morceau pour quel moment (milieu et boss du niveau), couches selon le jeu,
 // tempo selon la progression dans le milieu,
 // veille entre deux niveaux, baisses de volume (mort, fleur qui sort, frôlement), et pilotage du séquenceur.
-// Lit     : state.mode, state.run.step, state.bossFight.destroyed, FP.config.boss.tempoPerTarget, state.plant.{tip,corruption,toxicTimer,stemCount}, state.world.{surfaceY,height,milieu,boss},
+// Lit     : state.mode, state.run.step, state.bossFight.destroyed, FP.config.boss.tempoPerTarget, state.plant.{tip,corruption,toxicTimer,stemCount}, state.world.{surfaceY,height,milieu,boss,bossLevel.head.solid.off},
 //           state.graze.active, state.query.grazes, FP.certificate.canRestart, FP.songs, FP.sequencer.
 // Écrit   : rien dans l'état (le moteur audio uniquement).
-// Expose  : FP.music.{songFor (morceau du milieu du niveau, sa variante selon la pousse, thème du boss, reggae en boutique), layersFor,
+// Expose  : FP.music.{songFor (morceau du milieu du niveau, sa variante selon la pousse, thème du boss, reggae en boutique ; boss transpercé :
+//           silence coupé net, cut, le temps de son jingle de victoire), layersFor,
 //           tempoFor, relay (relais en fin de mesure ?), filterFor, trebleFor, grazeDuck} (purs, testés), FP.music.update(state, events, backend),
 //           FP.music.MUSIC_GAIN.
 (function () {
@@ -24,6 +25,8 @@
     // de boss, le thème du boss ; sinon une variante par pousse, en boucle : la nouvelle tige démarre sur sa propre progression.
     if (state.flow.won) return { song: 'title', gain: 1 };   // 4e boss battu : droit à l'écran de fin, sans repasser par la friche
     const id = state.world.milieu;
+    // Tête du boss transpercée (retours de playtest) : la musique coupe net ; le jingle de victoire (FP.sfx, bossPeak) éclate dans le silence.
+    if (state.world.boss && state.world.bossLevel && state.world.bossLevel.head.solid.off) return { song: null, gain: 0, cut: true };
     if (state.world.boss) return { song: id + 'Boss', gain: 1 };
     return { song: id + ((Math.max(1, state.plant.stemCount) - 1) % FP.songs.variants(id)), gain: 1 };
   }
@@ -72,7 +75,7 @@
     if (!backend || !state) return;
     const m = memoFor(backend), p = m.player, now = backend.now(), want = songFor(state);
     if (want.song !== p.current()) {
-      if (!want.song) p.stop(OUT_FADE);
+      if (!want.song) p.stop(want.cut ? 0 : OUT_FADE);
       else p.play(want.song, { fade: want.song === 'title' ? TITLE_FADE : 0, gain: want.gain, bpm: isGame(want.song) ? tempoFor(state) : 0,
         atBar: relay(p.current(), want.song) });   // variante suivante : relais en fin de mesure
     }
