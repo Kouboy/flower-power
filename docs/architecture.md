@@ -46,7 +46,7 @@ src/
 │   ├── decor-tube.js  ✅ conduites usées (coudes, cassures, rouille, galeries effondrées) pour les décors enterrés (FP.decorTube)
 │   ├── decor-friche.js, decor-industrie.js, decor-decharge.js, decor-nucleaire.js ✅ décor de chaque milieu (v4.11.0) : astre et météo, horizon, accessoires de surface, décor enterré, petites animations (FP.decor[id], contrat commun)
 │   ├── boss.js       ✅ le boss provisoire (v5.1.0, FP.bossRender) : parois, cibles, tête, plaques en formes simples dessinées par le code (pièces fixes dans un calque), menaces, salle avertie qui tremble
-│   ├── boss-fx.js    ✅ effets du combat de boss (v5.1.0, FP.bossFx) : explosions des cibles et de la tête, plaque qui tombe, graine rendue qui vole jusqu'au compteur du HUD avec « +1 GRAINE »
+│   ├── boss-fx.js    ✅ effets du combat de boss (v5.1.0, FP.bossFx) : explosions des cibles et de la tête ; point faible détruit : éclair blanc 2 images, éclats tirés de son polygone qui retombent, gerbe d'étincelles et de jetons, plaque qui tournoie en tombant ; graine rendue qui vole jusqu'au compteur du HUD avec « +1 GRAINE »
 │   ├── sky.js        ✅ ciel : bandes tramées de la nuance du niveau, puis le ciel et l'horizon du décor du milieu (deux caches)
 │   ├── soil.js       ✅ pelouse et trois strates tramées (humus, argile, pierre), détails clairsemés, accessoires et décor enterré du milieu, en cache ; petites animations du décor à l'écran
 │   ├── obstacles.js  ✅ sprites ramenés sur la grille (8 niveaux par canal, contour), ancrage tramé, enfouissement
@@ -115,7 +115,7 @@ L'état de la partie en cours est `FP.state.current`, créé par `FP.state.creat
   plant:  { seed, tip, dir, guide, trail, oldTrails, stemAge, stemCount, assaults, reserves, corruption, toxicTimer, recentToxic, scrapeTimer, cast, castRng, character },
   world:  { width, height, viewH, surfaceY, milieu, boss, bossLevel, skyVariant, lawnVariant, safePath, safeRadius, solids, toxics, leaks, bonuses, coins, chains },
   query:  { solid, target, head, danger, near, toxic, leak, leakHit, grazes },
-  flow:   { timer, stage, fade, overReason, blossom, next, won, freeze },
+  flow:   { timer, stage, fade, overReason, blossom, next, won, freeze, warp },   // warp : { stop, slow, scale } | null, arrêt sur image et ralenti (temps réel)
   bossThreats: { rooms: { [id]: { stage, t, half } }, shots: [{ x, y, vx, vy, solid }], aim: { turret, t, lockedAt } | null, cooldown },   // v5.1.0 : défenses des salles de boss (seul play/boss-threats.js l'écrit ; vidé par world/boss.js à chaque génération)
   bossFight: { destroyed, headOpen },   // v5.1.0 : une case par cible, gardée après une mort ; tête à nu ; remis à zéro par FP.boss.reset (seul play/boss.js l'écrit)
   garden: { flowers },
@@ -137,9 +137,9 @@ Un niveau est généré par `FP.level.startRun(state)` (tirage du T-Rex signatur
 
 `FP.loop.step(state, dt)` :
 
-1. `dt` plafonné à `config.loop.maxDt` (dt invalide → `fallbackDt`) ; `state.time += dt` ;
+1. `dt` plafonné à `config.loop.maxDt` (dt invalide → `fallbackDt`) ; puis passé par `FP.flow.warp(state, dt)` : 0 pendant un arrêt sur image, × `scale` pendant un ralenti (`state.flow.warp`, décompté en temps réel) ; `state.time += dt` (temps du jeu) ;
 2. dans tous les modes sauf `splash` et `menu`, `FP[nom].update(state, dt)` pour `input → plant → hazards → bossThreats → collision → graze → coinPlay → scoring → powerups → shop → flow → camera` (un système pas encore porté est sauté ; chacun décide selon `state.mode`). **Tout système expose `update(state, dt)`** : par exemple la requête de pointe vit dans `FP.collision.update` ;
-3. `FP.audio.consume(state.events, state, dt)` ;
+3. `FP.audio.consume(state.events, state, dt)` (dt réel : le son ne ralentit pas) ;
 4. `FP.render.frame(state)` ;
 5. `state.events` est vidé.
 
@@ -193,6 +193,7 @@ Spec `docs/superpowers/specs/2026-10-31-boss-refonte-design.md` (remplace le mot
 Défenses (`play/boss-threats.js`, `state.bossThreats`) : chaque salle a une zone (`room.zone`, solide `kind: 'defense'`, `off` hors coup, dans `world.solids`). Quand la pointe entre dans une salle : `warn` (1,2 s, événement `bossWarn { room, half }`, moitié = celle de la pointe à cet instant) → `strike` (`bossStrike`, la zone couvre exactement cette moitié, cause de mort `solid`/`defense`) → `rest` → `warn` si la pointe est encore là, sinon `idle`. Un cran de difficulté par boss (retours de playtest, `config.boss.ramp[milieu]`, du boss 1 au boss 4) : coup de 0,9 à 1,1 s, repos de 1,3 à 0,9 s, chaque cible détruite raccourcit les durées de 12 à 18 %, canaux des plans de 52 à 44 px (à 360 px) ; l'avertissement reste 1,2 s, jamais sous 1 s (`config.boss.defense`) ; `FP.bossThreats.timing(n, milieu)`. À la Bétonneuse, la galerie des vannes est défendue en trois sections (une par vanne, centrée sur le débouché de sa meurtrière). Pointe sortie pendant `warn` : aucun coup. Rien ne progresse pendant `flow.freeze` ; hors mode `playing` tout repasse au repos.
 Tirs visés (même module ; seulement si le boss a des tirs, `config.boss.ramp[milieu].shot`, donc pas à la Bétonneuse) : une seule visée à la fois, par la tourelle la plus proche de la pointe dans sa salle (`bossAim { turret }`). La visée suit la pointe `shot.track` (1 s), la ligne se fige `shot.lock` (0,3 s) avant la fin (`bossLock`, `aim.lockedAt` = pointe à cet instant), puis un projectile part de la tourelle vers ce point à `ramp[milieu].shot.speed` px/s (440 à 520 du boss 2 au boss 4, `bossShot`). Le projectile est un solide `kind: 'shot'` (octogone de rayon `shot.r`) dans `world.solids`, mortel (« touchée par un tir »), retiré à la sortie du cadre, dans une paroi, une cible, une plaque ou la tête (pas tombées), à la mort et à la génération. `cooldown` (`ramp[milieu].shot.gap`, de 2,6 à 2 s) court après chaque tir ; pas de nouvelle visée tant qu'il court, pendant le `strike` de la salle, ni pointe hors des salles ; pointe sortie de la salle en visée : visée annulée sans tir.
 
+Point faible détruit (retours de playtest, `config.boss.hit`) : à l'assaut, `flow` arme `flow.warp` (arrêt sur image 0,08 s puis ralenti 0,5 s à 40 %, le jeu reprend sa vitesse en moins d'1 s ; la mort de la pousse suit son cours au temps du jeu), forte secousse (`assaultShake` .45), son FM à plusieurs couches.
 Le rendu (`render/boss.js`, `render/boss-fx.js`) est provisoire : formes simples dessinées par le code, aux couleurs de `FP.palette.boss` ; parois, plaques et cibles intactes peintes une fois dans un calque (`FP.px.layer`, refait à la génération et quand une cible ou une plaque change d'état), hachures des défenses (la salle avertie tremble d'un pixel), lignes de visée et tirs, tête transpercée en épave (`render/boss.js`), explosions (`render/boss-fx.js`) lisibles (les vraies images viendront en v5.2.0) ; la graine rendue vole jusqu'au compteur du HUD avec « +1 GRAINE » (`FP.hud.seedCenter`) : sa case reste vide pendant le vol (`FP.bossFx.flying`) et se remplit d'un éclat à l'arrivée ; le HUD montre aussi trois icônes de cibles et une de tête (blindée, à nu).
 
 Vérifier : `dev/boss.html` (serveur statique, ou double-clic) affiche les quatre plans à 360 et 440 px ; `dev/tests/bossfight.test.js` joue un combat complet par boss à travers les vrais systèmes (une tige pilotée par cible puis vers la tête, esquive des défenses) jusqu'à la victoire et au milieu suivant.

@@ -97,7 +97,7 @@
 
   // Boss provisoire (v5.1.0, render/boss.js, ui/hud.js) : blocs par milieu (corps, reflet, ombre, contour, rivet), plus ce qui est commun.
   // weak : blanc-jaune incandescent réservé aux cibles et à la tête à nu (aucun décor, aucun obstacle ne l'emploie) ; plate : blindage de la tête
-  // (tôle claire, contour) ; glow : lueur de la tête à nu ; smoke : fumée des cibles détruites ; hole : leur épave ; hatch, aim, shot, boom : menaces et explosions.
+  // (tôle claire, contour) ; glow : lueur de la tête à nu ; smoke : fumée des cibles détruites ; hole : leur épave ; hatch, aim, shot, boom, flash : menaces, explosions et éclair.
   const boss = {
     milieux: {
       friche: { body: '#6e6b66', light: '#8d8a84', dark: '#43403c', edge: '#24211f', rivet: '#b4b0a8' },
@@ -108,7 +108,8 @@
     weak: ['#ffff80', '#ffe838'], plate: ['#d8c8a0', '#14100a'],
     glow: ['#e86a28', '#ff9a3a'], smoke: ['#5a5650', '#8a867e'], hole: '#0c0806',
     // Menaces (render/boss.js) : hachures orange de la défense, ligne de visée qui suit puis figée, projectile ; explosions (render/boss-fx.js).
-    hatch: ['#ff9a3a', '#e86a28'], aim: ['#ffb060', '#ff3a2a'], shot: ['#ff3a2a', '#ffff80'], boom: ['#fff8b0', '#ffff80', '#ffe838', '#ff9a3a', '#e86a28']
+    hatch: ['#ff9a3a', '#e86a28'], aim: ['#ffb060', '#ff3a2a'], shot: ['#ff3a2a', '#ffff80'], boom: ['#fff8b0', '#ffff80', '#ffe838', '#ff9a3a', '#e86a28'],
+    flash: '#f8ffd0'   // éclair du point faible détruit (render/boss-fx.js) : presque blanc, chaud, loin du rose pâle des limaces
   };
 
   // Teinte de terre du milieu id à une profondeur relative d (0 = surface, 1 = fond) ; k de 0 (claire) à 3 (sombre).

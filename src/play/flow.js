@@ -1,10 +1,11 @@
 // play/flow.js — déroulé de partie : mort, éclosion, transitions, fin de partie.
 // Lit     : state.mode, state.query.{solid,target,head,leak,toxic}, state.plant, state.input.pressed, state.events, state.rng, state.boosts.filter, state.world.{surfaceY,width,bossLevel.{targets,head.solid.off}},
-//           FP.config.{flow,text,toxic,garden,soil,boss,run,milieux}, FP.difficulty.level.
-// Écrit   : state.mode, state.flow (dont freeze : décompté ici), state.run (seul à l'écrire : milieu, pousses, boss, saison, carton, avance du pollen, playtest terminé), state.difficulty, state.garden.flowers (création, croissance, remise à zéro au milieu suivant), state.plant.{reserves,assaults,oldTrails,corruption,toxicTimer,recentToxic}, state.score.flowers,
+//           FP.config.{flow,text,toxic,garden,soil,boss (dont hit : arrêt et ralenti du point faible),run,milieux}, FP.difficulty.level.
+// Écrit   : state.mode, state.flow (dont freeze : décompté ici ; warp = { stop, slow, scale } | null : arrêt sur image puis ralenti, en s de temps réel, décompté par warp), state.run (seul à l'écrire : milieu, pousses, boss, saison, carton, avance du pollen, playtest terminé), state.difficulty, state.garden.flowers (création, croissance, remise à zéro au milieu suivant), state.plant.{reserves,assaults,oldTrails,corruption,toxicTimer,recentToxic}, state.score.flowers,
 //           state.level, state.camera.shake, state.score.eco et state.events (death, bloom, blossom, toxicEnter, ready, bossDown) ; appelle FP.level.generate, FP.plant.prepare/launch,
 //           FP.scoring.awardFlat (bonus du boss), FP.boss.destroy (assaut d'une cible), FP.boss.pierceHead (tête à nu) et FP.boss.reset (milieu suivant).
-// Expose  : FP.flow.update(state, dt), FP.flow.simplifyTrail(points, minStep), FP.flow.afterShop(state, after) (fin du bon de commande),
+// Expose  : FP.flow.update(state, dt), FP.flow.warp(state, dt) → dt du jeu (appelé par la boucle avec le dt réel : 0 pendant l'arrêt, × scale pendant le ralenti),
+//           FP.flow.simplifyTrail(points, minStep), FP.flow.afterShop(state, after) (fin du bon de commande),
 //           FP.flow.continueAfterWin(state) (écran de fin → saison suivante).
 //           Entre deux pousses (et après la dernière mort), FP.shop.open ouvre le bon de commande (mode shop). Les textes à l'écran sont l'affaire de ui/*.
 // Porté de la v3.43.16 (die, bloom, transitions de update()) ; éclosion visuelle et fondu : étape 6.
@@ -105,8 +106,11 @@
 
   // Assaut (v5.1.0) : la pointe a touché une cible intacte. Même mort que die (le minuteur de mort fait la suite), mais la graine
   // est rendue : la réserve ne baisse pas, donc jamais de dernière chance ; la tige n'est pas comptée comme sacrifiée.
+  // Point faible détruit (retours de playtest) : arrêt sur image puis ralenti, le temps que l'explosion se voie.
   function assault(state, target) {
+    const H = FP.config.boss.hit;
     state.plant.assaults += 1;
+    state.flow.warp = { stop: H.stop, slow: H.slow, scale: H.scale };
     FP.boss.destroy(state, state.world.bossLevel.targets.findIndex(t => t.solid === target));
     enterDying(state, { cause: 'assault', kind: 'target' }, '');
   }
@@ -209,6 +213,16 @@
     }
   }
 
+  // Temps du jeu pour dt secondes réelles : rien pendant l'arrêt sur image, scale pendant le ralenti, puis tout.
+  function warp(state, dt) {
+    const w = state.flow.warp;
+    if (!w) return dt;
+    if (w.stop > 0) { w.stop -= dt; return 0; }
+    if (w.slow > 0) { w.slow -= dt; return dt * w.scale; }
+    state.flow.warp = null;
+    return dt;
+  }
+
   // Fin du bon de commande : on reprend là où la pousse s'était arrêtée.
   function afterShop(state, after) {
     if (after === 'last') {
@@ -237,5 +251,5 @@
     if (p.germ >= 1) { state.events.push({ type: 'germPop', x: p.seed.x, y: p.seed.y }); state.run.card = null; FP.plant.launch(state); }
   }
 
-  FP.flow = { update, simplifyTrail, afterShop, continueAfterWin };
+  FP.flow = { update, warp, simplifyTrail, afterShop, continueAfterWin };
 })();

@@ -232,14 +232,18 @@
     // Boss (v5.1.0) : niveau construit depuis le plan du milieu (assets/boss/plans.js, world/boss.js).
     // top / bottom : zone du boss, de surfaceY + top à height - bottom ; toxics : nappes au plus, aux emplacements du plan.
     // targetBonus / bonus : points par cible détruite / par boss vaincu ; tempoPerTarget : BPM du thème par cible détruite ;
-    // assaultShake : secousse d'un assaut ; freeze : arrêt sur image de l'assaut final (s).
+    // assaultShake : secousse d'un assaut (forte : le point faible détruit) ; freeze : arrêt sur image de l'assaut final (s).
+    // hit (retours de playtest) : point faible détruit — arrêt sur image (stop) puis ralenti (slow), en s de temps réel, le jeu avançant à scale ;
+    // shards / shardLife : éclats de la cible (nombre, durée en s) ; plateLife : la plaque qui tournoie en tombant (s) ; sparks : étincelles et
+    // jetons de la gerbe ; gravity : leur chute (px/s²).
     // ramp (retours de playtest) : un cran de difficulté par boss, du boss 1 (friche) au boss 4 (nucléaire) — channelMin : largeur minimale
     // d'un canal de son plan, en px de monde à 360 px de large (× W / 360 ailleurs) ; strike, rest : coup et repos de la défense (s) ;
     // speedup : accélération par cible détruite ; shot : vitesse (px/s) et espacement (s) des tirs visés, null sans tourelles.
     // defense : avertissement (s) et son plancher, communs à tous les boss ; shot : suivi de la visée, ligne figée avant le tir (s), rayon du projectile.
     boss: {
       top: 70, bottom: 160, toxics: 2,
-      targetBonus: 200, bonus: 1500, tempoPerTarget: 6, assaultShake: .3, freeze: .35,
+      targetBonus: 200, bonus: 1500, tempoPerTarget: 6, assaultShake: .45, freeze: .35,
+      hit: { stop: .08, slow: .5, scale: .4, shards: 14, shardLife: 1.1, plateLife: 1, sparks: 24, gravity: 640 },
       ramp: {
         friche: { channelMin: 52, strike: .9, rest: 1.3, speedup: .12, shot: null },
         industrie: { channelMin: 49, strike: .97, rest: 1.17, speedup: .14, shot: { speed: 440, gap: 2.6 } },

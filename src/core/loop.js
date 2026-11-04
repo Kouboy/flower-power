@@ -1,6 +1,6 @@
 // core/loop.js — boucle principale, ordre fixe d'une frame.
-// Lit     : FP.config.loop, FP.state.current, les modules FP.<système> présents, FP.perf (?perf=1).
-// Écrit   : state.time, vide state.events en fin de frame.
+// Lit     : FP.config.loop, FP.state.current, les modules FP.<système> présents, FP.flow.warp (arrêt sur image et ralenti), FP.perf (?perf=1).
+// Écrit   : state.time (temps du jeu : ralenti par FP.flow.warp), vide state.events en fin de frame.
 // Expose  : FP.loop.UPDATE_ORDER, FP.loop.step(state, rawDt), FP.loop.start().
 // Mise à jour, son et rendu sont gardés séparément : une erreur dans l'un est signalée une fois en console
 // et n'empêche pas les autres (l'image continue d'être dessinée, la partie de tourner).
@@ -29,10 +29,11 @@
 
   function step(state, rawDt) {
     const { maxDt, fallbackDt } = FP.config.loop;
-    const dt = Number.isFinite(rawDt) && rawDt > 0 ? Math.min(rawDt, maxDt) : fallbackDt;
+    const real = Number.isFinite(rawDt) && rawDt > 0 ? Math.min(rawDt, maxDt) : fallbackDt;
+    const dt = FP.flow && FP.flow.warp ? FP.flow.warp(state, real) : real;   // systèmes et rendu au temps du jeu ; le son au temps réel
     state.time += dt;
     const perf = FP.perf;
-    let t = perf && perf.begin(dt);
+    let t = perf && perf.begin(real);
 
     if (state.mode !== 'menu' && state.mode !== 'splash') {
       guard('mise à jour', () => {
@@ -41,7 +42,7 @@
         }
       });
     }
-    if (FP.audio) guard('son', () => FP.audio.consume(state.events, state, dt));
+    if (FP.audio) guard('son', () => FP.audio.consume(state.events, state, real));
     if (perf) t = perf.mark('update', t);
     if (FP.render) guard('rendu', () => FP.render.frame(state));
     if (perf) perf.mark('render', t);

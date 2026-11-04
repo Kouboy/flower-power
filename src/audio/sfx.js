@@ -63,8 +63,14 @@
     hit: (n, z, d) => { d('kick', 0, 1.4); z(0, .18, .1, 520, 'bandpass'); n('slap', 40, 0, .2, 1, .55); },
     acid: (n, z) => { z(0, .3, .09, 2400, 'highpass'); n('clav', 46, 0, .25, 2, .66); },
     crack: (n, z, d) => { z(0, .12, .12, 300, 'lowpass'); z(.05, .08, .08, 900, 'bandpass'); d('snare', .02, .6); },
-    // Boss : explosion d'une cible, graine rendue, avertissement qui monte, clic de la visée figée, tir, explosion de la tête ; boss battu (impact et fanfare qui monte).
-    bossTarget: (n, z, d) => { d('kick', 0, 1.6); z(0, .5, .14, 900, 'lowpass'); n('sub', 33, 0, .45, 1.3); n('slap', 38, 0, .25, 1, .5); },
+    // Boss : explosion d'une cible (retours de playtest : bien plus grosse — double coup sourd, souffle grave, déchirure aiguë, ferraille,
+    // basse qui s'effondre, grondement qui traîne), graine rendue, avertissement qui monte, clic de la visée figée, tir, explosion de la tête ; boss battu (impact et fanfare qui monte).
+    bossTarget: (n, z, d) => {
+      d('kick', 0, 1.9); d('snare', .02, 1.3); d('kick', .16, 1.4);
+      z(0, 1, .2, 700, 'lowpass'); z(.02, .3, .12, 2800, 'bandpass'); z(.14, 1.2, .1, 240, 'lowpass');
+      n('sub', 31, 0, 1, 1.6, .8); n('slap', 38, 0, .3, 1.1, .5); n('clonk', 45, .03, .2, 1); n('clonk', 41, .09, .2, .8);
+      n('lowbrass', 40, .04, .7, 1.2, .7); n('lowbrass', 35, .1, .8, 1.1, .7); n('organ', 28, .12, 1.1, 1.2, .8); n('bell', 84, .02, .4, .6, .6);
+    },
     bossSeed: (n) => { n('bell', 76, .08, .14, .8); n('bell', 83, .16, .14, .9); n('bell', 88, .24, .35, 1); },
     bossWarn: (n, z, d, dur) => { for (let at = 0; at < dur - .06; at += .16 - .1 * at / dur) { const k = at / dur; n('organ', 52 + Math.round(16 * k), at, .1, .8 + .5 * k); } },   // dur : l'avertissement (s), qui monte et accélère jusqu'au coup
     bossLock: (n, z) => { n('clav', 88, 0, .04, 1.3); z(0, .04, .1, 3200, 'highpass'); },
