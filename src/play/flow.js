@@ -1,5 +1,5 @@
 // play/flow.js — déroulé de partie : mort, éclosion, transitions, fin de partie.
-// Lit     : state.mode, state.query.{solid,target,head,leak,toxic}, state.plant, state.input.pressed, state.events, state.rng, state.boosts.filter, state.world.{surfaceY,width,bossLevel.{targets,head.solid.off}},
+// Lit     : state.mode, state.query.{solid,target,head,leak,toxic} (et pops, via FP.leakPop), state.plant, state.input.pressed, state.events, state.rng, state.boosts.filter, state.world.{surfaceY,width,bossLevel.{targets,head.solid.off}},
 //           FP.config.{flow,text,toxic,garden,soil,boss (dont hit : arrêt et ralenti du point faible),run,milieux}, FP.difficulty.level.
 // Écrit   : state.mode, state.flow (dont freeze : décompté ici ; warp = { stop, slow, scale } | null : arrêt sur image puis ralenti, en s de temps réel, décompté par warp), state.run (seul à l'écrire : milieu, pousses, boss, saison, carton, avance du pollen, playtest terminé), state.difficulty, state.garden.flowers (création, croissance, remise à zéro au milieu suivant), state.plant.{reserves,assaults,oldTrails,corruption,toxicTimer,recentToxic}, state.score.flowers,
 //           state.level, state.camera.shake, state.score.eco et state.events (death, bloom, blossom, toxicEnter, ready, bossDown) ; appelle FP.level.generate, FP.plant.prepare/launch,
@@ -184,6 +184,7 @@
       case 'playing': {
         if (f.freeze > 0) break;   // arrêt sur image (cinématique du boss) : la pousse figée ne meurt ni n'éclot
         const q = state.query, text = FP.config.text;
+        FP.leakPop.update(state);   // bière : les limaces touchées éclatent, ce n'est pas une mort
         // Niveau de boss : le plafond ne s'ouvre qu'à la tête ; la surface atteinte sans l'avoir transpercée est une paroi du boss.
         if (state.plant.tip.y <= state.world.surfaceY) { if (sealed(state)) die(state, 'solid', 'boss', text.death.boss); else bloom(state); }
         else if (q.target) assault(state, q.target);   // l'assaut prime sur une paroi touchée dans la même frame

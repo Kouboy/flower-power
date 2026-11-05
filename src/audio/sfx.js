@@ -61,6 +61,7 @@
     shieldBreak: (n, z) => { z(0, .18, .08, 3500, 'highpass'); n('bell', 82, 0, .15, 1, .6); n('pluck', 57, .04, .12, .8); },
     contaminate: (n, z) => { n('organ', 40, 0, .3, 1.4, .7); z(0, .25, .05, 1700, 'bandpass', 3); },
     hit: (n, z, d) => { d('kick', 0, 1.4); z(0, .18, .1, 520, 'bandpass'); n('slap', 40, 0, .2, 1, .55); },
+    burp: (n, z) => { n('lowbrass', 43, 0, .22, 1.1, .6); n('organ', 50, .03, .12, .6, .5); z(0, .2, .05, 500, 'bandpass', 2); },   // rot de la limace saoule qui éclate (v5.2.0)
     acid: (n, z) => { z(0, .3, .09, 2400, 'highpass'); n('clav', 46, 0, .25, 2, .66); },
     crack: (n, z, d) => { z(0, .12, .12, 300, 'lowpass'); z(.05, .08, .08, 900, 'bandpass'); d('snare', .02, .6); },
     // Boss : explosion d'une cible (retours de playtest : bien plus grosse — double coup sourd, souffle grave, déchirure aiguë, ferraille,

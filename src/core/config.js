@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '5.1.0',
+    version: '5.2.0',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -268,6 +268,7 @@
     shop: {
       salt: 0x5f3759df, promo: .5,   // le bon s'ouvre avant chaque boss (et toujours en dernière chance) : play/flow.js
       lobbyingK: .6, compostK: .8, beerK: .3, premiumK: 2,
+      beerSway: 6, beerSwayHz: 2.2, popEco: 150,   // Bière (v5.2.0) : tangage latéral des limaces (px, Hz) ; ÉcoCrédits™ d'une limace qui éclate
       magnetRange: 110, magnetSpeed: 140, magnetAccel: 900,   // Aimant : portée (px), vitesse de départ et accélération (px/s, px/s²) des jetons aspirés
       inTime: .25, stampTime: .35, outTime: .3,
       items: [
@@ -315,6 +316,7 @@
       pressStart: 'PRESS TO START',   // écran d'accueil figé, clin d'œil Mega Drive
       record: 'Record :', saison: 'saison',   // titre (v4.9.0) : progression la plus lointaine
       chain: ['KARMA !', 'GREEN !', '0 DÉCHET !'],   // cri du chapelet complet (v4.5.0), tiré au hasard
+      pop: 'SANTÉ !',   // petit cri d'une limace qui éclate (v5.2.0, ui/cheer.js)
       // Bon de commande (v4.6.0).
       shop: {
         title: 'BON DE COMMANDE', from: 'ÉCO-BOUTIQUE · N° ', last: 'DERNIÈRE CHANCE !', order: 'COMMANDER', decline: 'NON MERCI',
@@ -323,7 +325,7 @@
         names: { seed: 'GRAINE BIO™', membrane: 'MEMBRANE ORGANIQUE', magnet: 'AIMANT À JETONS', premium: 'JETONS PREMIUM',
           compost: 'COMPOST LENT', spore: 'SPORE DE DÉPART', filter: 'FILTRE À CHARBON', beer: 'BIÈRE ANTI-LIMACES', lobbying: 'LOBBYING' },
         lines: { seed: 'une de plus', membrane: 'un choc offert', magnet: 'ramassage ×2', premium: 'jetons ×2',
-          compost: 'pousse ×0,8', spore: 'ça déblaie', filter: 'nappes inertes', beer: 'elles trinquent', lobbying: '-40 % déchets' }
+          compost: 'pousse ×0,8', spore: 'ça déblaie', filter: 'nappes inertes', beer: 'elles éclatent', lobbying: '-40 % déchets' }
       },
       // Interface pixel (v4.2.0) : cris de mort hors obstacles, aide de première pousse, relance, pied du titre, certificat.
       shout: { leak: 'LIXIVIAT\u00a0!', toxic: 'BRÛLÉE\u00a0!' },   // espace insécable avant « ! »

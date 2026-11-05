@@ -1,5 +1,5 @@
 // audio/audio.js — chef d'orchestre du son (Web Audio, aucun fichier) : déblocage au premier geste, événements de la frame →
-// effets (FP.sfx, dont les sons du boss : bossTarget, bossSeed, bossWarn, bossLock, bossShot, bossHead, bossBlast, bossCrumble, et le jingle bossVictory au bossPeak ; un assaut ne joue ni impact ni jingle de mort) et musique (FP.music), pause quand l'onglet est caché.
+// effets (FP.sfx, dont les sons du boss : bossTarget, bossSeed, bossWarn, bossLock, bossShot, bossHead, bossBlast, bossCrumble, le rot burp au leakPop, et le jingle bossVictory au bossPeak ; un assaut ne joue ni impact ni jingle de mort) et musique (FP.music), pause quand l'onglet est caché.
 // Lit     : les événements de la frame, state (via FP.sfx.drone et FP.music.update ; state.bossFight.destroyed et state.run.milieu pour la durée de bossWarn), FP.bossThreats.timing, FP.synth, FP.state.current.
 // Écrit   : rien dans l'état.
 // Expose  : FP.audio.consume(events, state, dt), FP.audio.sfx(name, intensity?), FP.audio.unlock(),
@@ -84,6 +84,7 @@
       case 'bossWarn': return FP.sfx.play(b, 'bossWarn', warnTime(state));   // monte sur toute la durée de l'avertissement
       case 'bossTarget': case 'bossSeed': case 'bossLock': case 'bossShot': case 'bossHead': case 'bossBlast': case 'bossCrumble': return FP.sfx.play(b, e.type);
       case 'bossPeak': return FP.sfx.jingle(b, 'bossVictory');   // la musique s'est tue à la tête transpercée (FP.music) : la victoire éclate dans le silence
+      case 'leakPop': return FP.sfx.play(b, 'burp');
       case 'toxicEnter': return FP.sfx.play(b, 'contaminate');
       case 'bonusSpawn': case 'ready': return FP.sfx.play(b, 'ready');
       case 'bossDown': return FP.sfx.play(b, 'bossDown');

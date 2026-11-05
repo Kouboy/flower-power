@@ -1,5 +1,5 @@
 // render/particles.js — particules : gerbes nées des événements, terre et éclats derrière la pointe.
-// Lit     : state.events (eco, bomb, shieldBreak, pickup, death, toxicEnter, bloom, blossom, growthTick), state.time, state.mode,
+// Lit     : state.events (eco, bomb, shieldBreak, pickup, death, toxicEnter, leakPop, bloom, blossom, growthTick), state.time, state.mode,
 //           state.plant.{tip,dir}, state.camera.y, state.world.viewH.
 // Écrit   : state.fx.particles uniquement (réservé au rendu) ; aléatoire visuel via Math.random.
 // Expose  : FP.particles.draw(actx, state) (repère d'art, caméra appliquée ici).
@@ -34,6 +34,7 @@
         case 'shieldBreak': burst(state, e.x, e.y, 'shield', 46); break;
         case 'pickup': burst(state, e.x, e.y, e.kind === 'water' ? 'water' : 'bud', e.kind === 'water' ? 34 : 36); break;
         case 'toxicEnter': burst(state, e.x, e.y, 'acid', 8); break;
+        case 'leakPop': burst(state, e.x, e.y, 'foam', 22); burst(state, e.x, e.y, 'beer', 12); break;   // v5.2.0 : mousse et bière, pas la teinte des dangers
         case 'death':
           // v3 : le lixiviat et la brûlure ajoutaient leur propre gerbe acide avant celle de la mort.
           if (e.cause === 'leak') burst(state, e.x, e.y, 'acid', 28);
@@ -85,7 +86,7 @@
     }
   }
 
-  const COLORS = { water: '#93ddff', bud: '#cfff9a', acid: '#b45cff', bomb: '#a6ff7a', impact: '#ff815f', petal: '#fff1a6', eco: '#cfff78', soil: '#7a5436', chip: '#4a3020', clod: '#221914', clodRim: '#3a2a1e', turf: '#4a7a2a', shield: '#caffde' };
+  const COLORS = { water: '#93ddff', bud: '#cfff9a', acid: '#b45cff', bomb: '#a6ff7a', impact: '#ff815f', petal: '#fff1a6', eco: '#cfff78', soil: '#7a5436', chip: '#4a3020', clod: '#221914', clodRim: '#3a2a1e', turf: '#4a7a2a', shield: '#caffde', foam: '#fff3c4', beer: '#f0a81c' };
 
   // Carré de 1 à 2 pixels d'art : il rétrécit en fin de vie au lieu de devenir transparent.
   function drawOne(g, q, oy) {
