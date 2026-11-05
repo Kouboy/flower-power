@@ -2,6 +2,14 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v5.2.0 — La bière défonce les limaces
+
+- suggestion d’un playtesteur : la Bière anti-limaces de la boutique rend les limaces saoules, en plus de les ralentir (× 0,3) : elles tanguent (6 px à 2,2 Hz, perpendiculairement à leur trajet, dans leur vraie position : la collision suit ce qu’on voit) ;
+- la pointe qui en touche une ne meurt plus : la limace éclate et disparaît du niveau, +150 ÉcoCrédits™ (au tarif de la saison), gerbe de mousse et de bière, anneau, petit rot en FM et petit cri « SANTÉ ! » ;
+- l’éclatement n’use pas la membrane, n’annule pas les frôlements en cours et ne déclenche plus le zoom de danger ; sans bière, une limace touchée tue comme avant ; nappes toxiques inchangées ;
+- la ligne du bon de commande passe de « elles trinquent » à « elles éclatent » ; la bière reste proposée jamais avant ni pendant un boss ;
+- banc : 629 tests.
+
 ## v5.1.0 — Refonte des boss
 
 - les quatre boss sont refaits d'après un plan composé à la main (`assets/boss/plans.js` : muraille à meurtrières, colosse traversé, forteresse, circuit puis cœur) : canaux étroits sans menace, salles larges où agissent les défenses ;

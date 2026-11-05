@@ -24,7 +24,7 @@ src/
 │   ├── coins.js      ✅ circuits de pièces (v4.5.0) : un chapelet facile et un appât par hauteur d'écran, tirage propre
 │   ├── boss-plan.js  ✅ plans de boss → monde (v5.1.0, FP.bossPlan) : zone du boss, proportions → coordonnées, trajets depuis la graine, distance aux parois
 │   ├── boss.js       ✅ niveau de boss (v5.1.0, FP.bossLevel) : construit depuis le plan du milieu (assets/boss/plans.js) — parois, cibles, tête, plaques, salles, tourelles, nappes ; graine propre à (graine, saison, milieu)
-│   ├── collision.js  ✅ requête de pointe : solide, intensité toxique, contact lixiviat, frôlements en cours, danger
+│   ├── collision.js  ✅ requête de pointe : solide, intensité toxique, contact lixiviat (sous la bière : limaces à faire éclater), frôlements en cours, danger
 │   └── hazards.js    ✅ limaces en mouvement (cx, cy, cr, hitFlash), intensité des nappes
 ├── play/
 │   ├── plant.js      ✅ croissance, pilotage, trace (prepare / launch / update)
@@ -36,6 +36,7 @@ src/
 │   ├── graze.js      ✅ frôlement : suivi par objet, paiement à la sortie, annulation au contact, mesures du flyover
 │   ├── coins.js      ✅ ramassage des pièces (FP.coinPlay) : pièce au combo en cours, bonus du chapelet complet
 │   ├── shop.js       ✅ boutique de fin de pousse (FP.shop) : tirage de 3 articles (un à −50 %), coches, commande, effets
+│   ├── leakpop.js    ✅ bière : la limace touchée éclate (retirée du niveau, +150 ÉcoCrédits™, événement leakPop), appelée par flow
 │   ├── powerups.js   ✅ flyover → pollen / goutte / spore, exclusivité, ramassage, bouclier organique
 │   └── scoring.js    ✅ ÉcoCrédits™, combo, records persistants
 ├── render/
@@ -78,7 +79,7 @@ src/
 │   ├── font.js       ✅ police bitmap 5×7 (FP.font : has, measure, wrap, draw), glyphes rendus en cache
 │   ├── hud.js        ✅ HUD des coins du bas (FP.hud.items, pur) : graines, ÉcoCrédits™, pollen et combo actifs, « TOUCHER POUR POUSSER »
 │   ├── shout.js      ✅ cri de mort (FP.shout.textFor), aide de première pousse (FP.shout.helpFor)
-│   ├── cheer.js      ✅ cri du chapelet complet (« KARMA ! », « GREEN ! », « 0 DÉCHET ! ») et son montant
+│   ├── cheer.js      ✅ cri du chapelet complet (« KARMA ! », « GREEN ! », « 0 DÉCHET ! ») et son montant ; petit « SANTÉ ! » d'une limace qui éclate
 │   ├── order.js      ✅ bon de commande en papier recyclé (FP.orderForm) : mise en page, zones de toucher, dessin
 │   ├── logo.js       ✅ logo groovy radioactif (FP.logo.layout, pur) : lettres tramées, anneaux, coulures, trèfle
 │   ├── title.js      ✅ écran titre
@@ -176,7 +177,7 @@ Spec : `docs/superpowers/specs/2026-10-22-interface-pixel-design.md` ; maquettes
 
 ## Ordre de chargement
 
-`index.html` charge : `assets/obstacles/manifest.js`, `assets/boss/plans.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `coins.js`, `boss-plan.js`, `boss.js`, `hazards.js`, `src/play/plant.js`, `src/world/collision.js`, `src/play/difficulty.js`, `flow.js`, `graze.js`, `coins.js` (play), `shop.js`, `scoring.js`, `powerups.js`, `boss.js` (play), `boss-threats.js`, `src/play/camera.js`, `src/render/palette.js`, `decor-tube.js`, `decor-friche.js`, `decor-industrie.js`, `decor-decharge.js`, `decor-nucleaire.js`, `px.js`, `boss.js` (rendu), `boss-fx.js`, `boss-death.js`, `view.js`, `sprites.js`, `soil.js`, `sky.js`, `obstacles.js`, `hazards.js`, `powerups.js`, `faces.js`, `cast.js`, `cast2.js`, `hero.js`, `plant.js`, `effects.js`, `flowers.js`, `particles.js`, `drillfx.js`, `mound.js`, `src/ui/font.js`, `hud.js`, `shout.js`, `cheer.js`, `cards.js`, `logo.js`, `title.js`, `certificate.js`, `ui.js`, `src/render/frame.js`, `src/audio/synth.js`, `score.js`, `songs.js`, `songs-industrie.js`, `songs-decharge.js`, `songs-nucleaire.js`, `sequencer.js`, `music.js`, `sfx.js`, `audio.js`, `src/debug/perf.js`, `flydebug.js`, `src/core/loop.js`, `src/ui/input.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` et les dessins (pour le catalogue).
+`index.html` charge : `assets/obstacles/manifest.js`, `assets/boss/plans.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `coins.js`, `boss-plan.js`, `boss.js`, `hazards.js`, `src/play/plant.js`, `src/world/collision.js`, `src/play/difficulty.js`, `flow.js`, `leakpop.js`, `graze.js`, `coins.js` (play), `shop.js`, `scoring.js`, `powerups.js`, `boss.js` (play), `boss-threats.js`, `src/play/camera.js`, `src/render/palette.js`, `decor-tube.js`, `decor-friche.js`, `decor-industrie.js`, `decor-decharge.js`, `decor-nucleaire.js`, `px.js`, `boss.js` (rendu), `boss-fx.js`, `boss-death.js`, `view.js`, `sprites.js`, `soil.js`, `sky.js`, `obstacles.js`, `hazards.js`, `powerups.js`, `faces.js`, `cast.js`, `cast2.js`, `hero.js`, `plant.js`, `effects.js`, `flowers.js`, `particles.js`, `drillfx.js`, `mound.js`, `src/ui/font.js`, `hud.js`, `shout.js`, `cheer.js`, `cards.js`, `logo.js`, `title.js`, `certificate.js`, `ui.js`, `src/render/frame.js`, `src/audio/synth.js`, `score.js`, `songs.js`, `songs-industrie.js`, `songs-decharge.js`, `songs-nucleaire.js`, `sequencer.js`, `music.js`, `sfx.js`, `audio.js`, `src/debug/perf.js`, `flydebug.js`, `src/core/loop.js`, `src/ui/input.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` et les dessins (pour le catalogue).
 
 `dev/check.html` charge aussi les fichiers `src/audio/*`, `src/debug/perf.js`, `flydebug.js` et `src/ui/input.js` (sans canvas ni paramètre d'URL : `FP.perf` et `FP.flydebug` valent `null`, le son reste muet, le pointeur n'est pas écouté).
 
@@ -212,7 +213,7 @@ Les 26 familles sont des PNG générés par PixelLab (simples, cartoon, contour 
 ## Dangers diffus
 
 - Nappes toxiques (`world.toxics`) : pas de choc. La requête de pointe renvoie leur intensité cumulée ; `flow` augmente `plant.toxicTimer` (×.72/s), pose `plant.corruption` (croissance déviée lue par `plant`), et brûle la pointe au-delà de .82 ; hors nappe, le compteur redescend ×3,6/s.
-- Limaces (`world.leaks`) : `hazards.update` calcule leur position courante (`cx, cy, cr`) ; à partir de `config.level.leaks.cross.fromLevel` (v4.17.0), une part d’entre elles (`crossing`) barre le chemin sûr, mais le laisse libre au bout de sa course ; un contact tue (cause `leak`) et pose `hitFlash` ; la couronne de frôlement alimente `query.danger` (zoom).
+- Limaces (`world.leaks`) : `hazards.update` calcule leur position courante (`cx, cy, cr`) ; à partir de `config.level.leaks.cross.fromLevel` (v4.17.0), une part d’entre elles (`crossing`) barre le chemin sûr, mais le laisse libre au bout de sa course ; un contact tue (cause `leak`) et pose `hitFlash` ; la couronne de frôlement alimente `query.danger` (zoom). Sous la Bière anti-limaces (v5.2.0, `state.boosts.beer`) les limaces sont saoules : en plus de ralentir, elles tanguent perpendiculairement à leur trajet (`config.shop.beerSway` px à `beerSwayHz` Hz, dans `cx, cy` : la collision suit ce qu'on voit), et un contact ne tue plus : `collision` le range dans `query.pops` (ni `leak`, ni `danger`, la membrane et les frôlements en cours n'y voient rien) et `play/leakpop.js` retire la limace, paie `config.shop.popEco` (150, au tarif de la saison) et émet `leakPop { x, y }` (gerbe de mousse, anneau, rot, « SANTÉ ! »). Les nappes toxiques ne changent pas.
 - Ordre de dessin (v3) : sol, nappes, limaces, obstacles, plante, pellicule toxique, anneau d'exposition, puis HUD.
 
 ## Frôlement et score

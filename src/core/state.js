@@ -61,7 +61,7 @@
         solids: [], toxics: [], leaks: [], bonuses: [],    // bonuses : récompenses de flyover (play/powerups.js)
         coins: [], chains: []                               // circuits de pièces (world/coins.js)
       },
-      query: { solid: null, danger: 0, near: null, toxic: 0, leak: 0, leakHit: null, grazes: [] },          // requête de pointe de la frame (world/collision.js)
+      query: { solid: null, danger: 0, near: null, toxic: 0, leak: 0, leakHit: null, pops: [], grazes: [] },          // requête de pointe de la frame (world/collision.js)
       flow: { timer: 0, stage: 'show', fade: 0, overReason: '', blossom: null, next: null, won: false, freeze: 0, warp: null },       // déroulé de partie (play/flow.js) ; warp : arrêt sur image et ralenti
       garden: { flowers: [] },                                // parterre : fleurs écloses pendant tout le run
       graze: { active: new Map() },                           // frôlements en cours (play/graze.js)

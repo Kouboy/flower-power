@@ -1,6 +1,6 @@
 // world/hazards.js — dangers diffus : limaces de lixiviat en mouvement, intensité des zones toxiques.
-// Lit     : state.time, state.world.leaks, state.plant.{stemCount,stemAge}, state.score.flowers, state.boosts.beer, FP.config.{hazards,shop.beerK}.
-// Écrit   : leak.{s,cx,cy,cr} (phase intégrée, position et rayon du corps cette frame), leak.hitFlash (décroissance).
+// Lit     : state.time, state.world.leaks, state.plant.{stemCount,stemAge}, state.score.flowers, state.boosts.beer, FP.config.{hazards,shop.{beerK,beerSway,beerSwayHz}}.
+// Écrit   : leak.{s,cx,cy,cr} (phase intégrée, position et rayon du corps cette frame, tangage de la bière compris), leak.hitFlash (décroissance).
 // Expose  : FP.hazards.update(state, dt), FP.hazards.leakSpeedScale(state), FP.hazards.toxicIntensityAt(o, x, y),
 //           FP.hazards.leakHeading(leak) (sens de marche : 1 ou −1).
 // Porté de la v3.43.16 (limaceSpeedScale, toxicIntensityAt, trajet des limaces de queryTipHazards / drawHazards).
@@ -33,12 +33,12 @@
   // La phase est intégrée (s += vitesse·dt) : la vitesse réelle reste plafonnée par leakSpeedScale.
   // (La v3 multipliait le temps total par l'échelle, ce qui accélérait sans fin et faisait sauter les limaces.)
   function update(state, dt) {
-    const h = FP.config.hazards, t = state.time, scale = leakSpeedScale(state);
+    const h = FP.config.hazards, shop = FP.config.shop, t = state.time, scale = leakSpeedScale(state), beer = state.boosts.beer;
     for (const l of state.world.leaks) {
-      l.s += dt * l.rate * h.leakRateK * scale * (state.boosts.beer ? FP.config.shop.beerK : 1);   // Bière anti-limaces (boutique)
-      const k = leakOffset(l);
-      l.cx = l.x + Math.cos(l.angle) * l.len * k;
-      l.cy = l.y + Math.sin(l.angle) * l.len * k;
+      l.s += dt * l.rate * h.leakRateK * scale * (beer ? shop.beerK : 1);   // Bière anti-limaces (boutique) : plus lentes…
+      const k = leakOffset(l), sway = beer ? shop.beerSway * Math.sin(t * FP.TAU * shop.beerSwayHz + l.phase) : 0;   // … et saoules : elles tanguent, perpendiculairement au trajet
+      l.cx = l.x + Math.cos(l.angle) * l.len * k - Math.sin(l.angle) * sway;
+      l.cy = l.y + Math.sin(l.angle) * l.len * k + Math.cos(l.angle) * sway;
       l.cr = l.r + Math.sin(t * h.leakWobbleFreq + l.phase) * h.leakWobble;
       l.hitFlash = Math.max(0, l.hitFlash - dt);
     }

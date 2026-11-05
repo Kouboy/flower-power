@@ -1,6 +1,6 @@
 // render/effects.js — effets visuels : chiffres ÉcoCrédits™, anneaux de frôlement, ramassage, rupture du bouclier,
 // onde de spore, impact à la mort, anneau d'éclosion.
-// Lit     : state.events (eco, pickup, bonusMissed, shieldBreak, bomb, death, blossom), state.time, state.mode, state.graze.active, state.plant.tip.
+// Lit     : state.events (eco, pickup, bonusMissed, shieldBreak, bomb, death, leakPop, blossom), state.time, state.mode, state.graze.active, state.plant.tip.
 // Écrit   : state.fx.effects et state.fx.ecoSide uniquement (réservés au rendu) ; l'aléatoire purement visuel utilise Math.random.
 // Expose  : FP.effects.draw(actx, state) (repère d'art, caméra appliquée ici : anneaux, frôlements),
 //           FP.effects.drawLabels(ctx, state) (couche nette, repère monde : chiffres « +Ɇ » en police pixel, FP.font, au-dessus de la tête) ;
@@ -27,6 +27,7 @@
       else if (e.type === 'shieldBreak') fx.push({ type: 'shieldBreak', x: e.x, y: e.y, t0, life: .62, r: 31, phase: rand(0, TAU) });
       else if (e.type === 'bomb') fx.push({ type: 'bomb', x: e.x, y: e.y, t0, life: .98, r: e.r });
       else if (e.type === 'death') fx.push({ type: 'hit', acid: e.cause !== 'solid' && e.cause !== 'assault', x: e.x, y: e.y, t0, life: .42, r: 28 });
+      else if (e.type === 'leakPop') fx.push({ type: 'pop', x: e.x, y: e.y, t0, life: .4, r: 22 });   // anneau de mousse (v5.2.0)
       else if (e.type === 'blossom') {   // halo d'éclosion : sur le cœur de la fleur principale (sinon, à défaut, sur la pointe)
         const f = e.flower !== undefined && state.garden.flowers[e.flower], c = f ? FP.flowersRender.headOf(f, state) : e;
         fx.push({ type: 'bloom', x: c.x, y: c.y, t0, life: 1.18, r: 68 + 13 * (e.bonus || 0) });
@@ -111,7 +112,8 @@
         const ang = i * TAU / 10 + t * .15;
         if (BAYER[i & 3][2] < a * 16) px.line(g, cx + Math.round(Math.cos(ang) * r * .4), cy + Math.round(Math.sin(ang) * r * .4), cx + Math.round(Math.cos(ang) * r), cy + Math.round(Math.sin(ang) * r), '#fff0a0');
       }
-    } else if (e.type === 'hit') fadeRing(g, cx, cy, Math.round(e.r * (.55 + 1.2 * k) / s), e.acid ? '#b45cff' : '#ff704e', a, k < .5 ? 3 : 2);
+    } else if (e.type === 'pop') fadeRing(g, cx, cy, Math.round(e.r * (.4 + .9 * k) / s), '#fff3c4', a, k < .4 ? 2 : 1);
+    else if (e.type === 'hit') fadeRing(g, cx, cy, Math.round(e.r * (.55 + 1.2 * k) / s), e.acid ? '#b45cff' : '#ff704e', a, k < .5 ? 3 : 2);
   }
 
   // Couche monde (pixels d'art) : anneaux et frôlements.

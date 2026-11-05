@@ -157,7 +157,7 @@ FP.test('flow: redimensionner pendant le fondu ne bloque pas la transition', () 
 FP.test('flow: une nappe brûle après la même distance parcourue (≈ 75 px), quelle que soit la vitesse', () => {
   const burnDistance = (stems) => {
     const s = flowRun(); s.plant.stemCount = stems; let t = 0;
-    for (; t < 5 && s.mode === 'playing'; t += 1 / 120) { s.query = { solid: null, leak: 0, toxic: 1, danger: 0, grazes: [] }; FP.flow.update(s, 1 / 120); }
+    for (; t < 5 && s.mode === 'playing'; t += 1 / 120) { s.query = { solid: null, leak: 0, toxic: 1, danger: 0, pops: [], grazes: [] }; FP.flow.update(s, 1 / 120); }
     return t * FP.plant.speed(s);
   };
   const slow = burnDistance(1), fast = burnDistance(20);
