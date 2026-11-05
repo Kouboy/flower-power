@@ -25,7 +25,10 @@
     // Hauteur du monde : la graine part bien plus bas que l'écran visible.
     world: {
       extraMin: 620,     // height >= viewH + extraMin
-      heightRatio: 2.35  // height >= viewH * heightRatio
+      heightRatio: 2.35, // height >= viewH * heightRatio
+      // v5.3.0 : la hauteur d'un niveau suit la vitesse de lancement de la pousse (vitesse / vitesse d'une pousse neuve),
+      // jusqu'à growMax fois la hauteur de départ : la traversée garde à peu près sa durée, le jeu ne « rétrécit » plus.
+      growMax: 2.2
     },
 
     level: {

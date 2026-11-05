@@ -53,14 +53,16 @@ const dodge = (s, placed, p, target) => {
 // Rend { stems, retries, minReserves, bosses, milieu, saison, mode, destroyed, headOpen } ; stems = pousses lancées, retries = mortes ailleurs que sur une cible.
 const playBossFight = (milieu) => {
   const s = bossRun(360, milieu), dt = 1 / 60, c = FP.config.plant.control, H = s.world.viewH;
-  const placed = FP.bossPlan.toWorld(s.world.bossLevel.plan, s.world), ids = s.world.bossLevel.targets.map(t => t.id);
+  // v5.3.0 : chaque pousse régénère le niveau, dont la hauteur suit la vitesse de lancement : les trajets se recalculent à chaque pousse.
+  let placed = FP.bossPlan.toWorld(s.world.bossLevel.plan, s.world);
+  const ids = s.world.bossLevel.targets.map(t => t.id);
   FP.plant.prepare(s); s.mode = 'ready'; s.plant.germ = 0;
   const out = { stems: 0, retries: 0, minReserves: s.plant.reserves, bosses: 0, milieu: 0, saison: 1, mode: '' };
   let was = 'ready', path = null, i = 1, won = false;
   for (let f = 0; f < 60 * 60 * 8 && !won; f++) {
     const bf = s.bossFight, k = bf.destroyed.indexOf(false);
     if (s.mode === 'playing') {
-      if (was !== 'playing') { out.stems++; i = 1; path = placed.paths[k >= 0 ? ids[k] : 'head']; }
+      if (was !== 'playing') { out.stems++; i = 1; placed = FP.bossPlan.toWorld(s.world.bossLevel.plan, s.world); path = placed.paths[k >= 0 ? ids[k] : 'head']; }
       const tip = s.plant.tip;
       while (i < path.length - 1 && tip.y <= path[i].y) i++;
       const p = dodge(s, placed, path[i], k >= 0 ? s.world.bossLevel.targets[k].solid : s.world.bossLevel.head.solid), look = FP.math.clamp(tip.y - p.y, c.lookAheadBottom, c.lookAheadTop);

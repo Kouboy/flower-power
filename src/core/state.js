@@ -2,7 +2,7 @@
 // Lit     : FP.params.{seed (graine imposée par l'URL), sansboss (version playtest)}, FP.createRng, FP.config.view, FP.config.world, FP.view.
 // Écrit   : FP.state.current (via ui/menu.js et core/loop.js).
 //           state.bossFight (cibles détruites du boss en cours, tête à nu ; écrit ensuite par play/boss.js), state.flow.freeze (arrêt sur image, 0 au départ ; écrit par play/boss.js, décompté par play/flow.js), state.flow.warp (ralenti, null au départ ; play/flow.js).
-// Expose  : FP.state.createRun(seed?, dims?), FP.state.applyView(state, dims), FP.state.current.
+// Expose  : FP.state.createRun(seed?, dims?), FP.state.applyView(state, dims), FP.state.worldHeightFor(viewH) (hauteur de départ d'un niveau, pure), FP.state.current.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
@@ -56,7 +56,8 @@
         cast: [], castRng: FP.createRng((s ^ FP.config.cast.salt) >>> 0), character: null   // pioche des personnages (play/plant.js)
       },
       world: {
-        width: dims.W, height, viewH: dims.H, surfaceY: surfaceYFor(dims.H), milieu: 'friche', level: 0,
+        width: dims.W, height, baseHeight: height, growK: 1, viewH: dims.H,   // v5.3.0 : hauteur de départ et facteur d'agrandissement (world/level.js)
+        surfaceY: surfaceYFor(dims.H), milieu: 'friche', level: 0,
         skyVariant: 0, lawnVariant: 0, safePath: [], safeRadius: 0,
         solids: [], toxics: [], leaks: [], bonuses: [],    // bonuses : récompenses de flyover (play/powerups.js)
         coins: [], chains: []                               // circuits de pièces (world/coins.js)
@@ -82,5 +83,5 @@
     state.camera.y = Math.max(0, Math.min(maxY, state.camera.y));
   }
 
-  FP.state = { createRun, applyView, current: null };
+  FP.state = { createRun, applyView, worldHeightFor, current: null };
 })();
