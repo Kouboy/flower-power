@@ -1,13 +1,13 @@
 // render/boss-death.js — la mort du boss (v5.1.0, retours de playtest) : chaque paroi se fissure après son explosion, puis s'effondre en gros
 // morceaux qui tombent ; au paroxysme, flash plein écran et pluie de jetons. Les explosions elles-mêmes sont dans render/boss-fx.js.
-// Lit     : state.{events, time, camera.y, run.milieu, bossFight.collapse}, state.world.{width, viewH, bossLevel.walls}, FP.config.{boss.death, milieux},
-//           FP.palette.{boss, coin}, FP.px, FP.bossFx.{shatter, shardAt}, FP.bossRender.artPoly.
+// Lit     : state.{events, time, camera.y, run.milieu, bossFight.collapse}, state.world.{width, viewH, bossLevel.walls}, FP.config.{boss.death, milieux}
+//           (dont les morceaux, la pluie et les fissures : death.{chunks,chunksMax,chunkPower,chunkLife,flash,rain,rainSpread,rainLife,crackArms,crackStep}),
+//           FP.palette.{boss, coin}, FP.px, FP.bossFx.{shatter, shardAt}.
 // Écrit   : state.fx.bossDeath uniquement { chunks, rain, flash: { t0 } | null } (horodatés avec state.time, éteints d'eux-mêmes).
 // Expose  : FP.bossDeath.update(state) (une fois par frame, avant le dessin : events → effets), FP.bossDeath.draw(g, state) (toile d'art, monde).
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
-  const CRACK_ARMS = 4, CRACK_STEP = 5;   // fissures d'une paroi : branches depuis son centre, pas d'un zigzag (px d'art)
 
   const store = (state) => state.fx.bossDeath || (state.fx.bossDeath = { chunks: [], rain: [], flash: null });
   const worldPoly = (o) => o.collision.map(([x, y]) => [o.x + x, o.y + y]);
@@ -18,12 +18,12 @@
     const fx = store(state), D = FP.config.boss.death, t0 = state.time, bl = state.world.bossLevel;
     for (const e of state.events) {
       if (e.type === 'bossCrumble' && bl) {
-        const w = bl.walls[e.i], n = Math.min(D.chunks * 3, Math.max(D.chunks, Math.round(Math.sqrt(w.broadR) * 2)));
-        for (const p of FP.bossFx.shatter(worldPoly(w), n, 70, e.i * 7919 + 1)) fx.chunks.push({ ...p, size: p.size + 2, t0 });
+        const w = bl.walls[e.i], n = Math.min(D.chunksMax, Math.max(D.chunks, Math.round(Math.sqrt(w.broadR) * 2)));
+        for (const p of FP.bossFx.shatter(worldPoly(w), n, D.chunkPower, e.i * 7919 + 1)) fx.chunks.push({ ...p, size: p.size + 2, t0 });
       } else if (e.type === 'bossPeak') {
         fx.flash = { t0 };
         const top = state.camera.y, W = state.world.width;
-        for (let i = 0; i < D.rain; i++) fx.rain.push({ x: hash(i, 1) * W, y: top - 10 - hash(i, 2) * 120, vx: (hash(i, 3) - .5) * 30, vy: 60 + hash(i, 4) * 120, spin: 0, t0 });
+        for (let i = 0; i < D.rain; i++) fx.rain.push({ x: hash(i, 1) * W, y: top - 10 - hash(i, 2) * D.rainSpread, vx: (hash(i, 3) - .5) * 30, vy: 60 + hash(i, 4) * 120, spin: 0, t0 });
       }
     }
     const alive = (f, life) => state.time - f.t0 < life;
@@ -34,7 +34,7 @@
 
   // Fissures d'une paroi qui a explosé : zigzags sombres depuis son centre, d'autant plus longs que l'effondrement approche (k de 0 à 1).
   function cracks(g, w, i, k, cam, color) {
-    const cx = FP.px.toArt(w.x), cy = FP.px.toArt(w.y) - cam, reach = FP.px.toArt(w.broadR) * k;
+    const { crackArms: CRACK_ARMS, crackStep: CRACK_STEP } = FP.config.boss.death, cx = FP.px.toArt(w.x), cy = FP.px.toArt(w.y) - cam, reach = FP.px.toArt(w.broadR) * k;
     for (let a = 0; a < CRACK_ARMS; a++) {
       let x = cx, y = cy, ang = (a + hash(i, a)) * Math.PI * 2 / CRACK_ARMS;
       for (let d = 0; d < reach; d += CRACK_STEP) {

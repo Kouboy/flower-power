@@ -192,7 +192,7 @@
   function threats(g, state, bl, cam, M, bands) {
     const th = state.bossThreats, top = state.camera.y, H = state.world.viewH;
     for (const r of bl.rooms) if (th.rooms[r.id] && r.y1 >= top && r.y0 <= top + H) danger(g, r, th.rooms[r.id], cam, state);
-    for (const q of bl.turrets) {
+    for (const q of bl.head.solid.off ? [] : bl.turrets) {   // boss transpercé : ses tourelles tombent avec ses parois
       if (q.y < top - 10 || q.y > top + H + 10) continue;
       const b = bands.find(s => s.id === q.room);
       turret(g, q, !!th.aim && th.aim.turret === q.id, cam, M, b ? b.dx : 0);

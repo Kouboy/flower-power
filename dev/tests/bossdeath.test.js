@@ -136,3 +136,13 @@ FP.test('music: la mort du boss coupe la musique net, le jingle de victoire écl
   withBackend(b => { FP.audio.consume([{ type: 'bossPeak', x: 0, y: 0 }], auRun(), 0); FP.assert(sounding(b).filter(c => c[0] === 'note').length >= 8, 'jingle'); });
   for (const type of ['bossBlast', 'bossCrumble']) withBackend(b => { FP.audio.consume([{ type, i: 0, x: 0, y: 0 }], auRun(), 0); FP.assert(sounding(b).length > 0, type); });
 });
+
+FP.test('bossDeath: boss transpercé, ses tourelles ne restent pas sur les ruines', () => bossDirect(() => {
+  const s = bdHead(), bl = s.world.bossLevel, q = bl.turrets[0], saved = FP.px.disc, at = [];
+  s.camera.y = q.y - s.world.viewH / 2;
+  FP.px.disc = (g, x, y, r, c) => { if (Math.abs(x - FP.px.toArt(q.x)) <= 1 && r === 4) at.push(c); return saved(g, x, y, r, c); };
+  try {
+    FP.bossRender.draw(recCtx(), s); FP.assert(at.length > 0, 'tourelle dessinée tant que le boss vit');
+    at.length = 0; bdPierce(s); FP.bossRender.draw(recCtx(), s); FP.assertEqual(at.length, 0, 'plus de tourelle');
+  } finally { FP.px.disc = saved; }
+}));

@@ -234,12 +234,15 @@
     // targetBonus / bonus : points par cible détruite / par boss vaincu ; tempoPerTarget : BPM du thème par cible détruite ;
     // assaultShake : secousse d'un assaut (forte : le point faible détruit).
     // hit (retours de playtest) : point faible détruit — arrêt sur image (stop) puis ralenti (slow), en s de temps réel, le jeu avançant à scale ;
-    // shards / shardLife : éclats de la cible (nombre, durée en s) ; plateLife : la plaque qui tournoie en tombant (s) ; sparks : étincelles et
-    // jetons de la gerbe ; gravity : leur chute (px/s²).
+    // shards / shardLife / shardPower : éclats de la cible (nombre, durée en s, vitesse de projection en px/s) ; plateLife : la plaque qui
+    // tournoie en tombant (s) ; sparks : étincelles et jetons de la gerbe ; gravity : leur chute (px/s²) ; flashFrames / flashMax : l'éclair
+    // blanc (images, et au plus tant de s de jeu).
     // death (retours de playtest) : boss détruit — cinématique de time s (temps réel) au ralenti scale, la pousse figée (flow.freeze = time × scale
     // s de jeu) ; chain : part de la cinématique sur laquelle les explosions vont de la tête à la paroi la plus lointaine ; crack : part pendant
     // laquelle une paroi se fissure avant de s'effondrer ; peak : paroxysme (toutes tombées, flash, jingle, jetons) ; shake : secousse ;
-    // chunks / chunkLife : gros morceaux d'une paroi (au moins, durée s) ; flash : durée du flash plein écran (s) ; rain / rainLife : pluie de jetons.
+    // chunks / chunksMax / chunkPower / chunkLife : gros morceaux d'une paroi (au moins, au plus, vitesse de projection px/s, durée s) ;
+    // flash : durée du flash plein écran (s) ; rain / rainSpread / rainLife : pluie de jetons (nombre, hauteur de départ au-dessus de l'écran
+    // en px, durée s) ; crackArms / crackStep : fissures d'une paroi (branches depuis son centre, pas du zigzag en px d'art).
     // ramp (retours de playtest) : un cran de difficulté par boss, du boss 1 (friche) au boss 4 (nucléaire) — channelMin : largeur minimale
     // d'un canal de son plan, en px de monde à 360 px de large (× W / 360 ailleurs) ; strike, rest : coup et repos de la défense (s) ;
     // speedup : accélération par cible détruite ; shot : vitesse (px/s) et espacement (s) des tirs visés, null sans tourelles.
@@ -247,8 +250,9 @@
     boss: {
       top: 70, bottom: 160, toxics: 2,
       targetBonus: 200, bonus: 1500, tempoPerTarget: 6, assaultShake: .45,
-      hit: { stop: .08, slow: .5, scale: .4, shards: 14, shardLife: 1.1, plateLife: 1, sparks: 24, gravity: 640 },
-      death: { time: 3.5, scale: .5, chain: .55, crack: .2, peak: .8, shake: .5, chunks: 8, chunkLife: 1.6, flash: .4, rain: 40, rainLife: 2.5 },
+      hit: { stop: .08, slow: .5, scale: .4, shards: 14, shardLife: 1.1, shardPower: 160, plateLife: 1, sparks: 24, gravity: 640, flashFrames: 2, flashMax: .25 },
+      death: { time: 3.5, scale: .5, chain: .55, crack: .2, peak: .8, shake: .5, chunks: 8, chunksMax: 24, chunkPower: 70, chunkLife: 1.6, flash: .4,
+        rain: 40, rainSpread: 120, rainLife: 2.5, crackArms: 4, crackStep: 5 },
       ramp: {
         friche: { channelMin: 52, strike: .9, rest: 1.3, speedup: .12, shot: null },
         industrie: { channelMin: 49, strike: .97, rest: 1.17, speedup: .14, shot: { speed: 440, gap: 2.6 } },

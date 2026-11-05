@@ -2,7 +2,8 @@
 // graine qui revient au compteur du HUD
 // avec un gros « +1 GRAINE ». Retours de playtest : le point faible détruit éclate (éclair blanc 2 images, éclats tirés de son polygone qui
 // retombent, gerbe d'étincelles et de jetons), sa plaque se détache en tournoyant et tombe.
-// Lit     : state.{events, time, camera.y, plant.reserves}, state.world.{viewH, width, bossLevel.{targets,plates,walls}} (solid, target), FP.config.boss.hit,
+// Lit     : state.{events, time, camera.y, plant.reserves}, state.world.{viewH, width, bossLevel.{targets,plates,walls}} (solid, target), FP.config.boss.hit
+//           (éclats, plaque, gerbe, éclair : shards, shardLife, shardPower, plateLife, sparks, gravity, flashFrames, flashMax),
 //           FP.palette.{boss,seed,coin}, FP.px, FP.font, FP.hud.{seedCenter, SEED_SCALE}, FP.bossRender.{fillPoly, artPoly}.
 // Écrit   : state.fx.boss uniquement { bursts, flights (départ { from } en pixels de la toile d'interface, pris à l'assaut), plates, shards, sparks,
 //           flash: { t0, frames } | null } (effets horodatés avec state.time, éteints d'eux-mêmes ; l'éclair compte ses images).
@@ -21,7 +22,6 @@
   const RISE = .35, LIFT = 14, START = 2, PEAK = 5;   // montée (part du vol), hauteur gagnée (px), taille au départ et au sommet (× pixel d'art)
   const LABEL = '+1 GRAINE', LABEL_SCALE = 3;
   const BOOM = { target: { life: .7, size: 1.4 }, head: { life: 1.05, size: 2 }, blast: { life: .8, size: 1.2 } };
-  const FLASH_FRAMES = 2, FLASH_MAX = .25;      // l'éclair : deux images, jamais plus d'un quart de seconde de jeu
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
   // Point du monde → toile d'interface (pixels d'art, caméra du moment), gardé dans le cadre.
@@ -55,8 +55,8 @@
   function hit(fx, state, e, t0) {
     const H = FP.config.boss.hit, bl = state.world.bossLevel, tg = bl && bl.targets[e.i], seed = seedOf(e.x, e.y), r = rand(seed ^ 0x2545f491);
     fx.bursts.push({ x: e.x, y: e.y, t0, kind: 'target' });
-    fx.flash = { t0, frames: FLASH_FRAMES };
-    if (tg) for (const p of shatter(worldPoly(tg.solid), H.shards, 160, seed)) fx.shards.push({ ...p, t0 });
+    fx.flash = { t0, frames: H.flashFrames };
+    if (tg) for (const p of shatter(worldPoly(tg.solid), H.shards, H.shardPower, seed)) fx.shards.push({ ...p, t0 });
     const pl = bl && bl.plates.find(q => q.target === e.i);
     if (pl) fx.plates.push({ solid: pl.solid, t0, vx: (pl.solid.x < state.world.width / 2 ? -1 : 1) * (30 + 30 * r()), vy: -90, spin: (r() < .5 ? -1 : 1) * (5 + 4 * r()) });
     for (let i = 0; i < H.sparks; i++) {
@@ -149,7 +149,7 @@
     for (const b of fx.bursts) burst(g, b, cam, t);
     for (const p of fx.shards) shard(g, p, cam, t, [P.weak[0], P.weak[1], P.boom[3]]);
     for (const p of fx.sparks) spark(g, p, cam, t);
-    if (fx.flash && t - fx.flash.t0 < FLASH_MAX) {   // débordant d'un écran de chaque côté : le zoom de la caméra n'en montre jamais le bord
+    if (fx.flash && t - fx.flash.t0 < FP.config.boss.hit.flashMax) {   // débordant d'un écran de chaque côté : le zoom de la caméra n'en montre jamais le bord
       const w = Math.ceil(state.world.width / FP.px.SCALE), h = Math.ceil(state.world.viewH / FP.px.SCALE);
       FP.px.rect(g, -w, -h, 3 * w, 3 * h, P.flash);
     }
