@@ -4,7 +4,7 @@
 // Écrit   : rien.
 // Expose  : FP.songs.title, FP.songs.shop (reggae de la boutique), FP.songs.friche0..3 (variantes de la musique de la friche, une par pousse),
 //           FP.songs.fricheBoss (thème du boss de la friche, v4.10.0), FP.songs.variants(milieuId) (nombre de variantes d'un milieu)
-//           = { bpm, bars, beatsPerBar, pcs, notes, swing? }, FP.songs.jingles.{death,blossom,record} ; note = { beat, dur, inst, midi?, vel?, layer, bend?, detune? (cents) }.
+//           = { bpm, bars, beatsPerBar, pcs, notes, swing? }, FP.songs.jingles.{death,blossom,record,bossVictory} ; note = { beat, dur, inst, midi?, vel?, layer, bend?, detune? (cents) }.
 //           swing : retard aléatoire maximal (s) de la caisse claire et des charlestons (« boîte à rythmes qui boite »).
 // Temps en beats (noire = 1) depuis le début de la boucle ; pcs = classes de hauteur de la gamme (contrôlées par les tests).
 (function () {
@@ -131,7 +131,11 @@
         n(0, 'sitar', 64, .5, 1), n(.25, 'sitar', 68, .5, 1), n(.5, 'sitar', 71, .5, 1), n(.75, 'sitar', 76, .75, 1.1, 1.06), n(1.25, 'bell', 83, .6, 1)]),
       // Record battu : clochettes qui montent, cuivres qui claironnent.
       record: j([n(0, 'bell', 76, .25, 1), n(.25, 'bell', 80, .25, 1), n(.5, 'bell', 83, .25, 1), n(.75, 'bell', 88, .5, 1.1),
-        n(1, 'brass', 52, 1, 1.2), n(1, 'brass', 59, 1, 1.1), n(1, 'brass', 64, 1, 1.1)])
+        n(1, 'brass', 52, 1, 1.2), n(1, 'brass', 59, 1, 1.1), n(1, 'brass', 64, 1, 1.1)]),
+      // Boss détruit (retours de playtest) : coup de grosse caisse, fanfare de cuivres qui monte en mi, accord tenu et clochettes au sommet.
+      bossVictory: j([n(0, 'kick', 0, .5, 1.6), n(0, 'brass', 52, .25, 1.2), n(.25, 'brass', 56, .25, 1.2), n(.5, 'brass', 59, .25, 1.2),
+        n(.75, 'brass', 64, .5, 1.3), n(1.5, 'kick', 0, .5, 1.4), n(1.5, 'brass', 52, 2.5, 1.2), n(1.5, 'brass', 59, 2.5, 1.1), n(1.5, 'brass', 64, 2.5, 1.1),
+        n(1.5, 'brass', 68, 2.5, 1.1), n(1.75, 'bell', 76, .5, 1), n(2, 'bell', 80, .5, 1), n(2.25, 'bell', 83, .5, 1), n(2.5, 'bell', 88, 1.5, 1.1)])
     };
   }
 

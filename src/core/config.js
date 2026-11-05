@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '5.0.0',
+    version: '5.1.0',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -210,16 +210,16 @@
     milieux: [
       { id: 'friche', name: 'FRICHE URBAINE', line: 'Futur éco-quartier. Livraison prévue : jamais.',
         kinds: ['cone', 'scooter', 'tire', 'trashbag', 'drone', 'cart', 'mattress', 'pallet'],
-        boss: { name: 'LA BÉTONNEUSE DU GRAND PROJET', order: 'PERCE SES 4 VANNES À BÉTON' } },
+        boss: { name: 'LA BÉTONNEUSE DU GRAND PROJET', order: 'DÉTRUIS SES 3 VANNES, PUIS SA TOUPIE' } },
       { id: 'industrie', name: 'ZONE INDUSTRIELLE', line: 'Taux d\'emploi local : 0,3 robot par habitant.',
         kinds: ['server', 'battery', 'solar', 'extinguisher', 'drone', 'oildrum', 'gear', 'pipe'],
-        boss: { name: 'RAFFINERIE ÉCO-RESPONSABLE™', order: 'PERCE SES 4 VANNES' } },
+        boss: { name: 'RAFFINERIE ÉCO-RESPONSABLE™', order: 'DÉTRUIS SES 3 CUVES, PUIS SA TORCHÈRE' } },
       { id: 'decharge', name: 'DÉCHARGE', line: 'Tri sélectif : la décharge choisit qui elle garde.',
         kinds: ['microwave', 'arcade', 'trashbag', 'tire', 'scooter', 'fridge', 'crt', 'sofa'],
-        boss: { name: 'L\'INCINÉRATEUR À ÉNERGIE VERTE', order: 'PERCE SES 4 BRÛLEURS' } },
+        boss: { name: 'L\'INCINÉRATEUR À ÉNERGIE VERTE', order: 'DÉTRUIS SES 3 BRÛLEURS, PUIS SA GUEULE' } },
       { id: 'nucleaire', name: 'SITE NUCLÉAIRE', line: 'Énergie décarbonée. Déchets : à voir dans 24 000 ans.',
         kinds: ['nuclear', 'sarcophagus', 'battery', 'server', 'hazmat', 'gasmask', 'duck'],
-        boss: { name: 'LE RÉACTEUR « NEUTRE EN CARBONE »', order: 'PERCE SES 4 BARRES DE CONTRÔLE' } }
+        boss: { name: 'LE RÉACTEUR « NEUTRE EN CARBONE »', order: 'DÉTRUIS SES 3 BARRES, PUIS SON CŒUR' } }
     ],
     run: { steps: 3,   // pousses réussies par milieu avant son boss
       playtest: { steps: 6, shopEvery: 3 } },   // v4.13.0, ?sansboss=1 : 6 pousses par milieu, bon de commande toutes les 3, pas de boss
@@ -229,21 +229,38 @@
     // Obstacles (v4.17.0) : part d'enfouis et hauteur de terre (part du sprite, tirée entre les deux bornes).
     obstacles: { bury: { chance: .5, depth: [.36, .5] } },
 
-    // Moteur de boss (v4.12.0) : 4 tronçons accrochés tour à tour aux flancs, un point faible par tronçon, une trappe sous la pelouse.
-    // segWidth : largeur d'un tronçon (part de l'écran, > .5 : le couloir zigzague) ; spineW : largeur de la colonne qui les relie le long de chaque bord ; thickK : épaisseur d'un tronçon (part de la zone / segments),
-    // le reste va aux intervalles ; crossK : pente d'un changement de flanc (part de maxSlope) ; crossUp : part de la montée droite d'un intervalle
-    // gardée au-dessus du coin quitté (le reste sous le coin suivant) ; corridorK : élargissement du couloir sûr ; weakR / weakHit / weakOut : rayon dessiné,
-    // rayon de perçage, saillie hors du flanc, marge de la flèche au bord de l'écran ; top / bottom : zone du boss, de surfaceY + top à height - bottom ; trap : sous la pelouse.
-    // defense : cycle (s), avertissement, coup, accélération par point percé, portée (part de la largeur libre), épaisseur, attache (part du haut du tronçon).
-    // pierceBonus / bonus : points par point percé / par boss vaincu ; pierceShake : secousse au perçage.
+    // Boss (v5.1.0) : niveau construit depuis le plan du milieu (assets/boss/plans.js, world/boss.js).
+    // top / bottom : zone du boss, de surfaceY + top à height - bottom ; toxics : nappes au plus, aux emplacements du plan.
+    // targetBonus / bonus : points par cible détruite / par boss vaincu ; tempoPerTarget : BPM du thème par cible détruite ;
+    // assaultShake : secousse d'un assaut (forte : le point faible détruit).
+    // hit (retours de playtest) : point faible détruit — arrêt sur image (stop) puis ralenti (slow), en s de temps réel, le jeu avançant à scale ;
+    // shards / shardLife / shardPower : éclats de la cible (nombre, durée en s, vitesse de projection en px/s) ; plateLife : la plaque qui
+    // tournoie en tombant (s) ; sparks : étincelles et jetons de la gerbe ; gravity : leur chute (px/s²) ; flashFrames / flashMax : l'éclair
+    // blanc (images, et au plus tant de s de jeu).
+    // death (retours de playtest) : boss détruit — cinématique de time s (temps réel) au ralenti scale, la pousse figée (flow.freeze = time × scale
+    // s de jeu) ; chain : part de la cinématique sur laquelle les explosions vont de la tête à la paroi la plus lointaine ; crack : part pendant
+    // laquelle une paroi se fissure avant de s'effondrer ; peak : paroxysme (toutes tombées, flash, jingle, jetons) ; shake : secousse ;
+    // chunks / chunksMax / chunkPower / chunkLife : gros morceaux d'une paroi (au moins, au plus, vitesse de projection px/s, durée s) ;
+    // flash : durée du flash plein écran (s) ; rain / rainSpread / rainLife : pluie de jetons (nombre, hauteur de départ au-dessus de l'écran
+    // en px, durée s) ; crackArms / crackStep : fissures d'une paroi (branches depuis son centre, pas du zigzag en px d'art).
+    // ramp (retours de playtest) : un cran de difficulté par boss, du boss 1 (friche) au boss 4 (nucléaire) — channelMin : largeur minimale
+    // d'un canal de son plan, en px de monde à 360 px de large (× W / 360 ailleurs) ; strike, rest : coup et repos de la défense (s) ;
+    // speedup : accélération par cible détruite ; shot : vitesse (px/s) et espacement (s) des tirs visés, null sans tourelles.
+    // defense : avertissement (s) et son plancher, communs à tous les boss ; shot : suivi de la visée, ligne figée avant le tir (s), rayon du projectile.
     boss: {
-      segments: 4, segWidth: .53, spineW: .12, thickK: .225, crossK: .8, crossUp: .6, corridorK: 1.3,
-      weakR: 14, weakHit: 20, weakOut: 12, arrowMargin: 14,
-      top: 70, bottom: 160,
-      trap: { gap: 30, thick: 14 }, trapSlide: .6,
-      defense: { period: 2.6, warn: .7, strike: .6, speedup: .2, reach: .5, thick: 14, mountK: .25 },
-      toxics: 2, pierceBonus: 200, bonus: 1500, tempoPerPierce: 6, pierceShake: .2,
-      pairs: { friche: ['piston', 'jet'], industrie: ['jet', 'arm'], decharge: ['arm', 'jet'], nucleaire: ['piston', 'arm'] }
+      top: 70, bottom: 160, toxics: 2,
+      targetBonus: 200, bonus: 1500, tempoPerTarget: 6, assaultShake: .45,
+      hit: { stop: .08, slow: .5, scale: .4, shards: 14, shardLife: 1.1, shardPower: 160, plateLife: 1, sparks: 24, gravity: 640, flashFrames: 2, flashMax: .25 },
+      death: { time: 3.5, scale: .5, chain: .55, crack: .2, peak: .8, shake: .5, chunks: 8, chunksMax: 24, chunkPower: 70, chunkLife: 1.6, flash: .4,
+        rain: 40, rainSpread: 120, rainLife: 2.5, crackArms: 4, crackStep: 5 },
+      ramp: {
+        friche: { channelMin: 52, strike: .9, rest: 1.3, speedup: .12, shot: null },
+        industrie: { channelMin: 49, strike: .97, rest: 1.17, speedup: .14, shot: { speed: 440, gap: 2.6 } },
+        decharge: { channelMin: 47, strike: 1.03, rest: 1.03, speedup: .16, shot: { speed: 480, gap: 2.3 } },
+        nucleaire: { channelMin: 44, strike: 1.1, rest: .9, speedup: .18, shot: { speed: 520, gap: 2 } }
+      },
+      defense: { warn: 1.2, warnMin: 1 },
+      shot: { track: 1, lock: .3, r: 5 }
     },
 
     // Boutique de fin de pousse (v4.6.0) : 3 articles tirés (un à −50 %), achetés au score ; effets sur la pousse suivante.
@@ -329,7 +346,7 @@
         oildrum: 'rupture : bidon d’huile', gear: 'rupture : engrenage rouillé', pipe: 'rupture : tuyau percé',
         fridge: 'rupture : frigo aux CFC', crt: 'rupture : télé cathodique', sofa: 'rupture : canapé défoncé',
         hazmat: 'rupture : combinaison vide', gasmask: 'rupture : masque à gaz', duck: 'rupture : canard mutant',
-        boss: 'écrasée par le boss', defense: 'fauchée par une défense', trap: 'la trappe est fermée'
+        head: 'la tête est blindée', boss: 'écrasée par le boss', defense: 'emportée par la défense', shot: 'touchée par un tir'
       }
     },
 

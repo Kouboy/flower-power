@@ -11,7 +11,7 @@
   const SFX = { bus: 'sfx' };
 
   // Anti-rafale par type de son, propre à chaque moteur (une spore qui paie dix fois ne joue qu'un « kling »).
-  const GAPS = { grazeStart: .10, contaminate: .24, scrape: .032, letter: .02, type: .02 };
+  const GAPS = { bossBlast: .07, bossCrumble: .1, grazeStart: .10, contaminate: .24, scrape: .032, letter: .02, type: .02 };
   function allowed(b, kind) {
     const n = b.now(), cd = b.cooldowns || (b.cooldowns = {});
     if ((cd[kind] || 0) > n) return false;
@@ -63,9 +63,22 @@
     hit: (n, z, d) => { d('kick', 0, 1.4); z(0, .18, .1, 520, 'bandpass'); n('slap', 40, 0, .2, 1, .55); },
     acid: (n, z) => { z(0, .3, .09, 2400, 'highpass'); n('clav', 46, 0, .25, 2, .66); },
     crack: (n, z, d) => { z(0, .12, .12, 300, 'lowpass'); z(.05, .08, .08, 900, 'bandpass'); d('snare', .02, .6); },
-    // Boss (v4.12.0) : point faible percé (craquement métallique et gerbe), trappe qui s'ouvre (clang puis grincement qui descend), boss battu (impact et fanfare qui monte).
-    pierce: (n, z, d) => { n('metal', 76, 0, .12, 1.2); n('cowbell', 83, .02, .1, .8); z(0, .1, .1, 3000, 'highpass'); d('snare', .03, .8); n('bell', 88, .08, .2, .7); n('bell', 95, .13, .25, .6); },
-    trapOpen: (n, z) => { n('clonk', 38, 0, .12, 1.4); n('metal', 52, 0, .25, 1.1); z(0, .2, .1, 600, 'bandpass', 2); n('slide', 64, .15, .5, 1, .6); z(.15, .45, .05, 900, 'bandpass', 4); },
+    // Boss : explosion d'une cible (retours de playtest : bien plus grosse — double coup sourd, souffle grave, déchirure aiguë, ferraille,
+    // basse qui s'effondre, grondement qui traîne), graine rendue, avertissement qui monte, clic de la visée figée, tir, explosion de la tête ; boss battu (impact et fanfare qui monte).
+    bossTarget: (n, z, d) => {
+      d('kick', 0, 1.9); d('snare', .02, 1.3); d('kick', .16, 1.4);
+      z(0, 1, .2, 700, 'lowpass'); z(.02, .3, .12, 2800, 'bandpass'); z(.14, 1.2, .1, 240, 'lowpass');
+      n('sub', 31, 0, 1, 1.6, .8); n('slap', 38, 0, .3, 1.1, .5); n('clonk', 45, .03, .2, 1); n('clonk', 41, .09, .2, .8);
+      n('lowbrass', 40, .04, .7, 1.2, .7); n('lowbrass', 35, .1, .8, 1.1, .7); n('organ', 28, .12, 1.1, 1.2, .8); n('bell', 84, .02, .4, .6, .6);
+    },
+    bossSeed: (n) => { n('bell', 76, .08, .14, .8); n('bell', 83, .16, .14, .9); n('bell', 88, .24, .35, 1); },
+    bossWarn: (n, z, d, dur) => { for (let at = 0; at < dur - .06; at += .16 - .1 * at / dur) { const k = at / dur; n('organ', 52 + Math.round(16 * k), at, .1, .8 + .5 * k); } },   // dur : l'avertissement (s), qui monte et accélère jusqu'au coup
+    bossLock: (n, z) => { n('clav', 88, 0, .04, 1.3); z(0, .04, .1, 3200, 'highpass'); },
+    bossShot: (n, z) => { z(0, .16, .12, 1800, 'bandpass'); n('pluck', 60, 0, .1, 1, .5); },
+    bossHead: (n, z, d) => { d('kick', 0, 1.8); d('snare', .05, 1); z(0, .8, .16, 300, 'lowpass'); n('sub', 31, 0, .8, 1.5); for (const [m, at] of [[52, .1], [59, .18], [64, .26]]) n('brass', m, at, .3, 1.1); },
+    // Mort du boss : chaque paroi explose (coup sourd, souffle), puis s'effondre (grondement, ferraille qui tombe) ; le paroxysme lance le jingle (audio.js).
+    bossBlast: (n, z, d) => { d('kick', 0, 1.6); z(0, .5, .14, 500, 'lowpass'); n('sub', 33, 0, .4, 1.2, .8); n('clonk', 43, .02, .15, .7); },
+    bossCrumble: (n, z, d) => { z(0, .9, .1, 220, 'lowpass'); d('kick', .05, .9); for (let i = 0; i < 4; i++) n('clonk', 40 - i * 2, .08 + i * .09, .12, .6 - i * .1); },
     bossDown: (n, z, d) => { d('kick', 0, 1.6); z(0, .4, .12, 350, 'lowpass'); n('sub', 33, 0, .5, 1.2); for (const [m, at] of [[64, .12], [71, .2], [76, .28], [83, .36]]) n('brass', m, at, .3, 1.1); n('bell', 88, .36, .6, .9); },
     ready: (n) => { n('organ', 52, 0, .3, 1.5); n('organ', 59, .12, .3, 1.3); },
     // Interface.

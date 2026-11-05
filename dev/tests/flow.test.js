@@ -112,7 +112,8 @@ FP.test('flow: pas de mort pendant l’éclosion', () => {
   s.query = { solid: { kind: 'server' }, leak: 0, toxic: 0, danger: 0, grazes: [] };
   FP.flow.update(s, 1 / 60); FP.assertEqual(s.mode, 'bloom'); FP.assertEqual(s.plant.reserves, 3);
 });
-const bloomNow = (s) => { s.plant.tip = { x: 220, y: s.world.surfaceY - 1 }; FP.collision.update(s); FP.flow.update(s, 0); };
+// Une pousse qui réussit ; au boss, elle a transpercé la tête (sinon la surface est une paroi, play/flow.js).
+const bloomNow = (s) => { if (s.world.bossLevel) s.world.bossLevel.head.solid.off = true; s.plant.tip = { x: 220, y: s.world.surfaceY - 1 }; FP.collision.update(s); FP.flow.update(s, 0); };
 const advance = (s, sec) => { for (let t = 0; t < sec - 1e-9; t += 1 / 60) FP.flow.update(s, 1 / 60); };
 FP.test('flow: fondu sortant puis nouveau niveau puis fondu entrant', () => {
   const s = flowRun(), before = JSON.stringify(s.world.solids.map(o => [o.x, o.y]));

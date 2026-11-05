@@ -85,6 +85,7 @@
     G[ch] = [...(base === 'I' ? ACCENT3 : ACCENT)[acc], ...G[base]];
   }
   G['Ç'] = ['.###.', '#...#', '#....', '#....', '.###.', '..#..', '.##..'];
+  G['Œ'] = ['.####', '#.#..', '#.#..', '#.###', '#.#..', '#.#..', '.####'];   // v5.1.0 : « SON CŒUR »
 
   const upper = (s) => String(s).toLocaleUpperCase('fr-FR');
   const glyph = (ch) => G[ch] || G['?'];

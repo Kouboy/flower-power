@@ -1,26 +1,30 @@
 // ui/hud.js — HUD en pixels d'art, dans les coins du bas : graines restantes, ÉcoCrédits™, et seulement quand ils sont actifs,
 // le pollen et le combo ; « TOUCHER POUR POUSSER » entre deux niveaux.
-// Lit     : state.mode, state.time, state.plant.reserves, state.score.{eco,flowerBonus,combo}, state.run.{milieu,saison}, state.world.bossLevel, state.bossFight.pierced, FP.config.{plant.seeds,text.ready,milieux},
-//           FP.palette.{seed,boss}, FP.font, FP.px, FP.view.ui.
-// Écrit   : state.fx.ui.hud uniquement (animations : score affiché, graines perdues, rebonds).
-// Expose  : FP.hud.items(state) (… boss : booléens des points percés, ou null), FP.hud.layout(h) (purs, testés), FP.hud.draw(g, state) (toile d'interface), FP.hud.{MARGIN, SEED_SCALE, SEED_STEP}.
+// Lit     : state.mode, state.time, state.plant.reserves, state.score.{eco,flowerBonus,combo}, state.run.{milieu,saison}, state.world.bossLevel, state.bossFight.{destroyed,headOpen}, FP.config.{plant.seeds,text.ready,milieux},
+//           FP.bossFx.flying (graines rendues encore en vol), FP.palette.{seed,boss}, FP.font, FP.px, FP.view.ui.
+// Écrit   : state.fx.ui.hud uniquement (animations : score affiché, graines perdues ou gagnées, rebonds).
+// Expose  : FP.hud.items(state) (seeds : la réserve moins les graines rendues encore en vol, flying : celles-ci ; … boss : { targets: [bool ×3] (vrai une fois détruite), head: 'armored' | 'open' }, ou null hors boss), FP.hud.layout(h), FP.hud.seedCenter(i, h) (purs, testés), FP.hud.draw(g, state) (toile d'interface), FP.hud.{MARGIN, SEED_SCALE, SEED_STEP}.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
   const MARGIN = 4;                 // pixels d'art depuis les bords
-  const SEED_SCALE = 2, SEED_STEP = 16, LOST_TIME = .4, CRACK_TIME = .25;   // graines ×2 : lisibles sur téléphone
-  const BOSS_STEP = 11;             // écart des icônes de points faibles
+  const SEED_SCALE = 2, SEED_STEP = 16, LOST_TIME = .4, CRACK_TIME = .25, POP_TIME = .25;   // graines ×2 : lisibles sur téléphone ; POP_TIME : éclat d'une graine qui arrive
+  const BOSS_STEP = 11;             // écart des icônes du boss (trois cibles, puis la tête)
   const EMPTY = '#3a2a1e', SPROUT = '#7fb04a', MILIEU = '#c9a87a';
 
-  // Ce que le HUD affiche : pas de fleurs (le parterre en tient lieu), pas d'élan.
+  // La tête est à nu quand ses trois cibles sont détruites : state.bossFight.headOpen (play/boss.js) en est l'unique source.
+  const bossItem = (fight) => ({ targets: fight.destroyed.slice(), head: fight.headOpen ? 'open' : 'armored' });
+
+  // Ce que le HUD affiche : pas de fleurs (le parterre en tient lieu), pas d'élan. Une graine rendue par un assaut (render/boss-fx.js)
+  // ne compte qu'une fois arrivée au compteur : sa case reste vide pendant le vol.
   function items(state) {
-    const sc = state.score;
+    const sc = state.score, flying = Math.min(state.plant.reserves, FP.bossFx ? FP.bossFx.flying(state) : 0);
     return {
-      seeds: state.plant.reserves, seedsMax: FP.config.plant.seeds, eco: sc.eco,
+      seeds: state.plant.reserves - flying, flying, seedsMax: FP.config.plant.seeds, eco: sc.eco,
       pollen: sc.flowerBonus > 0 ? sc.flowerBonus : null, combo: sc.combo > 1 ? sc.combo : null,
       ready: state.mode === 'ready',
       milieu: FP.config.milieux[state.run.milieu].name, mult: state.run.saison,   // v4.9.0 : milieu en cours, multiplicateur de saison
-      boss: state.world.bossLevel ? state.bossFight.pierced.slice() : null   // v4.12.0 : un booléen par point faible, vrai une fois percé
+      boss: state.world.bossLevel ? bossItem(state.bossFight) : null   // v5.1.0 : cibles détruites, tête blindée ou à nu
     };
   }
 
@@ -30,15 +34,19 @@
     return { seedY, scoreY, comboY, pollenY: seedY - 13, textY: comboY - 13 };
   }
 
+  // Centre de la graine i (pixels de la toile d'interface de hauteur h) : là où atterrit la graine rendue par un assaut (render/boss-fx.js).
+  const seedCenter = (i, h) => ({ x: MARGIN + i * SEED_STEP + 3 * SEED_SCALE, y: layout(h).seedY + 3.5 * SEED_SCALE });
+
   function memo(state, it) {
     const ui = state.fx.ui || (state.fx.ui = {});
-    return ui.hud || (ui.hud = { shownEco: it.eco, seeds: it.seeds, lostAt: [], pollen: null, pollenAt: -9, combo: null, comboAt: -9, last: state.time });
+    return ui.hud || (ui.hud = { shownEco: it.eco, seeds: it.seeds, held: it.seeds + it.flying, lostAt: [], gainAt: [], pollen: null, pollenAt: -9, combo: null, comboAt: -9, last: state.time });
   }
 
-  // Graine : ovale brun avec reflet et pousse ; vide et sombre une fois perdue ; fendue juste après la perte.
-  // Dessinée sur une grille 6 × 8 agrandie SEED_SCALE fois depuis (x, y).
-  function seed(g, x, y, full, crack) {
+  // Graine : ovale brun avec reflet et pousse ; vide et sombre une fois perdue ; fendue juste après la perte ; qui arrive (pop) :
+  // levée de 2 pixels dans un liseré doré. Dessinée sur une grille 6 × 8 agrandie SEED_SCALE fois depuis (x, y).
+  function seed(g, x, y, full, crack, pop) {
     const p = FP.palette.seed, k = SEED_SCALE;
+    if (pop) { y -= 2; g.fillStyle = FP.font.COLORS.gold; g.fillRect(x - 1, y - k - 1, 6 * k + 2, 8 * k + 2); }
     const r = (col, dx, dy, w, h) => { g.fillStyle = col; g.fillRect(x + dx * k, y + dy * k, w * k, h * k); };
     r(FP.font.INK, 1, 0, 4, 1); r(FP.font.INK, 0, 1, 6, 5); r(FP.font.INK, 1, 6, 4, 1);
     r(full ? p.body : EMPTY, 1, 1, 4, 5);
@@ -54,14 +62,17 @@
     g.fillStyle = FP.font.COLORS.gold; g.fillRect(x + 2, y + 2, 2, 2);
   }
 
-  // Points faibles du boss : une cible par point, jaune pleine une fois percée, creuse et sombre sinon ; sous le nom du milieu.
+  // Boss : trois cibles (carré plein, éteint et fumant une fois détruite), puis la tête (blindée : plaque grise ; à nu : lueur) ; sous le nom du milieu.
   function bossIcons(g, boss, w) {
-    const P = FP.palette.boss, x0 = Math.round(w / 2 - (boss.length - 1) * BOSS_STEP / 2), y = MARGIN + FP.font.HEIGHT + 7;
-    boss.forEach((hit, i) => {
+    const P = FP.palette.boss, { px } = FP, n = boss.targets.length + 1, x0 = Math.round(w / 2 - (n - 1) * BOSS_STEP / 2), y = MARGIN + FP.font.HEIGHT + 7;
+    boss.targets.forEach((done, i) => {
       const x = x0 + i * BOSS_STEP;
-      FP.px.disc(g, x, y, 4, FP.font.INK);
-      if (hit) { FP.px.disc(g, x, y, 3, P.weak[1]); FP.px.disc(g, x, y, 1, P.weak[0]); } else { FP.px.disc(g, x, y, 3, P.hole); FP.px.ring(g, x, y, 3, P.smoke[1]); }
+      px.rect(g, x - 4, y - 4, 9, 9, FP.font.INK);
+      if (done) { px.rect(g, x - 3, y - 3, 7, 7, P.hole); px.rect(g, x - 1, y - 1, 3, 3, P.smoke[1]); } else { px.rect(g, x - 3, y - 3, 7, 7, P.weak[1]); px.rect(g, x - 1, y - 1, 3, 3, P.weak[0]); }
     });
+    const hx = x0 + boss.targets.length * BOSS_STEP;
+    px.disc(g, hx, y, 4, FP.font.INK);
+    if (boss.head === 'open') { px.disc(g, hx, y, 3, P.glow[1]); px.disc(g, hx, y, 1, P.weak[0]); } else { px.disc(g, hx, y, 3, P.plate[0]); px.ring(g, hx, y, 3, P.smoke[0]); }
   }
 
   function draw(g, state) {
@@ -69,14 +80,18 @@
     const dt = Math.max(0, Math.min(.1, t - m.last));
     m.last = t;
 
-    // Graines : celles perdues depuis la dernière frame se fendent puis s'éteignent.
-    for (let i = it.seeds; i < m.seeds; i++) m.lostAt[i] = t;
-    m.seeds = it.seeds;
+    // Graines : celles perdues depuis la dernière frame se fendent puis s'éteignent ; la case qu'une graine en vol a quittée reste vide
+    // sans se fendre, et la graine qui arrive (rendue ou gagnée) fait un petit éclat.
+    const held = it.seeds + it.flying;
+    for (let i = held; i < m.held; i++) m.lostAt[i] = t;
+    for (let i = m.seeds; i < it.seeds; i++) m.gainAt[i] = t;
+    m.seeds = it.seeds; m.held = held;
     const L = layout(h), seedY = L.seedY;
     for (let i = 0; i < it.seedsMax; i++) {
       const lost = t - (m.lostAt[i] !== undefined ? m.lostAt[i] : -9);
       const full = i < it.seeds || lost < LOST_TIME, crack = i >= it.seeds && lost < LOST_TIME && lost >= 0;
-      seed(g, MARGIN + i * SEED_STEP, seedY, full && !(crack && lost > CRACK_TIME), crack);
+      const pop = i < it.seeds && t - (m.gainAt[i] !== undefined ? m.gainAt[i] : -9) < POP_TIME;
+      seed(g, MARGIN + i * SEED_STEP, seedY, full && !(crack && lost > CRACK_TIME), crack, pop);
     }
 
     // Score : compteur d'arcade qui rattrape le vrai score en ~0,5 s ; un score qui baisse (nouveau run) est repris tel quel.
@@ -101,5 +116,5 @@
     if (it.ready && Math.floor(t * 2) % 2 === 0) font.draw(g, FP.config.text.ready, w / 2, L.textY, { align: 'center' });
   }
 
-  FP.hud = { items, layout, draw, MARGIN, SEED_SCALE, SEED_STEP };
+  FP.hud = { items, layout, seedCenter, draw, MARGIN, SEED_SCALE, SEED_STEP };
 })();

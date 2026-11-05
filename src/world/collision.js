@@ -1,16 +1,19 @@
 // world/collision.js — requête unique de la pointe contre les dangers, une fois par frame.
 // Lit     : state.mode, state.plant.tip, state.world.{solids (ceux marqués `off` sont ignorés),toxics,leaks} (leak.cx/cy/cr calculés par world/hazards.js),
-//           FP.hazards.toxicIntensityAt, FP.config.{hazards,graze}.
-// Écrit   : state.query = { solid, danger, near, toxic, leak, leakHit, grazes } ; leak.hitFlash de chaque limace touchée.
+//           FP.hazards.toxicIntensityAt, FP.config.{hazards,graze}. Un solide de kind 'target' non détruit va dans query.target, jamais dans query.solid ;
+//           la tête à nu (headOpen) va dans query.head, la tête blindée dans query.solid (une paroi).
+// Écrit   : state.query = { solid, target, head, danger, near, toxic, leak, leakHit, grazes } ; leak.hitFlash de chaque limace touchée.
+//           target : la cible de boss intacte touchée (assaut, play/flow.js), prioritaire sur solid.
+//           head : la tête de boss à nu touchée (transpercée, play/flow.js) ; la membrane ne la touche pas.
 //           grazes : un élément { obj, kind:'solid'|'leak', intensity, x, y } par frôlement en cours (play/graze.js).
-// Expose  : FP.collision.update(state), FP.collision.queryPoint(world, x, y), FP.collision.grazeBand(solid),
+// Expose  : FP.collision.update(state), FP.collision.queryPoint(world, x, y, headOpen), FP.collision.grazeBand(solid),
 //           FP.collision.distanceTo(solid, x, y) (distance signée au polygone).
 // Porté de la v3.43.16 (queryTipHazards, pixelMaskDistance, solidGrazeBand) — polygones authorés uniquement.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
 
-  const EMPTY = () => ({ solid: null, danger: 0, near: null, toxic: 0, leak: 0, leakHit: null, grazes: [] });
+  const EMPTY = () => ({ solid: null, target: null, head: null, danger: 0, near: null, toxic: 0, leak: 0, leakHit: null, grazes: [] });
 
   // Bande de frôlement autour du polygone : seulement si l'obstacle accepte le flyover.
   const grazeBand = (o) => (o.flyoverEligible ? o.grazeRadius : 0);
@@ -22,14 +25,19 @@
     return FP.geom.sdPoly(dx * ca - dy * sa, dx * sa + dy * ca, o.collision);
   }
 
-  function querySolids(q, solids, x, y) {
+  function querySolids(q, solids, x, y, headOpen) {
     for (const o of solids) {
-      if (o.off) continue;                                   // défense au repos, trappe ouverte
+      if (o.off) continue;                                   // défense au repos, cible détruite, plaque tombée, tête transpercée
       const band = grazeBand(o), br = o.broadR + band + FP.config.graze.broadPad;
       const dx = x - o.x, dy = y - o.y;
       if (dx * dx + dy * dy > br * br) continue;             // broad phase
       const d = distanceTo(o, x, y);
-      if (d <= 0) { if (!q.solid) q.solid = o; continue; }
+      if (d <= 0) {
+        if (o.kind === 'target') { if (!q.target) q.target = o; }   // v5.1.0 : une cible n'est pas une paroi, c'est un assaut
+        else if (o.kind === 'head' && headOpen) { if (!q.head) q.head = o; }   // tête à nu : on la transperce
+        else if (!q.solid) q.solid = o;
+        continue;
+      }
       if (d < band) {
         const intensity = Math.max(0, Math.min(1, 1 - d / band));
         if (intensity > FP.config.graze.minIntensity) {
@@ -63,9 +71,9 @@
     }
   }
 
-  function queryPoint(world, x, y) {
+  function queryPoint(world, x, y, headOpen) {
     const q = EMPTY();
-    querySolids(q, world.solids, x, y);
+    querySolids(q, world.solids, x, y, headOpen);
     for (const o of world.toxics || []) q.toxic += FP.hazards.toxicIntensityAt(o, x, y);
     queryLeaks(q, world.leaks || [], x, y);
     return q;
@@ -73,7 +81,7 @@
 
   function update(state) {
     const tip = state.plant.tip;
-    state.query = state.mode === 'playing' && tip ? queryPoint(state.world, tip.x, tip.y) : EMPTY();
+    state.query = state.mode === 'playing' && tip ? queryPoint(state.world, tip.x, tip.y, !!(state.bossFight && state.bossFight.headOpen)) : EMPTY();
     // Toutes les limaces touchées clignotent (v3), pas seulement la première.
     if (state.query.leakHit) for (const l of state.world.leaks) if (inContact(l, tip.x, tip.y)) l.hitFlash = FP.config.hazards.hitFlash;
   }

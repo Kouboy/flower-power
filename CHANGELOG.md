@@ -2,6 +2,22 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v5.1.0 — Refonte des boss
+
+- les quatre boss sont refaits d'après un plan composé à la main (`assets/boss/plans.js` : muraille à meurtrières, colosse traversé, forteresse, circuit puis cœur) : canaux étroits sans menace, salles larges où agissent les défenses ;
+- trois cibles par boss, chacune reliée à une plaque du blindage de la tête : la pointe qui en touche une la détruit, meurt dans l'explosion (un assaut, pas un échec), la plaque tombe, et la graine est rendue (« +1 GRAINE », la réserve ne baisse pas) ;
+- la tête, blindée tant qu'il reste une plaque (la percuter est une mort normale), s'allume une fois les trois cibles détruites : la tige la transperce sans mourir (arrêt sur image, explosion), puis la fleur éclot ;
+- les défenses regardent la tige : avertissement long, coup sur la moitié de la salle où elle se trouvait, repos ; on les évite en se décalant, jamais en attendant (plus de loterie des pistons) ; à partir du boss 2, des tourelles visent la pointe, ligne de visée figée avant le tir ;
+- plus de points faibles effleurés, de couloir en zigzag, de trappe sous la pelouse ni de panneau de texte ; rendu provisoire en formes simples (les images viennent en v5.2.0) ;
+- outil de réglage `dev/boss.html` : les quatre plans à 360 et 440 px (parois, cibles, tête, plaques, salles, tourelles, trajets) ;
+- le plafond n'est ouvert qu'à la tête : chaque plan le ferme d'un bord à l'autre (les plaques tombées ne laissent qu'une niche), et la surface atteinte sans avoir transpercé la tête est une mort contre le boss ; on n'entre dans une salle que près de son milieu, d'où l'on a toujours le temps de passer dans l'autre moitié avant le coup ;
+- la graine rendue quitte le compteur pendant son vol et le remplit d'un éclat en arrivant ; la salle avertie tremble et son avertissement monte jusqu'au coup ; les tirs s'arrêtent sur le boss ; parois peintes une fois dans un calque ;
+- un combat complet par boss est joué par le banc (`dev/tests/bossfight.test.js`) à travers les vrais systèmes ;
+- retours de playtest, boss trop faciles : un cran de difficulté par boss (`config.boss.ramp`) — canaux resserrés à la main (52 px au boss 1, 49, 47, 44 au boss 4), coup de la défense plus long (0,9 → 1,1 s), repos plus court (1,3 → 0,9 s), accélération par cible plus forte (12 → 18 %), tirs plus rapides et plus serrés (440 px/s toutes les 2,6 s au boss 2, 520 toutes les 2 s au boss 4) ; à la Bétonneuse, muraille plus basse et haute galerie des vannes défendue (coulée de béton, trois sections) : filer droit sur une vanne ne suffit plus, il faut esquiver ;
+- point faible détruit bien plus spectaculaire : arrêt sur image puis ralenti d'une demi-seconde, éclair blanc, forte secousse, la cible éclate en éclats qui retombent, sa plaque se détache en tournoyant, gerbe d'étincelles et de jetons, explosion sonore à plusieurs couches ;
+- boss détruit : cinématique de 3,5 s au ralenti — la pousse se fige, les menaces se taisent, la musique coupe net ; explosions en chaîne de la tête vers les bords, chaque paroi se fissure puis s'effondre en gros morceaux ; au paroxysme, flash plein écran, jingle de victoire et pluie de jetons ; puis la pousse repart à travers les ruines et éclot ;
+- banc : 619 tests.
+
 ## v5.0.0 — Obstacles PixelLab officiels
 
 - les obstacles PixelLab deviennent les obstacles du jeu, sans paramètre : 26 familles, dont trois propres à chaque milieu ;

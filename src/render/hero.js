@@ -15,7 +15,7 @@
   function mood(state, memory) {
     const t = state.time, p = state.plant;
     let cause = memory && state.mode !== 'playing' ? memory.cause : null;
-    for (const e of state.events) if (e.type === 'death') cause = e.cause === 'solid' ? 'solid' : 'melt';
+    for (const e of state.events) if (e.type === 'death') cause = e.cause === 'solid' || e.cause === 'assault' ? 'solid' : 'melt';
     const grazes = (state.query && state.query.grazes) || [];
     const dizzy = p.toxicTimer / FP.config.toxic.burnAt > .6;
     const sweat = grazes.some(g => g.intensity > .7);

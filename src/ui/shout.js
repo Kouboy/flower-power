@@ -15,6 +15,7 @@
     const t = FP.config.text;
     if (event.cause === 'leak') return t.shout.leak;
     if (event.cause === 'toxic') return t.shout.toxic;
+    if (event.cause === 'assault') return '';   // l'assaut (v5.1.0) n'est pas une mort : aucun cri
     const full = t.death[event.kind] || t.deathDefault, at = full.indexOf(' : ');
     return (at >= 0 ? full.slice(at + 3) : full).toLocaleUpperCase('fr-FR') + '\u00a0!';   // insécable : le « ! » ne part pas seul à la ligne
   }
@@ -64,7 +65,7 @@
 
   function draw(g, state) {
     const ui = state.fx.ui || (state.fx.ui = {});
-    for (const e of state.events) if (e.type === 'death') ui.shout = { text: textFor(e), t0: state.time };
+    for (const e of state.events) if (e.type === 'death' && e.cause !== 'assault') ui.shout = { text: textFor(e), t0: state.time };   // un assaut n'est pas une mort : ni cri ni « rupture : … »
     for (const c of cues(state)) FP.audio.sfx(c);
     if (ui.shout) drawShout(g, ui.shout, state.time);
     const help = helpFor(state);

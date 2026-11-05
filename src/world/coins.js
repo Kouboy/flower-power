@@ -26,13 +26,14 @@
     return Math.hypot((dx * ca - dy * sa) / t.rx, (dx * sa + dy * ca) / t.ry);
   }
 
+  // Les solides `off` (cible détruite, plaque tombée, zone de défense au repos) sont ignorés partout.
   // Une pièce est posable : dans le monde (marge), sous la surface, hors de tout obstacle, au plus au premier tiers d'une nappe,
   // et sans toucher une pièce d'un chapelet déjà posé.
   function fits(world, x, y) {
     const k = FP.config.coins;
     if (x < k.radius + k.edge || x > world.width - k.radius - k.edge || y <= world.surfaceY + k.sliceMargin || y >= startLine(world)) return false;
     // Rejet rapide en hauteur (même résultat) : un obstacle ou une nappe trop haut ou trop bas ne peut pas toucher la pièce.
-    return world.solids.every(o => Math.abs(o.y - y) > o.broadR + k.radius + 2 || FP.collision.distanceTo(o, x, y) >= k.radius + 2) &&
+    return world.solids.every(o => o.off || Math.abs(o.y - y) > o.broadR + k.radius + 2 || FP.collision.distanceTo(o, x, y) >= k.radius + 2) &&
       world.toxics.every(t => Math.abs(t.y - y) > Math.max(t.rx, t.ry) || ellipseK(t, x, y) >= 1 - k.toxicBite) &&
       world.coins.every(c => Math.hypot(c.x - x, c.y - y) > 2 * k.radius + 2);
   }
@@ -141,7 +142,7 @@
   // Appât de la tranche : un ancrage tiré parmi les dangers présents ; aucun → chapelet décalé du chemin.
   function baitChain(world, rng, slice) {
     const inSlice = (o) => o.y >= slice.top && o.y < slice.bottom, n = baitCount(rng), options = [];
-    const solids = world.solids.filter(inSlice);
+    const solids = world.solids.filter(o => !o.off && inSlice(o));
     for (const o of solids) if (FP.collision.grazeBand(o) > 0) options.push(['graze', () => grazeArc(world, o, n)]);
     for (const a of solids) for (const b of solids) if (a !== b && a.x < b.x && Math.abs(a.y - b.y) < 60) options.push(['gap', () => gapLine(world, a, b, n)]);
     for (const t of world.toxics.filter(inSlice)) options.push(['toxic', () => toxicBite(world, t, FP.level.pathXAt(world, t.y) < t.x ? -1 : 1, n)]);

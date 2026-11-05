@@ -1,6 +1,6 @@
 // ui/certificate.js — écran de fin : un « certificat d'éco-responsabilité » qui monte sur le jeu assombri, ses lignes qui
 // s'écrivent, puis le tampon « VALIDÉ* » qui s'abat ; la relance n'est possible qu'après le tampon.
-// Lit     : state.time, state.score.{flowers,eco,recordBefore}, state.plant.stemCount, state.run.{bosses,saison,milieu,playtest,done}, state.flow.overReason,
+// Lit     : state.time, state.score.{flowers,eco,recordBefore}, state.plant.{stemCount,assaults}, state.run.{bosses,saison,milieu,playtest,done}, state.flow.overReason,
 //           FP.config.text.{certificate,again}, FP.font, FP.view.ui.
 // Écrit   : state.fx.ui.{overAt, readyAfter, certCue} uniquement (début de la fin de partie ; délai avant relance, tampon compris).
 // Expose  : FP.certificate.lines(state), FP.certificate.canRestart(state), FP.certificate.cues(state) (purs hors mémoire, testés),
@@ -27,7 +27,7 @@
     const rows = [
       { label: t.flowers, value: fmt(sc.flowers) },
       { label: t.eco, value: 'Ɇ' + fmt(sc.eco) },
-      { label: t.stems, value: fmt(state.plant.stemCount) },
+      { label: t.stems, value: fmt(state.plant.stemCount - (state.plant.assaults || 0)) },   // v5.1.0 : une tige d'assaut n'est pas un sacrifice
       sitesRow(state, t),
       beaten ? { label: t.record, value: t.beaten, beaten: true } : { label: t.record, value: fmt(rb.flowers) + ' ' + t.flowersUnit, beaten: false }
     ];

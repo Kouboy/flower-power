@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Flower Power — plans de boss</title>
+<style>
+  body{font:14px/1.5 system-ui,sans-serif;background:#15110e;color:#f7e9c7;margin:24px;}
+  h1{font-size:20px;margin:0 0 4px;} h2{font-size:15px;margin:20px 0 6px;}
+  .row{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start;}
+  figure{margin:0;} figcaption{font-size:12px;opacity:.8;margin-top:4px;}
+  canvas{background:#2a211b;border:1px solid #4a3a30;}
+  .key span{display:inline-block;width:12px;height:12px;margin:0 4px -2px 12px;border:1px solid #000;}
+  #err{color:#ff8a7a;white-space:pre-wrap;}
+</style>
+</head>
+<body>
+<h1>Plans de boss</h1>
+<div class="key">
+  <span style="background:#6b625a"></span>mur<span style="background:#e8a030"></span>cible<span style="background:#e04848"></span>tête<span style="background:#7a8ca0"></span>plaque
+  <span style="background:#5ac8e0"></span>tourelle<span style="background:#80e070"></span>trajets<span style="background:#a050d0"></span>nappe
+  <span style="background:rgba(255,60,60,.25)"></span>salle, moitié gauche<span style="background:rgba(255,160,40,.25)"></span>moitié droite
+</div>
+<div id="err"></div>
+<div id="out"></div>
+<!-- Mêmes scripts que dev/check.html, sans le banc ni les tests ; la boucle du jeu n'est pas lancée. -->
+<script src="../assets/obstacles/manifest.js"></script>
+<script src="../assets/boss/plans.js"></script>
+<script src="../src/core/fp.js"></script>
+<script src="../src/core/geom.js"></script>
+<script src="../src/core/config.js"></script>
+<script src="../src/core/state.js"></script>
+<script src="../src/world/catalog.js"></script>
+<script src="../src/world/level.js"></script>
+<script src="../src/world/coins.js"></script>
+<script src="../src/world/boss-plan.js"></script>
+<script src="../src/world/boss.js"></script>
+<script src="../src/world/hazards.js"></script>
+<script src="../src/play/plant.js"></script>
+<script src="../src/world/collision.js"></script>
+<script src="../src/play/difficulty.js"></script>
+<script src="../src/play/flow.js"></script>
+<script src="../src/play/graze.js"></script>
+<script src="../src/play/coins.js"></script>
+<script src="../src/play/shop.js"></script>
+<script src="../src/play/scoring.js"></script>
+<script src="../src/play/powerups.js"></script>
+<script src="../src/play/boss.js"></script>
+<script src="../src/play/boss-threats.js"></script>
+<script src="../src/audio/synth.js"></script>
+<script src="../src/audio/score.js"></script>
+<script src="../src/audio/songs.js"></script>
+<script src="../src/audio/songs-industrie.js"></script>
+<script src="../src/audio/songs-decharge.js"></script>
+<script src="../src/audio/songs-nucleaire.js"></script>
+<script src="../src/audio/sequencer.js"></script>
+<script src="../src/audio/music.js"></script>
+<script src="../src/audio/sfx.js"></script>
+<script src="../src/audio/audio.js"></script>
+<script src="../src/ui/input.js"></script>
+<script src="../src/play/camera.js"></script>
+<script src="../src/debug/perf.js"></script>
+<script src="../src/debug/flydebug.js"></script>
+<script src="../src/render/palette.js"></script>
+<script src="../src/render/decor-tube.js"></script>
+<script src="../src/render/decor-friche.js"></script>
+<script src="../src/render/decor-industrie.js"></script>
+<script src="../src/render/decor-decharge.js"></script>
+<script src="../src/render/decor-nucleaire.js"></script>
+<script src="../src/render/px.js"></script>
+<script src="../src/render/boss.js"></script>
+<script src="../src/render/boss-fx.js"></script>
+<script src="../src/render/faces.js"></script>
+<script src="../src/render/cast.js"></script>
+<script src="../src/render/cast2.js"></script>
+<script src="../src/render/hero.js"></script>
+<script src="../src/render/flowers.js"></script>
+<script src="../src/render/soil.js"></script>
+<script src="../src/render/plant.js"></script>
+<script src="../src/render/drillfx.js"></script>
+<script src="../src/render/mound.js"></script>
+<script src="../src/render/effects.js"></script>
+<script src="../src/render/particles.js"></script>
+<script src="../src/ui/font.js"></script>
+<script src="../src/ui/hud.js"></script>
+<script src="../src/ui/shout.js"></script>
+<script src="../src/ui/cheer.js"></script>
+<script src="../src/ui/cards.js"></script>
+<script src="../src/ui/order.js"></script>
+<script src="../src/ui/logo.js"></script>
+<script src="../src/ui/title.js"></script>
+<script src="../src/ui/certificate.js"></script>
+<script src="../src/render/obstacles.js"></script>
+<script src="../src/render/coins.js"></script>
+<script src="../src/render/hazards.js"></script>
+<script src="../src/core/loop.js"></script>
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const MILIEUX = ['friche', 'industrie', 'decharge', 'nucleaire'];
+    const PATH_COLORS = ['#80e070', '#70d0ff', '#ffe070', '#ff90e0'];   // une couleur par trajet, la tête en dernier
+    const out = document.getElementById('out');
+    const poly = (g, pts, fill, stroke) => {
+      g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath();
+      if (fill) { g.fillStyle = fill; g.fill(); }
+      if (stroke) { g.strokeStyle = stroke; g.lineWidth = 1; g.stroke(); }
+    };
+    function draw(id, W) {
+      const H = Math.round(W * 16 / 9);
+      const s = FP.state.createRun(7, { W, H });
+      FP.level.startRun(s); s.run.milieu = MILIEUX.indexOf(id); s.run.boss = true; FP.level.generate(s);
+      const w = s.world, plan = FLOWER_POWER_BOSS_PLANS[id], placed = FP.bossPlan.toWorld(plan, w), z = FP.bossPlan.zone(w);
+      const pad = 10, cv = document.createElement('canvas');
+      cv.width = W + 2 * pad; cv.height = Math.round(z.bottom - z.top + 2 * pad + 40);
+      const g = cv.getContext('2d'), oy = pad - z.top + 20;   // la zone du boss commence à 20 px du haut
+      g.translate(pad, oy);
+      g.fillStyle = '#3a2d24'; g.fillRect(0, z.top, W, z.bottom - z.top);
+      for (const r of placed.rooms) {   // salles : moitié gauche et moitié droite, séparées au milieu
+        const [x0, y0, x1, y1] = r.rect, mid = (x0 + x1) / 2;
+        g.fillStyle = 'rgba(255,60,60,.25)'; g.fillRect(x0, y0, mid - x0, y1 - y0);
+        g.fillStyle = 'rgba(255,160,40,.25)'; g.fillRect(mid, y0, x1 - mid, y1 - y0);
+        g.strokeStyle = '#ff9060'; g.strokeRect(x0, y0, x1 - x0, y1 - y0);
+        g.fillStyle = '#ffd0b0'; g.font = '10px sans-serif'; g.fillText(r.id + ' (' + r.defense + ')', x0 + 3, y0 + 11);
+      }
+      const FILL = { wall: '#6b625a', target: '#e8a030', head: '#e04848', plate: '#7a8ca0', turret: '#5ac8e0' };
+      for (const p of placed.pieces) {
+        poly(g, p.poly, FILL[p.role], '#000');
+        const [cx, cy] = p.poly.reduce((a, q) => [a[0] + q[0] / p.poly.length, a[1] + q[1] / p.poly.length], [0, 0]);
+        g.fillStyle = '#fff'; g.font = '9px sans-serif'; g.fillText(p.id, cx - 12, cy + 3);
+      }
+      for (const t of placed.toxics) { g.fillStyle = '#a050d0'; g.beginPath(); g.arc(t.x, t.y, 9, 0, 7); g.fill(); }
+      Object.keys(placed.paths).forEach((pid, k) => {
+        const path = placed.paths[pid];
+        g.strokeStyle = PATH_COLORS[k % PATH_COLORS.length]; g.lineWidth = 1.5; g.beginPath();
+        path.forEach((p, i) => i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y)); g.stroke();
+        for (const p of path) { g.fillStyle = g.strokeStyle; g.fillRect(p.x - 1.5, p.y - 1.5, 3, 3); }
+      });
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.fillStyle = '#f7e9c7'; g.font = '12px sans-serif';
+      g.fillText(id + ' (' + plan.form + ') — W ' + W + ', canal mini ' + placed.channelMin.toFixed(0) + ' px', pad, 14);
+      const fig = document.createElement('figure'); fig.appendChild(cv);
+      const cap = document.createElement('figcaption');
+      cap.textContent = Object.keys(placed.paths).map((pid, k) => pid + ' ' + PATH_COLORS[k % PATH_COLORS.length]).join(' · ');
+      fig.appendChild(cap); return fig;
+    }
+    try {
+      for (const W of [360, 440]) {
+        const h = document.createElement('h2'); h.textContent = 'Largeur ' + W + ' px'; out.appendChild(h);
+        const row = document.createElement('div'); row.className = 'row'; out.appendChild(row);
+        for (const id of MILIEUX) row.appendChild(draw(id, W));
+      }
+    } catch (e) { document.getElementById('err').textContent = 'Erreur : ' + (e && e.stack || e); }
+  });
+</script>
+</body>
+</html>

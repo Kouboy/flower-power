@@ -1,69 +1,69 @@
-// play/boss.js — le boss : ses défenses (chaque tronçon prévient, frappe, se repose ; seul le coup est un obstacle), le perçage des points faibles, la trappe.
-// Lit     : state.time, state.mode, state.plant.tip, state.world.bossLevel.{defenses,weak,trap}, state.bossFight.{pierced,phase}, FP.config.boss, FP.scoring.awardFlat.
-// Écrit   : solide de chaque défense : off, collision (repère local, le long de +x), a, broadR ; state.bossFight.{pierced,phase} (seul à l'écrire) ;
-//           trap.solid.off et trap.openedAt (ouverture, à l'instant state.time) ; state.camera.shake, state.events (bossPierce, bossTrap) ; le score, par FP.scoring.awardFlat.
-// Expose  : FP.boss.stageAt(i, phase) → { stage: 'rest' | 'warn' | 'strike', k } (pur ; phase = state.bossFight.phase, en cycles), FP.boss.update(state, dt),
-//           FP.boss.reset(state) (nouveau boss : plus aucun point percé, phase à zéro).
-// Les points percés survivent à une mort (le niveau se régénère avec eux) ; seul reset les remet à zéro.
-// Le cycle accélère de `speedup` par point percé : la phase (en cycles) avance de dt / période, sans jamais sauter — un perçage
-// raccourcit ce qui reste de l'étape en cours, il ne fait pas tomber une défense en coup. La défense i est décalée de i quarts de cycle.
-// Forme : piston = rectangle qui sort de la face ; jet = rectangle fin, plein dès k = .2 ; bras = barre qui pivote de la verticale à l'horizontale.
+// play/boss.js — le combat de boss (v5.1.0) : état du combat dans state.bossFight (seul à l'écrire).
+// Lit     : state.plant.tip, state.world.bossLevel.{targets,plates,head,walls}, FP.config.boss.{targetBonus,assaultShake,death}, FP.collision.distanceTo.
+// Écrit   : state.bossFight = { destroyed: [bool ×3] (une case par cible, dans l'ordre du plan), headOpen (les trois détruites),
+//             collapse?: { t, walls: [{ at, blown, down }], peak } (cinématique de destruction, retirée à sa fin) } ;
+//           off des solides de la cible détruite et de sa plaque, de la tête, puis de chaque paroi qui s'effondre ; state.score.eco (FP.scoring.awardFlat), state.camera.shake,
+//           state.events (bossTarget { i, x, y } puis bossSeed { x, y } : la graine jaillit de l'épave ; bossHead { x, y } : la tête transpercée ;
+//             bossBlast { i, x, y } : une paroi explose et se fissure ; bossCrumble { i } : elle s'effondre ; bossPeak { x, y } : le paroxysme),
+//           state.flow.{freeze, warp} (la cinématique : la pousse figée, le jeu au ralenti).
+// Expose  : FP.boss.reset(state) (nouveau boss : aucune cible détruite, tête blindée),
+//           FP.boss.destroy(state, i) (assaut de la cible i ; sans effet si elle l'est déjà),
+//           FP.boss.pierceHead(state) (la pointe traverse la tête à nu : tête off, cinématique ; sans effet si blindée ou déjà ouverte),
+//           FP.boss.update(state, dt) (déroule la cinématique : explosions en chaîne depuis la tête, parois qui s'effondrent, paroxysme).
+// Les cibles détruites survivent à une mort (world/boss.js régénère le niveau avec elles) ; seul reset les remet à zéro.
+// Cinématique (retours de playtest) : config.boss.death.time s de temps réel au ralenti death.scale, soit G = time × scale s de jeu de gel
+// (flow.freeze) ; la paroi i explose à chain × G × (sa distance à la tête / la plus grande), se fissure, s'effondre crack × G plus tard ;
+// au paroxysme (peak × G) toutes sont tombées.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
 
-  const JET_GROW = .2, JET_THIN = .7;   // part du coup où le jet se déploie ; épaisseur du jet (× thick)
+  function reset(state) { state.bossFight = { destroyed: [false, false, false], headOpen: false }; }
 
-  // Étape de la défense i à la phase donnée : les parts du cycle (avertissement, coup, repos) ne dépendent pas de la vitesse.
-  function stageAt(i, phase) {
-    const d = FP.config.boss.defense, W = d.warn / d.period, S = d.strike / d.period;
-    const u = (((phase + i / 4) % 1) + 1) % 1;
-    if (u < W) return { stage: 'warn', k: u / W };
-    if (u < W + S) return { stage: 'strike', k: (u - W) / S };
-    return { stage: 'rest', k: (u - W - S) / (1 - W - S) };
+  // Assaut : la cible explose et reste détruite, sa plaque tombe, la tête s'ouvre quand les trois le sont. La mort de la pousse
+  // et la graine rendue sont l'affaire de play/flow.js.
+  function destroy(state, i) {
+    const bf = state.bossFight, bl = state.world.bossLevel, cfg = FP.config.boss;
+    if (!bl || bf.destroyed[i]) return;
+    const t = bl.targets[i], plate = bl.plates.find(p => p.target === i);
+    bf.destroyed[i] = true;
+    t.solid.off = true; plate.solid.off = true;
+    bf.headOpen = bf.destroyed.every(Boolean);
+    FP.scoring.awardFlat(state, t.solid.x, t.solid.y, cfg.targetBonus);
+    state.camera.shake = Math.max(state.camera.shake, cfg.assaultShake);
+    state.events.push({ type: 'bossTarget', i, x: t.solid.x, y: t.solid.y });
+    state.events.push({ type: 'bossSeed', x: t.solid.x, y: t.solid.y });
   }
 
-  const rect = (x0, x1, y0, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+  const gel = () => FP.config.boss.death.time * FP.config.boss.death.scale;   // durée de la cinématique en temps de jeu
 
-  // Forme locale et angle d'une défense en coup. Le côté du couloir est à +x local quand a = 0 (side -1) ou a = π (side +1).
-  function shape(df, k) {
-    const d = FP.config.boss.defense, reach = df.reach, h = d.thick / 2, toward = df.side < 0 ? 0 : Math.PI;
-    if (df.type === 'piston') return { a: toward, poly: rect(0, Math.max(1, reach * k), -h, h) };
-    if (df.type === 'jet') return { a: toward, poly: rect(0, reach * Math.min(1, k / JET_GROW), -h * JET_THIN, h * JET_THIN) };
-    // Bras : de la verticale (vers le haut, dans le flanc) à l'horizontale ; le côté épais reste dans le tronçon à k = 0.
-    const a = -Math.PI / 2 + k * (df.side < 0 ? Math.PI / 2 : -Math.PI / 2);
-    return { a, poly: df.side < 0 ? rect(0, reach, -d.thick, 0) : rect(0, reach, 0, d.thick) };
+  // Tête à nu transpercée : la pousse n'y meurt pas ; la cinématique commence (pousse figée, ralenti), puis la tige continue jusqu'à la surface (bloom).
+  function pierceHead(state) {
+    const bf = state.bossFight, bl = state.world.bossLevel, h = bl && bl.head.solid, D = FP.config.boss.death;
+    if (!bf.headOpen || !h || h.off) return;
+    h.off = true;
+    const d = bl.walls.map(w => FP.collision.distanceTo(w, h.x, h.y)), far = Math.max(1e-6, ...d);
+    bf.collapse = { t: 0, peak: false, walls: d.map(v => ({ at: D.chain * gel() * Math.max(0, v) / far, blown: false, down: false })) };
+    state.flow.freeze = gel();
+    state.flow.warp = { stop: 0, slow: D.time, scale: D.scale };
+    state.camera.shake = Math.max(state.camera.shake, D.shake);
+    state.events.push({ type: 'bossHead', x: state.plant.tip.x, y: state.plant.tip.y });
   }
 
-  // La pointe passe à moins de weakHit d'un point faible intact : il est percé (une fois) ; le quatrième ouvre la trappe.
-  function pierce(state, bl) {
-    const c = FP.config.boss, tip = state.plant.tip, done = state.bossFight.pierced;
-    for (const w of bl.weak) {
-      if (done[w.i] || Math.hypot(tip.x - w.x, tip.y - w.y) >= c.weakHit) continue;
-      done[w.i] = true;
-      state.events.push({ type: 'bossPierce', i: w.i, x: w.x, y: w.y });
-      FP.scoring.awardFlat(state, w.x, w.y, c.pierceBonus);
-      state.camera.shake = Math.max(state.camera.shake, c.pierceShake);
-    }
-    if (done.every(Boolean) && !bl.trap.solid.off) { bl.trap.solid.off = true; bl.trap.openedAt = state.time; state.events.push({ type: 'bossTrap' }); }
-  }
-
-  function reset(state) { state.bossFight.pierced = Array(FP.config.boss.segments).fill(false); state.bossFight.phase = 0; }
-
+  // Cinématique : chaque paroi explose à son heure, se fissure, puis s'effondre (off) ; au paroxysme, toutes sont tombées.
   function update(state, dt) {
-    const bl = state.world.bossLevel, bf = state.bossFight, d = FP.config.boss.defense;
-    if (!bl) return;
-    if (state.mode === 'playing') pierce(state, bl);
-    bf.phase = (bf.phase + dt / (d.period * Math.pow(1 - d.speedup, bf.pierced.filter(Boolean).length))) % 1;
-    for (const df of bl.defenses) {
-      const o = df.solid, s = stageAt(df.i, bf.phase);
-      o.off = s.stage !== 'strike';
-      if (o.off) continue;
-      const sh = shape(df, s.k);
-      o.a = sh.a; o.collision = sh.poly;
-      o.broadR = Math.max(...sh.poly.map(([px, py]) => Math.hypot(px, py)));
-    }
+    const bf = state.bossFight, c = bf && bf.collapse, bl = state.world.bossLevel;
+    if (!c || !bl) return;
+    const D = FP.config.boss.death, G = gel(), h = bl.head.solid;
+    c.t += dt;
+    bl.walls.forEach((w, i) => {
+      const k = c.walls[i];
+      if (!k.blown && c.t >= k.at) { k.blown = true; state.events.push({ type: 'bossBlast', i, x: w.x, y: w.y }); state.camera.shake = Math.max(state.camera.shake, D.shake * .6); }
+      if (!k.down && (c.t >= k.at + D.crack * G || c.t >= D.peak * G)) { k.down = true; w.off = true; state.events.push({ type: 'bossCrumble', i }); }
+    });
+    if (!c.peak && c.t >= D.peak * G) { c.peak = true; state.camera.shake = Math.max(state.camera.shake, D.shake); state.events.push({ type: 'bossPeak', x: h.x, y: h.y }); }
+    if (c.t >= G) delete bf.collapse;
   }
 
-  FP.boss = { stageAt, update, reset };
+  FP.boss = { reset, destroy, pierceHead, update };
 })();
