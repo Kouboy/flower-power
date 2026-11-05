@@ -13,15 +13,17 @@
 // ouverture centrée sur son milieu (au plus 0,18 de large de chaque côté) : la tige y a le temps de passer dans l'autre moitié
 // avant le coup de la défense. Contrôlés par dev/tests/bossplan.test.js (remplissage) et bossfight.test.js (esquive).
 window.FLOWER_POWER_BOSS_PLANS = {
-  // Bétonneuse (friche) : muraille à mi-hauteur percée de trois meurtrières (large, sinueuse, étroite), une vanne au débouché de
-  // chacune dans la galerie ; un parapet ferme la galerie, sauf une ouverture vers la salle sous la toupie.
+  // Bétonneuse (friche) : muraille basse percée de trois meurtrières (large, sinueuse, étroite) ; au-dessus, une haute galerie défendue,
+  // une vanne tout en haut au-dessus de chaque meurtrière ; un parapet ferme la galerie, sauf une ouverture vers la salle sous la toupie.
+  // Relecture (retours de playtest) : la galerie est assez haute pour qu'une tige qui file droit de sa meurtrière à sa vanne reste dans
+  // la salle plus longtemps que l'avertissement et la moitié du coup, même à 280 px (bossfight.test.js) : il faut esquiver la coulée.
   friche: {
     form: 'muraille',
     pieces: [
-      { id: 'mur-g', role: 'wall', poly: [[0, .451], [.039, .451], [.039, .608], [0, .608]] },   // muraille : bord gauche
-      { id: 'mur-1', role: 'wall', poly: [[.306, .451], [.4, .451], [.367, .469], [.45, .521], [.367, .573], [.4, .608], [.306, .608]] },   // muraille : entre la meurtrière large et la sinueuse
-      { id: 'mur-2', role: 'wall', poly: [[.656, .451], [.78, .451], [.78, .608], [.656, .608], [.622, .573], [.706, .521], [.622, .469]] },   // muraille : entre la sinueuse et l'étroite
-      { id: 'mur-d', role: 'wall', poly: [[.942, .451], [1, .451], [1, .608], [.942, .608]] },   // muraille : bord droit
+      { id: 'mur-g', role: 'wall', poly: [[0, .7], [.039, .7], [.039, .857], [0, .857]] },   // muraille : bord gauche
+      { id: 'mur-1', role: 'wall', poly: [[.306, .7], [.4, .7], [.367, .718], [.45, .77], [.367, .822], [.4, .857], [.306, .857]] },   // muraille : entre la meurtrière large et la sinueuse
+      { id: 'mur-2', role: 'wall', poly: [[.656, .7], [.78, .7], [.78, .857], [.656, .857], [.622, .822], [.706, .77], [.622, .718]] },   // muraille : entre la sinueuse et l'étroite
+      { id: 'mur-d', role: 'wall', poly: [[.942, .7], [1, .7], [1, .857], [.942, .857]] },   // muraille : bord droit
       { id: 'parapet-g', role: 'wall', poly: [[0, .26], [.348, .26], [.348, .3], [0, .3]] },   // parapet au-dessus de la galerie, à gauche de l'ouverture
       { id: 'parapet-d', role: 'wall', poly: [[.708, .26], [1, .26], [1, .3], [.708, .3]] },   // parapet, à droite de l'ouverture
       { id: 'plafond-g', role: 'wall', poly: [[0, 0], [.359, 0], [.359, .025], [.392, .025], [.392, .06], [.355, .06], [.355, .03], [0, .03]] },   // plafond gauche, ergot dans la toupie
@@ -37,16 +39,16 @@ window.FLOWER_POWER_BOSS_PLANS = {
     rooms: [
       // la galerie des vannes, défendue en trois sections, chacune centrée sur le débouché de sa meurtrière (une seule salle d'un bord à
       // l'autre ne s'esquivait pas depuis les meurtrières des bords : la moitié épargnée était trop loin)
-      { id: 'galerie-g', rect: [.056, .3, .348, .4], defense: 'beton', turrets: [] },
-      { id: 'galerie-c', rect: [.348, .3, .708, .4], defense: 'beton', turrets: [] },
-      { id: 'galerie-d', rect: [.708, .3, 1, .4], defense: 'beton', turrets: [] },
+      { id: 'galerie-g', rect: [.056, .3, .348, .66], defense: 'beton', turrets: [] },
+      { id: 'galerie-c', rect: [.348, .3, .708, .66], defense: 'beton', turrets: [] },
+      { id: 'galerie-d', rect: [.708, .3, 1, .66], defense: 'beton', turrets: [] },
       { id: 'salle', rect: [.056, .13, 1, .26], defense: 'beton', turrets: [] }   // milieu à .528, celui de l'ouverture du parapet
     ],
     paths: {
-      'vanne-large': [[.5, 1.042], [.172, .903], [.172, .608], [.172, .38]],
-      'vanne-sinueuse': [[.5, .66], [.528, .608], [.494, .573], [.578, .521], [.494, .469], [.528, .451], [.62, .42], [.665, .37]],
-      'vanne-etroite': [[.5, 1.042], [.861, .894], [.861, .608], [.861, .38]],
-      head: [[.5, .66], [.528, .608], [.494, .573], [.578, .521], [.494, .469], [.528, .451], [.528, .3], [.528, .2], [.5, .085]]
+      'vanne-large': [[.5, 1.042], [.172, .91], [.172, .857], [.172, .38]],
+      'vanne-sinueuse': [[.5, .909], [.528, .857], [.494, .822], [.578, .77], [.494, .718], [.528, .7], [.6, .55], [.665, .37]],
+      'vanne-etroite': [[.5, 1.042], [.861, .91], [.861, .857], [.861, .38]],
+      head: [[.5, .909], [.528, .857], [.494, .822], [.578, .77], [.494, .718], [.528, .7], [.528, .3], [.528, .2], [.5, .085]]
     },
     toxics: [[.153, .998], [.847, .998]]
   },
