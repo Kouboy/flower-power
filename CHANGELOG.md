@@ -2,6 +2,13 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v5.4.0 — Un bon de commande à chaque fleur
+
+- le bon de commande s'ouvre après chaque fleur éclose (3 par milieu au lieu d'un seul avant le boss) : les articles servent enfin dans les pousses ordinaires, où ils font tous effet ;
+- avant et pendant un boss, le bon ne tire que les articles utiles contre lui : Graine Bio™, Membrane, Compost, Filtre (`shop.bossItems`, remplace la liste noire Lobbying/Bière) ;
+- rien ne change après un boss vaincu, à la dernière chance ni dans la version playtest ; prix inchangés, à revoir au playtest (la même cagnotte se dépense en trois fois) ;
+- banc : 647 tests.
+
 ## v5.3.2 — Retouches de playtest
 
 - la motte de la surface gonfle plus tôt : elle commence 0,9 s avant que la pointe arrive, à sa vitesse du moment (avant : 80 px, soit 0,67 s au départ et 0,3 s à pleine vitesse) ;
