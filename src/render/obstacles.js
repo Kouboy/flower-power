@@ -4,7 +4,7 @@
 // Écrit   : o._anchor, o._look sur chaque solide — caches de rendu uniquement, jamais lus par la simulation.
 // Expose  : FP.obstacles.draw(actx, world, cameraY) — repère d'art, la caméra est appliquée ici ; FP.obstacles.look(o) (pur) ;
 //           FP.obstacles.prewarm() — prépare une famille par appel, hors des moments de jeu.
-// Chaque obstacle a son apparence : teinte, luminosité, usure, et pour une part d'entre eux le bas enfoui dans la terre
+// Chaque obstacle a son apparence : teinte, luminosité, usure, et pour une part d'entre eux le bas enfoui dans la terre (qui le laisse deviner, v5.3.2)
 // (assez profond : le pied des sprites PixelLab est une flaque qu'une mince couche de terre ne ferait que recouvrir).
 // Chaque sprite est réduit une seule fois par (sprite, miroir) : moyenne, 8 niveaux par canal, contour d'un pixel.
 (function () {
@@ -162,10 +162,10 @@
       g.globalCompositeOperation = 'source-atop';
       const d = Math.max(0, Math.min(.999, (o.y - FP.soil.surfaceTop(world)) / (world.height - FP.soil.surfaceTop(world))));
       const base = c.height - Math.round(c.height * depth);
-      for (let x = 0; x < c.width; x++) {
+      for (let x = 0; x < c.width; x++) {   // v5.3.2 : terre en partie transparente (bury.cover), lisière opaque : l'obstacle se devine dessous
         const top = base + Math.round(Math.sin(x * .7 + L.hue) * 1.5 + Math.sin(x * .23) * 1.5);
-        px.rect(g, x, top, 1, c.height - top, palette.strataTone(d, 1 + (x % 3 === 0 ? 1 : 0), world.milieu));
-        px.rect(g, x, top, 1, 1, palette.strataTone(d, 0, world.milieu));
+        g.globalAlpha = B.cover; px.rect(g, x, top + 1, 1, c.height - top - 1, palette.strataTone(d, 1 + (x % 3 === 0 ? 1 : 0), world.milieu));
+        g.globalAlpha = 1; px.rect(g, x, top, 1, 1, palette.strataTone(d, 0, world.milieu));
       }
       g.globalCompositeOperation = 'source-over';
     }

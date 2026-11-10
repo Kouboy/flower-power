@@ -2,6 +2,13 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v5.3.2 — Retouches de playtest
+
+- la motte de la surface gonfle plus tôt : elle commence 0,9 s avant que la pointe arrive, à sa vitesse du moment (avant : 80 px, soit 0,67 s au départ et 0,3 s à pleine vitesse) ;
+- le son de ramassage d'un jeton est deux fois moins fort ;
+- la partie enfouie des obstacles se devine sous une terre à 60 % d'opacité, lisière opaque : plus de collision avec un obstacle « fantôme » (la collision couvre toute la silhouette, enfouie comprise) ;
+- banc : 645 tests.
+
 ## v5.3.1 — Les tourelles tirent enfin
 
 - retour de playtest : « les tirs ennemis ne se déclenchent jamais ». Cause : la visée (1 s) démarrait avec l'avertissement de la défense, et le coup l'annulait une image avant le tir dès que l'avertissement tombait à son plancher (1 s) ; seuls 2 à 4 tirs partaient par combat ;

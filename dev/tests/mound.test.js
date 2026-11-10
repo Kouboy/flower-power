@@ -9,6 +9,16 @@ FP.test('mound: la motte ne gonfle qu’à l’approche de la surface, et de plu
   FP.assertEqual(b.x, 200);
   s.plant.tip = { x: 200, y: sy }; FP.assertEqual(FP.mound.swell(s).k, 1);
 });
+// v5.3.2 (retour de playtest : la motte arrive trop tard) : elle commence à gonfler moundLead secondes avant la surface, à toute vitesse.
+FP.test('mound: la motte prévient le même temps à l’avance, lente ou rapide', () => {
+  const s = moundRun(), sy = s.world.surfaceY, lead = FP.config.soil.moundLead;
+  FP.assert(lead >= .8, 'au moins 0,8 s d’avance : ' + lead);
+  for (const stems of [0, 1e3]) {
+    s.plant.stemCount = stems; const v = FP.plant.speed(s);
+    s.plant.tip = { x: 200, y: sy + v * lead + 2 }; FP.assertEqual(FP.mound.swell(s).k, 0, 'pas encore, ' + stems);
+    s.plant.tip = { x: 200, y: sy + v * lead * .5 }; FP.assert(Math.abs(FP.mound.swell(s).k - .5) < .01, 'à mi-chemin, ' + stems);
+  }
+});
 FP.test('mound: rien hors de la pousse', () => {
   const s = moundRun(); s.plant.tip = { x: 200, y: s.world.surfaceY + 10 }; s.mode = 'dying';
   FP.assertEqual(FP.mound.swell(s).k, 0);

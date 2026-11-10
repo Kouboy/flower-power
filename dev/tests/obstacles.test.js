@@ -17,3 +17,8 @@ FP.test('config: enfouissement assez profond pour se voir', () => {
   const b = FP.config.obstacles.bury;
   FP.assert(b.chance > .33 && b.depth[0] > .28 && b.depth[0] < b.depth[1] && b.depth[1] < .6, JSON.stringify(b));
 });
+// v5.3.2 (retour de playtest : obstacle « fantôme » à grande vitesse) : la partie enfouie se devine sous une terre en partie transparente.
+FP.test('config: la partie enfouie d’un obstacle reste visible sous la terre', () => {
+  const c = FP.config.obstacles.bury.cover;
+  FP.assert(c >= .4 && c <= .7, 'couverture de terre ' + c);
+});
