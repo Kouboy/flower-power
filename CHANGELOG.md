@@ -2,6 +2,13 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v5.3.1 — Les tourelles tirent enfin
+
+- retour de playtest : « les tirs ennemis ne se déclenchent jamais ». Cause : la visée (1 s) démarrait avec l'avertissement de la défense, et le coup l'annulait une image avant le tir dès que l'avertissement tombait à son plancher (1 s) ; seuls 2 à 4 tirs partaient par combat ;
+- la tourelle vise maintenant pendant le repos de la défense de sa salle : le coup, puis le tir. Si la tige est déjà sortie de la salle (les chambres de la Raffinerie se traversent avant la fin du coup), elle la vise quand même et lui tire dans le dos ;
+- combats simulés : 6 à 7 tirs à la Raffinerie (0 avec la seule visée au repos), 3 à l'Incinérateur et au Réacteur, dont une partie atteint la tige ;
+- banc : 643 tests.
+
 ## v5.3.0 — Les niveaux s'agrandissent avec la vitesse
 
 - retour de playtest : « plus on va vite, plus les niveaux paraissent petits ». La hauteur de chaque niveau suit maintenant la vitesse de lancement de la pousse (pousses et fleurs accumulées) : un niveau se traverse en à peu près le même temps, ≈ 15 s, du début à la fin (avant : ≈ 15 s au départ, ≈ 7 s à pleine vitesse), jusqu'à ≈ 2,2 fois la hauteur de départ (≈ 5 écrans) ;

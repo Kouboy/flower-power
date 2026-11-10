@@ -1,7 +1,8 @@
 // play/boss-threats.js — les défenses signature des salles de boss (v5.1.0) : quand la pointe entre dans une salle, un long
 // avertissement, puis un coup sur la moitié de la salle où elle se trouvait ; on l'évite en se déplaçant (la tige ne s'arrête jamais).
-// v5.1.0 (suite) : tirs visés — à partir du boss 2, une tourelle de la salle de la pointe la suit (ligne de visée), fige la ligne peu
-// avant de tirer, puis un projectile rapide part le long de la ligne figée : on l'évite en virant après le figement.
+// v5.1.0 (suite) : tirs visés — à partir du boss 2, une tourelle suit la pointe (ligne de visée), fige la ligne peu avant de tirer, puis un
+// projectile rapide part le long de la ligne figée : on l'évite en virant après le figement. v5.3.1 : la tourelle vise pendant le repos de
+// la défense de sa salle, la pointe encore dedans ou déjà sortie (le coup, puis le tir).
 // Lit     : state.{mode, flow.freeze, world.bossLevel.head.solid.off, plant.tip, run.milieu, bossFight.destroyed}, state.world.{width,height,bossLevel.{rooms[].{x0,y0,x1,y1,zone,turrets},turrets[],walls,targets,plates,head}},
 //           FP.config.{boss.defense, boss.shot, boss.ramp[id].{strike,rest,speedup,shot}, milieux}, FP.collision.distanceTo.
 // Écrit   : state.bossThreats.{aim: { turret, t, lockedAt: null | { x, y } } | null, cooldown (s), shots: [{ x, y, vx, vy, solid }]} ; solides 'shot'
@@ -11,8 +12,7 @@
 //           world/boss.js à chaque génération), la zone (solide 'defense') de chaque salle : off sauf pendant le coup, polygone = moitié visée ;
 //           state.events (bossWarn { room, half } à chaque avertissement, bossStrike { room, half } à chaque coup ; bossAim / bossLock / bossShot { turret } : le dessin et le son sont ailleurs).
 // Expose  : FP.bossThreats.update(state, dt), FP.bossThreats.timing(destroyedCount, id) → { warn, strike, rest } (pur ; id : milieu du boss,
-//             coup, repos et accélération propres à chaque boss — config.boss.ramp —, avertissement commun),
-//           FP.bossThreats.roomAt(bossLevel, x, y) → salle | null (pur).
+//             coup, repos et accélération propres à chaque boss — config.boss.ramp —, avertissement commun).
 // Hors niveau de boss, hors mode playing, et dès que la tête est transpercée (le boss meurt : sa cinématique, puis ses ruines) : tout repasse
 // au repos, visée et tirs effacés ; pendant l'arrêt sur image (flow.freeze) rien ne progresse.
 (function () {
@@ -27,12 +27,6 @@
   const bossId = (state) => FP.config.milieux[state.run.milieu].id;
 
   const inside = (r, x, y) => x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1;
-
-  function roomAt(bl, x, y) {
-    if (!bl) return null;
-    for (const r of bl.rooms) if (inside(r, x, y)) return r;
-    return null;
-  }
 
   // Zone = moitié `half` de la salle (de son milieu à son bord), pleine hauteur ; broadR et centre suivent.
   function aim(r, half) {
@@ -90,7 +84,10 @@
     state.events.push({ type: 'bossShot', turret: tur.id });
   }
 
-  // Une visée à la fois : tourelle de la salle de la pointe (la plus proche), jamais pendant le coup de la défense ni le délai entre tirs.
+  // Une visée à la fois, jamais pendant le délai entre tirs (v5.3.1 : commencée avec l'avertissement, elle était annulée par le coup juste avant
+  // de tirer) : la tourelle la plus proche parmi les salles au repos (un repos suit toujours un coup, donc un passage de la tige) vise la tige
+  // où qu'elle soit, dans la salle ou déjà sortie (tir dans le dos), jusqu'au tir. Commencée au repos, la visée (track = 1 s) finit avant le
+  // coup suivant (avertissement d'au moins warnMin = 1 s après le repos).
   function shoot(state, bl, tip, dt) {
     const cfg = FP.config.boss.shot, th = state.bossThreats, w = state.world;
     for (let i = th.shots.length - 1; i >= 0; i--) {
@@ -99,22 +96,20 @@
     }
     th.cooldown = Math.max(0, th.cooldown - dt);
     if (!FP.config.boss.ramp[bossId(state)].shot) return;   // boss sans tourelles (la Bétonneuse)
-    const room = tip ? roomAt(bl, tip.x, tip.y) : null, a = th.aim;
+    const a = th.aim;
     if (a) {
       const tur = bl.turrets.find(q => q.id === a.turret);
-      const st = state.bossThreats.rooms[tur.room];
-      // pointe sortie de la salle, ou coup de la défense qui commence : visée annulée sans tir (un tir déjà parti continue)
-      if (!room || room.id !== tur.room || (st && st.stage === 'strike')) { th.aim = null; return; }
       a.t += dt;
       if (!a.lockedAt && a.t >= cfg.track - cfg.lock) { a.lockedAt = { x: tip.x, y: tip.y }; state.events.push({ type: 'bossLock', turret: tur.id }); }
       if (a.t >= cfg.track) fire(state, tur, a.lockedAt);
       return;
     }
-    const e = room && state.bossThreats.rooms[room.id];
-    if (!room || th.cooldown > 0 || (e && e.stage === 'strike')) return;
+    if (!tip || th.cooldown > 0) return;
     let best = null, bd = Infinity;
     for (const q of bl.turrets) {
-      const d = q.room === room.id ? Math.hypot(q.x - tip.x, q.y - tip.y) : Infinity;
+      const e = state.bossThreats.rooms[q.room];
+      if (!e || e.stage !== 'rest') continue;
+      const d = Math.hypot(q.x - tip.x, q.y - tip.y);
       if (d < bd) { bd = d; best = q; }
     }
     if (!best) return;
@@ -146,5 +141,5 @@
     shoot(state, bl, tip, dt);
   }
 
-  FP.bossThreats = { update, timing, roomAt };
+  FP.bossThreats = { update, timing };
 })();
