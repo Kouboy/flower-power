@@ -64,7 +64,7 @@
       if (state.flow.next === 'boss') r.boss = true;
     }
     state.difficulty = FP.difficulty.level(r);
-    p.oldTrails.push(simplifyTrail(p.trail, cfg.trailSimplifyPx));
+    p.oldTrails.push({ points: simplifyTrail(p.trail, cfg.trailSimplifyPx), height: state.world.height });   // v5.3.0 : avec la hauteur de son niveau
     if (p.oldTrails.length > cfg.oldTrailsMax) p.oldTrails.shift();
     // bloom : la motte se fend (terre projetée) ; blossom, hatchDelay plus tard : la fleur sort (anneau doré, pétales).
     const burst = { x: p.tip.x, y: state.world.surfaceY + FP.config.soil.surfaceOffset - 9, count, bonus: state.score.flowerBonus, flower: main };

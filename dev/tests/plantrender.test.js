@@ -68,7 +68,7 @@ const stemRun = () => {
   return s;
 };
 FP.test('plantRender: les anciennes tiges en calque donnent exactement les mêmes pixels', () => {
-  const s = stemRun(); s.plant.oldTrails = [s.plant.trail.map(p => ({ x: p.x - 60, y: p.y })), s.plant.trail.map(p => ({ x: p.x + 70, y: p.y + 30 }))];
+  const s = stemRun(); s.plant.oldTrails = [-60, 70].map((dx, i) => ({ points: s.plant.trail.map(p => ({ x: p.x + dx, y: p.y + 30 * i })), height: s.world.height + 200 * i }));
   const direct = fakeLayerCtx(), cached = fakeLayerCtx();
   fakeLayer.made = 0;
   withoutLayer(() => FP.plantRender.drawOld(direct, s)); withLayer(() => FP.plantRender.drawOld(cached, s));

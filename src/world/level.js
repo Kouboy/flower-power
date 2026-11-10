@@ -1,9 +1,9 @@
 // world/level.js — génération d'un niveau à partir de la graine du run.
-// Lit     : state.rng, state.difficulty (niveau équivalent : réglages par niveau), state.level (réveil du T-Rex), state.run.{milieu,boss}, FP.config.shop.lobbyingK (option lobbying), state.world.{width,viewH,surfaceY,baseHeight,growK}, state.plant.stemCount, state.score.flowers, state.signature,
+// Lit     : state.rng, state.difficulty (niveau équivalent : réglages par niveau), state.level (réveil du T-Rex), state.run.{milieu,boss}, FP.config.shop.lobbyingK (option lobbying), state.world.{width,viewH,surfaceY,baseHeight,growK}, FP.state.levelHeightFor (hauteur du niveau), state.signature,
 //           FP.config.{level,spawnTables,signature,milieux,world.growMax,plant.speed}, FP.state.worldHeightFor, FP.catalog, FP.geom, FP.bossLevel.generate (niveau de boss).
 // Écrit   : state.world.{height,baseHeight,growK (v5.3.0 : hauteur du niveau, décidée ici),milieu,level,boss,bossLevel,skyVariant,lawnVariant,safePath,safeRadius,hazardRadius,solidExtra,solids,toxics,leaks (crossing : barre le chemin sûr, v4.17.0),bonuses}, state.signature ;
 //           puis FP.coins.place écrit state.world.{coins,chains}.
-// Expose  : FP.level.startRun(state), FP.level.generate(state), FP.level.heightFor(state) (pur, testé), FP.level.tableFor(milieu, band) (pur, testé),
+// Expose  : FP.level.startRun(state), FP.level.generate(state), FP.level.tableFor(milieu, band) (pur, testé),
 //           FP.level.makeToxic(rng, x, y, big),
 //           FP.level.distToSafePath(world,x,y), FP.level.pathXAt(world,y), FP.level.depthK(world,y), FP.level.depthBand(world,y).
 // Porté de la v3.43.16 (generateSoil, generateSafePath, objectFits…) sans les familles vectorielles ni les portes.
@@ -359,19 +359,10 @@
 
   // --- Points d'entrée -----------------------------------------------------
 
-  // Hauteur du niveau (v5.3.0) : celle de départ × la vitesse de lancement de la pousse qui va partir (pousses et fleurs
-  // accumulées, sans l'accélération d'une longue pousse), rapportée à celle d'une pousse neuve, plafonnée à growMax.
-  function heightFor(state) {
-    const c = FP.config.plant.speed, base = FP.state.worldHeightFor(state.world.viewH);
-    const v = Math.min(c.max, c.base + c.perStem * state.plant.stemCount + c.perFlower * state.score.flowers);
-    const k = clamp(v / c.base, 1, FP.config.world.growMax);
-    return { height: Math.round(base * k), base, k };
-  }
-
   // opts.lobbying (boutique) : moins d'obstacles (× FP.config.shop.lobbyingK).
   function generate(state, opts = {}) {
     const world = state.world, rng = state.rng, g = FP.config.level.grid;
-    const size = heightFor(state);   // décidée à chaque niveau, figée ensuite (avant le niveau de boss aussi)
+    const size = FP.state.levelHeightFor(state);   // décidée à chaque niveau, figée ensuite (avant le niveau de boss aussi)
     world.height = size.height; world.baseHeight = size.base; world.growK = size.k;
     world.solids = []; world.toxics = []; world.leaks = []; world.bonuses = [];
     world.milieu = FP.config.milieux[state.run.milieu].id;   // v4.9.0 ; le rendu ramène les nuances tirées à celles du milieu
@@ -399,5 +390,5 @@
     generate(state);
   }
 
-  FP.level = { startRun, generate, heightFor, tableFor, makeToxic, distToSafePath, pathXAt, depthK, depthBand };
+  FP.level = { startRun, generate, tableFor, makeToxic, distToSafePath, pathXAt, depthK, depthBand };
 })();

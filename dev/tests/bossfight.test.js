@@ -14,7 +14,7 @@ const fightStep = (s, dt) => { s.time += dt; for (const n of FIGHT_ORDER) if (FP
 // défense (avertissement, coup, repos) de montée, elle entre de l'autre côté si le passage le permet (une demi-largeur de canal) : le
 // premier coup tombera loin de la cible. Pendant un coup, si sa cible est hors d'atteinte avant le prochain avertissement,
 // elle attend près du milieu, côté épargné, plutôt que de filer vers un trajet lointain (elle ne pourrait plus repasser au repos). Constantes réglées sur les plans et les menaces actuels : à revoir si l'un ou l'autre change.
-const DODGE_SPEED = 40, DODGE_SLACK = .6, DODGE_REACH = 50, DODGE_ETA = 1.25;   // vitesse latérale supposée (px/s), marge (s), portée de l'assaut (px), marge sur le temps d'arrivée
+const DODGE_SPEED = 40, DODGE_SLACK = .6, DODGE_REACH = 90, DODGE_ETA = 1.25;   // vitesse latérale supposée (px/s), marge (s), portée de l'assaut (px ; 90 depuis la v5.3.0 : à 260 px/s, 50 px laissaient la tige sous le coup de la galerie), marge sur le temps d'arrivée
 const DODGE_SIDE = 20, DODGE_ENTRY = 40;   // écart au milieu qui fait choisir l'entrée (px), distance sous la salle où elle se place (px)
 const dodge = (s, placed, p, target) => {
   const tip = s.plant.tip, reach = FP.collision.distanceTo(target, tip.x, tip.y);
@@ -85,12 +85,11 @@ const playBossFight = (milieu, stems = 0) => {
 };
 
 // v5.3.0 : chaque boss se joue aussi à la taille où on le rencontre en première saison (pousses lancées ≈ 3 éclosions par milieu
-// + fleurs : facteurs ≈ 1,5 / 2 / 2,17 / 2,17). La Bétonneuse au facteur maximal (saison 2) n'est couverte que par l'esquive depuis
-// chaque entrée : le robot, réglé sur des galeries courtes, s'y fait toucher (à juger au playtest).
-const FIGHT_STEMS = [10, 19, 27, 1e3];
+// + fleurs : facteurs ≈ 1,5 / 2 / 2,17 / 2,17), et la Bétonneuse aussi au facteur maximal (saison 2, ou après beaucoup de morts).
+const FIGHT_STEMS = [[10, 1e3], [19], [27], [1e3]];
 FP.test('bossFight: un combat complet par boss, de la première cible à la victoire (taille de départ et taille de première saison)', () => {
-  for (const grown of [false, true]) MILIEUX.forEach((m0, m) => {
-    const stems = grown ? FIGHT_STEMS[m] : 0, name = m0 + (grown ? ' étiré' : ''), r = playBossFight(m, stems), next = (m + 1) % 4;
+  MILIEUX.forEach((m0, m) => [0, ...FIGHT_STEMS[m]].forEach(stems => {
+    const name = m0 + (stems ? ' étiré (' + stems + ' pousses)' : ''), r = playBossFight(m, stems), next = (m + 1) % 4;
     FP.assertEqual(r.bosses, 1, name + ' : boss vaincu ' + JSON.stringify(r));
     FP.assertEqual(r.milieu, next, name + ' : milieu suivant ' + JSON.stringify(r));
     FP.assertEqual(r.saison, m === 3 ? 2 : 1, name + ' : saison ' + JSON.stringify(r));
@@ -98,7 +97,7 @@ FP.test('bossFight: un combat complet par boss, de la première cible à la vict
     FP.assert(r.stems >= 4 && r.stems <= 10, name + ' : ' + r.stems + ' pousses ' + JSON.stringify(r));
     FP.assert(r.minReserves > 0, name + ' : réserve à zéro ' + JSON.stringify(r));
     console.log('bossFight ' + name + ' : ' + JSON.stringify(r));
-  });
+  }));
 });
 
 // --- Défenses toujours esquivables (revue finale v5.1.0) : une pointe qui entre dans une salle, où que ce soit le long de ses

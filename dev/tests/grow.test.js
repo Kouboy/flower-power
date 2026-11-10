@@ -16,12 +16,12 @@ FP.test('grow: premier niveau à la hauteur actuelle', () => {
   FP.assertEqual(s.world.growK, 1);
 });
 FP.test('grow: la hauteur suit la vitesse de lancement', () => {
-  const s = growRun(440, 4, 2), r = FP.level.heightFor(s);
+  const s = growRun(440, 4, 2), r = FP.state.levelHeightFor(s);
   FP.assert(Math.abs(r.k - 156 / 120) < 1e-9, String(r.k));   // pousse n° 5 : 120 + 6·4 + 6·2
   FP.assertEqual(s.world.height, Math.round(H0of(s) * r.k));
   let prev = 0;
-  for (const n of [0, 2, 5, 9]) { const k = FP.level.heightFor(growRun(440, n, 0)).k; FP.assert(k > prev || (k === 1 && prev === 0), n + ' ' + k); prev = k; }
-  FP.assert(FP.level.heightFor(growRun(440, 3, 4)).k > FP.level.heightFor(growRun(440, 3, 1)).k, 'les fleurs comptent');
+  for (const n of [0, 2, 5, 9]) { const k = FP.state.levelHeightFor(growRun(440, n, 0)).k; FP.assert(k > prev || (k === 1 && prev === 0), n + ' ' + k); prev = k; }
+  FP.assert(FP.state.levelHeightFor(growRun(440, 3, 4)).k > FP.state.levelHeightFor(growRun(440, 3, 1)).k, 'les fleurs comptent');
 });
 FP.test('grow: plafond à growMax', () => {
   // La vitesse plafonne à speed.max : le facteur réel culmine à max / base (≈ 2,17), growMax (2,2) reste un garde-fou.
@@ -30,7 +30,7 @@ FP.test('grow: plafond à growMax', () => {
   FP.assert(Math.abs(s.world.growK - top) < 1e-9, String(s.world.growK));
   FP.assertEqual(s.world.height, Math.round(H0of(s) * top));
   const saved = c.max; c.max = 400;
-  try { FP.assertEqual(FP.level.heightFor(s).k, 2.2, 'plafonné par growMax'); } finally { c.max = saved; }
+  try { FP.assertEqual(FP.state.levelHeightFor(s).k, 2.2, 'plafonné par growMax'); } finally { c.max = saved; }
 });
 FP.test('grow: durée de traversée à peu près constante', () => {
   const a = growRun(440, 0, 0), b = growRun(440, 40, 10);
@@ -44,7 +44,7 @@ FP.test('grow: figée pendant un niveau, recalculée à la génération suivante
   FP.assertEqual(s.world.height, h1, 'figée pendant la pousse');
   s.score.flowers = 6;
   bloomNow(s); advance(s, 8); skipShop(s);
-  FP.assertEqual(s.world.height, Math.round(H0of(s) * FP.level.heightFor(s).k), 'après éclosion');
+  FP.assertEqual(s.world.height, Math.round(H0of(s) * FP.state.levelHeightFor(s).k), 'après éclosion');
   FP.assert(s.world.height > h1, 'plus haut après éclosion');
   const h2 = s.world.height; s.score.flowers = 12;
   killNow(s);
@@ -68,7 +68,7 @@ FP.test('grow: le niveau de boss prend aussi la hauteur calculée', () => {
   const s = growRun(360, 12, 4);
   s.run.boss = true; s.run.milieu = 1; FP.level.generate(s);
   FP.assert(s.world.bossLevel, 'niveau de boss');
-  FP.assertEqual(s.world.height, Math.round(H0of(s) * FP.level.heightFor(s).k));
+  FP.assertEqual(s.world.height, Math.round(H0of(s) * FP.state.levelHeightFor(s).k));
   FP.assert(s.world.growK > 1);
 });
 // Densité constante par écran (v5.3.0) : un niveau plus haut contient proportionnellement plus de choses.
@@ -130,4 +130,14 @@ FP.test('grow: le décor de chaque milieu se dessine sur un niveau étiré au ma
     FP.assert(g.rects.length > 0, m.id + ' : rien de dessiné');
     FP.assert(g.rects.every(r => r.y >= top - 2 - 22 && r.y < bottom), m.id + ' : décor hors du niveau');
   }
+});
+FP.test('grow: une ancienne tige reste plantée dans la graine et monte jusqu\'à la surface quand le niveau grandit', () => {
+  const s = flowRun(), off = FP.config.plant.seedOffset, seed0 = s.world.height - off;
+  s.plant.trail = [{ x: 220, y: seed0 }, { x: 200, y: (seed0 + s.world.surfaceY) / 2 }, { x: 220, y: s.world.surfaceY - 1 }];
+  s.score.flowers = 10; bloomNow(s); advance(s, 8); skipShop(s);
+  FP.assert(s.world.height > seed0 + off, 'le niveau a grandi');
+  const pts = FP.plantRender.oldTrailPoints(s.plant.oldTrails[0], s.world);
+  FP.assert(Math.abs(pts[0].y - (s.world.height - off)) < 1e-6, 'pied à la graine ' + pts[0].y);
+  FP.assert(Math.abs(pts[pts.length - 1].y - (s.world.surfaceY - 1)) < 1, 'tête à la surface ' + pts[pts.length - 1].y);
+  FP.assertEqual(pts[1].x, 200);
 });

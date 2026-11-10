@@ -8,7 +8,7 @@ const PLAN_WIDTHS = [280, 300, 360, 440];
 const PLAN_END = 12;
 
 // Chaque plan est vérifié sur un niveau de départ et sur un niveau étiré au facteur maximal (v5.3.0 : la hauteur suit la vitesse).
-const stretchTo = (s, stems) => { s.plant.stemCount = stems; const h = FP.level.heightFor(s); Object.assign(s.world, { height: h.height, baseHeight: h.base, growK: h.k }); return s; };
+const stretchTo = (s, stems) => { s.plant.stemCount = stems; const h = FP.state.levelHeightFor(s); Object.assign(s.world, { height: h.height, baseHeight: h.base, growK: h.k }); return s; };
 const eachPlan = (fn) => {
   for (const grown of [false, true]) for (const W of PLAN_WIDTHS) for (const milieu of PLAN_MILIEUX) {
     const s = FP.state.createRun(7, { W, H: Math.round(W * 16 / 9) });

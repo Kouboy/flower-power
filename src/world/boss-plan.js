@@ -1,10 +1,10 @@
 // world/boss-plan.js — plans de boss composés à la main (v5.1.0) : passage des proportions du plan aux coordonnées du monde.
 // Lit     : FP.config.boss.{top,bottom,ramp[id].channelMin}, FP.config.plant.seedOffset, FP.geom.sdPoly, world.{width,height,baseHeight,surfaceY} ; un plan de window.FLOWER_POWER_BOSS_PLANS
-//           (assets/boss/plans.js) et un monde { width, height, surfaceY }, passés en argument.
+//           (assets/boss/plans.js) et un monde { width, height, baseHeight, surfaceY }, passés en argument.
 // Écrit   : rien (fonctions pures).
 // Expose  : FP.bossPlan.zone(world) → { top, bottom } : de surfaceY + config.boss.top à height - config.boss.bottom ;
 //           FP.bossPlan.toWorld(plan, world) → { pieces: [{ id, role, plate, poly }], rooms: [{ id, rect, defense, turrets }],
-//             paths: { id: [{ x, y }] }, toxics: [{ x, y }], channelMin } : x × largeur, y sur la hauteur de la zone ;
+//             paths: { id: [{ x, y }] }, toxics: [{ x, y }], channelMin } : x × largeur, y sur la hauteur de la zone (au-delà de y = 1, la bande d'envol garde la hauteur de départ baseHeight) ;
 //             chaque trajet commence à la graine (x = W / 2, y = height - plant.seedOffset), ajoutée devant les points du plan ;
 //             channelMin = config.boss.ramp[id].channelMin × W / 360, id = milieu du plan (réglage propre à chaque boss, donné pour un monde de 360 px de large) ;
 //           FP.bossPlan.clearance(placed, x, y) → distance signée à la plus proche pièce wall, head ou plate (négative dedans).

@@ -1,8 +1,8 @@
 // core/state.js — l'unique objet d'état d'une partie.
-// Lit     : FP.params.{seed (graine imposée par l'URL), sansboss (version playtest)}, FP.createRng, FP.config.view, FP.config.world, FP.view.
+// Lit     : FP.params.{seed (graine imposée par l'URL), sansboss (version playtest)}, FP.createRng, FP.config.view, FP.config.world, FP.config.plant.speed, FP.view.
 // Écrit   : FP.state.current (via ui/menu.js et core/loop.js).
 //           state.bossFight (cibles détruites du boss en cours, tête à nu ; écrit ensuite par play/boss.js), state.flow.freeze (arrêt sur image, 0 au départ ; écrit par play/boss.js, décompté par play/flow.js), state.flow.warp (ralenti, null au départ ; play/flow.js).
-// Expose  : FP.state.createRun(seed?, dims?), FP.state.applyView(state, dims), FP.state.worldHeightFor(viewH) (hauteur de départ d'un niveau, pure), FP.state.current.
+// Expose  : FP.state.createRun(seed?, dims?), FP.state.applyView(state, dims), FP.state.worldHeightFor(viewH) (hauteur de départ d'un niveau, pure), FP.state.levelHeightFor(state) (hauteur du niveau suivant, pure), FP.state.current.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
@@ -24,6 +24,15 @@
     if (!(viewH > 0)) return 0;
     const w = FP.config.world;
     return Math.max(viewH + w.extraMin, Math.floor(viewH * w.heightRatio));
+  }
+
+  // Hauteur du niveau (v5.3.0) : celle de départ × la vitesse de lancement de la pousse qui va partir (pousses et fleurs
+  // accumulées, sans l'accélération d'une longue pousse), rapportée à celle d'une pousse neuve, plafonnée à growMax.
+  function levelHeightFor(state) {
+    const c = FP.config.plant.speed, base = worldHeightFor(state.world.viewH);
+    const v = Math.min(c.max, c.base + c.perStem * state.plant.stemCount + c.perFlower * state.score.flowers);
+    const k = Math.max(1, Math.min(FP.config.world.growMax, v / c.base));
+    return { height: Math.round(base * k), base, k };
   }
 
   // Chaque appel construit des objets neufs : deux runs ne partagent rien.
@@ -83,5 +92,5 @@
     state.camera.y = Math.max(0, Math.min(maxY, state.camera.y));
   }
 
-  FP.state = { createRun, applyView, worldHeightFor, current: null };
+  FP.state = { createRun, applyView, worldHeightFor, levelHeightFor, current: null };
 })();
