@@ -71,16 +71,16 @@ FP.test('palette: strataTone suit le milieu', () => {
 const spyShop = (fn) => { const keep = FP.shop.open, calls = []; FP.shop.open = (s, o) => { calls.push({ after: o.after, boss: s.run.boss }); keep(s, o); }; try { fn(calls); } finally { FP.shop.open = keep; } };
 const nextBloom = (s) => { FP.plant.launch(s); bloomNow(s); advance(s, 8); skipShop(s); };
 const killNow = (s) => { FP.plant.launch(s); serverAt(s); s.plant.tip = { x: 220, y: 900 }; FP.collision.update(s); FP.flow.update(s, 0); advance(s, 3); };
-FP.test('flow: trois éclosions mènent au boss, boutique comprise', () => spyShop(calls => {
+FP.test('flow: trois éclosions mènent au boss, un bon après chacune (v5.4.0)', () => spyShop(calls => {
   const s = flowRun();
   for (let i = 0; i < 3; i++) nextBloom(s);
   FP.assert(s.run.boss && s.run.step === 3 && s.mode === 'ready', JSON.stringify(s.run) + ' ' + s.mode);
-  FP.assertEqual(JSON.stringify(calls), JSON.stringify([{ after: 'bloom', boss: true }]));
+  FP.assertEqual(JSON.stringify(calls), JSON.stringify([{ after: 'bloom', boss: false }, { after: 'bloom', boss: false }, { after: 'bloom', boss: true }]));
   FP.assertEqual(s.run.card && s.run.card.kind, 'boss');
 }));
 FP.test('flow: une mort ne fait pas avancer le milieu', () => spyShop(calls => {
   const s = flowRun(); nextBloom(s); killNow(s);
-  FP.assertEqual(s.run.step, 1); FP.assertEqual(calls.length, 0); FP.assertEqual(s.mode, 'ready');
+  FP.assertEqual(s.run.step, 1); FP.assertEqual(calls.length, 1, 'le seul bon est celui de l’éclosion'); FP.assertEqual(s.mode, 'ready');
 }));
 FP.test('flow: une éclosion à plusieurs fleurs compte pour une pousse', () => {
   const s = flowRun(), level = s.level;
@@ -114,7 +114,7 @@ FP.test('flow: mort au boss puis dernière chance : on reste au boss', () => spy
   FP.assertEqual(s.mode, 'shop'); FP.assertEqual(calls[calls.length - 1].after, 'last');
   s.plant.reserves = 1; s.shop = null; FP.flow.afterShop(s, 'last');   // la Graine Bio™ achetée
   FP.assert(s.run.boss && s.run.milieu === 0 && s.run.step === 3 && s.mode === 'ready', JSON.stringify(s.run));
-  FP.assertEqual(calls.length, 2);
+  FP.assertEqual(calls.length, 4);
 }));
 FP.test('flow: après une mort au boss, le carton du boss revient (mort simple et dernière chance)', () => {
   // La germination efface le carton : on la fait pour de vrai (hold, flow.test.js), puis la pousse meurt.
@@ -126,8 +126,11 @@ FP.test('flow: après une mort au boss, le carton du boss revient (mort simple e
   s.plant.reserves = 1; s.shop = null; FP.flow.afterShop(s, 'last');
   FP.assertEqual(s.run.card && s.run.card.kind, 'boss');
 });
-FP.test('flow: la boutique ne s’ouvre jamais hors boss et dernière chance', () => spyShop(calls => {
+FP.test('flow: la boutique s’ouvre après une éclosion ou en dernière chance, jamais après une mort simple', () => spyShop(calls => {
   const s = flowRun();
-  for (let i = 0; i < 10; i++) { s.plant.reserves = 3; if (i % 3 === 1) killNow(s); else nextBloom(s); }
-  FP.assert(calls.length > 0 && calls.every(c => (c.after === 'bloom' && c.boss) || c.after === 'last'), JSON.stringify(calls));
+  for (let i = 0; i < 10; i++) {
+    s.plant.reserves = 3; const n = calls.length;
+    if (i % 3 === 1) { killNow(s); FP.assertEqual(calls.length, n, 'mort ' + i); } else nextBloom(s);
+  }
+  FP.assert(calls.length > 0 && calls.every(c => c.after === 'bloom' || c.after === 'last'), JSON.stringify(calls));
 }));

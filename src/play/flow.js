@@ -60,7 +60,7 @@
     }
     else {
       r.step += 1; r.push += count - 1;   // v4.13.0 : chaque fleur en plus avance la difficulté d'une pousse dans le milieu
-      state.flow.next = r.playtest ? playtestNext(r) : (r.step >= FP.config.run.steps ? 'boss' : null);
+      state.flow.next = r.playtest ? playtestNext(r) : (r.step >= FP.config.run.steps ? 'boss' : 'shop');   // v5.4.0 : bon après chaque éclosion
       if (state.flow.next === 'boss') r.boss = true;
     }
     state.difficulty = FP.difficulty.level(r);

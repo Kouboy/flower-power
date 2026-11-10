@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '5.3.2',
+    version: '5.4.0',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -269,7 +269,8 @@
     // Boutique de fin de pousse (v4.6.0) : 3 articles tirés (un à −50 %), achetés au score ; effets sur la pousse suivante.
     // co2 : masse satirique ajoutée à la « livraison » (kg), sans effet en jeu. Tirage propre (graine ^ salt ^ passage).
     shop: {
-      salt: 0x5f3759df, promo: .5,   // le bon s'ouvre avant chaque boss (et toujours en dernière chance) : play/flow.js
+      salt: 0x5f3759df, promo: .5,   // le bon s'ouvre après chaque éclosion (v5.4.0) et toujours en dernière chance : play/flow.js
+      bossItems: ['seed', 'membrane', 'compost', 'filter'],   // v5.4.0 : seuls articles tirés avant et pendant un boss (les autres n'y servent pas)
       lobbyingK: .6, compostK: .8, beerK: .3, premiumK: 2,
       beerSway: 6, beerSwayHz: 2.2, popEco: 150,   // Bière (v5.2.0) : tangage latéral des limaces (px, Hz) ; ÉcoCrédits™ d'une limace qui éclate
       magnetRange: 110, magnetSpeed: 140, magnetAccel: 900,   // Aimant : portée (px), vitesse de départ et accélération (px/s, px/s²) des jetons aspirés

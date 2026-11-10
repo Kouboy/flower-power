@@ -25,9 +25,9 @@ FP.test('playtest: game over inchangé', () => {
   FP.assertEqual(s.mode, 'shop'); skipShop(s);
   FP.assertEqual(s.mode, 'over'); FP.assertEqual(s.run.done, false);
 });
-FP.test('flow: avec boss, toujours 3 pousses puis bon puis boss', () => spyShop(calls => {
+FP.test('flow: avec boss, toujours 3 pousses (un bon après chacune) puis boss', () => spyShop(calls => {
   const s = flowRun(); for (let i = 0; i < 3; i++) nextBloom(s);
-  FP.assert(s.run.boss); FP.assertEqual(JSON.stringify(calls), JSON.stringify([{ after: 'bloom', boss: true }]));
+  FP.assert(s.run.boss); FP.assertEqual(JSON.stringify(calls), JSON.stringify([{ after: 'bloom', boss: false }, { after: 'bloom', boss: false }, { after: 'bloom', boss: true }]));
 }));
 FP.test('difficulty: la difficulté suit les éclosions, pas les morts', () => {
   const s = playRun(), got = [];

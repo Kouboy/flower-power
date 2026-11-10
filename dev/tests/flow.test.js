@@ -21,12 +21,13 @@ FP.test('flow: plus de graines → over', () => {
   FP.assert(s.shop.lastChance); skipShop(s);
   FP.assertEqual(s.mode, 'over');
 });
-FP.test('flow: surface → éclosion puis ready au niveau suivant', () => {
+FP.test('flow: surface → éclosion, bon de commande (v5.4.0) puis ready au niveau suivant', () => {
   const s = flowRun(); s.plant.tip = { x: 220, y: s.world.surfaceY - 1 };
   FP.collision.update(s); FP.flow.update(s, 0);
   FP.assertEqual(s.mode, 'bloom'); FP.assertEqual(s.score.flowers, 1); FP.assertEqual(s.level, 1);
   FP.assertEqual(s.plant.oldTrails.length, 1);
   for (let i = 0; i < 180; i++) FP.flow.update(s, 1 / 60);   // éclosion 1,55 s + fondus .46 + .48 s
+  FP.assertEqual(s.mode, 'shop'); skipShop(s);
   FP.assertEqual(s.mode, 'ready');
 });
 FP.test('flow: ready exige de faire germer la graine', () => {
