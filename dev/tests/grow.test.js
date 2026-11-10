@@ -118,3 +118,16 @@ FP.test('grow: au facteur max, le T-Rex trouve sa place', () => {
   }
   FP.assert(placed >= 15, `placé ${placed}/20`);
 });
+// Décor sur un niveau étiré au maximum (v5.3.0) : le sous-sol se répartit sur toute la hauteur et se dessine dans la terre.
+// Utilise recCtx et decorRng (decor.test.js). Le cache de la terre (render/soil.js) demande un vrai DOM : vérifié dans le navigateur.
+FP.test('grow: le décor de chaque milieu se dessine sur un niveau étiré au maximum', () => {
+  const s = growRun(360, 1e3, 0), top = FP.px.toArt(FP.soil.surfaceTop(s.world)), bottom = Math.ceil(s.world.height / FP.px.SCALE);
+  FP.assert(s.world.growK > 2, 'niveau étiré');
+  for (const m of FP.config.milieux) {
+    const D = FP.decor[m.id], L = D.layout(180, top, bottom, decorRng(3));
+    FP.assert(L.under.some(u => u.y > top + (bottom - top) * .66), m.id + ' : rien dans le bas du niveau étiré');
+    const g = recCtx(); D.under(g, L); D.surface(g, L, top - 2);
+    FP.assert(g.rects.length > 0, m.id + ' : rien de dessiné');
+    FP.assert(g.rects.every(r => r.y >= top - 2 - 22 && r.y < bottom), m.id + ' : décor hors du niveau');
+  }
+});
