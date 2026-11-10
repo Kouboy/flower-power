@@ -1,5 +1,5 @@
 // world/level.js — génération d'un niveau à partir de la graine du run.
-// Lit     : state.rng, state.difficulty (niveau équivalent : réglages par niveau), state.level (réveil du T-Rex), state.run.{milieu,boss}, FP.config.shop.lobbyingK (option lobbying), state.world.{width,viewH,surfaceY}, state.plant.stemCount, state.score.flowers, state.signature,
+// Lit     : state.rng, state.difficulty (niveau équivalent : réglages par niveau), state.level (réveil du T-Rex), state.run.{milieu,boss}, FP.config.shop.lobbyingK (option lobbying), state.world.{width,viewH,surfaceY,baseHeight,growK}, state.plant.stemCount, state.score.flowers, state.signature,
 //           FP.config.{level,spawnTables,signature,milieux,world.growMax,plant.speed}, FP.state.worldHeightFor, FP.catalog, FP.geom, FP.bossLevel.generate (niveau de boss).
 // Écrit   : state.world.{height,baseHeight,growK (v5.3.0 : hauteur du niveau, décidée ici),milieu,level,boss,bossLevel,skyVariant,lawnVariant,safePath,safeRadius,hazardRadius,solidExtra,solids,toxics,leaks (crossing : barre le chemin sûr, v4.17.0),bonuses}, state.signature ;
 //           puis FP.coins.place écrit state.world.{coins,chains}.
@@ -231,9 +231,10 @@
     return path[path.length - 1].x;
   }
 
+  // Échelle d'un niveau : celle de la hauteur de départ (plafonnée), × growK (v5.3.0) — même densité par écran sur un niveau plus haut.
   function worldScaleOf(world) {
-    const s = FP.config.level.solids;
-    return clamp((world.height - world.surfaceY) / (world.viewH - world.surfaceY), 1, s.worldScaleMax);
+    const s = FP.config.level.solids, base = world.baseHeight || world.height;
+    return clamp((base - world.surfaceY) / (world.viewH - world.surfaceY), 1, s.worldScaleMax) * (world.growK || 1);
   }
 
   function countFor(c, state) {
