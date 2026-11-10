@@ -7,8 +7,9 @@ Une entrée par version (voir `AGENTS.md`).
 - retour de playtest : « plus on va vite, plus les niveaux paraissent petits ». La hauteur de chaque niveau suit maintenant la vitesse de lancement de la pousse (pousses et fleurs accumulées) : un niveau se traverse en à peu près le même temps, ≈ 15 s, du début à la fin (avant : ≈ 15 s au départ, ≈ 7 s à pleine vitesse), jusqu'à ≈ 2,2 fois la hauteur de départ (≈ 5 écrans) ;
 - même cadrage, même taille d'obstacles, même densité par écran : obstacles, nappes et lixiviats en proportion, jetons par hauteur d'écran ; le premier niveau d'une partie est identique à avant ;
 - la hauteur se décide à chaque nouveau niveau (éclosion, mort, boss) puis reste figée ; les couches de terre s'épaississent avec la profondeur ;
-- les boss s'étirent aussi ; leur jouabilité est revérifiée sur des niveaux étirés (canaux, seule la tête mène à la surface, esquive depuis chaque entrée, combat complet à la taille de première saison) ;
-- banc : 641 tests.
+- les boss s'étirent aussi ; leur jouabilité est revérifiée sur des niveaux étirés (canaux, seule la tête mène à la surface, esquive depuis chaque entrée, combat complet à la taille de première saison, et la Bétonneuse au facteur maximal) ;
+- les anciennes tiges partent toujours de la graine et montent jusqu'à la surface, même quand le niveau a grandi depuis ;
+- banc : 642 tests.
 
 ## v5.2.0 — La bière défonce les limaces
 
