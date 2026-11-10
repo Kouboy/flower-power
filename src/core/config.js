@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '5.3.1',
+    version: '5.3.2',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -230,7 +230,7 @@
     // repart `drop` sous ce sommet. d = 1 vaut le niveau `levelAtMax` des réglages par niveau (fin de la rampe safePath.hard).
     difficulty: { drop: .15, levelAtMax: 10 },
     // Obstacles (v4.17.0) : part d'enfouis et hauteur de terre (part du sprite, tirée entre les deux bornes).
-    obstacles: { bury: { chance: .5, depth: [.36, .5] } },
+    obstacles: { bury: { chance: .5, depth: [.36, .5], cover: .6 } },   // cover (v5.3.2) : opacité de la terre sur la partie enfouie (l'obstacle se devine dessous)
 
     // Boss (v5.1.0) : niveau construit depuis le plan du milieu (assets/boss/plans.js, world/boss.js).
     // top / bottom : zone du boss, de surfaceY + top à height - bottom ; toxics : nappes au plus, aux emplacements du plan.
@@ -369,7 +369,8 @@
       fallbackDt: .016  // dt invalide (NaN, négatif, nul)
     },
 
-    // Rendu du sol : la lisière d'herbe est dessinée 11 px sous surfaceY ; marge de tranche visible.
-    soil: { surfaceOffset: 11, viewPad: 70 }
+    // Rendu du sol : la lisière d'herbe est dessinée 11 px sous surfaceY ; marge de tranche visible ;
+    // moundLead (v5.3.2) : la motte de la surface commence à gonfler ce temps (s) avant que la pointe y arrive, à sa vitesse du moment.
+    soil: { surfaceOffset: 11, viewPad: 70, moundLead: .9 }
   };
 })();

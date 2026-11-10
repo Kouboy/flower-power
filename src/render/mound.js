@@ -1,14 +1,13 @@
 // render/mound.js — émergence en motte de taupe : la pelouse gonfle au-dessus de la pointe qui approche, se fend à
 // l'éclosion, puis retombe en un petit tas de terre qui reste au pied de la fleur tout le run.
 // Lit     : state.mode, state.time, state.events (bloom), state.plant.tip, state.world.{surfaceY,lawnVariant,milieu}, state.camera.y,
-//           FP.config.flow.hatchDelay, FP.palette.milieux, FP.soil.surfaceTop, FP.px.
+//           FP.config.flow.hatchDelay, FP.config.soil.moundLead, FP.plant.speed, FP.palette.milieux, FP.soil.surfaceTop, FP.px.
 // Écrit   : state.fx.mound uniquement (réservé au rendu) ; aléatoire purement visuel (Math.random).
 // Expose  : FP.mound.draw(actx, state) (repère d'art, caméra appliquée ici) ; FP.mound.swell(state) (pur, testé).
 // Ne touche pas au DOM : testable sous Node. La gerbe de terre de la fente est dans render/particles.js (événement bloom).
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
-  const RANGE = 80;               // px monde sous la surface où la motte commence à gonfler
   const MAX_H = 9, HEAP_H = 3;    // hauteur de la motte pleine, puis du tas qui reste (pixels d'art)
   const CRACK_TIME = .1, SETTLE = .35;
   const SINK = 3;                 // le dôme descend sous le tapis d'herbe et le remplace : la pelouse est soulevée, pas recouverte
@@ -19,10 +18,12 @@
   const rand = (a, b) => a + (b - a) * Math.random();
 
   // Gonflement : k de 0 (loin) à 1 (la pointe touche la surface), centré sur la pointe. Seulement pendant la pousse.
+  // v5.3.2 : il commence soil.moundLead secondes avant la surface (avant : 80 px, soit 0,3 s seulement à pleine vitesse).
   function swell(state) {
     const tip = state.plant.tip;
     if (state.mode !== 'playing' || !tip) return { k: 0, x: 0 };
-    const k = Math.max(0, Math.min(1, 1 - (tip.y - state.world.surfaceY) / RANGE));
+    const range = FP.plant.speed(state) * FP.config.soil.moundLead;
+    const k = Math.max(0, Math.min(1, 1 - (tip.y - state.world.surfaceY) / range));
     return { k, x: tip.x };
   }
 
