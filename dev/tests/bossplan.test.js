@@ -7,11 +7,14 @@ const PLAN_WIDTHS = [280, 300, 360, 440];
 // 12 px de trajet juste avant la cible, dispensés de distance : voulu (la pointe y touche sa cible), et pas mis à l'échelle de W.
 const PLAN_END = 12;
 
+// Chaque plan est vérifié sur un niveau de départ et sur un niveau étiré au facteur maximal (v5.3.0 : la hauteur suit la vitesse).
+const stretchTo = (s, stems) => { s.plant.stemCount = stems; const h = FP.state.levelHeightFor(s); Object.assign(s.world, { height: h.height, baseHeight: h.base, growK: h.k }); return s; };
 const eachPlan = (fn) => {
-  for (const W of PLAN_WIDTHS) for (const milieu of PLAN_MILIEUX) {
+  for (const grown of [false, true]) for (const W of PLAN_WIDTHS) for (const milieu of PLAN_MILIEUX) {
     const s = FP.state.createRun(7, { W, H: Math.round(W * 16 / 9) });
+    if (grown) stretchTo(s, 1e3);
     const plan = window.FLOWER_POWER_BOSS_PLANS[milieu];
-    fn({ s, W, milieu, plan, placed: FP.bossPlan.toWorld(plan, s.world), zone: FP.bossPlan.zone(s.world), at: `${milieu} W=${W}` });
+    fn({ s, W, milieu, plan, grown, placed: FP.bossPlan.toWorld(plan, s.world), zone: FP.bossPlan.zone(s.world), at: `${milieu} W=${W}${grown ? ' k=' + s.world.growK.toFixed(2) : ''}` });
   }
 };
 // Points d'un trajet tous les 4 px, avec la longueur qui reste jusqu'au bout.
@@ -85,8 +88,8 @@ FP.test('bossPlan: chaque trajet reste à distance sûre et atteint sa cible', (
 // à la largeur où ils sont composés (360 px : la zone du boss n'est pas exactement proportionnelle à W, ses marges sont en px).
 const PLAN_TIGHT = 4;   // px au plus entre le trajet le plus serré et la demi-largeur minimale
 FP.test('bossPlan: chaque plan a un canal resserré près de la largeur minimale de son boss', () => {
-  eachPlan(({ W, placed, at }) => {
-    if (W !== 360) return;
+  eachPlan(({ W, grown, placed, at }) => {
+    if (W !== 360 || grown) return;   // propriété des plans à leur taille de départ ; étirés, les passages verticaux s'élargissent
     let tight = Infinity;
     for (const [id, pts] of Object.entries(placed.paths)) {
       const piece = placed.pieces.find(p => (id === 'head' ? p.role === 'head' : p.id === id)), others = withoutPiece(placed, piece.id);
@@ -233,7 +236,7 @@ const goneWith = (placed, destroyed, headOff) => {
 FP.test('bossPlan: la surface ne s’atteint qu’à travers la tête, quelles que soient les plaques tombées', () => {
   eachPlan(({ s, placed, at }) => {
     const g = floodGrid(s, placed), starts = [g.seed];
-    for (const r of placed.rooms) starts.push(...roomCells(g, r.rect));
+    for (const r of placed.rooms) for (const k of roomCells(g, r.rect)) starts.push(k);   // une à une : une salle étirée a trop de cases pour un étalement
     const surface = (seen) => seen.subarray(0, g.nx).some(Boolean);   // première rangée : au-dessus de la surface
     for (let m = 0; m < 8; m++) {
       const destroyed = [0, 1, 2].map(k => !!(m & (1 << k)));

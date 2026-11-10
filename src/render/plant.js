@@ -1,8 +1,8 @@
 // render/plant.js — tige, anciennes tiges, graine endormie, héros et guide du pointeur, en pixels d'art.
-// Lit     : state.plant, state.world.milieu, state.input, state.mode, state.time, state.world.viewH, state.camera.y, FP.config.plant.control, FP.plant.speed,
+// Lit     : state.plant, state.world.milieu, state.input, state.mode, state.time, state.world.viewH, state.camera.y, FP.config.plant.{control,seedOffset}, FP.plant.speed,
 //           FP.px, FP.palette.{stem,seed,strataTone}, FP.soil.surfaceTop, FP.geom.{clampUpAngle,distPointToSegment}, FP.hero, FP.cast, FP.powerupsRender.drawShield.
 // Écrit   : rien (le canvas uniquement).
-// Expose  : FP.plantRender.drawOld(actx, state) (anciennes tiges, sous les obstacles), FP.plantRender.draw(actx, state) (repère d'art, caméra appliquée ici), FP.plantRender.drawFinger(g, state) (toile d'interface),
+// Expose  : FP.plantRender.drawOld(actx, state) (anciennes tiges, sous les obstacles), FP.plantRender.oldTrailPoints(trail, world) (pur, testé), FP.plantRender.draw(actx, state) (repère d'art, caméra appliquée ici), FP.plantRender.drawFinger(g, state) (toile d'interface),
 //           FP.plantRender.buried(x, y, old) — portion de tige recouverte de terre, FP.plantRender.haloLevel(d, old) — densité
 //           du halo tramé autour de la tige et de la graine, FP.plantRender.drill(state) — foreuse devant la tête, FP.plantRender.drillStart(id) — où elle commence (pures, testées),
 //           FP.plantRender.seed(g, seed, oy, germ, t) — la graine et sa germination (testée).
@@ -250,15 +250,20 @@
 
   // Anciennes tiges : juste après la terre, sous les dangers et les déchets (elles ne brouillent pas le terrain).
   // Dessinées entières dans un calque quand une tige s'ajoute (ou au changement de niveau), recopiées ensuite.
+  // v5.3.0 : le niveau grandit avec la vitesse ; une ancienne tige s'étire de sa graine à la surface du niveau en cours.
+  function oldTrailPoints(trail, w) {
+    const s = w.surfaceY, off = FP.config.plant.seedOffset, f = (w.height - off - s) / (trail.height - off - s);
+    return trail.points.map(p => ({ x: p.x, y: s + (p.y - s) * f }));
+  }
   const oldCache = { key: null, layer: null };
   function drawOld(g, state) {
     const w = state.world, trails = state.plant.oldTrails, oy = FP.px.toArt(state.camera.y);
     if (!trails.length) return;
-    const key = w.milieu + ',' + w.width + ',' + w.height + ';' + trails.map(t => t.length + ':' + (t[0] ? t[0].x + ':' + t[0].y : '')).join(';');
+    const key = w.milieu + ',' + w.width + ',' + w.height + ';' + trails.map(t => t.height + ':' + t.points.length + ':' + (t.points[0] ? t.points[0].x + ':' + t.points[0].y : '')).join(';');
     if (oldCache.key !== key) {
       const l = worldLayer(w);
-      if (!l) { for (const t of trails) drawStem(g, t, oy, false, w, w.viewH); return; }
-      for (const t of trails) drawStem(l.g, t, 0, false, w, w.height);
+      if (!l) { for (const t of trails) drawStem(g, oldTrailPoints(t, w), oy, false, w, w.viewH); return; }
+      for (const t of trails) drawStem(l.g, oldTrailPoints(t, w), 0, false, w, w.height);
       Object.assign(oldCache, { key, layer: l });
     }
     FP.px.blit(g, oldCache.layer, oy, rows(w.viewH));
@@ -293,5 +298,5 @@
     }
   }
 
-  FP.plantRender = { drawOld, draw, drawFinger, buried, haloLevel, drill, drillStart, seed: drawSeed };
+  FP.plantRender = { drawOld, oldTrailPoints, draw, drawFinger, buried, haloLevel, drill, drillStart, seed: drawSeed };
 })();

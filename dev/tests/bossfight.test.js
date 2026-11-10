@@ -14,7 +14,7 @@ const fightStep = (s, dt) => { s.time += dt; for (const n of FIGHT_ORDER) if (FP
 // défense (avertissement, coup, repos) de montée, elle entre de l'autre côté si le passage le permet (une demi-largeur de canal) : le
 // premier coup tombera loin de la cible. Pendant un coup, si sa cible est hors d'atteinte avant le prochain avertissement,
 // elle attend près du milieu, côté épargné, plutôt que de filer vers un trajet lointain (elle ne pourrait plus repasser au repos). Constantes réglées sur les plans et les menaces actuels : à revoir si l'un ou l'autre change.
-const DODGE_SPEED = 40, DODGE_SLACK = .6, DODGE_REACH = 50, DODGE_ETA = 1.25;   // vitesse latérale supposée (px/s), marge (s), portée de l'assaut (px), marge sur le temps d'arrivée
+const DODGE_SPEED = 40, DODGE_SLACK = .6, DODGE_REACH = 90, DODGE_ETA = 1.25;   // vitesse latérale supposée (px/s), marge (s), portée de l'assaut (px ; 90 depuis la v5.3.0 : à 260 px/s, 50 px laissaient la tige sous le coup de la galerie), marge sur le temps d'arrivée
 const DODGE_SIDE = 20, DODGE_ENTRY = 40;   // écart au milieu qui fait choisir l'entrée (px), distance sous la salle où elle se place (px)
 const dodge = (s, placed, p, target) => {
   const tip = s.plant.tip, reach = FP.collision.distanceTo(target, tip.x, tip.y);
@@ -51,19 +51,23 @@ const dodge = (s, placed, p, target) => {
 };
 
 // Rend { stems, retries, minReserves, bosses, milieu, saison, mode, destroyed, headOpen } ; stems = pousses lancées, retries = mortes ailleurs que sur une cible.
-const playBossFight = (milieu) => {
-  const s = bossRun(360, milieu), dt = 1 / 60, c = FP.config.plant.control, H = s.world.viewH;
-  const placed = FP.bossPlan.toWorld(s.world.bossLevel.plan, s.world), ids = s.world.bossLevel.targets.map(t => t.id);
+// stems : pousses déjà lancées au départ (1e3 → niveau étiré au maximum, v5.3.0).
+const playBossFight = (milieu, stems = 0) => {
+  const s = bossRun(360, milieu, 7, stems), dt = 1 / 60, c = FP.config.plant.control, H = s.world.viewH;
+  // v5.3.0 : chaque pousse régénère le niveau, dont la hauteur suit la vitesse de lancement : les trajets se recalculent à chaque pousse.
+  let placed = FP.bossPlan.toWorld(s.world.bossLevel.plan, s.world);
+  const ids = s.world.bossLevel.targets.map(t => t.id);
   FP.plant.prepare(s); s.mode = 'ready'; s.plant.germ = 0;
   const out = { stems: 0, retries: 0, minReserves: s.plant.reserves, bosses: 0, milieu: 0, saison: 1, mode: '' };
   let was = 'ready', path = null, i = 1, won = false;
   for (let f = 0; f < 60 * 60 * 8 && !won; f++) {
     const bf = s.bossFight, k = bf.destroyed.indexOf(false);
     if (s.mode === 'playing') {
-      if (was !== 'playing') { out.stems++; i = 1; path = placed.paths[k >= 0 ? ids[k] : 'head']; }
+      if (was !== 'playing') { out.stems++; i = 1; placed = FP.bossPlan.toWorld(s.world.bossLevel.plan, s.world); path = placed.paths[k >= 0 ? ids[k] : 'head']; }
       const tip = s.plant.tip;
       while (i < path.length - 1 && tip.y <= path[i].y) i++;
-      const p = dodge(s, placed, path[i], k >= 0 ? s.world.bossLevel.targets[k].solid : s.world.bossLevel.head.solid), look = FP.math.clamp(tip.y - p.y, c.lookAheadBottom, c.lookAheadTop);
+      // Vise comme steerAlong (aimAt, boss.test.js).
+      const p = dodge(s, placed, aimAt(path, i, tip, c), k >= 0 ? s.world.bossLevel.targets[k].solid : s.world.bossLevel.head.solid), look = FP.math.clamp(tip.y - p.y, c.lookAheadBottom, c.lookAheadTop);
       s.input = { ...s.input, down: true, touch: !!p.turn, key: false, active: true, x: p.x, screenX: p.turn > 0 ? s.world.width : 0, pressed: false,
         y: p.turn ? H : (c.lookAheadTop - look) / (c.lookAheadTop - c.lookAheadBottom) * H };
     } else s.input = { ...s.input, down: s.mode === 'ready', pressed: false, key: false, active: true, x: s.plant.seed.x, y: H / 2 };
@@ -80,9 +84,12 @@ const playBossFight = (milieu) => {
   return out;
 };
 
-FP.test('bossFight: un combat complet par boss, de la première cible à la victoire', () => {
-  MILIEUX.forEach((name, m) => {
-    const r = playBossFight(m), next = (m + 1) % 4;
+// v5.3.0 : chaque boss se joue aussi à la taille où on le rencontre en première saison (pousses lancées ≈ 3 éclosions par milieu
+// + fleurs : facteurs ≈ 1,5 / 2 / 2,17 / 2,17), et la Bétonneuse aussi au facteur maximal (saison 2, ou après beaucoup de morts).
+const FIGHT_STEMS = [[10, 1e3], [19], [27], [1e3]];
+FP.test('bossFight: un combat complet par boss, de la première cible à la victoire (taille de départ et taille de première saison)', () => {
+  MILIEUX.forEach((m0, m) => [0, ...FIGHT_STEMS[m]].forEach(stems => {
+    const name = m0 + (stems ? ' étiré (' + stems + ' pousses)' : ''), r = playBossFight(m, stems), next = (m + 1) % 4;
     FP.assertEqual(r.bosses, 1, name + ' : boss vaincu ' + JSON.stringify(r));
     FP.assertEqual(r.milieu, next, name + ' : milieu suivant ' + JSON.stringify(r));
     FP.assertEqual(r.saison, m === 3 ? 2 : 1, name + ' : saison ' + JSON.stringify(r));
@@ -90,7 +97,7 @@ FP.test('bossFight: un combat complet par boss, de la première cible à la vict
     FP.assert(r.stems >= 4 && r.stems <= 10, name + ' : ' + r.stems + ' pousses ' + JSON.stringify(r));
     FP.assert(r.minReserves > 0, name + ' : réserve à zéro ' + JSON.stringify(r));
     console.log('bossFight ' + name + ' : ' + JSON.stringify(r));
-  });
+  }));
 });
 
 // --- Défenses toujours esquivables (revue finale v5.1.0) : une pointe qui entre dans une salle, où que ce soit le long de ses
@@ -117,8 +124,8 @@ const roomEntries = (s, placed, rect) => {
   return out;
 };
 // Rend '' (esquivé) ou la raison de l'échec.
-const dodgeFrom = (W, milieu, room, at, fast) => {
-  const s = bossRun(W, milieu);
+const dodgeFrom = (W, milieu, room, at, fast, stems = 0) => {
+  const s = bossRun(W, milieu, 7, stems);
   s.bossFight.destroyed = [true, true, true]; s.bossFight.headOpen = true; FP.level.generate(s);
   FP.plant.launch(s); s.events.length = 0;
   const p = s.plant, r = s.world.bossLevel.rooms.find(q => q.id === room), mid = (r.x0 + r.x1) / 2, H = s.world.viewH;
@@ -140,14 +147,14 @@ const dodgeFrom = (W, milieu, room, at, fast) => {
   return woke ? 'jamais fini' : 'la salle ne s’éveille pas';
 };
 
-FP.test('bossFight: une défense s’esquive depuis chaque entrée de salle, vite ou lentement', () => {
-  for (const W of PLAN_WIDTHS) MILIEUX.forEach((name, milieu) => {
-    const s = bossRun(W, milieu), placed = FP.bossPlan.toWorld(s.world.bossLevel.plan, s.world);
+FP.test('bossFight: une défense s’esquive depuis chaque entrée de salle, vite ou lentement (niveau de départ et étiré)', () => {
+  for (const stems of [0, 1e3]) for (const W of PLAN_WIDTHS) MILIEUX.forEach((m0, milieu) => {
+    const name = m0 + (stems ? ' étiré' : ''), s = bossRun(W, milieu, 7, stems), placed = FP.bossPlan.toWorld(s.world.bossLevel.plan, s.world);
     for (const room of placed.rooms) {
       const entries = roomEntries(s, placed, room.rect);
       FP.assert(entries.length > 0, `${name} ${room.id} sans entrée W=${W}`);
       for (const at of entries) for (const fast of [false, true]) {
-        const err = dodgeFrom(W, milieu, room.id, at, fast);
+        const err = dodgeFrom(W, milieu, room.id, at, fast, stems);
         FP.assert(!err, `${name} ${room.id} W=${W} entrée (${at.x | 0}, ${at.y | 0}) ${fast ? 'rapide' : 'lente'} : ${err}`);
       }
     }

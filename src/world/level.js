@@ -1,7 +1,7 @@
 // world/level.js — génération d'un niveau à partir de la graine du run.
-// Lit     : state.rng, state.difficulty (niveau équivalent : réglages par niveau), state.level (réveil du T-Rex), state.run.{milieu,boss}, FP.config.shop.lobbyingK (option lobbying), state.world.{width,height,viewH,surfaceY}, state.signature,
-//           FP.config.{level,spawnTables,signature,milieux}, FP.catalog, FP.geom, FP.bossLevel.generate (niveau de boss).
-// Écrit   : state.world.{milieu,level,boss,bossLevel,skyVariant,lawnVariant,safePath,safeRadius,hazardRadius,solidExtra,solids,toxics,leaks (crossing : barre le chemin sûr, v4.17.0),bonuses}, state.signature ;
+// Lit     : state.rng, state.difficulty (niveau équivalent : réglages par niveau), state.level (réveil du T-Rex), state.run.{milieu,boss}, FP.config.shop.lobbyingK (option lobbying), state.world.{width,viewH,surfaceY,baseHeight,growK}, FP.state.levelHeightFor (hauteur du niveau), state.signature,
+//           FP.config.{level,spawnTables,signature,milieux,world.growMax,plant.speed}, FP.state.worldHeightFor, FP.catalog, FP.geom, FP.bossLevel.generate (niveau de boss).
+// Écrit   : state.world.{height,baseHeight,growK (v5.3.0 : hauteur du niveau, décidée ici),milieu,level,boss,bossLevel,skyVariant,lawnVariant,safePath,safeRadius,hazardRadius,solidExtra,solids,toxics,leaks (crossing : barre le chemin sûr, v4.17.0),bonuses}, state.signature ;
 //           puis FP.coins.place écrit state.world.{coins,chains}.
 // Expose  : FP.level.startRun(state), FP.level.generate(state), FP.level.tableFor(milieu, band) (pur, testé),
 //           FP.level.makeToxic(rng, x, y, big),
@@ -231,9 +231,10 @@
     return path[path.length - 1].x;
   }
 
+  // Échelle d'un niveau : celle de la hauteur de départ (plafonnée), × growK (v5.3.0) — même densité par écran sur un niveau plus haut.
   function worldScaleOf(world) {
-    const s = FP.config.level.solids;
-    return clamp((world.height - world.surfaceY) / (world.viewH - world.surfaceY), 1, s.worldScaleMax);
+    const s = FP.config.level.solids, base = world.baseHeight || world.height;
+    return clamp((base - world.surfaceY) / (world.viewH - world.surfaceY), 1, s.worldScaleMax) * (world.growK || 1);
   }
 
   function countFor(c, state) {
@@ -361,6 +362,8 @@
   // opts.lobbying (boutique) : moins d'obstacles (× FP.config.shop.lobbyingK).
   function generate(state, opts = {}) {
     const world = state.world, rng = state.rng, g = FP.config.level.grid;
+    const size = FP.state.levelHeightFor(state);   // décidée à chaque niveau, figée ensuite (avant le niveau de boss aussi)
+    world.height = size.height; world.baseHeight = size.base; world.growK = size.k;
     world.solids = []; world.toxics = []; world.leaks = []; world.bonuses = [];
     world.milieu = FP.config.milieux[state.run.milieu].id;   // v4.9.0 ; le rendu ramène les nuances tirées à celles du milieu
     world.level = state.level;   // v4.13.1 : graine du décor, figée jusqu'au niveau suivant (l'éclosion avance state.level avant le fondu)

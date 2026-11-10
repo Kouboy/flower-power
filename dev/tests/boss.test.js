@@ -1,7 +1,9 @@
 // Niveau de boss (v5.1.0) : construit depuis le plan du milieu (assets/boss/plans.js), état du combat, HUD, musique.
 // Aides d'autres fichiers (chargés après, appelées au lancement des tests) : recCtx (decor.test.js), flowRun, nextBloom, bloomNow, advance, skipShop (flow / milieux).
-const bossRun = (W, milieu, seed = 7) => {
+// stems : pousses déjà lancées (v5.3.0 : la hauteur du niveau suit la vitesse de lancement ; 1e3 → facteur maximal).
+const bossRun = (W, milieu, seed = 7, stems = 0) => {
   const s = FP.state.createRun(seed, { W, H: Math.round(W * 16 / 9) });
+  s.plant.stemCount = stems;
   FP.level.startRun(s); s.run.milieu = milieu; s.run.boss = true; FP.level.generate(s);
   return s;
 };
@@ -101,7 +103,13 @@ FP.test('music: le thème du boss s’emballe de tempoPerTarget par cible détru
 });
 
 // Pousse pilotée à la souris (les vrais play/plant.js et world/collision.js) le long d'un trajet de référence, jusqu'à la pièce visée.
-// Le pointeur vise l'abscisse du prochain point du trajet ; sa hauteur d'écran donne un regard en avant égal à l'écart jusqu'à ce point.
+// Le pointeur vise le prochain point du trajet s'il est à portée de regard (lookAheadTop) ; plus loin (niveaux étirés, v5.3.0), le
+// point du trajet à cette portée, comme un joueur qui suit la courbe des yeux : viser tout droit un point très haut coupait les virages.
+const aimAt = (path, i, tip, c) => (tip.y - path[i].y <= c.lookAheadTop ? path[i] : aheadOn(path, tip.y - c.lookAheadTop));
+const aheadOn = (path, y) => {
+  for (let j = 1; j < path.length; j++) if (path[j].y <= y) { const a = path[j - 1], b = path[j], u = (a.y - y) / (a.y - b.y || 1); return { x: a.x + (b.x - a.x) * u, y }; }
+  return path[path.length - 1];
+};
 // Rend null si la pointe arrive à moins de 12 px de la pièce sans avoir touché autre chose, sinon ce qui a mal tourné.
 const steerAlong = (s, path, goal) => {
   const c = FP.config.plant.control, dt = 1 / 60, H = s.world.viewH;
@@ -110,7 +118,7 @@ const steerAlong = (s, path, goal) => {
   for (let f = 0; f < 60 * 60; f++) {
     const tip = s.plant.tip;
     while (i < path.length - 1 && tip.y <= path[i].y) i++;
-    const p = path[i], look = FP.math.clamp(tip.y - p.y, c.lookAheadBottom, c.lookAheadTop);
+    const p = aimAt(path, i, tip, c), look = FP.math.clamp(tip.y - p.y, c.lookAheadBottom, c.lookAheadTop);
     const y = (c.lookAheadTop - look) / (c.lookAheadTop - c.lookAheadBottom) * H;
     s.input = { ...s.input, down: true, touch: false, key: false, active: true, x: p.x, screenX: 0, y };
     s.time += dt;
@@ -122,19 +130,19 @@ const steerAlong = (s, path, goal) => {
   return 'jamais arrivée';
 };
 
-FP.test('bossLevel: une pousse pilotée atteint chaque cible sans toucher de paroi', () => {
-  for (const W of [280, 440]) for (let milieu = 0; milieu < 4; milieu++) {
-    const s0 = bossRun(W, milieu), placed = FP.bossPlan.toWorld(s0.world.bossLevel.plan, s0.world);
+FP.test('bossLevel: une pousse pilotée atteint chaque cible sans toucher de paroi (niveau de départ et étiré au maximum)', () => {
+  for (const stems of [0, 1e3]) for (const W of [280, 440]) for (let milieu = 0; milieu < 4; milieu++) {
+    const s0 = bossRun(W, milieu, 7, stems), placed = FP.bossPlan.toWorld(s0.world.bossLevel.plan, s0.world);
     for (const t of s0.world.bossLevel.targets) {
-      const s = bossRun(W, milieu), goal = s.world.bossLevel.targets[t.i].solid;
+      const s = bossRun(W, milieu, 7, stems), goal = s.world.bossLevel.targets[t.i].solid;
       const err = steerAlong(s, placed.paths[t.id], goal);
-      FP.assert(!err, `W=${W} ${MILIEUX[milieu]} → ${t.id} : ${err}`);
+      FP.assert(!err, `W=${W} k=${s.world.growK.toFixed(2)} ${MILIEUX[milieu]} → ${t.id} : ${err}`);
     }
-    const s = bossRun(W, milieu);
+    const s = bossRun(W, milieu, 7, stems);
     s.bossFight.destroyed = [true, true, true]; s.bossFight.headOpen = true; FP.level.generate(s);
     FP.assert(s.world.bossLevel.plates.every(p => p.solid.off), 'plaques tombées');
     const err = steerAlong(s, placed.paths.head, s.world.bossLevel.head.solid);
-    FP.assert(!err, `W=${W} ${MILIEUX[milieu]} → tête : ${err}`);
+    FP.assert(!err, `W=${W} k=${s.world.growK.toFixed(2)} ${MILIEUX[milieu]} → tête : ${err}`);
   }
 });
 
