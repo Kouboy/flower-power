@@ -2,6 +2,15 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v5.7.0 — Boss cohérent : une seule machine
+
+- les points faibles deviennent des pompes (piston qui bat) reliées au cœur par des tuyaux rouillés où circule un flux vert ; une pompe cassée rompt son tuyau, qui fuit, et son flux s'arrête ; le cœur blindé tremble au rythme du flux, à nu il lance des étincelles ; à la Bétonneuse, une vraie image de pompe ;
+- les hachures disparaissent : chaque défense est une machine (goulotte de béton, buses de vapeur, brûleurs, émetteur de radiation) qui se prépare pendant l'avertissement puis remplit toute la moitié frappée ; un mince liseré orange marque la zone visée ; zones et durées inchangées ;
+- tourelles visibles : socle de 16 px, canon qui pivote vers la pousse, lentille qui passe de l'orange au rouge, recul et éclair au tir, son du tir plus fort ; même difficulté ;
+- la machine surgit de la terre : bords extérieurs des murs rongés (frange, mottes, racines), poche de terre sur la tête, où la fleur éclot ;
+- le premier plan flou de la v5.6.0 est retiré ; tuyaux tracés par l'outil `dev/tools/route-pipes.js` (plus court chemin dans la masse de la machine, colonnes le long des parois là où les pompes flottent) ;
+- banc : 682 tests.
+
 ## v5.6.1 — La terre revient autour du boss
 
 - l'arrière-plan d'usine de la v5.6.0 est retiré : il remplaçait la terre autour du boss par une silhouette qui se répétait mal (retour de jeu) ; la terre du milieu revient, comme avant la v5.6.0 ;

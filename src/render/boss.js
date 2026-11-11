@@ -1,4 +1,4 @@
-// render/boss.js — le boss, provisoire (v5.1.0 : formes simples dessinées par le code, sans image) : parois, cibles, tête, plaques du blindage, et ses menaces (hachures de la défense, visée des tourelles, projectiles).
+// render/boss.js — le corps du boss (v5.1.0 ; habillé des images du milieu depuis la v5.6.0, sinon formes du code) : parois, pompes (cibles) dont le piston bat, tête qui tremble au rythme du flux, plaques ; et ses menaces (liseré de la zone visée, visée depuis la bouche du canon, projectiles). Tuyaux, machines de défense, tourelles et terre : render/boss-pipes.js, boss-machines.js, boss-earth.js (v5.7.0).
 // Lit     : state.{time,camera.y,run.milieu,plant.tip,bossFight.{headOpen,destroyed},bossThreats.{rooms,aim,shots}}, state.world.{width,height,viewH,bossLevel.{walls,targets,head,plates,rooms,turrets}} (x, y, collision, off de chaque solide),
 //           FP.config.milieux, FP.palette.boss, FP.bossThreats.timing, FP.px (dont layer et blit), FP.bossSkin (images du milieu, v5.6.0 ; sans image : formes du code).
 // Écrit   : rien dans l'état (la toile reçue ; un calque en cache, créé à la première utilisation).
