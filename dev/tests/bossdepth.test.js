@@ -1,5 +1,5 @@
-// Profondeur des boss (v5.6.0) : arrière-plan lointain, premier plan flou en parallaxe. Aides : skinImg, skinCtx, skinRun (bossskin.test.js), growRun (grow.test.js).
-const depthImgs = () => { FP.bossSkin._set('friche', 'back', skinImg(60, 40)); FP.bossSkin._set('friche', 'fore', [skinImg(20, 80), skinImg(64, 48)]); };
+// Profondeur des boss (v5.6.0) : premier plan flou en parallaxe. Aides : skinImg, skinCtx, skinRun (bossskin.test.js), growRun (grow.test.js).
+const depthImgs = () => { FP.bossSkin._set('friche', 'fore', [skinImg(20, 80), skinImg(64, 48)]); };
 const depthStretched = () => {
   const s = growRun(440, 30, 12); s.run.boss = true; s.run.milieu = 0; FP.level.generate(s); s.mode = 'playing'; s.time = 2; return s;
 };
@@ -17,29 +17,14 @@ FP.test('bossDepth: placement identique d’une tentative à l’autre', () => {
   FP.assert(JSON.stringify(FP.bossDepth.place(8, 'friche', 1000, 6000, 780, 2)) !== JSON.stringify(a), 'une autre graine change le placement');
 });
 
-FP.test('bossDepth: l’arrière-plan couvre toute la zone du boss, même au facteur max', () => {
-  try {
-    FP.bossSkin._reset(); depthImgs();
-    const s = depthStretched(), z = FP.bossPlan.zone(s.world), H = Math.ceil(s.world.viewH / FP.px.SCALE);
-    FP.assert(s.world.growK > 2, 'étiré : ' + s.world.growK);
-    for (const camY of [z.top - s.world.viewH / 2, (z.top + z.bottom) / 2, z.bottom - s.world.viewH / 2]) {
-      s.camera.y = camY; const g = skinCtx(); FP.bossDepth.drawBack(g, s);
-      const ya = Math.max(0, FP.px.toArt(z.top - camY)), yb = Math.min(H, FP.px.toArt(z.bottom - camY));
-      const rows = new Set(); for (const q of g.images) for (let y = q.a[5]; y < q.a[5] + q.a[7]; y++) rows.add(y);
-      for (let y = ya; y < yb; y++) FP.assert(rows.has(y), 'rangée ' + y + ' couverte (caméra ' + Math.round(camY) + ')');
-      FP.assert(![...rows].some(y => y < ya || y >= yb), 'rien hors de la zone');
-    }
-  } finally { FP.bossSkin._reset(); }
-});
-
-FP.test('bossDepth: sans images, ni arrière-plan ni premier plan', () => {
+FP.test('bossDepth: sans images, pas de premier plan', () => {
   FP.bossSkin._reset();
   for (const m of [0, 1, 2, 3]) {
-    const s = skinRun(m), g = skinCtx(); FP.bossDepth.drawBack(g, s); FP.bossDepth.drawFore(g, s);
+    const s = skinRun(m), g = skinCtx(); FP.bossDepth.drawFore(g, s);
     FP.assertEqual(g.images.length + g.rects.length, 0, 'milieu ' + m);
   }
   const n = bossRun(440, 0); n.world.bossLevel = null; const g = skinCtx(); depthImgs();
-  try { FP.bossDepth.drawBack(g, n); FP.bossDepth.drawFore(g, n); FP.assertEqual(g.images.length, 0, 'hors boss'); } finally { FP.bossSkin._reset(); }
+  try { FP.bossDepth.drawFore(g, n); FP.assertEqual(g.images.length, 0, 'hors boss'); } finally { FP.bossSkin._reset(); }
 });
 
 // Toile cachée factice : contexte avec ou sans `filter`, appels comptés.

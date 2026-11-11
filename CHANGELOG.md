@@ -2,6 +2,11 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v5.6.1 — La terre revient autour du boss
+
+- l'arrière-plan d'usine de la v5.6.0 est retiré : il remplaçait la terre autour du boss par une silhouette qui se répétait mal (retour de jeu) ; la terre du milieu revient, comme avant la v5.6.0 ;
+- banc : 670 tests.
+
 ## v5.6.0 — Habillage des boss : la Bétonneuse
 
 - les boss reçoivent une vraie apparence (PixelLab, retouchée) : matière répétée dans les parois (ancrée au monde, contour et rivets gardés), images des cibles, de la tête blindée, des plaques (même quand elles tombent) et des tourelles ; la tête à nu, les épaves et les tirs restent dessinés par le code ;

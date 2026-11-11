@@ -11,7 +11,7 @@ FP.test('bossSkin: sans images, chaque boss se dessine comme avant (aucune image
   for (const m of [0, 1, 2, 3]) {
     const g = skinDraw(skinRun(m));
     FP.assertEqual(g.images.length, 0, 'milieu ' + m); FP.assert(g.rects.length > 0, 'dessin actuel, milieu ' + m);
-    for (const r of ['matter', 'target', 'head', 'plate', 'turret', 'back']) FP.assertEqual(FP.bossSkin.image(skinId(m), r), null);
+    for (const r of ['matter', 'target', 'head', 'plate', 'turret']) FP.assertEqual(FP.bossSkin.image(skinId(m), r), null);
     FP.assertEqual(FP.bossSkin.fore(skinId(m)).length, 0);
   }
 });
@@ -73,10 +73,10 @@ FP.test('bossSkin: le calque est refait quand une image devient prête', () => {
   } finally { FP.px.layer = saved; FP.bossSkin._reset(); }
 });
 
-FP.test('bossSkin: art.js — chaque milieu décrit a ses 6 images et deux éléments de premier plan', () => {
+FP.test('bossSkin: art.js — chaque milieu décrit a ses 5 images et deux éléments de premier plan', () => {
   for (const [id, a] of Object.entries(window.FLOWER_POWER_BOSS_ART)) {
     FP.assert(FP.config.milieux.some(m => m.id === id), 'milieu connu ' + id);
-    for (const r of ['matter', 'target', 'head', 'plate', 'turret', 'back']) FP.assert(typeof a[r] === 'string' && a[r].endsWith('.png'), id + ' ' + r);
+    for (const r of ['matter', 'target', 'head', 'plate', 'turret']) FP.assert(typeof a[r] === 'string' && a[r].endsWith('.png'), id + ' ' + r);
     FP.assert(Array.isArray(a.fore) && a.fore.length === 2 && a.fore.every(f => f.endsWith('.png')), id + ' fore');
   }
 });
