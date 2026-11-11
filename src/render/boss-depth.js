@@ -1,12 +1,12 @@
-// render/boss-depth.js — la profondeur des boss (v5.6.0) : arrière-plan d'usine lointain, répété, plus lent que la caméra ;
-// éléments de premier plan flous, plus rapides que la caméra, qui peuvent traverser l'écran. Les menaces passent par-dessus (frame.js).
+// render/boss-depth.js — la profondeur des boss (v5.6.0) : éléments de premier plan flous, plus rapides que la caméra, qui peuvent traverser l'écran. Les menaces passent par-dessus (frame.js).
 // Lit     : state.{seed, time, camera.y, run.milieu, bossFight.collapse, bossThreats.rooms}, state.world.{width, viewH, bossLevel},
-//           FP.config.{milieux, boss.skin (back, fore, blur, foreAlpha, foreAlphaNoBlur, foreGap, foreX, foreShake, backDim)},
-//           FP.bossSkin.{image, fore}, FP.bossPlan.zone, FP.palette.boss.milieux, FP.px (dont layer), FP.createRng.
+//           FP.config.{milieux, boss.skin (fore, blur, foreAlpha, foreAlphaNoBlur, foreGap, foreX, foreShake)},
+//           FP.bossSkin.fore, FP.bossPlan.zone, FP.px (dont layer), FP.createRng.
 // Écrit   : rien dans l'état (la toile reçue ; une toile floutée en cache par image du premier plan).
 // Expose  : FP.bossDepth.parallax(y, camY, f) → y - camY × f (pur) ; place(seed, milieuId, top, bottom, viewH, n) → [{ i, y, x }] (pur) ;
 //           blurred(img) → { canvas, pad, sharp } (préparé une fois ; sharp : le navigateur ne sait pas flouter) ; alphaOf(b) → opacité ;
-//           layout(state) → [{ img, x, y, f }] (premier plan, pixels d'art de l'écran) ; drawBack(g, state) ; drawFore(g, state).
+//           layout(state) → [{ img, x, y, f }] (premier plan, pixels d'art de l'écran) ; drawFore(g, state).
+// v5.6.1 : l'arrière-plan d'usine (drawBack) est retiré — il remplaçait la terre autour du boss.
 // Rien hors niveau de boss, ni pour un milieu sans images (son boss reste dessiné par le code).
 (function () {
   'use strict';
@@ -87,25 +87,5 @@
     }
   }
 
-  // Arrière-plan : l'image répétée en largeur et en hauteur, à back × la vitesse de la caméra, limitée à la zone du boss, sous un voile sombre.
-  function drawBack(g, state) {
-    const w = state.world;
-    if (!w.bossLevel) return;
-    const img = FP.bossSkin.image(idOf(state), 'back');
-    if (!img) return;
-    const K = FP.config.boss.skin, z = FP.bossPlan.zone(w), cam = state.camera.y, H = Math.ceil(w.viewH / FP.px.SCALE);
-    const W = Math.ceil(w.width / FP.px.SCALE), ya = Math.max(0, FP.px.toArt(z.top - cam)), yb = Math.min(H, FP.px.toArt(z.bottom - cam));
-    if (yb <= ya) return;
-    const oy = FP.px.toArt(parallax(z.top, cam - z.top, K.back) - z.top);   // rangée d'écran où commence une tuile
-    for (let y = ya; y < yb;) {
-      const sy = ((y - oy) % img.height + img.height) % img.height, h = Math.min(img.height - sy, yb - y);
-      for (let x = 0; x < W; x += img.width) { const n = Math.min(img.width, W - x); g.drawImage(img, 0, sy, n, h, x, y, n, h); }
-      y += h;
-    }
-    g.globalAlpha = K.backDim;
-    FP.px.rect(g, 0, ya, W, yb - ya, FP.palette.boss.milieux[idOf(state)].edge);
-    g.globalAlpha = 1;
-  }
-
-  FP.bossDepth = { parallax, place, blurred, alphaOf, layout, drawBack, drawFore };
+  FP.bossDepth = { parallax, place, blurred, alphaOf, layout, drawFore };
 })();

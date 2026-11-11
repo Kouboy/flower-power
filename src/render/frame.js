@@ -25,7 +25,6 @@
     let t = perf && performance.now();
     FP.sky.draw(g, state);
     FP.soil.draw(g, state);
-    FP.bossDepth.drawBack(g, state);  // usine lointaine derrière le boss (v5.6.0) : juste sur la terre, sous les nappes et les anciennes tiges
     FP.plantRender.drawOld(g, state);   // anciennes tiges : sous les dangers et les déchets
     if (perf) t = perf.mark('soil', t);
     FP.hazardsRender.drawBase(g, state);
