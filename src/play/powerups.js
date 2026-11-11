@@ -69,7 +69,8 @@
     return true;
   }
 
-  // Spawn prédictif : devant la pointe, décalé latéralement (d'abord du côté extérieur à l'obstacle).
+  // Spawn prédictif : devant la pointe, dans son axe (v5.5.0, retour de playtest : à ramasser sans virer) ; en secours,
+  // décalé latéralement (d'abord du côté extérieur à l'obstacle).
   function findSpawn(state, obj, risk) {
     const c = FP.config.powerups.spawn, tip = state.plant.tip;
     const d = FP.geom.clampUpAngle(state.plant.dir.x, state.plant.dir.y, c.dirCone);
@@ -79,6 +80,7 @@
     const base = Math.max(c.minAhead, Math.min(c.idealAhead + risk * c.aheadRisk, availableUp - c.aheadSlack));
     const minProjection = availableUp < c.nearSurfaceUp ? c.minProjectionNear : c.minProjection;
     const attempts = [
+      [base, 0, out], [base + 12, 0, out], [Math.max(34, base - 12), 0, out], [base + 24, 0, out],
       [base, 34, out], [base + 10, 42, out], [Math.max(34, base - 10), 46, -out], [base + 18, 28, -out],
       [base + 25, 36, out], [Math.max(32, base - 5), 23, -out], [Math.max(30, base - 16), 18, out], [Math.max(30, base - 16), 18, -out]
     ];

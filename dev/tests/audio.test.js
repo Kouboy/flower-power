@@ -17,9 +17,10 @@ FP.test('audio: mort = impact puis jingle des cuivres', () => withBackend(b => {
   FP.audio.consume([{ type: 'death', cause: 'solid' }], auRun(), 0);
   FP.assert(sounding(b).some(c => c[0] === 'note' && c[1] === 'brass'), 'cuivres');
 }));
-FP.test('audio: le kling monte d’un demi-ton par palier de combo, plafond +5', () => {
+FP.test('audio: le kling monte d’une note de la gamme par palier de combo, plafond au 4e (v5.5.0)', () => {
   const pitch = (combo) => { let m = 0; withBackend(b => { FP.audio.consume([{ type: 'eco', amount: 500, combo }], auRun(), 0); m = Math.min(...sounding(b).filter(c => c[0] === 'note').map(c => c[2])); }); return m; };
-  FP.assertEqual(pitch(2) - pitch(1), 1); FP.assertEqual(pitch(9) - pitch(1), 5);
+  FP.assert(pitch(1) < pitch(2) && pitch(2) < pitch(3) && pitch(3) < pitch(4), [1, 2, 3, 4].map(pitch).join());
+  FP.assertEqual(pitch(9), pitch(4));
 });
 FP.test('audio: anti-rafale par type', () => withBackend(b => {
   FP.audio.consume(Array.from({ length: 8 }, () => ({ type: 'eco', amount: 500, combo: 1 })), auRun(), 0);
@@ -96,7 +97,8 @@ FP.test('audio: un jeton sonne en verre, au-dessus de la musique, sans percer', 
   FP.audio.consume([{ type: 'coin', rank: 3, chain: 2 }], auRun(), 0);
   const n = sounding(b).filter(c => c[0] === 'note');
   FP.assert(n.length && n.every(c => c[1] === 'glass' && c[2] >= 88), JSON.stringify(n.map(c => [c[1], c[2]])));
-  FP.assert(n.every(c => c[5] * FP.synth.INSTRUMENTS.glass.gain <= .01), 'volume');   // v4.7.3 : encore trop fort à .033 ; v5.3.2 : encore trop fort à .02
+  FP.assert(n.every(c => c[5] * FP.synth.INSTRUMENTS.glass.gain <= .015), 'volume');   // v4.7.3 : encore trop fort à .033 ; v5.3.2 : encore trop fort à .02
+  FP.assert(n.every(c => c[5] >= .12), 'pas trop discret non plus (v5.5.0 : .09 trop bas)');
 }));
 FP.test('music: la musique est plus présente', () => FP.assertEqual(FP.music.MUSIC_GAIN, .8));
 FP.test('audio: chaque traînée a sa phrase, qui boucle tous les 8 jetons', () => {
@@ -144,4 +146,24 @@ FP.test('audio: la victoire du boss a son son', () => {
   for (const type of ['bossDown']) withBackend(b => {
     FP.audio.consume([{ type, i: 1, x: 100, y: 200 }], auRun(), 0); FP.assert(sounding(b).length > 0, type);
   });
+});
+// Gammes (v5.5.0) : les sons de ramassage jouent dans une pentatonique tirée de la gamme de la musique du milieu
+// (variantes et thème du boss) : plus de fausses notes contre l'Industrie, la Décharge ou le Nucléaire.
+FP.test('audio: jetons, chapelet, ÉcoCrédits et frôlement restent dans la gamme de la musique du milieu', () => {
+  FP.config.milieux.forEach((mi, m) => {
+    const songs = [...Array(FP.songs.variants(mi.id)).keys()].map(v => FP.songs[mi.id + v]).concat([FP.songs[mi.id + 'Boss']]);
+    FP.assert(songs.length > 1 && songs.every(Boolean), mi.id);
+    const heard = [];
+    const listen = (events) => withBackend(b => { const s = auRun(); s.run.milieu = m; FP.audio.consume(events, s, 0); heard.push(...sounding(b).filter(c => c[0] === 'note').map(c => c[2])); });
+    for (let chain = 0; chain < 6; chain++) for (let rank = 0; rank < 8; rank++) listen([{ type: 'coin', rank, chain }]);
+    listen([{ type: 'chainDone' }]);
+    for (let combo = 1; combo <= 8; combo++) listen([{ type: 'eco', amount: 100, combo }]);
+    listen([{ type: 'grazeStart', intensity: .8 }]);
+    FP.assert(heard.length > 60, mi.id + ' : ' + heard.length);
+    for (const song of songs) for (const midi of heard) FP.assert(song.pcs.includes(((midi % 12) + 12) % 12), mi.id + ' : ' + midi + ' hors gamme');
+  });
+});
+FP.test('audio: deux milieux, deux gammes de jetons', () => {
+  const notes = (m) => { const out = []; withBackend(b => { const s = auRun(); s.run.milieu = m; FP.audio.consume([{ type: 'coin', rank: 2, chain: 0 }], s, 0); out.push(...sounding(b).map(c => c[2])); }); return out.join(); };
+  FP.assert(notes(0) !== notes(3), notes(0) + ' / ' + notes(3));
 });

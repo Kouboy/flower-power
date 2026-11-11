@@ -2,6 +2,15 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v5.5.0 — Réglages de playtest : tourelles, gammes, frôlement, bonus
+
+- une tourelle de plus à chaque boss : la Bétonneuse en a désormais une (sous le parapet droit, tirs lents), les trois autres en ont trois ; les tirs sont plus serrés (espacement 2 / 1,75 / 1,5 s au lieu de 2,6 / 2,3 / 2) — positions provisoires, à recaler sur les images des boss ;
+- les jetons, l'accord du chapelet, la cloche des ÉcoCrédits™ et le pincement du frôlement jouent dans une pentatonique tirée de la gamme de la musique du milieu (friche mi mineur, industrie la mineur, décharge sol mineur harmonique, nucléaire mi majeur) : plus de fausses notes ; la cloche des combos monte par degrés de la gamme, plus par demi-tons ;
+- le son des jetons remonte à mi-chemin (.13, après .09 en v5.3.2) ;
+- le frôlement s'active de plus loin : bande de 22 px autour des obstacles au lieu de 16 (`graze.reachPad`) ;
+- la récompense d'un survol apparaît dans l'axe de la pointe, à ramasser sans virer ; les places décalées ne servent qu'en secours ;
+- banc : 651 tests.
+
 ## v5.4.0 — Un bon de commande à chaque fleur
 
 - le bon de commande s'ouvre après chaque fleur éclose (3 par milieu au lieu d'un seul avant le boss) : les articles servent enfin dans les pousses ordinaires, où ils font tous effet ;

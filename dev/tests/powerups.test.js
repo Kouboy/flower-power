@@ -159,3 +159,20 @@ FP.test('powerups: un obstacle déjà récompensé annonce encore « pas flyover
   FP.powerups.onFlyover(s, o, record({ time: .5 }));
   FP.assert(s.events.some(e => e.type === 'flyover' && e.outcome === 'notQualified'));
 });
+// Sur la trajectoire (v5.5.0, retour de playtest) : la récompense apparaît dans l'axe de la pointe, à portée de ramassage sans
+// virer ; les places décalées sur le côté ne servent qu'en secours.
+FP.test('powerups: la récompense apparaît sur la trajectoire de la pointe, droite ou en biais', () => {
+  for (const dir of [{ x: 0, y: -1 }, { x: .5, y: -Math.sqrt(.75) }, { x: -.5, y: -Math.sqrt(.75) }]) {
+    const s = puRun(); const o = qualifyingFlyover(s); s.plant.dir = dir;
+    FP.powerups.onFlyover(s, o, record());
+    const b = s.world.bonuses[0], t = s.plant.tip; FP.assert(b, JSON.stringify(dir));
+    const off = Math.abs((b.x - t.x) * -dir.y + (b.y - t.y) * dir.x);   // écart à la droite de la pointe
+    FP.assert(off < 1, 'écart ' + off.toFixed(1) + ' px pour ' + JSON.stringify(dir));
+  }
+});
+FP.test('powerups: place prise devant → récompense décalée en secours', () => {
+  const s = puRun(), x = s.world.width - FP.config.powerups.spawn.marginX - 6, o = server(x - 50, 900);   // l'axe longe le bord droit : hors champ
+  s.world.solids = [o]; s.plant.tip = { x, y: 850 }; s.plant.dir = { x: 0, y: -1 };
+  FP.powerups.onFlyover(s, o, record());
+  const b = s.world.bonuses[0]; FP.assert(b && x - b.x > 10, b ? String(b.x) : 'pas de récompense');
+});

@@ -22,12 +22,11 @@ FP.test('threats: un cran de difficulté par boss — canaux, coup, repos, accé
   FP.assertEqual(R[0].strike, .9); FP.assertEqual(R[3].strike, 1.1);
   FP.assertEqual(R[0].rest, 1.3); FP.assertEqual(R[3].rest, .9);
   FP.assertEqual(R[0].speedup, .12); FP.assertEqual(R[3].speedup, .18);
-  FP.assertEqual(R[0].shot, null, 'pas de tirs au boss 1');
-  FP.assertEqual(list(r => r.shot && [r.shot.speed, r.shot.gap]), '[null,[440,2.6],[480,2.3],[520,2]]');
+  FP.assertEqual(list(r => [r.shot.speed, r.shot.gap]), '[[400,3.2],[440,2],[480,1.75],[520,1.5]]');   // v5.5.0 : tirs dès le boss 1, plus serrés ensuite
   for (let k = 0; k < 3; k++) {
     const a = R[k], b = R[k + 1], at = MILIEUX[k] + ' → ' + MILIEUX[k + 1];
     FP.assert(b.channelMin < a.channelMin && b.strike > a.strike && b.rest < a.rest && b.speedup > a.speedup, 'plus dur ' + at);
-    if (a.shot) FP.assert(b.shot.speed > a.shot.speed && b.shot.gap < a.shot.gap, 'tirs plus durs ' + at);
+    FP.assert(b.shot.speed > a.shot.speed && b.shot.gap < a.shot.gap, 'tirs plus durs ' + at);
   }
   FP.assertEqual(FP.config.boss.defense.warn, 1.2); FP.assertEqual(FP.config.boss.defense.warnMin, 1);
 });
@@ -169,16 +168,12 @@ const shotTick = (s, n) => { for (let i = 0; i < n; i++) thrStep(s); };
 const shotEvents = (s, type) => s.events.filter(e => e.type === type);
 const toRest = (s, r) => { for (let i = 0; i < 600 && thrStage(s, r) !== 'rest'; i++) thrStep(s); s.events.length = 0; };   // v5.3.1 : la visée attend le repos de la défense
 
-FP.test('shots: pas de tir à la Bétonneuse', () => {
-  const s = shotRun(0); s.plant.tip = thrIn(thrRoom(s), .5);
-  shotTick(s, 600); FP.assertEqual(s.bossThreats.shots.length, 0); FP.assertEqual(s.bossThreats.aim, null);
-  FP.assert(!s.world.solids.some(o => o.kind === 'shot'), 'aucun solide de tir');
-});
 
 FP.test('shots: la ligne se fige 0,3 s avant le tir, le projectile suit la ligne figée', () => {
-  const s = shotRun(1), r = shotRoom(s), cfg = { ...FP.config.boss.shot, ...FP.config.boss.ramp.industrie.shot }, tur = s.world.bossLevel.turrets.find(q => q.room === r.id);
+  const s = shotRun(1), r = shotRoom(s), cfg = { ...FP.config.boss.shot, ...FP.config.boss.ramp.industrie.shot };
   s.plant.tip = thrIn(r, .3); toRest(s, r);
   FP.assert(s.bossThreats.aim && s.bossThreats.aim.t === 0, 'visée au début du repos');
+  const tur = s.world.bossLevel.turrets.find(q => q.id === s.bossThreats.aim.turret);   // v5.5.0 : la salle a deux tourelles, la plus proche vise
   let t = 0, lockT = null, shotT = null, locked = null;
   for (let i = 0; i < 600 && shotT === null; i++, t += 1 / 60) {
     if (lockT === null) s.plant.tip = thrIn(r, .3 + .001 * i);
@@ -208,9 +203,9 @@ FP.test('shots: au moins l’espacement du boss entre deux tirs', () => {
 // v5.3.1 (retour de playtest : « les tirs ne se déclenchent jamais ») : la visée démarrait avec l'avertissement et le coup de la défense
 // l'annulait une image avant le tir dès que l'avertissement tombait à son plancher (1 s = la durée de visée). La tourelle vise désormais
 // pendant le repos de la défense : le coup, puis le tir.
-FP.test('shots: la tourelle vise pendant le repos de la défense et tire, à chaque boss à tourelles, quelles que soient les cibles détruites', () => {
+FP.test('shots: la tourelle vise pendant le repos de la défense et tire, à chaque boss (Bétonneuse comprise, v5.5.0), quelles que soient les cibles détruites', () => {
   FP.assert(FP.config.boss.shot.track <= FP.config.boss.defense.warnMin, 'une visée commencée au repos finit avant le coup suivant');
-  for (const m of [1, 2, 3]) for (const n of [0, 1, 2]) {
+  for (const m of [0, 1, 2, 3]) for (const n of [0, 1, 2]) {
     const s = shotRun(m), r = shotRoom(s), name = 'milieu ' + m + ', ' + n + ' cible(s)';
     s.bossFight.destroyed = [0, 1, 2].map(i => i < n); s.plant.tip = thrIn(r, .4);
     let aimStage = null, shot = false;
@@ -225,7 +220,7 @@ FP.test('shots: la tourelle vise pendant le repos de la défense et tire, à cha
 });
 // Raffinerie : ses chambres se traversent avant la fin du coup ; la tourelle vise la tige dans le dos dès le repos, où qu'elle soit.
 FP.test('shots: une tige sortie de la salle pendant le coup est visée au repos et prend le tir dans le dos', () => {
-  for (const m of [1, 2, 3]) {
+  for (const m of [0, 1, 2, 3]) {
     const s = shotRun(m), r = shotRoom(s), above = { x: (r.x0 + r.x1) / 2, y: r.y0 - 40 };
     s.plant.tip = thrIn(r, .4);
     for (let i = 0; i < 400 && thrStage(s, r) !== 'strike'; i++) thrStep(s);
@@ -275,7 +270,7 @@ FP.test('shots: un projectile sorti du cadre est retiré ; un tir touche et tue 
 });
 
 FP.test('shots: aucun tir ne part pendant un coup de la défense (plusieurs cycles, pointe dans la salle)', () => {
-  for (const m of [1, 2, 3]) {
+  for (const m of [0, 1, 2, 3]) {
     const s = shotRun(m), r = shotRoom(s); s.plant.tip = thrIn(r, .4);
     let shots = 0;
     for (let i = 0; i < 60 * 40; i++) {

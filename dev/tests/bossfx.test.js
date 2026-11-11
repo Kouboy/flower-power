@@ -47,7 +47,7 @@ FP.test('bossfx: la graine en vol et l’explosion se dessinent, puis s’éteig
 });
 
 FP.test('bossRender: dessine sans erreur chaque étape (idle, warn, strike, visée, figée, tir)', () => {
-  for (const milieu of [1, 2, 3]) {
+  for (const milieu of [0, 1, 2, 3]) {
     const s = bfxRun(milieu), bl = s.world.bossLevel, r = bl.rooms[0], tur = bl.turrets.find(q => q.room === r.id) || bl.turrets[0];
     s.camera.y = (r.y0 + r.y1) / 2 - s.world.viewH / 2;
     const count = (setup) => { setup(); const g = recCtx(); FP.bossRender.draw(g, s); return g.rects.length; };
