@@ -7,7 +7,8 @@
 //           FP.bossSkin.version() → augmente à chaque image devenue prête (clé du calque de render/boss.js) ;
 //           FP.bossSkin.spans(pts, inset, fn) → appelle fn(y, a, b) pour chaque morceau de rangée du polygone (règle pair-impair) ;
 //           FP.bossSkin.wall(g, pts, img, ox, oy, inset) : img répétée dans le polygone, ancrée au monde (ox, oy : origine du monde
-//           en pixels d'art dans g) ; FP.bossSkin.piece(g, pts, img, inset) : img étirée à la boîte du polygone, découpée par lui.
+//           en pixels d'art dans g) ; FP.bossSkin.piece(g, pts, img, inset) : img à l'échelle de la boîte du polygone sans déformation
+//           (proportions gardées, centrée), découpée par lui.
 //           Réservés au banc d'essai : FP.bossSkin._set(milieuId, role, img) ('fore' : un tableau d'images) et FP.bossSkin._reset().
 // Sous Node (pas d'Image) : rien n'est chargé, tout passe par le dessin du code.
 (function () {
@@ -73,8 +74,13 @@
   function piece(g, pts, img, inset = 0) {
     let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
     for (const p of pts) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); }
-    const kx = img.width / Math.max(1, x1 - x0), ky = img.height / Math.max(1, y1 - y0);
-    spans(pts, inset, (y, a, b) => g.drawImage(img, (a - x0) * kx, (y - y0) * ky, (b - a) * kx, ky, a, y, b - a, 1));
+    const k = Math.min((x1 - x0) / img.width, (y1 - y0) / img.height), w = img.width * k, h = img.height * k;
+    const dx = x0 + (x1 - x0 - w) / 2, dy = y0 + (y1 - y0 - h) / 2;
+    spans(pts, inset, (y, a, b) => {
+      if (y < dy || y + 1 > dy + h) return;
+      const l = Math.max(a, dx), r = Math.min(b, dx + w);
+      if (r > l) g.drawImage(img, (l - dx) / k, (y - dy) / k, (r - l) / k, 1 / k, l, y, r - l, 1);
+    });
   }
 
   const fake = (img) => ({ img, ready: true });

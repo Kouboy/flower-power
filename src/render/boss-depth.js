@@ -16,13 +16,20 @@
   const parallax = (y, camY, f) => y - camY * f;
   const idOf = (state) => FP.config.milieux[state.run.milieu].id;
 
-  // Premier plan : de top à bottom, un élément tous les foreGap écrans, images alternées, abscisse tirée.
+  // Vitesse relative de l'image i parmi n : de fore[0] (première) à fore[1] (dernière).
+  const speedOf = (i, n) => { const K = FP.config.boss.skin; return K.fore[0] + (K.fore[1] - K.fore[0]) * (n > 1 ? i / (n - 1) : 0); };
+
+  // Premier plan, placé dans l'espace de la caméra (revue finale) : l'élément k passe au milieu de l'écran quand la caméra est à
+  // c_k sous top ; deux passages sont espacés de foreGap écrans de course de caméra, quelle que soit la vitesse de chacun (à
+  // vitesses différentes, un espacement dans le monde laissait deux éléments se rattraper sur un long niveau). De la caméra un écran
+  // au-dessus de top jusqu'à bottom ; images alternées, abscisse tirée.
   function place(seed, milieuId, top, bottom, viewH, n) {
     const K = FP.config.boss.skin, m = FP.config.milieux.findIndex(q => q.id === milieuId);
     const rng = FP.createRng((seed ^ Math.imul(m + 1, 0x85ebca6b) ^ 0xb055) >>> 0), out = [];
-    for (let y = top + rng.next() * viewH, k = 0; y <= bottom; k++) {
-      out.push({ i: k % n, y, x: rng.range(K.foreX[0], K.foreX[1]) });
-      y += viewH * rng.range(K.foreGap[0], K.foreGap[1]);
+    for (let c = (rng.next() - 1) * viewH, k = 0; c <= bottom - top; k++) {
+      const i = k % n;
+      out.push({ i, y: top + c * speedOf(i, n) + viewH / 2, x: rng.range(K.foreX[0], K.foreX[1]) });
+      c += viewH * rng.range(K.foreGap[0], K.foreGap[1]);
     }
     return out;
   }
@@ -56,14 +63,14 @@
     if (!bl) return [];
     const imgs = FP.bossSkin.fore(idOf(state));
     if (!imgs.length) return [];
-    const K = FP.config.boss.skin, z = FP.bossPlan.zone(w), fmax = K.fore[1];
+    const z = FP.bossPlan.zone(w);
     if (placedFor !== bl || placedN !== imgs.length) {
-      placed = place(state.seed, idOf(state), z.top - w.viewH * fmax, z.top + (z.bottom - z.top) * fmax + w.viewH, w.viewH, imgs.length);
+      placed = place(state.seed, idOf(state), z.top, z.bottom, w.viewH, imgs.length);
       placedFor = bl; placedN = imgs.length;
     }
     const dx = jolt(state), cam = state.camera.y, W = Math.ceil(w.width / FP.px.SCALE), H = Math.ceil(w.viewH / FP.px.SCALE), out = [];
     for (const e of placed) {
-      const img = imgs[e.i % imgs.length], f = K.fore[0] + (K.fore[1] - K.fore[0]) * (imgs.length > 1 ? e.i / (imgs.length - 1) : 0);
+      const img = imgs[e.i % imgs.length], f = speedOf(e.i, imgs.length);
       const y = FP.px.toArt(parallax(e.y - z.top, cam - z.top, f)) - Math.floor(img.height / 2);
       if (y > H || y + img.height < 0) continue;
       out.push({ img, x: Math.round(e.x * W) - Math.floor(img.width / 2) + dx, y, f });

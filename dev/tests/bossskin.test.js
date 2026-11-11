@@ -91,3 +91,21 @@ FP.test('bossSkin: une plaque qui tombe garde sa matière', () => {
     const g = skinCtx(); FP.bossFx.draw(g, s); FP.assert(g.images.some(q => q.img === img), 'image de la plaque');
   } finally { FP.bossSkin._reset(); }
 });
+
+// Revue finale (v5.6.0) : une image de pièce n'est pas déformée par une boîte étirée ; une plaque est répétée à l'échelle 1.
+FP.test('bossSkin: une pièce garde les proportions de son image, centrée dans sa boîte', () => {
+  const img = skinImg(8, 8), g = skinCtx(), box = [[0, 0], [20, 0], [20, 60], [0, 60]];
+  FP.bossSkin.piece(g, box, img);
+  FP.assert(g.images.length > 0, 'dessinée');
+  for (const q of g.images) FP.assert(Math.abs(q.a[2] / q.a[6] - q.a[3] / q.a[7]) < 1e-9, 'même échelle en x et en y : ' + q.a.join());
+  const ys = g.images.map(q => q.a[5]); FP.assert(Math.min(...ys) >= 20 && Math.max(...ys) < 40, 'centrée en hauteur : ' + Math.min(...ys) + '…' + Math.max(...ys));
+});
+FP.test('bossSkin: une plaque habillée est répétée sans déformation', () => {
+  const img = skinImg(16, 8);
+  try {
+    FP.bossSkin._set('friche', 'plate', img);
+    const s = skinRun(0), p = s.world.bossLevel.plates[0].solid; s.camera.y = p.y - s.world.viewH / 2;
+    const a = skinDraw(s).images.filter(q => q.img === img);
+    FP.assert(a.length > 0 && a.every(q => q.a[2] === q.a[6] && q.a[3] === q.a[7]), 'échelle 1');
+  } finally { FP.bossSkin._reset(); }
+});

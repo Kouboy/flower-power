@@ -8,7 +8,7 @@ Une entrée par version (voir `AGENTS.md`).
 - profondeur : une usine lointaine défile derrière le boss (0,6× la caméra) et des éléments flous de premier plan (chaîne de grue, grillage) passent devant, plus vite que la caméra (1,4 à 1,8×), en tremblant davantage pendant un avertissement et à la mort du boss ; le flou est préparé une seule fois par image ;
 - les menaces (hachures, visée, tirs) sont dessinées après tout le reste : jamais cachées par le premier plan ;
 - la Bétonneuse est la première habillée (8 images, `assets/boss/art/friche/`) ; les trois autres boss gardent leurs formes du code jusqu'à leurs images (v5.7.0) ; outil `dev/tools/import-boss.js` ;
-- banc : 667 tests.
+- banc : 671 tests.
 
 ## v5.5.0 — Réglages de playtest : tourelles, gammes, frôlement, bonus
 

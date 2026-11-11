@@ -132,7 +132,9 @@
     if (typeof document === 'undefined') return null;
     const canvas = document.createElement('canvas');
     canvas.width = w; canvas.height = h;
-    return { canvas, g: canvas.getContext('2d') };
+    const g = canvas.getContext('2d');
+    g.imageSmoothingEnabled = false;   // pixel art : une image agrandie ou réduite reste nette (v5.6.0)
+    return { canvas, g };
   }
 
   // Recopie un calque au repère du monde (y d'art absolu) sur la toile visible, décalé de oy, sur h lignes.

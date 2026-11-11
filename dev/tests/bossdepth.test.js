@@ -9,12 +9,11 @@ FP.test('bossDepth: parallaxe', () => {
   FP.assertEqual(FP.bossDepth.parallax(1000, 400, 1.8), 280);
 });
 
-FP.test('bossDepth: placement identique d’une tentative à l’autre, espacé d’au moins un écran', () => {
+FP.test('bossDepth: placement identique d’une tentative à l’autre', () => {
   const a = FP.bossDepth.place(7, 'friche', 1000, 6000, 780, 2), b = FP.bossDepth.place(7, 'friche', 1000, 6000, 780, 2);
   FP.assertEqual(JSON.stringify(a), JSON.stringify(b));
   FP.assert(a.length >= 3, 'plusieurs éléments : ' + a.length);
-  for (let k = 1; k < a.length; k++) FP.assert(a[k].y - a[k - 1].y >= FP.config.boss.skin.foreGap[0] * 780 - 1e-9, 'écart ' + k);
-  for (const e of a) { FP.assert(e.y >= 1000 && e.y <= 6000, 'dans la zone'); FP.assert(e.x >= 0 && e.x <= 1 && (e.i === 0 || e.i === 1), 'x, i'); }
+  for (const e of a) { FP.assert(e.x >= 0 && e.x <= 1 && (e.i === 0 || e.i === 1), 'x, i'); }
   FP.assert(JSON.stringify(FP.bossDepth.place(8, 'friche', 1000, 6000, 780, 2)) !== JSON.stringify(a), 'une autre graine change le placement');
 });
 
@@ -82,5 +81,20 @@ FP.test('bossDepth: le premier plan défile plus vite que la caméra et tremble 
     const r = s.world.bossLevel.rooms[0]; s.bossThreats.rooms[r.id] = { stage: 'warn', t: .3, half: 1 };
     const xs = new Set([0, 1 / 30 + 1e-3].map(dt => { s.time = 2 + dt; return at(z.top).x - e.x; }));
     FP.assert(xs.has(FP.config.boss.skin.foreShake) && xs.has(-FP.config.boss.skin.foreShake), 'secousse ± ' + [...xs]);
+  } finally { FP.bossSkin._reset(); }
+});
+
+FP.test('bossDepth: au plus un élément du premier plan à l’écran, même au facteur max', () => {
+  try {
+    FP.bossSkin._reset(); FP.bossSkin._set('friche', 'fore', [skinImg(16, 147), skinImg(120, 83)]);
+    const s = depthStretched(), z = FP.bossPlan.zone(s.world), H = Math.ceil(s.world.viewH / FP.px.SCALE);
+    let seen = 0, frames = 0;
+    for (let c = z.top - s.world.viewH; c < z.bottom; c += 4) {
+      s.camera.y = c; frames++;
+      const v = FP.bossDepth.layout(s).filter(e => e.y < H && e.y + e.img.height > 0);
+      FP.assert(v.length <= 1, 'deux éléments à la caméra ' + Math.round(c));
+      if (v.length) seen++;
+    }
+    FP.assert(seen / frames > .3, 'présent souvent : ' + (seen / frames).toFixed(2));
   } finally { FP.bossSkin._reset(); }
 });

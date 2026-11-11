@@ -58,7 +58,7 @@
   // Cible intacte : bloc incandescent ou son image (fond peint dans le calque) dont le cœur pulse ; sur l'image, un éclat au centre.
   function targetBase(g, pts, M, S) {
     fillPoly(g, pts, M.edge);
-    if (S.target) FP.bossSkin.piece(g, pts, S.target, 1); else fillPoly(g, pts, FP.palette.boss.weak[1], 1);
+    if (S.target) { fillPoly(g, pts, M.dark, 1); FP.bossSkin.piece(g, pts, S.target, 1); } else fillPoly(g, pts, FP.palette.boss.weak[1], 1);
   }
   function targetCore(g, pts, t, S) {
     const pulse = Math.round((Math.sin(t * 6) + 1) / 2);
@@ -72,17 +72,18 @@
     if (off) { wreck(g, pts, t, M); return; }
     const P = FP.palette.boss, b = box(pts), cx = Math.round((b.x0 + b.x1) / 2), cy = Math.round((b.y0 + b.y1) / 2);
     fillPoly(g, pts, M.edge);
-    if (!open && S.head) { FP.bossSkin.piece(g, pts, S.head, 1); return; }
+    if (!open && S.head) { fillPoly(g, pts, M.dark, 1); FP.bossSkin.piece(g, pts, S.head, 1); return; }
     fillPoly(g, pts, open ? P.glow[0] : M.dark, 1);
     if (!open) return;
     const r = 2 + Math.round((Math.sin(t * 5) + 1) * 1.5);
     FP.px.disc(g, cx, cy, r + 1, P.glow[1]); FP.px.disc(g, cx, cy, r, P.weak[1]); FP.px.disc(g, cx, cy, Math.max(1, r - 2), P.weak[0]);
   }
 
-  // Plaque du blindage : son image, ou tôle claire au contour sombre, deux rivets.
+  // Plaque du blindage : son image répétée à l'échelle 1 depuis le coin de la plaque (une plaque haute et étroite ne la déforme pas),
+  // ou tôle claire au contour sombre, deux rivets.
   function plate(g, pts, S) {
-    if (S.plate) { FP.bossSkin.piece(g, pts, S.plate); return; }
     const P = FP.palette.boss, b = box(pts);
+    if (S.plate) { fillPoly(g, pts, P.plate[1]); FP.bossSkin.wall(g, pts, S.plate, Math.round(b.x0), Math.round(b.y0), 1); return; }
     fillPoly(g, pts, P.plate[1]);
     fillPoly(g, pts, P.plate[0], 1);
     if (b.x1 - b.x0 > 6 && b.y1 - b.y0 > 4) for (const x of [Math.ceil(b.x0) + 2, Math.floor(b.x1) - 3]) FP.px.rect(g, x, Math.ceil(b.y0) + 2, 1, 1, P.plate[1]);

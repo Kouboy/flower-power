@@ -58,3 +58,10 @@ FP.test('px: line peint exactement les mêmes pixels qu’avant, en bien moins d
   }
   FP.assert(after < before * .6, before + ' → ' + after + ' appels');
 });
+
+FP.test('px: un calque ne lisse pas les images (pixel art net)', () => {
+  const had = typeof document !== 'undefined', saved = had ? document : undefined, ctx = {};
+  globalThis.document = { createElement: () => ({ getContext: () => ctx }) };
+  try { FP.px.layer(4, 4); FP.assertEqual(ctx.imageSmoothingEnabled, false); }
+  finally { if (had) globalThis.document = saved; else delete globalThis.document; }
+});
