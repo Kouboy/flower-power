@@ -4,7 +4,8 @@
 //           FP.config.{boss.toxics,milieux}, window.FLOWER_POWER_BOSS_PLANS, FP.bossPlan.toWorld, FP.createRng, FP.level.makeToxic, FP.coins.place.
 // Écrit   : state.bossThreats, state.world.{bossLevel,solids,toxics,leaks,bonuses,safePath,safeRadius} ; puis FP.coins.place écrit state.world.{coins,chains}.
 //           bossLevel = { plan, walls: [solid], targets: [{ id, i, plate (id de sa plaque), solid }], head: { solid },
-//             plates: [{ id, target (indice i de sa cible), solid }], rooms: [{ id, x0, y0, x1, y1, defense, turrets, zone (solide 'defense', off) }], turrets: [{ id, x, y, room }] }.
+//             plates: [{ id, target (indice i de sa cible), solid }], rooms: [{ id, x0, y0, x1, y1, defense, turrets, zone (solide 'defense', off) }], turrets: [{ id, x, y, room }],
+//             pipes: [{ from, to, open, target, pts }] (v5.7.0 : tuyaux de la machine, décor) }.
 //           state.bossThreats remis à { rooms: {}, shots: [], aim: null, cooldown: 0 } (écrit ensuite par play/boss-threats.js).
 // Expose  : FP.bossLevel.generate(state).
 // Graine propre : empreinte de (state.seed, saison, milieu), jamais state.rng : le niveau est le même d'une tentative à l'autre.
@@ -54,6 +55,8 @@
       const [x0, y0, x1, y1] = r.rect;
       bl.rooms.push({ id: r.id, x0, y0, x1, y1, defense: r.defense, turrets: r.turrets, zone: makeSolid(KIND.defense, [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], true) });
     }
+    // Tuyaux (v5.7.0) : décor de la machine, jamais solides ; target = indice de la cible (pompe) qui l'alimente, -1 pour une liaison.
+    bl.pipes = placed.pipes.map(p => ({ ...p, target: p.from ? bl.targets.findIndex(t => t.id === p.from) : -1 }));
     return bl;
   }
 

@@ -244,3 +244,42 @@ FP.test('bossPlan: la surface ne s’atteint qu’à travers la tête, quelles q
     FP.assert(surface(open), 'la tête transpercée ouvre la surface ' + at);
   });
 });
+
+// Tuyaux (v5.7.0, boss cohérent) : chaque pompe (cible) est reliée à la tête ; les tuyaux courent dans la masse de la machine
+// (murs, tête, cibles ; jamais sur une plaque, qui tombe) et restent hors des couloirs.
+const PIPE_SOLID = { wall: true, head: true, target: true };
+const pipeSamples = (pts) => pathSamples(pts.map(([x, y]) => ({ x, y })));
+FP.test('bossPlan: chaque cible a un tuyau jusqu’à la tête, et au moins une liaison', () => {
+  eachPlan(({ placed, at }) => {
+    const piece = (id) => placed.pieces.find(p => p.id === id), head = placed.pieces.find(p => p.role === 'head');
+    const targets = placed.pieces.filter(p => p.role === 'target').map(p => p.id).sort();
+    const feeds = placed.pipes.filter(p => p.to === 'head');
+    FP.assertEqual(feeds.map(p => p.from).sort().join(), targets.join(), 'un tuyau par cible ' + at);
+    for (const p of feeds) {
+      const [x0, y0] = p.pts[0], [x1, y1] = p.pts[p.pts.length - 1];
+      FP.assert(FP.geom.sdPoly(x0, y0, piece(p.from).poly) <= 6, `départ de ${p.from} ` + at);
+      FP.assert(FP.geom.sdPoly(x1, y1, head.poly) <= 6, `arrivée de ${p.from} ` + at);
+    }
+    FP.assert(placed.pipes.some(p => p.from === null && p.to === null), 'liaison ' + at);
+  });
+});
+// Tronçon à l'air libre (`open`, là où une pompe flotte : Bétonneuse) : vertical, et à au moins channelMin / 2 de tout trajet de
+// référence, hors des PIPE_END derniers px de chaque trajet (qui finit sur sa cible : l'air juste au-dessus n'est pas un couloir).
+const PIPE_END = 30;
+// Tolérance au bord de la masse (px) : le point où un tuyau quitte un mur pour une colonne est sur le bord, arrondi au millième.
+const PIPE_EDGE = 2;
+FP.test('bossPlan: les tuyaux courent dans la masse de la machine, ou en colonne hors des couloirs, aux deux facteurs d’étirement', () => {
+  eachPlan(({ W, placed, at }) => {
+    const solids = placed.pieces.filter(p => PIPE_SOLID[p.role]), end = PIPE_END * W / 360;
+    const refs = Object.values(placed.paths).map(pathSamples).flat().filter(q => q.left > end);
+    for (const [k, p] of placed.pipes.entries()) for (let i = 1; i < p.pts.length; i++) {
+      const seg = [p.pts[i - 1], p.pts[i]], open = (p.open || []).includes(i - 1);
+      if (open) FP.assert(Math.abs(seg[0][0] - seg[1][0]) < 1e-6, `tuyau ${k} (${p.from}) : tronçon ${i - 1} à l'air libre pas vertical ` + at);
+      for (const q of pipeSamples(seg)) {
+        if (!open) { FP.assert(solids.some(o => FP.geom.sdPoly(q.x, q.y, o.poly) <= PIPE_EDGE), `tuyau ${k} (${p.from}) hors de la machine en (${q.x | 0},${q.y | 0}) ` + at); continue; }
+        const d = Math.min(...refs.map(r => Math.hypot(r.x - q.x, r.y - q.y)));
+        FP.assert(d >= placed.channelMin / 2, `tuyau ${k} (${p.from}) dans un couloir en (${q.x | 0},${q.y | 0}) : ${d.toFixed(1)} ` + at);
+      }
+    }
+  });
+});
