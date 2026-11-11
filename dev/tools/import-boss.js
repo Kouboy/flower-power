@@ -34,6 +34,6 @@ for (const [role, f] of Object.entries(FILES)) entry[role] = Array.isArray(f) ? 
 const text = fs.readFileSync(ART, 'utf8'), m = text.match(/window\.FLOWER_POWER_BOSS_ART = (\{[\s\S]*\});/);
 if (!m) { console.error('art.js : objet introuvable'); process.exit(1); }
 const all = Object.assign(JSON.parse(m[1].replace(/'/g, '"').replace(/(\w+):/g, '"$1":')), { [id]: entry });
-const body = Object.entries(all).map(([k, v]) => '  ' + k + ': ' + JSON.stringify(v).replace(/"/g, '\'').replace(/'(\w+)':/g, '$1: ').replace(/,(?=\S)/g, ', ')).join(',\n');
+const body = Object.entries(all).map(([k, v]) => '  ' + k + ': ' + JSON.stringify(v).replace(/"/g, '\'').replace(/'(\w+)':/g, '$1: ').replace(/,(?=\S)/g, ', ').replace(/^\{/, '{ ').replace(/\}$/, ' }')).join(',\n');
 fs.writeFileSync(ART, text.replace(m[0], 'window.FLOWER_POWER_BOSS_ART = {' + (body ? '\n' + body + '\n' : '') + '};'));
 console.log('assets/boss/art.js : ' + id + ' à jour');
