@@ -30,7 +30,7 @@
     FP.hazardsRender.drawBase(g, state);
     FP.hazardsRender.drawLeaks(g, state);
     FP.obstacles.draw(g, world, camY);
-    FP.bossRender.draw(g, state);     // boss : parois, cibles, tête, plaques, menaces (rien hors niveau de boss)
+    FP.bossRender.draw(g, state);     // boss : parois, cibles, tête, plaques, tourelles (rien hors niveau de boss)
     FP.bossFx.update(state);          // explosions, plaques qui tombent, graine rendue : nées des événements de la frame
     FP.bossFx.draw(g, state);
     FP.bossDeath.update(state);       // mort du boss : fissures, parois qui s'effondrent, flash, pluie de jetons
@@ -49,6 +49,7 @@
     FP.effects.draw(g, state);
     FP.particles.draw(g, state);
     FP.drillFx.drawOver(g, state);    // ondes et étincelles : devant la tête, comme des débris projetés
+    FP.bossRender.drawThreats(g, state);   // menaces du boss (v5.6.0) : par-dessus tout, jamais cachées
   }
 
   function frame(state) {

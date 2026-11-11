@@ -50,8 +50,8 @@ FP.test('bossRender: dessine sans erreur chaque étape (idle, warn, strike, vis�
   for (const milieu of [0, 1, 2, 3]) {
     const s = bfxRun(milieu), bl = s.world.bossLevel, r = bl.rooms[0], tur = bl.turrets.find(q => q.room === r.id) || bl.turrets[0];
     s.camera.y = (r.y0 + r.y1) / 2 - s.world.viewH / 2;
-    const count = (setup) => { setup(); const g = recCtx(); FP.bossRender.draw(g, s); return g.rects.length; };
-    const colors = (setup) => { setup(); const g = recCtx(); FP.bossRender.draw(g, s); return new Set(g.rects.map(q => q.c)); };
+    const count = (setup) => { setup(); const g = recCtx(); FP.bossRender.draw(g, s); FP.bossRender.drawThreats(g, s); return g.rects.length; };
+    const colors = (setup) => { setup(); const g = recCtx(); FP.bossRender.draw(g, s); FP.bossRender.drawThreats(g, s); return new Set(g.rects.map(q => q.c)); };
     const set = (stage, t, half = 1) => { s.bossThreats.rooms[r.id] = { stage, t, half }; };
     const idle = count(() => set('idle', 0));
     const warn = count(() => set('warn', .5)), strike = count(() => set('strike', .3));
@@ -202,4 +202,30 @@ FP.test('bossfx: la graine part de l’épave telle qu’elle était à l’écr
   const s = bfxRun(); bfxAssault(s); s.time += .5;
   const frame = () => { const g = recCtx(); const t = bfxTexts(() => FP.bossFx.drawUi(g, s)); return JSON.stringify([g.rects, t]); };
   const a = frame(); s.camera.y += 400; FP.assertEqual(frame(), a, 'rien ne saute quand la caméra bouge (pousse suivante préparée)');
+});
+
+// v5.6.0 : les menaces sont dessinées à part (drawThreats), après tout le reste du monde (le premier plan des boss passe dessous).
+const bfxThreatened = (s) => {
+  const r = s.world.bossLevel.rooms[0], q = s.world.bossLevel.turrets[0];
+  s.bossThreats.rooms[r.id] = { stage: 'strike', t: .1, half: -1 };
+  s.camera.y = r.y0 - 20;
+  s.bossThreats.aim = { turret: q.id, lockedAt: null };
+  s.bossThreats.shots.push({ x: (r.x0 + r.x1) / 2, y: (r.y0 + r.y1) / 2, vx: 100, vy: 0 });
+  return s;
+};
+FP.test('bossRender: draw ne dessine aucune menace', () => {
+  for (const m of [0, 1, 2, 3]) {
+    const s = bfxThreatened(bfxRun(m)), g = recCtx(); FP.bossRender.draw(g, s);
+    s.bossThreats = { rooms: {}, shots: [], aim: s.bossThreats.aim, cooldown: 0 };   // même visée : la lentille rouge de la tourelle fait partie du corps
+    const h = recCtx(); FP.bossRender.draw(h, s);
+    FP.assert(!g.rects.some(q => FP.palette.boss.aim.includes(q.c)), 'pas de ligne de visée, milieu ' + m);
+    FP.assert(JSON.stringify(g.rects) === JSON.stringify(h.rects), 'milieu ' + m + ' : ' + g.rects.length + ' / ' + h.rects.length);
+  }
+});
+FP.test('bossRender: drawThreats dessine hachures, visée et tirs, rien sans menace', () => {
+  const s = bfxThreatened(bfxRun(1)), g = recCtx(); FP.bossRender.drawThreats(g, s);
+  FP.assert(g.rects.length > 0, 'menaces dessinées');
+  s.bossThreats = { rooms: {}, shots: [], aim: null, cooldown: 0 };
+  const h = recCtx(); FP.bossRender.drawThreats(h, s); FP.assertEqual(h.rects.length, 0);
+  const n = bossRun(440, 1); n.world.bossLevel = null; const k = recCtx(); FP.bossRender.drawThreats(k, n); FP.assertEqual(k.rects.length, 0, 'hors boss');
 });

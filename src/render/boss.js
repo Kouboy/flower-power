@@ -2,7 +2,9 @@
 // Lit     : state.{time,camera.y,run.milieu,plant.tip,bossFight.{headOpen,destroyed},bossThreats.{rooms,aim,shots}}, state.world.{width,height,viewH,bossLevel.{walls,targets,head,plates,rooms,turrets}} (x, y, collision, off de chaque solide),
 //           FP.config.milieux, FP.palette.boss, FP.bossThreats.timing, FP.px (dont layer et blit).
 // Écrit   : rien dans l'état (la toile reçue ; un calque en cache, créé à la première utilisation).
-// Expose  : FP.bossRender.draw(g, state) — repère d'art, la caméra est appliquée ici ; rien hors niveau de boss ; fillPoly, artPoly (pour boss-fx.js).
+// Expose  : FP.bossRender.draw(g, state) (corps : parois, cibles, tête, plaques, tourelles) et FP.bossRender.drawThreats(g, state) (menaces :
+//           défenses, visée, projectiles ; v5.6.0, dessinées après tout le reste du monde) — repère d'art, la caméra est appliquée ici ;
+//           rien hors niveau de boss ; fillPoly, artPoly (pour boss-fx.js).
 // Cible détruite (off) : épave sombre qui fume ; plaque tombée ou paroi effondrée (off) : rien ; tête à nu (bossFight.headOpen) : lueur qui pulse ; tête transpercée (off) : épave.
 // Calque (revue finale) : parois, plaques et cibles intactes (sans leur cœur qui pulse) sont peintes une fois, sur toute la hauteur du niveau,
 // puis recopiées ; le calque est refait à chaque génération et quand une cible, une plaque ou une paroi (effondrée à la mort du boss : off,
@@ -189,14 +191,22 @@
     FP.px.disc(g, x, y, 4, M.edge); FP.px.disc(g, x, y, 3, M.light); FP.px.disc(g, x, y, 1, aiming ? FP.palette.boss.weak[1] : M.dark);
   }
 
-  function threats(g, state, bl, cam, M, bands) {
+  // Tourelles (socle et lentille) : avec le corps du boss, sous le premier plan ; elles tremblent avec leur salle.
+  function turrets(g, state, bl, cam, M, bands) {
     const th = state.bossThreats, top = state.camera.y, H = state.world.viewH;
-    for (const r of bl.rooms) if (th.rooms[r.id] && r.y1 >= top && r.y0 <= top + H) danger(g, r, th.rooms[r.id], cam, state);
     for (const q of bl.head.solid.off ? [] : bl.turrets) {   // boss transpercé : ses tourelles tombent avec ses parois
       if (q.y < top - 10 || q.y > top + H + 10) continue;
       const b = bands.find(s => s.id === q.room);
       turret(g, q, !!th.aim && th.aim.turret === q.id, cam, M, b ? b.dx : 0);
     }
+  }
+
+  // Menaces (v5.6.0 : à part, dessinées après tout le reste du monde, premier plan compris) : défenses, visée, projectiles.
+  function drawThreats(g, state) {
+    const bl = state.world.bossLevel;
+    if (!bl) return;
+    const th = state.bossThreats, top = state.camera.y, H = state.world.viewH, cam = FP.px.toArt(top);
+    for (const r of bl.rooms) if (th.rooms[r.id] && r.y1 >= top && r.y0 <= top + H) danger(g, r, th.rooms[r.id], cam, state);
     const a = th.aim, tur = a && bl.turrets.find(q => q.id === a.turret), to = a && (a.lockedAt || state.plant.tip);
     if (tur && to) aimLine(g, tur, to, !!a.lockedAt, cam);
     for (const s of th.shots) shot(g, s, cam);
@@ -218,8 +228,8 @@
       if (tg.solid.off) wreck(g, pts, t, M); else targetCore(g, pts, t);
     }
     if (seen(bl.head.solid)) head(g, artPoly(bl.head.solid, cam), state.bossFight.headOpen, bl.head.solid.off, t, M);
-    threats(g, state, bl, cam, M, bands);
+    turrets(g, state, bl, cam, M, bands);
   }
 
-  FP.bossRender = { draw, fillPoly, artPoly };
+  FP.bossRender = { draw, drawThreats, fillPoly, artPoly };
 })();
