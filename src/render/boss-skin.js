@@ -3,13 +3,12 @@
 // Lit     : window.FLOWER_POWER_BOSS_ART.
 // Écrit   : rien dans l'état (la toile reçue).
 // Expose  : FP.bossSkin.image(milieuId, role) → image prête ou null (role : matter | target | head | plate | turret) ;
-//           FP.bossSkin.fore(milieuId) → images prêtes du premier plan (tableau, vide sans images) ;
 //           FP.bossSkin.version() → augmente à chaque image devenue prête (clé du calque de render/boss.js) ;
 //           FP.bossSkin.spans(pts, inset, fn) → appelle fn(y, a, b) pour chaque morceau de rangée du polygone (règle pair-impair) ;
 //           FP.bossSkin.wall(g, pts, img, ox, oy, inset) : img répétée dans le polygone, ancrée au monde (ox, oy : origine du monde
 //           en pixels d'art dans g) ; FP.bossSkin.piece(g, pts, img, inset) : img à l'échelle de la boîte du polygone sans déformation
 //           (proportions gardées, centrée), découpée par lui.
-//           Réservés au banc d'essai : FP.bossSkin._set(milieuId, role, img) ('fore' : un tableau d'images) et FP.bossSkin._reset().
+//           Réservés au banc d'essai : FP.bossSkin._set(milieuId, role, img) et FP.bossSkin._reset().
 // Sous Node (pas d'Image) : rien n'est chargé, tout passe par le dessin du code.
 (function () {
   'use strict';
@@ -29,14 +28,13 @@
     entries = {};
     if (typeof Image === 'undefined') return;
     for (const [id, a] of Object.entries(window.FLOWER_POWER_BOSS_ART || {})) {
-      entries[id] = { fore: (a.fore || []).map(load) };
+      entries[id] = {};
       for (const r of ROLES) if (a[r]) entries[id][r] = load(a[r]);
     }
   }
 
   const ready = (e) => (e && e.ready ? e.img : null);
   const image = (id, role) => ready(entries[id] && entries[id][role]);
-  const fore = (id) => (entries[id] ? entries[id].fore.map(ready).filter(Boolean) : []);
 
   // Morceaux de rangées d'un polygone quelconque (concave compris), rognés de inset aux deux bouts et en haut et en bas.
   function spans(pts, inset, fn) {
@@ -85,12 +83,11 @@
 
   const fake = (img) => ({ img, ready: true });
   function _set(id, role, img) {
-    const e = entries[id] = entries[id] || { fore: [] };
-    if (role === 'fore') e.fore = img.map(fake); else e[role] = fake(img);
+    (entries[id] = entries[id] || {})[role] = fake(img);
     version++;
   }
   function _reset() { entries = {}; version++; }
 
   loadAll();
-  FP.bossSkin = { image, fore, version: () => version, spans, wall, piece, _set, _reset };
+  FP.bossSkin = { image, version: () => version, spans, wall, piece, _set, _reset };
 })();

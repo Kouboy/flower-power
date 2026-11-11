@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '5.6.1',
+    version: '5.7.0',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -265,12 +265,19 @@
       },
       defense: { warn: 1.2, warnMin: 1 },
       shot: { track: 1, lock: .3, r: 5 },
-      // Habillage (v5.6.0, render/boss-depth.js) : fore = vitesses du premier plan relatives à la caméra (du 1er au 2e élément) ;
-      // blur = flou du premier plan (pixels d'art, préparé une fois) ; foreAlpha, foreAlphaNoBlur = opacité du premier plan, avec ou sans
-      // flou possible ; foreGap = course de caméra entre deux éléments du premier plan (hauteurs d'écran, min et max) ; foreX = abscisses
-      // possibles du centre d'un élément (fraction de la largeur) ; foreShake = secousse en plus du premier plan (pixels d'art) pendant un
-      // avertissement et à la mort du boss.
-      skin: { fore: [1.4, 1.8], blur: 1.5, foreAlpha: .85, foreAlphaNoBlur: .6, foreGap: [1, 1.5], foreX: [.12, .88], foreShake: 2 }
+      // Tuyaux et pompes (v5.7.0, render/boss-pipes.js, render/boss.js) : width = épaisseur d'un tuyau (px d'art) ; flowSpeed = vitesse du
+      // flux (px/s) ; pulseGap = écart entre deux pulsations (px) ; leakRate = gouttes par seconde d'un tuyau rompu ; pumpHz = battement du
+      // piston d'une pompe ; headShake = tremblement du cœur blindé (px d'art) au rythme du flux qui arrive.
+      pipes: { width: 6, flowSpeed: 60, pulseGap: 26, leakRate: 6, pumpHz: 1.6, headShake: 1 },
+      // Machines de défense (v5.7.0, render/boss-machines.js, render/boss.js) : border = épaisseur du liseré de la zone visée (px d'art) ;
+      // drops, puffs, arcs = gouttes de béton, bouffées de vapeur par buse, arcs de radiation pendant l'avertissement.
+      machines: { border: 1, drops: 5, puffs: 4, arcs: 3 },
+      // Tourelles (v5.7.0, render/boss-machines.js) : size = diamètre du socle, barrel = longueur du canon, recoil = recul au tir (px d'art) ;
+      // recoilTime = durée du recul (s).
+      turret: { size: 16, barrel: 10, recoil: 3, recoilTime: .15 },
+      // Terre (v5.7.0, render/boss-earth.js) : fringe = profondeur maximale de la frange qui ronge un bord extérieur (px d'art) ; clods =
+      // densité des mottes ; roots = racines par bord ; pocket = demi-largeur de la poche de terre sur la tête (px).
+      earth: { fringe: 5, clods: .35, roots: 2, pocket: 34 }
     },
 
     // Boutique de fin de pousse (v4.6.0) : 3 articles tirés (un à −50 %), achetés au score ; effets sur la pousse suivante.

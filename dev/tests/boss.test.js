@@ -189,7 +189,8 @@ FP.test('bossRender: dessine chaque plan sans erreur ni écriture dans l’état
 
 FP.test('palette: les teintes du boss restent à 60 de toute teinte de danger', () => {
   const rgb = (h) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)), dist = (a, b) => Math.hypot(...rgb(a).map((v, i) => v - rgb(b)[i]));
-  const B = FP.palette.boss, all = [...B.weak, ...B.plate, ...B.glow, ...B.smoke, B.hole, ...B.hatch, ...B.aim, ...B.shot, ...B.boom, B.flash, ...Object.values(B.milieux).flatMap(m => Object.values(m))];
+  const B = FP.palette.boss, all = [...B.weak, ...B.plate, ...B.glow, ...B.smoke, B.hole, ...B.alert, ...B.aim, ...B.shot, ...B.boom, B.flash, ...Object.values(B.milieux).flatMap(m => Object.values(m)),
+    ...Object.values(B.pipe), ...B.flow, ...Object.values(B.machines).flat()];
   for (const c of all) for (const d of FP.palette.danger) FP.assert(dist(c, d) >= 60, c + ' trop proche du danger ' + d);
 });
 

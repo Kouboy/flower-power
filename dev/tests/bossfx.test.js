@@ -50,15 +50,16 @@ FP.test('bossRender: dessine sans erreur chaque étape (idle, warn, strike, vis�
   for (const milieu of [0, 1, 2, 3]) {
     const s = bfxRun(milieu), bl = s.world.bossLevel, r = bl.rooms[0], tur = bl.turrets.find(q => q.room === r.id) || bl.turrets[0];
     s.camera.y = (r.y0 + r.y1) / 2 - s.world.viewH / 2;
-    const count = (setup) => { setup(); const g = recCtx(); FP.bossRender.draw(g, s); FP.bossRender.drawThreats(g, s); return g.rects.length; };
-    const colors = (setup) => { setup(); const g = recCtx(); FP.bossRender.draw(g, s); FP.bossRender.drawThreats(g, s); return new Set(g.rects.map(q => q.c)); };
+    const all = (g) => { FP.bossRender.draw(g, s); FP.bossMachines.draw(g, s); FP.bossRender.drawThreats(g, s); return g; };
+    const count = (setup) => { setup(); return all(recCtx()).rects.length; };
+    const colors = (setup) => { setup(); return new Set(all(recCtx()).rects.map(q => q.c)); };
     const set = (stage, t, half = 1) => { s.bossThreats.rooms[r.id] = { stage, t, half }; };
     const idle = count(() => set('idle', 0));
     const warn = count(() => set('warn', .5)), strike = count(() => set('strike', .3));
-    FP.assert(warn > idle && strike > idle, 'hachures : ' + [idle, warn, strike]);
-    FP.assert(colors(() => set('warn', .5)).has(FP.palette.boss.hatch[0]) || colors(() => set('warn', .6)).has(FP.palette.boss.hatch[0]), 'hachures orange');
+    FP.assert(warn > idle && strike > idle, 'machine qui se prépare puis frappe : ' + [idle, warn, strike]);
+    FP.assert(colors(() => set('warn', .5)).has(FP.palette.boss.alert[0]) || colors(() => set('warn', .6)).has(FP.palette.boss.alert[0]), 'liseré orange');
     // le clignotement accélère : plus de bascules par seconde en fin d’avertissement qu’au début
-    const flips = (from, to) => { let n = 0, prev = null; for (let t = from; t < to; t += .01) { const on = colors(() => set('warn', t)).has(FP.palette.boss.hatch[0]); if (prev !== null && on !== prev) n++; prev = on; } return n; };
+    const flips = (from, to) => { let n = 0, prev = null; for (let t = from; t < to; t += .01) { const on = colors(() => set('warn', t)).has(FP.palette.boss.alert[0]); if (prev !== null && on !== prev) n++; prev = on; } return n; };
     FP.assert(flips(.8, 1.2) > flips(0, .4), 'clignotement qui accélère');
     set('idle', 0);
     const tip = { x: (r.x0 + r.x1) / 2, y: (r.y0 + r.y1) / 2 }; s.plant.tip = tip;
@@ -167,8 +168,9 @@ FP.test('bossRender: la salle avertie tremble (calque et tourelles) d’un pixel
   const s = bfxRun(1), bl = s.world.bossLevel, r = bl.rooms[0], tur = bl.turrets.find(q => q.room === r.id);
   const M = FP.palette.boss.milieux[s.world.milieu];
   s.camera.y = (r.y0 + r.y1) / 2 - s.world.viewH / 2;
-  const frame = (stage, time) => { s.bossThreats.rooms[r.id] = { stage, t: .2, half: 1 }; s.time = time; const g = bfxBlitCtx(); FP.bossRender.draw(g, s); return g; };
-  const lens = (g) => { const q = g.rects.find(o => o.c === M.edge && o.w === 9 && Math.abs(o.x + 4 - FP.px.toArt(tur.x)) <= 1); return q && q.x + 4; };
+  const frame = (stage, time) => { s.bossThreats.rooms[r.id] = { stage, t: .2, half: 1 }; s.time = time; const g = bfxBlitCtx(); FP.bossRender.draw(g, s); FP.bossMachines.draw(g, s); return g; };
+  const R = Math.floor(FP.config.boss.turret.size / 2);   // v5.7.0 : socle de la tourelle (render/boss-machines.js), rangée la plus large 2R + 1
+  const lens = (g) => { const q = g.rects.find(o => o.c === M.edge && o.w === 2 * R + 1 && Math.abs(o.x + R - FP.px.toArt(tur.x)) <= 1); return q && q.x + R; };
   const a = frame('warn', 0), b = frame('warn', 1.01 / 30);
   FP.assert(a.blits.some(q => q.dx !== 0) && b.blits.some(q => q.dx !== 0), 'rangées de la salle décalées');
   FP.assert(a.blits.every(q => Math.abs(q.dx) <= 1), '± 1 pixel');

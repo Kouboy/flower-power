@@ -1,4 +1,4 @@
-// render/boss.js — le boss, provisoire (v5.1.0 : formes simples dessinées par le code, sans image) : parois, cibles, tête, plaques du blindage, et ses menaces (hachures de la défense, visée des tourelles, projectiles).
+// render/boss.js — le corps du boss (v5.1.0 ; habillé des images du milieu depuis la v5.6.0, sinon formes du code) : parois, pompes (cibles) dont le piston bat, tête qui tremble au rythme du flux, plaques ; et ses menaces (liseré de la zone visée, visée depuis la bouche du canon, projectiles). Tuyaux, machines de défense, tourelles et terre : render/boss-pipes.js, boss-machines.js, boss-earth.js (v5.7.0).
 // Lit     : state.{time,camera.y,run.milieu,plant.tip,bossFight.{headOpen,destroyed},bossThreats.{rooms,aim,shots}}, state.world.{width,height,viewH,bossLevel.{walls,targets,head,plates,rooms,turrets}} (x, y, collision, off de chaque solide),
 //           FP.config.milieux, FP.palette.boss, FP.bossThreats.timing, FP.px (dont layer et blit), FP.bossSkin (images du milieu, v5.6.0 ; sans image : formes du code).
 // Écrit   : rien dans l'état (la toile reçue ; un calque en cache, créé à la première utilisation).
@@ -32,7 +32,7 @@
 
   // Images du milieu (v5.6.0, render/boss-skin.js) : null pour chaque rôle sans image prête.
   const skinOf = (id) => ({ matter: FP.bossSkin.image(id, 'matter'), target: FP.bossSkin.image(id, 'target'), head: FP.bossSkin.image(id, 'head'),
-    plate: FP.bossSkin.image(id, 'plate'), turret: FP.bossSkin.image(id, 'turret') });
+    plate: FP.bossSkin.image(id, 'plate') });
 
   // Paroi : contour, puis la matière du boss ancrée au monde (ox, oy : origine du monde dans g) ou, sans image, reflet, liseré d'ombre
   // à 3 pixels du bord et corps ; rivets réguliers le long du haut.
@@ -60,11 +60,14 @@
     fillPoly(g, pts, M.edge);
     if (S.target) { fillPoly(g, pts, M.dark, 1); FP.bossSkin.piece(g, pts, S.target, 1); } else fillPoly(g, pts, FP.palette.boss.weak[1], 1);
   }
-  function targetCore(g, pts, t, S) {
-    const pulse = Math.round((Math.sin(t * 6) + 1) / 2);
-    if (!S.target) { fillPoly(g, pts, FP.palette.boss.weak[0], 2 + pulse); return; }
-    const b = box(pts);
-    FP.px.disc(g, Math.round((b.x0 + b.x1) / 2), Math.round((b.y0 + b.y1) / 2), 1 + pulse, FP.palette.boss.weak[0]);
+  // Pompe (v5.7.0) : un piston bat au-dessus de la cible, à pumpHz, et la pousse le voit pomper le flux vers le cœur.
+  function targetCore(g, pts, t, S, M) {
+    const pulse = Math.round((Math.sin(t * 6) + 1) / 2), b = box(pts), cx = Math.round((b.x0 + b.x1) / 2);
+    if (!S.target) fillPoly(g, pts, FP.palette.boss.weak[0], 2 + pulse);
+    else FP.px.disc(g, cx, Math.round((b.y0 + b.y1) / 2), 1 + pulse, FP.palette.boss.weak[0]);
+    const stroke = Math.round((Math.sin(t * FP.TAU * FP.config.boss.pipes.pumpHz) + 1) * 1.5), w = Math.max(2, Math.round((b.x1 - b.x0) / 4));
+    FP.px.rect(g, cx - Math.floor(w / 2), Math.round(b.y0) - 2 - stroke, w, 2 + stroke, M.light);
+    FP.px.rect(g, cx - Math.floor(w / 2) - 1, Math.round(b.y0) - 3 - stroke, w + 2, 1, M.edge);
   }
 
   // Tête : bloc sombre tant qu'elle est blindée ; à nu, une lueur pulse au centre ; transpercée, une épave.
@@ -77,6 +80,9 @@
     if (!open) return;
     const r = 2 + Math.round((Math.sin(t * 5) + 1) * 1.5);
     FP.px.disc(g, cx, cy, r + 1, P.glow[1]); FP.px.disc(g, cx, cy, r, P.weak[1]); FP.px.disc(g, cx, cy, Math.max(1, r - 2), P.weak[0]);
+    // À nu (v5.7.0) : des étincelles jaillissent du cœur privé de son flux.
+    const R = Math.round((b.x1 - b.x0) / 2) + 1, f = Math.floor(t * 12);
+    for (let k = 0; k < 3; k++) { const a = ((f + k * 5) % 12) / 12 * FP.TAU; FP.px.rect(g, Math.round(cx + Math.cos(a) * R), Math.round(cy + Math.sin(a) * R * .6), 1, 1, P.weak[0]); }
   }
 
   // Plaque du blindage : son image répétée à l'échelle 1 depuis le coin de la plaque (une plaque haute et étroite ne la déforme pas),
@@ -136,37 +142,22 @@
 
   // --- Menaces : zone de la défense (hachures), visée des tourelles, projectiles. ---
 
-  // Hachures en escalier à 45° (marches de STEP pixels) dans le rectangle [xa, xb] × [ya, yb] de l'écran d'art ; w : largeur d'une bande.
-  const STEP = 6, PERIOD = 16;
-  function hatches(g, xa, xb, ya, yb, w, color) {
-    for (let y = ya; y < yb; y += STEP) {
-      const h = Math.min(STEP, yb - y);
-      for (let sx = xa - (yb - ya) - PERIOD; sx < xb; sx += PERIOD) {
-        const x0 = Math.max(xa, sx + (y - ya)), x1 = Math.min(xb, sx + (y - ya) + w);
-        if (x1 > x0) FP.px.rect(g, x0, y, x1 - x0, h, color);
-      }
-    }
-  }
-
-  // Défense d'une salle : avertissement (hachures qui clignotent de plus en plus vite, jusqu'au coup), coup (bandes pleines et larges, cadre).
+  // Liseré de la zone visée (v5.7.0, à la place des hachures) : un cadre fin autour de la moitié de salle qui va être frappée, qui
+  // clignote de plus en plus vite pendant l'avertissement (de 2 à 12 Hz) ; la machine elle-même dit ce qui va frapper (render/boss-machines.js).
   function danger(g, r, e, cam, state) {
-    if (e.stage !== 'warn' && e.stage !== 'strike') return;
-    const P = FP.palette.boss, mid = (r.x0 + r.x1) / 2, H = FP.px.toArt(state.world.viewH);
+    if (e.stage !== 'warn') return;
+    const A = FP.palette.boss.alert, mid = (r.x0 + r.x1) / 2, H = FP.px.toArt(state.world.viewH), w = FP.config.boss.machines.border;
     const xa = FP.px.toArt(e.half < 0 ? r.x0 : mid), xb = FP.px.toArt(e.half < 0 ? mid : r.x1);
     const ya = Math.max(0, FP.px.toArt(r.y0) - cam), yb = Math.min(H, FP.px.toArt(r.y1) - cam);
     if (yb <= ya) return;
-    if (e.stage === 'strike') {
-      hatches(g, xa, xb, ya, yb, 11, P.hatch[1]); hatches(g, xa, xb, ya, yb, 5, P.hatch[0]);
-      FP.px.rect(g, xa, ya, xb - xa, 1, P.hatch[0]); FP.px.rect(g, xa, yb - 1, xb - xa, 1, P.hatch[0]);
-      return;
-    }
     const W = FP.bossThreats.timing(state.bossFight.destroyed.filter(Boolean).length, FP.config.milieux[state.run.milieu].id).warn;
-    const phase = 2 * e.t + 5 * e.t * e.t / W;    // clignotement de 2 à 12 Hz
-    if (Math.floor(phase * 2) % 2 === 0) hatches(g, xa, xb, ya, yb, 6, P.hatch[0]);
-    FP.px.rect(g, xa, ya, xb - xa, 1, P.hatch[1]); FP.px.rect(g, xa, yb - 1, xb - xa, 1, P.hatch[1]);
+    const phase = 2 * e.t + 5 * e.t * e.t / W;
+    if (Math.floor(phase * 2) % 2) return;
+    FP.px.rect(g, xa, ya, xb - xa, w, A[0]); FP.px.rect(g, xa, yb - w, xb - xa, w, A[0]);
+    FP.px.rect(g, xa, ya, w, yb - ya, A[1]); FP.px.rect(g, xb - w, ya, w, yb - ya, A[1]);
   }
 
-  // Ligne de visée : de la tourelle vers la pointe (orange, pointillée) ; une fois figée, rouge et continue, prolongée au-delà du point visé.
+  // Ligne de visée : de la bouche du canon (render/boss-machines.js) vers la pointe (orange, pointillée) ; une fois figée, rouge et continue, prolongée au-delà du point visé.
   function aimLine(g, tur, to, locked, cam) {
     const P = FP.palette.boss, ax = FP.px.toArt(tur.x), ay = FP.px.toArt(tur.y) - cam;
     const dx = FP.px.toArt(to.x) - ax, dy = FP.px.toArt(to.y) - cam - ay, len = Math.hypot(dx, dy) || 1, reach = locked ? 400 : len;
@@ -184,27 +175,6 @@
     FP.px.disc(g, x, y, Math.max(1, FP.px.toArt(FP.config.boss.shot.r) - 2), P.shot[1]);
   }
 
-  // Tourelle : son image ou un socle, et une lentille (rouge quand elle vise), décalée de dx quand sa salle tremble.
-  function turret(g, q, aiming, cam, M, dx, S) {
-    const x = FP.px.toArt(q.x) + dx, y = FP.px.toArt(q.y) - cam;
-    if (S.turret) {
-      g.drawImage(S.turret, x - Math.floor(S.turret.width / 2), y - Math.floor(S.turret.height / 2));
-      if (aiming) FP.px.disc(g, x, y, 1, FP.palette.boss.weak[1]);
-      return;
-    }
-    FP.px.disc(g, x, y, 4, M.edge); FP.px.disc(g, x, y, 3, M.light); FP.px.disc(g, x, y, 1, aiming ? FP.palette.boss.weak[1] : M.dark);
-  }
-
-  // Tourelles (socle et lentille) : avec le corps du boss, sous le premier plan ; elles tremblent avec leur salle.
-  function turrets(g, state, bl, cam, M, S, bands) {
-    const th = state.bossThreats, top = state.camera.y, H = state.world.viewH;
-    for (const q of bl.head.solid.off ? [] : bl.turrets) {   // boss transpercé : ses tourelles tombent avec ses parois
-      if (q.y < top - 10 || q.y > top + H + 10) continue;
-      const b = bands.find(s => s.id === q.room);
-      turret(g, q, !!th.aim && th.aim.turret === q.id, cam, M, b ? b.dx : 0, S);
-    }
-  }
-
   // Menaces (v5.6.0 : à part, dessinées après tout le reste du monde, premier plan compris) : défenses, visée, projectiles.
   function drawThreats(g, state) {
     const bl = state.world.bossLevel;
@@ -212,7 +182,7 @@
     const th = state.bossThreats, top = state.camera.y, H = state.world.viewH, cam = FP.px.toArt(top);
     for (const r of bl.rooms) if (th.rooms[r.id] && r.y1 >= top && r.y0 <= top + H) danger(g, r, th.rooms[r.id], cam, state);
     const a = th.aim, tur = a && bl.turrets.find(q => q.id === a.turret), to = a && (a.lockedAt || state.plant.tip);
-    if (tur && to) aimLine(g, tur, to, !!a.lockedAt, cam);
+    if (tur && to) aimLine(g, FP.bossMachines.turretPose(state, tur).muzzle, to, !!a.lockedAt, cam);   // v5.7.0 : depuis la bouche du canon
     for (const s of th.shots) shot(g, s, cam);
   }
 
@@ -229,10 +199,12 @@
     for (const tg of bl.targets) {
       if (!seen(tg.solid)) continue;
       const pts = artPoly(tg.solid, cam, shift(tg.solid));
-      if (tg.solid.off) wreck(g, pts, t, M); else targetCore(g, pts, t, S);
+      if (tg.solid.off) wreck(g, pts, t, M); else targetCore(g, pts, t, S, M);
     }
-    if (seen(bl.head.solid)) head(g, artPoly(bl.head.solid, cam), state.bossFight.headOpen, bl.head.solid.off, t, M, S);
-    turrets(g, state, bl, cam, M, S, bands);
+    // Cœur blindé (v5.7.0) : il tremble au rythme des pulsations qui arrivent, tant qu'une pompe tourne.
+    const C = FP.config.boss.pipes, fed = !state.bossFight.headOpen && bl.targets.some(q => !q.solid.off);
+    const jolt = fed ? (Math.floor(t * C.flowSpeed / C.pulseGap * 2) % 2) * C.headShake : 0;
+    if (seen(bl.head.solid)) head(g, artPoly(bl.head.solid, cam, jolt), state.bossFight.headOpen, bl.head.solid.off, t, M, S);
   }
 
   FP.bossRender = { draw, drawThreats, fillPoly, artPoly };

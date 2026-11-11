@@ -167,3 +167,10 @@ FP.test('audio: deux milieux, deux gammes de jetons', () => {
   const notes = (m) => { const out = []; withBackend(b => { const s = auRun(); s.run.milieu = m; FP.audio.consume([{ type: 'coin', rank: 2, chain: 0 }], s, 0); out.push(...sounding(b).map(c => c[2])); }); return out.join(); };
   FP.assert(notes(0) !== notes(3), notes(0) + ' / ' + notes(3));
 });
+
+FP.test('audio: le tir de tourelle est plus fort (v5.7.0)', () => withBackend(b => {
+  FP.audio.consume([{ type: 'bossShot', turret: 't' }], auRun(), 0);
+  const s = sounding(b), burst = s.find(c => c[0] === 'burst'), pluck = s.find(c => c[0] === 'note' && c[1] === 'pluck');
+  FP.assert(burst && burst[3] >= .18, 'souffle ' + (burst && burst[3]));
+  FP.assert(pluck && pluck[5] >= 1.5, 'claquement ' + (pluck && pluck[5]));
+}));
