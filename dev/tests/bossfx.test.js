@@ -50,15 +50,16 @@ FP.test('bossRender: dessine sans erreur chaque étape (idle, warn, strike, vis�
   for (const milieu of [0, 1, 2, 3]) {
     const s = bfxRun(milieu), bl = s.world.bossLevel, r = bl.rooms[0], tur = bl.turrets.find(q => q.room === r.id) || bl.turrets[0];
     s.camera.y = (r.y0 + r.y1) / 2 - s.world.viewH / 2;
-    const count = (setup) => { setup(); const g = recCtx(); FP.bossRender.draw(g, s); FP.bossRender.drawThreats(g, s); return g.rects.length; };
-    const colors = (setup) => { setup(); const g = recCtx(); FP.bossRender.draw(g, s); FP.bossRender.drawThreats(g, s); return new Set(g.rects.map(q => q.c)); };
+    const all = (g) => { FP.bossRender.draw(g, s); FP.bossMachines.draw(g, s); FP.bossRender.drawThreats(g, s); return g; };
+    const count = (setup) => { setup(); return all(recCtx()).rects.length; };
+    const colors = (setup) => { setup(); return new Set(all(recCtx()).rects.map(q => q.c)); };
     const set = (stage, t, half = 1) => { s.bossThreats.rooms[r.id] = { stage, t, half }; };
     const idle = count(() => set('idle', 0));
     const warn = count(() => set('warn', .5)), strike = count(() => set('strike', .3));
-    FP.assert(warn > idle && strike > idle, 'hachures : ' + [idle, warn, strike]);
-    FP.assert(colors(() => set('warn', .5)).has(FP.palette.boss.hatch[0]) || colors(() => set('warn', .6)).has(FP.palette.boss.hatch[0]), 'hachures orange');
+    FP.assert(warn > idle && strike > idle, 'machine qui se prépare puis frappe : ' + [idle, warn, strike]);
+    FP.assert(colors(() => set('warn', .5)).has(FP.palette.boss.alert[0]) || colors(() => set('warn', .6)).has(FP.palette.boss.alert[0]), 'liseré orange');
     // le clignotement accélère : plus de bascules par seconde en fin d’avertissement qu’au début
-    const flips = (from, to) => { let n = 0, prev = null; for (let t = from; t < to; t += .01) { const on = colors(() => set('warn', t)).has(FP.palette.boss.hatch[0]); if (prev !== null && on !== prev) n++; prev = on; } return n; };
+    const flips = (from, to) => { let n = 0, prev = null; for (let t = from; t < to; t += .01) { const on = colors(() => set('warn', t)).has(FP.palette.boss.alert[0]); if (prev !== null && on !== prev) n++; prev = on; } return n; };
     FP.assert(flips(.8, 1.2) > flips(0, .4), 'clignotement qui accélère');
     set('idle', 0);
     const tip = { x: (r.x0 + r.x1) / 2, y: (r.y0 + r.y1) / 2 }; s.plant.tip = tip;

@@ -142,34 +142,19 @@
 
   // --- Menaces : zone de la défense (hachures), visée des tourelles, projectiles. ---
 
-  // Hachures en escalier à 45° (marches de STEP pixels) dans le rectangle [xa, xb] × [ya, yb] de l'écran d'art ; w : largeur d'une bande.
-  const STEP = 6, PERIOD = 16;
-  function hatches(g, xa, xb, ya, yb, w, color) {
-    for (let y = ya; y < yb; y += STEP) {
-      const h = Math.min(STEP, yb - y);
-      for (let sx = xa - (yb - ya) - PERIOD; sx < xb; sx += PERIOD) {
-        const x0 = Math.max(xa, sx + (y - ya)), x1 = Math.min(xb, sx + (y - ya) + w);
-        if (x1 > x0) FP.px.rect(g, x0, y, x1 - x0, h, color);
-      }
-    }
-  }
-
-  // Défense d'une salle : avertissement (hachures qui clignotent de plus en plus vite, jusqu'au coup), coup (bandes pleines et larges, cadre).
+  // Liseré de la zone visée (v5.7.0, à la place des hachures) : un cadre fin autour de la moitié de salle qui va être frappée, qui
+  // clignote de plus en plus vite pendant l'avertissement (de 2 à 12 Hz) ; la machine elle-même dit ce qui va frapper (render/boss-machines.js).
   function danger(g, r, e, cam, state) {
-    if (e.stage !== 'warn' && e.stage !== 'strike') return;
-    const P = FP.palette.boss, mid = (r.x0 + r.x1) / 2, H = FP.px.toArt(state.world.viewH);
+    if (e.stage !== 'warn') return;
+    const A = FP.palette.boss.alert, mid = (r.x0 + r.x1) / 2, H = FP.px.toArt(state.world.viewH), w = FP.config.boss.machines.border;
     const xa = FP.px.toArt(e.half < 0 ? r.x0 : mid), xb = FP.px.toArt(e.half < 0 ? mid : r.x1);
     const ya = Math.max(0, FP.px.toArt(r.y0) - cam), yb = Math.min(H, FP.px.toArt(r.y1) - cam);
     if (yb <= ya) return;
-    if (e.stage === 'strike') {
-      hatches(g, xa, xb, ya, yb, 11, P.hatch[1]); hatches(g, xa, xb, ya, yb, 5, P.hatch[0]);
-      FP.px.rect(g, xa, ya, xb - xa, 1, P.hatch[0]); FP.px.rect(g, xa, yb - 1, xb - xa, 1, P.hatch[0]);
-      return;
-    }
     const W = FP.bossThreats.timing(state.bossFight.destroyed.filter(Boolean).length, FP.config.milieux[state.run.milieu].id).warn;
-    const phase = 2 * e.t + 5 * e.t * e.t / W;    // clignotement de 2 à 12 Hz
-    if (Math.floor(phase * 2) % 2 === 0) hatches(g, xa, xb, ya, yb, 6, P.hatch[0]);
-    FP.px.rect(g, xa, ya, xb - xa, 1, P.hatch[1]); FP.px.rect(g, xa, yb - 1, xb - xa, 1, P.hatch[1]);
+    const phase = 2 * e.t + 5 * e.t * e.t / W;
+    if (Math.floor(phase * 2) % 2) return;
+    FP.px.rect(g, xa, ya, xb - xa, w, A[0]); FP.px.rect(g, xa, yb - w, xb - xa, w, A[0]);
+    FP.px.rect(g, xa, ya, w, yb - ya, A[1]); FP.px.rect(g, xb - w, ya, w, yb - ya, A[1]);
   }
 
   // Ligne de visée : de la tourelle vers la pointe (orange, pointillée) ; une fois figée, rouge et continue, prolongée au-delà du point visé.
