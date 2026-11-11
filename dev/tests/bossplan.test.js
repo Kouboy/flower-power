@@ -174,12 +174,9 @@ FP.test('bossPlan: trajets loin des tourelles et des autres cibles, nappes hors 
   });
 });
 
-FP.test('bossPlan: pas de tourelle à la Bétonneuse, au moins une ailleurs', () => {
-  for (const milieu of PLAN_MILIEUX) {
-    const n = window.FLOWER_POWER_BOSS_PLANS[milieu].pieces.filter(p => p.role === 'turret').length;
-    if (milieu === 'friche') FP.assertEqual(n, 0, milieu);
-    else FP.assert(n >= 1, 'tourelle ' + milieu);
-  }
+FP.test('bossPlan: tourelles (v5.5.0) — une à la Bétonneuse, trois ensuite', () => {
+  const n = (milieu) => window.FLOWER_POWER_BOSS_PLANS[milieu].pieces.filter(p => p.role === 'turret').length;
+  FP.assertEqual(PLAN_MILIEUX.map(n).join(), '1,3,3,3');
 });
 
 // --- Plafond fermé (revue finale v5.1.0) : la surface ne s'atteint qu'à travers la tête, quelles que soient les plaques tombées.

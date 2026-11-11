@@ -1,8 +1,8 @@
-// audio/sfx.js — effets sonores en FM (même moteur que la musique, accordés en mi) : sons de jeu, sons d'interface, jingles,
+// audio/sfx.js — effets sonores en FM (même moteur que la musique, accordés en mi ; ramassages dans la gamme du milieu) : sons de jeu, sons d'interface, jingles,
 // bourdonnement continu du frôlement et grattement de la tige qui creuse.
 // Lit     : state.mode, state.graze.active, state.query.grazes, FP.songs.jingles, FP.sequencer.notesBetween, FP.synth.DRUMS.
 // Écrit   : rien dans l'état (le moteur audio uniquement ; anti-rafale rangé sur le moteur).
-// Expose  : FP.sfx.play(backend, name, intensity?), FP.sfx.jingle(backend, name), FP.sfx.drone(backend, state, events), FP.sfx.hum(backend, state, events) (nappe toxique, effort de germination),
+// Expose  : FP.sfx.play(backend, name, intensity?, key?) (key : id du milieu, gamme des ramassages ; friche par défaut), FP.sfx.jingle(backend, name), FP.sfx.drone(backend, state, events), FP.sfx.hum(backend, state, events) (nappe toxique, effort de germination),
 //           FP.sfx.scrape(backend, k), FP.sfx.NAMES.
 (function () {
   'use strict';
@@ -20,11 +20,19 @@
   }
 
   // Recettes : (note, bruit, batterie, t, intensité). note(inst, midi, délai, durée, vel, bend?) ; bruit(délai, durée, gain, Hz, type, q?).
-  // Phrases des jetons (v4.7.1) : mi pentatonique, une octave au-dessus de la musique (mi6 = 88). Chaque traînée a la sienne
-  // (d'après son numéro), qui boucle tous les 8 jetons : montée, descente, arche, question-réponse, vague, escalier.
-  const COIN_PHRASES = [[88, 91, 93, 95, 98, 100, 98, 95], [100, 98, 95, 93, 91, 88, 91, 93], [88, 93, 98, 100, 98, 93, 91, 88],
-    [91, 93, 95, 93, 98, 95, 93, 91], [88, 95, 91, 98, 93, 100, 95, 98], [88, 91, 88, 93, 91, 95, 93, 98]];
-  const coinNote = (rank, chain) => COIN_PHRASES[Math.max(0, chain || 0) % COIN_PHRASES.length][Math.max(0, Math.round(rank)) % 8];
+  // Phrases des jetons (v4.7.1) : une octave au-dessus de la musique. Chaque traînée a la sienne (d'après son numéro), qui
+  // boucle tous les 8 jetons : montée, descente, arche, question-réponse, vague, escalier. En degrés (v5.5.0) de la gamme du milieu.
+  const COIN_PHRASES = [[0, 1, 2, 3, 4, 5, 4, 3], [5, 4, 3, 2, 1, 0, 1, 2], [0, 2, 4, 5, 4, 2, 1, 0],
+    [1, 2, 3, 2, 4, 3, 2, 1], [0, 3, 1, 4, 2, 5, 3, 4], [0, 1, 0, 2, 1, 3, 2, 4]];
+  // Gammes des ramassages (v5.5.0) : pentatonique (6 notes, octave comprise) tirée de la gamme de la musique du milieu, variantes et
+  // boss compris (contrôlé par les tests) ; chord : accord du chapelet complet (cloches, puis cuivre grave).
+  const KEYS = {
+    friche: { scale: [88, 91, 93, 95, 98, 100], chord: [76, 83, 88, 91], brass: 64 },      // mi sol la si ré : mi mineur
+    industrie: { scale: [88, 91, 93, 96, 98, 100], chord: [76, 81, 84, 88], brass: 57 },   // mi sol la do ré : la mineur
+    decharge: { scale: [90, 91, 94, 96, 98, 102], chord: [74, 79, 82, 86], brass: 55 },    // fa♯ sol si♭ do ré : sol mineur harmonique
+    nucleaire: { scale: [88, 90, 92, 95, 97, 100], chord: [76, 83, 88, 92], brass: 64 }    // mi fa♯ sol♯ si do♯ : mi majeur
+  };
+  const coinNote = (k, rank, chain) => k.scale[COIN_PHRASES[Math.max(0, chain || 0) % COIN_PHRASES.length][Math.max(0, Math.round(rank)) % 8]];
   const rnd = (a, b) => a + Math.random() * (b - a);   // variations sensorielles : chaque froissement est différent
   const GRAINS = ['grainA', 'grainB', 'grainC'];
   // Papier froissé : count craquements FM de hauteurs et de timbres variés, serrés au début puis qui s'espacent, sur len secondes.
@@ -34,11 +42,11 @@
   const RECIPES = {
     start: (n, z) => { n('brass', 52, 0, .35, 1.3); n('brass', 59, .04, .35, 1.2); n('brass', 64, .08, .4, 1.2); n('bell', 76, .12, .5, 1); z(0, .25, .06, 3000, 'highpass'); },
     growStart: (n, z) => { n('pluck', 40, 0, .08, 1.3); n('pluck', 47, .03, .08, 1); z(0, .1, .08, 400, 'lowpass'); },
-    grazeStart: (n, z, d, i) => { n('pluck', 71, 0, .06, i); z(0, .07, .05 * i, 2100, 'bandpass'); },
-    eco: (n, z, d, combo) => { const m = 76 + Math.min(5, Math.max(0, Math.round(combo) - 1)); n('bell', m, 0, .12, 1); n('bell', m + 7, .05, .14, .8); z(0, .04, .02, 2600, 'highpass'); },
-    // Pièce (v4.5.0) : « tink » qui monte d'une note par pièce du chapelet (mi mineur pentatonique), puis l'accord du chapelet complet.
-    coin: (n, z, d, c) => { n('glass', coinNote(c.rank, c.chain), 0, .15, .09); },   // c = { rank, chain } ; v5.3.2 : moitié moins fort (retour de playtest)
-    chain: (n) => { for (const m of [76, 83, 88, 91]) n('bell', m, 0, .7, .42); n('brass', 64, .02, .4, .35); },
+    grazeStart: (n, z, d, i, k) => { n('pluck', k.scale[3] - 24, 0, .06, i); z(0, .07, .05 * i, 2100, 'bandpass'); },
+    eco: (n, z, d, combo, k) => { const i = Math.min(3, Math.max(0, Math.round(combo) - 1)); n('bell', k.scale[i] - 12, 0, .12, 1); n('bell', k.scale[i + 2] - 12, .05, .14, .8); z(0, .04, .02, 2600, 'highpass'); },
+    // Pièce (v4.5.0) : « tink » qui suit la phrase de sa traînée dans la gamme du milieu, puis l'accord du chapelet complet.
+    coin: (n, z, d, c, k) => { n('glass', coinNote(k, c.rank, c.chain), 0, .15, .13); },   // c = { rank, chain } ; .18 → .09 (v5.3.2) → .13 (v5.5.0)
+    chain: (n, z, d, i, k) => { for (const m of k.chord) n('bell', m, 0, .7, .42); n('brass', k.brass, .02, .4, .35); },
     // Bon de commande (v4.6.0), en FM pur : papier froissé (apparition, départ), gratouillis de crayon, tiroir-caisse.
     // Germination (v4.7.0) : la graine craque (deux fois), puis la pousse part dans un « pop » qui monte.
     germCrack: (n) => { n('grainA', 70, 0, .03, 1); n('clonk', 45, 0, .06, .4); },
@@ -91,14 +99,14 @@
   };
   const NAMES = Object.keys(RECIPES);
 
-  function play(b, name, intensity) {
+  function play(b, name, intensity, key) {
     const r = RECIPES[name];
     if (!b || !r || !allowed(b, name)) return;
     const t = b.now();
     const n = (inst, midi, at, dur, vel, bend) => b.note(inst, midi, t + at, dur, vel, bend ? { bus: 'sfx', bend } : SFX);
     const z = (at, dur, gain, hz, type, q) => b.burst(t + at, dur, gain, hz, type, SFX, q);
     const d = (kind, at, vel) => b.drum(kind, t + at, vel, SFX);
-    r(n, z, d, intensity === undefined ? 1 : intensity);
+    r(n, z, d, intensity === undefined ? 1 : intensity, KEYS[key] || KEYS.friche);
   }
 
   // Jingle : une petite partition de FP.songs.jingles, jouée tout de suite sur le bus des effets.

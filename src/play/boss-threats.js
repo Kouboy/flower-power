@@ -1,6 +1,6 @@
 // play/boss-threats.js — les défenses signature des salles de boss (v5.1.0) : quand la pointe entre dans une salle, un long
 // avertissement, puis un coup sur la moitié de la salle où elle se trouvait ; on l'évite en se déplaçant (la tige ne s'arrête jamais).
-// v5.1.0 (suite) : tirs visés — à partir du boss 2, une tourelle suit la pointe (ligne de visée), fige la ligne peu avant de tirer, puis un
+// v5.1.0 (suite) : tirs visés — à chaque boss (v5.5.0 ; avant, à partir du boss 2), une tourelle suit la pointe (ligne de visée), fige la ligne peu avant de tirer, puis un
 // projectile rapide part le long de la ligne figée : on l'évite en virant après le figement. v5.3.1 : la tourelle vise pendant le repos de
 // la défense de sa salle, la pointe encore dedans ou déjà sortie (le coup, puis le tir).
 // Lit     : state.{mode, flow.freeze, world.bossLevel.head.solid.off, plant.tip, run.milieu, bossFight.destroyed}, state.world.{width,height,bossLevel.{rooms[].{x0,y0,x1,y1,zone,turrets},turrets[],walls,targets,plates,head}},
@@ -95,7 +95,6 @@
       if (s.x < -cfg.r || s.x > w.width + cfg.r || s.y < -cfg.r || s.y > w.height + cfg.r || blocked(bl, s.x, s.y)) dropShot(state, i);
     }
     th.cooldown = Math.max(0, th.cooldown - dt);
-    if (!FP.config.boss.ramp[bossId(state)].shot) return;   // boss sans tourelles (la Bétonneuse)
     const a = th.aim;
     if (a) {
       const tur = bl.turrets.find(q => q.id === a.turret);

@@ -63,3 +63,11 @@ FP.test('graze: score ≥ 55 mais paiement arrondi < 75 → rien', () => withAwa
   noGraze(s); FP.graze.update(s, 1 / 60);
   FP.assertEqual(got.length, 0); FP.assertEqual(s.graze.active.size, 0);
 }));
+// Portée (v5.5.0, retour de playtest) : le frôlement s'active un peu plus loin de l'obstacle (rayon de la fiche + reachPad).
+FP.test('graze: le frôlement s’active jusqu’à 22 px d’un obstacle', () => {
+  const s = grazeRun(), o = FP.catalog.makeSolid({ kind: 'tire', x: 220, y: 400, a: 0, flip: 1 });
+  s.world.solids = [o];
+  FP.assertEqual(FP.collision.grazeBand(o), 22);
+  const at = (d) => { let y = 400; while (FP.collision.distanceTo(o, 220, y) < d) y -= .25; s.plant.tip = { x: 220, y }; FP.collision.update(s); return s.query.grazes.length; };
+  FP.assert(at(20) > 0, 'à 20 px'); FP.assertEqual(at(23), 0, 'à 23 px');
+});

@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '5.4.0',
+    version: '5.5.0',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -167,7 +167,8 @@
       base: 130, hotExp: 2.15, hotGain: 1980, closeExp: 2.4, closeGain: 95,
       holdPerSec: 120, holdMax: 900, peakExp: 2.2, peakGain: 360, step: 25, effBase: .45, effGain: .55,
       premium: { trex_signature: 1.18, nuclear: 1.18 }, leakMul: 1.12, leakFlashBase: .08, leakFlashGain: .18,
-      broadPad: 10, minIntensity: .02   // phase large de la requête de pointe ; en dessous, pas de frôlement
+      broadPad: 10, minIntensity: .02,   // phase large de la requête de pointe ; en dessous, pas de frôlement
+      reachPad: 6   // v5.5.0 (retour de playtest) : la bande de frôlement s'étend de tant de px au-delà du grazeRadius de la fiche (16 → 22)
     },
 
     // ÉcoCrédits™ : arrondis à 25, combo ×(1 + .22 par cran) si les gains s'enchaînent en moins de 2 s.
@@ -248,7 +249,7 @@
     // en px, durée s) ; crackArms / crackStep : fissures d'une paroi (branches depuis son centre, pas du zigzag en px d'art).
     // ramp (retours de playtest) : un cran de difficulté par boss, du boss 1 (friche) au boss 4 (nucléaire) — channelMin : largeur minimale
     // d'un canal de son plan, en px de monde à 360 px de large (× W / 360 ailleurs) ; strike, rest : coup et repos de la défense (s) ;
-    // speedup : accélération par cible détruite ; shot : vitesse (px/s) et espacement (s) des tirs visés, null sans tourelles.
+    // speedup : accélération par cible détruite ; shot : vitesse (px/s) et espacement (s) des tirs visés (v5.5.0 : dès le boss 1, espacement −25 % ensuite).
     // defense : avertissement (s) et son plancher, communs à tous les boss ; shot : suivi de la visée, ligne figée avant le tir (s), rayon du projectile.
     boss: {
       top: 70, bottom: 160, toxics: 2,
@@ -257,10 +258,10 @@
       death: { time: 3.5, scale: .5, chain: .55, crack: .2, peak: .8, shake: .5, chunks: 8, chunksMax: 24, chunkPower: 70, chunkLife: 1.6, flash: .4,
         rain: 40, rainSpread: 120, rainLife: 2.5, crackArms: 4, crackStep: 5 },
       ramp: {
-        friche: { channelMin: 52, strike: .9, rest: 1.3, speedup: .12, shot: null },
-        industrie: { channelMin: 49, strike: .97, rest: 1.17, speedup: .14, shot: { speed: 440, gap: 2.6 } },
-        decharge: { channelMin: 47, strike: 1.03, rest: 1.03, speedup: .16, shot: { speed: 480, gap: 2.3 } },
-        nucleaire: { channelMin: 44, strike: 1.1, rest: .9, speedup: .18, shot: { speed: 520, gap: 2 } }
+        friche: { channelMin: 52, strike: .9, rest: 1.3, speedup: .12, shot: { speed: 400, gap: 3.2 } },
+        industrie: { channelMin: 49, strike: .97, rest: 1.17, speedup: .14, shot: { speed: 440, gap: 2 } },
+        decharge: { channelMin: 47, strike: 1.03, rest: 1.03, speedup: .16, shot: { speed: 480, gap: 1.75 } },
+        nucleaire: { channelMin: 44, strike: 1.1, rest: .9, speedup: .18, shot: { speed: 520, gap: 1.5 } }
       },
       defense: { warn: 1.2, warnMin: 1 },
       shot: { track: 1, lock: .3, r: 5 }

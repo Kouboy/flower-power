@@ -18,7 +18,7 @@
   const EMPTY = () => ({ solid: null, target: null, head: null, danger: 0, near: null, toxic: 0, leak: 0, leakHit: null, pops: [], grazes: [] });
 
   // Bande de frôlement autour du polygone : seulement si l'obstacle accepte le flyover.
-  const grazeBand = (o) => (o.flyoverEligible ? o.grazeRadius : 0);
+  const grazeBand = (o) => (o.flyoverEligible ? o.grazeRadius + FP.config.graze.reachPad : 0);   // v5.5.0 : un peu plus loin que la fiche
 
   // Distance signée de (x, y) au polygone de collision, dans le repère local de l'obstacle.
   function distanceTo(o, x, y) {

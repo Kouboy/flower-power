@@ -1,6 +1,6 @@
 // audio/audio.js — chef d'orchestre du son (Web Audio, aucun fichier) : déblocage au premier geste, événements de la frame →
 // effets (FP.sfx, dont les sons du boss : bossTarget, bossSeed, bossWarn, bossLock, bossShot, bossHead, bossBlast, bossCrumble, le rot burp au leakPop, et le jingle bossVictory au bossPeak ; un assaut ne joue ni impact ni jingle de mort) et musique (FP.music), pause quand l'onglet est caché.
-// Lit     : les événements de la frame, state (via FP.sfx.drone et FP.music.update ; state.bossFight.destroyed et state.run.milieu pour la durée de bossWarn), FP.bossThreats.timing, FP.synth, FP.state.current.
+// Lit     : les événements de la frame, state (via FP.sfx.drone et FP.music.update ; state.bossFight.destroyed et state.run.milieu pour la durée de bossWarn et la gamme des ramassages), FP.bossThreats.timing, FP.config.milieux, FP.synth, FP.state.current.
 // Écrit   : rien dans l'état.
 // Expose  : FP.audio.consume(events, state, dt), FP.audio.sfx(name, intensity?), FP.audio.unlock(),
 //           FP.audio.setting() / cycleSetting() / loadSetting() (réglage 'all' | 'sfx' | 'mute', mémorisé sous flower_power_v4_sound),
@@ -59,6 +59,9 @@
   // Durée de l'avertissement d'une défense de boss au rythme du combat (FP.bossThreats.timing) : le son qui monte la couvre.
   const warnTime = (state) => FP.bossThreats.timing(state.bossFight.destroyed.filter(Boolean).length, FP.config.milieux[state.run.milieu].id).warn;
 
+  // Gamme des ramassages (v5.5.0) : celle du milieu en cours (FP.sfx).
+  const keyOf = (state) => (state && state.run ? FP.config.milieux[state.run.milieu].id : null);
+
   // Événements de la frame → effets.
   function play(b, e, state) {
     switch (e.type) {
@@ -66,16 +69,16 @@
       case 'stemStart': return FP.sfx.play(b, 'growStart');
       case 'bloom': return FP.sfx.play(b, 'crack');
       case 'blossom': return FP.sfx.jingle(b, 'blossom');
-      case 'eco': return e.kind === 'coin' || e.kind === 'chain' ? undefined : FP.sfx.play(b, 'eco', e.combo || 1);   // pièce et chapelet ont leurs sons
-      case 'coin': return FP.sfx.play(b, 'coin', { rank: e.rank || 0, chain: e.chain || 0 });
-      case 'chainDone': return FP.sfx.play(b, 'chain');
+      case 'eco': return e.kind === 'coin' || e.kind === 'chain' ? undefined : FP.sfx.play(b, 'eco', e.combo || 1, keyOf(state));   // pièce et chapelet ont leurs sons
+      case 'coin': return FP.sfx.play(b, 'coin', { rank: e.rank || 0, chain: e.chain || 0 }, keyOf(state));
+      case 'chainDone': return FP.sfx.play(b, 'chain', 1, keyOf(state));
       case 'germCrack': return FP.sfx.play(b, 'germCrack');
       case 'germPop': return FP.sfx.play(b, 'germPop');
       case 'shopOpen': return FP.sfx.play(b, 'crumple');
       case 'shopTick': return FP.sfx.play(b, 'pencil');
       case 'shopOrder': return FP.sfx.play(b, 'register');
       case 'shopClose': return FP.sfx.play(b, 'crumpleOut');
-      case 'grazeStart': return FP.sfx.play(b, 'grazeStart', clamp(e.intensity || .6, .2, 1.6));
+      case 'grazeStart': return FP.sfx.play(b, 'grazeStart', clamp(e.intensity || .6, .2, 1.6), keyOf(state));
       case 'pickup': return FP.sfx.play(b, e.kind === 'water' ? 'water' : 'bud');
       case 'shieldBreak': return FP.sfx.play(b, 'shieldBreak');
       case 'bomb': return FP.sfx.play(b, 'bomb');
