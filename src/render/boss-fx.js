@@ -4,7 +4,7 @@
 // retombent, gerbe d'étincelles et de jetons), sa plaque se détache en tournoyant et tombe.
 // Lit     : state.{events, time, camera.y, plant.reserves}, state.world.{viewH, width, bossLevel.{targets,plates,walls}} (solid, target), FP.config.boss.hit
 //           (éclats, plaque, gerbe, éclair : shards, shardLife, shardPower, plateLife, sparks, gravity, flashFrames, flashMax),
-//           FP.palette.{boss,seed,coin}, FP.px, FP.font, FP.hud.{seedCenter, SEED_SCALE}, FP.bossRender.{fillPoly, artPoly}.
+//           FP.palette.{boss,seed,coin}, FP.px, FP.font, FP.hud.{seedCenter, SEED_SCALE}, FP.bossRender.{fillPoly, artPoly}, FP.bossSkin.{image, wall} (plaque habillée).
 // Écrit   : state.fx.boss uniquement { bursts, flights (départ { from } en pixels de la toile d'interface, pris à l'assaut), plates, shards, sparks,
 //           flash: { t0, frames } | null } (effets horodatés avec state.time, éteints d'eux-mêmes ; l'éclair compte ses images).
 // Expose  : FP.bossFx.update(state) (une fois par frame, avant le dessin : events → effets), FP.bossFx.draw(g, state) (toile d'art, monde),
@@ -120,12 +120,14 @@
     }
   }
 
-  // Plaque qui se détache : elle tournoie en tombant (polygone tourné autour de son centre) et clignote avant de disparaître.
-  function plate(g, p, cam, t) {
+  // Plaque qui se détache : elle tournoie en tombant (polygone tourné autour de son centre) et clignote avant de disparaître ;
+  // habillée (v5.6.0), son image y est répétée comme une matière (une image étirée se déformerait en tournant).
+  function plate(g, p, cam, t, img) {
     const age = t - p.t0, P = FP.palette.boss, at = platePose(p, age), c = Math.cos(at.a), s = Math.sin(at.a);
     if (age > FP.config.boss.hit.plateLife * .7 && Math.floor(age * 24) % 2) return;
     const pts = FP.bossRender.artPoly({ x: at.x, y: at.y, collision: p.solid.collision.map(([x, y]) => [x * c - y * s, x * s + y * c]) }, cam);
-    FP.bossRender.fillPoly(g, pts, P.plate[1]); FP.bossRender.fillPoly(g, pts, P.plate[0], 1);
+    FP.bossRender.fillPoly(g, pts, P.plate[1]);
+    if (img) FP.bossSkin.wall(g, pts, img, 0, 0, 1); else FP.bossRender.fillPoly(g, pts, P.plate[0], 1);
   }
 
   // Éclat : carré de 1 à 3 pixels d'art qui bascule (largeur et hauteur échangées au rythme de sa rotation).
@@ -145,7 +147,8 @@
     const fx = state.fx.boss;
     if (!fx) return;
     const cam = FP.px.toArt(state.camera.y), t = state.time, P = FP.palette.boss;
-    for (const p of fx.plates) plate(g, p, cam, t);
+    const plateImg = fx.plates.length ? FP.bossSkin.image(FP.config.milieux[state.run.milieu].id, 'plate') : null;
+    for (const p of fx.plates) plate(g, p, cam, t, plateImg);
     for (const b of fx.bursts) burst(g, b, cam, t);
     for (const p of fx.shards) shard(g, p, cam, t, [P.weak[0], P.weak[1], P.boom[3]]);
     for (const p of fx.sparks) spark(g, p, cam, t);

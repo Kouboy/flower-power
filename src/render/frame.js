@@ -4,7 +4,7 @@
 // 3. L'interface (doigt, HUD, cri, titre, certificat) est dessinée dans la toile FP.view.ui, agrandie sans secousse ni zoom.
 // 4. Les outils de réglage et le fondu, à pleine résolution, par-dessus tout.
 // Lit     : state.world, state.camera.y, FP.view, FP.camera.zoomFrame,
-//           FP.view.art, FP.px.SCALE, state.flow.fade, FP.sky, FP.soil, FP.hazardsRender, FP.obstacles, FP.bossRender, FP.bossFx, FP.bossDeath, FP.coinsRender, FP.powerupsRender, FP.plantRender, FP.flowersRender,
+//           FP.view.art, FP.px.SCALE, state.flow.fade, FP.sky, FP.soil, FP.hazardsRender, FP.obstacles, FP.bossDepth, FP.bossRender, FP.bossFx, FP.bossDeath, FP.coinsRender, FP.powerupsRender, FP.plantRender, FP.flowersRender,
 //           FP.effects, FP.particles, FP.drillFx, FP.ui ; state.camera.shake (secousse) ; FP.perf, FP.flydebug (outils de réglage).
 // Écrit   : rien lui-même (le canvas) ; effects et particles, qu'il appelle, tiennent state.fx.
 // Expose  : FP.render.frame(state).
@@ -25,12 +25,13 @@
     let t = perf && performance.now();
     FP.sky.draw(g, state);
     FP.soil.draw(g, state);
+    FP.bossDepth.drawBack(g, state);  // usine lointaine derrière le boss (v5.6.0) : juste sur la terre, sous les nappes et les anciennes tiges
     FP.plantRender.drawOld(g, state);   // anciennes tiges : sous les dangers et les déchets
     if (perf) t = perf.mark('soil', t);
     FP.hazardsRender.drawBase(g, state);
     FP.hazardsRender.drawLeaks(g, state);
     FP.obstacles.draw(g, world, camY);
-    FP.bossRender.draw(g, state);     // boss : parois, cibles, tête, plaques, menaces (rien hors niveau de boss)
+    FP.bossRender.draw(g, state);     // boss : parois, cibles, tête, plaques, tourelles (rien hors niveau de boss)
     FP.bossFx.update(state);          // explosions, plaques qui tombent, graine rendue : nées des événements de la frame
     FP.bossFx.draw(g, state);
     FP.bossDeath.update(state);       // mort du boss : fissures, parois qui s'effondrent, flash, pluie de jetons
@@ -49,6 +50,8 @@
     FP.effects.draw(g, state);
     FP.particles.draw(g, state);
     FP.drillFx.drawOver(g, state);    // ondes et étincelles : devant la tête, comme des débris projetés
+    FP.bossDepth.drawFore(g, state);       // premier plan flou du boss (v5.6.0) : devant la pousse
+    FP.bossRender.drawThreats(g, state);   // menaces du boss (v5.6.0) : par-dessus tout, jamais cachées
   }
 
   function frame(state) {

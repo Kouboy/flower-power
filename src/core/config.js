@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '5.5.0',
+    version: '5.6.0',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -264,7 +264,14 @@
         nucleaire: { channelMin: 44, strike: 1.1, rest: .9, speedup: .18, shot: { speed: 520, gap: 1.5 } }
       },
       defense: { warn: 1.2, warnMin: 1 },
-      shot: { track: 1, lock: .3, r: 5 }
+      shot: { track: 1, lock: .3, r: 5 },
+      // Habillage (v5.6.0, render/boss-depth.js) : back, fore = vitesses de l'arrière-plan et du premier plan relatives à la caméra
+      // (du 1er au 2e élément) ; blur = flou du premier plan (pixels d'art, préparé une fois) ; foreAlpha, foreAlphaNoBlur = opacité du
+      // premier plan, avec ou sans flou possible ; foreGap = écart entre deux éléments du premier plan (hauteurs d'écran, min et max) ;
+      // foreX = abscisses possibles du centre d'un élément du premier plan (fraction de la largeur) ;
+      // foreShake = secousse en plus du premier plan (pixels d'art) pendant un avertissement et à la mort du boss ; backDim = voile sombre
+      // posé sur l'arrière-plan (opacité).
+      skin: { back: .6, fore: [1.4, 1.8], blur: 1.5, foreAlpha: .85, foreAlphaNoBlur: .6, foreGap: [1, 1.5], foreX: [.12, .88], foreShake: 2, backDim: .55 }
     },
 
     // Boutique de fin de pousse (v4.6.0) : 3 articles tirés (un à −50 %), achetés au score ; effets sur la pousse suivante.
