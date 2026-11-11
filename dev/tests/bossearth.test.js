@@ -47,3 +47,15 @@ FP.test('bossEarth: même terre d’une tentative à l’autre, rien hors boss',
   FP.assert(ga.rects.length > 0 && JSON.stringify(ga.rects) === JSON.stringify(gb.rects), 'identique');
   a.world.bossLevel = null; const g = skinCtx(); FP.bossEarth.draw(g, a); FP.assertEqual(g.rects.length, 0, 'hors boss');
 });
+
+FP.test('bossEarth: un mur effondré perd sa terre ; la poche monte jusqu’à la surface', () => {
+  for (const m of [0, 1, 2, 3]) {
+    const s = earthRun(m), bl = s.world.bossLevel, h = bl.head.solid; s.camera.y = s.world.surfaceY - 10;
+    const C = earthColors(m), cam = FP.px.toArt(s.camera.y), P = FP.config.boss.earth.pocket;
+    const g = skinCtx(); FP.bossEarth.draw(g, s);
+    FP.assert(g.rects.some(r => C.has(r.c) && Math.abs((r.x + .5) * FP.px.SCALE - h.x) <= P && (r.y + cam) * FP.px.SCALE <= s.world.surfaceY + 12), 'poche jusqu’à la surface, milieu ' + m);
+    s.camera.y = bl.rooms[0].y0 - s.world.viewH / 2; const before = skinCtx(); FP.bossEarth.draw(before, s);
+    for (const w of bl.walls) w.off = true; const after = skinCtx(); FP.bossEarth.draw(after, s);
+    FP.assert(after.rects.length < before.rects.length, 'moins de terre sans murs, milieu ' + m);
+  }
+});

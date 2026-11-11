@@ -126,7 +126,7 @@
 
   function draw(g, state) {
     const bl = state.world.bossLevel;
-    if (!bl) return;
+    if (!bl || bl.head.solid.off) return;   // boss transpercé : ses machines tombent avec ses parois
     const id = FP.config.milieux[state.run.milieu].id, M = FP.palette.boss.milieux[id], Q = FP.palette.boss.machines, K = FP.config.boss.machines;
     const cam = FP.px.toArt(state.camera.y), top = state.camera.y, H = Math.ceil(state.world.viewH / FP.px.SCALE), t = state.time;
     const W = FP.bossThreats.timing(state.bossFight.destroyed.filter(Boolean).length, id).warn;

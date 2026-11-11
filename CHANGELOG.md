@@ -9,7 +9,7 @@ Une entrée par version (voir `AGENTS.md`).
 - tourelles visibles : socle de 16 px, canon qui pivote vers la pousse, lentille qui passe de l'orange au rouge, recul et éclair au tir, son du tir plus fort ; même difficulté ;
 - la machine surgit de la terre : bords extérieurs des murs rongés (frange, mottes, racines), poche de terre sur la tête, où la fleur éclot ;
 - le premier plan flou de la v5.6.0 est retiré ; tuyaux tracés par l'outil `dev/tools/route-pipes.js` (plus court chemin dans la masse de la machine, colonnes le long des parois là où les pompes flottent) ;
-- banc : 682 tests.
+- banc : 686 tests.
 
 ## v5.6.1 — La terre revient autour du boss
 

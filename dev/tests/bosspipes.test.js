@@ -58,3 +58,37 @@ FP.test('bossRender: la pompe bat', () => {
   const half = 1 / FP.config.boss.pipes.pumpHz / 2;
   FP.assert(frame(2) !== frame(2 + half / 2), 'le piston bouge');
 });
+
+// Revue finale (v5.7.0).
+const pipeFakeLayer = () => { const made = []; return { made, layer: (w, h) => { const l = { canvas: { width: w, height: h }, g: skinCtx() }; made.push(l); return l; } }; };
+FP.test('bossPipes: boss transpercé, plus de tuyaux ni de machines', () => {
+  for (const m of [0, 1, 2, 3]) {
+    const s = pipeRun(m), bl = s.world.bossLevel; s.camera.y = bl.head.solid.y - s.world.viewH / 2;
+    bl.head.solid.off = true; for (const w of bl.walls) w.off = true;
+    const g = skinCtx(); FP.bossPipes.draw(g, s); FP.bossMachines.draw(g, s);
+    FP.assertEqual(g.rects.length + g.images.length, 0, 'milieu ' + m);
+  }
+});
+FP.test('bossPipes: aucune pulsation sur la pompe ni sur la tête', () => {
+  for (const m of [0, 1, 2, 3]) {
+    const s = pipeRun(m), bl = s.world.bossLevel, F = FP.palette.boss.flow, polys = [bl.head.solid, ...bl.targets.map(t => t.solid)].map(o => o.collision.map(([x, y]) => [o.x + x, o.y + y]));
+    for (const o of [bl.head.solid, ...bl.targets.map(t => t.solid)]) for (const t of [1, 1.13, 1.27]) {
+      s.camera.y = o.y - s.world.viewH / 2; s.time = t; const g = skinCtx(); FP.bossPipes.draw(g, s); const cam = FP.px.toArt(s.camera.y);
+      const bad = g.rects.filter(r => F.includes(r.c) && polys.some(P => FP.geom.sdPoly((r.x + .5) * FP.px.SCALE, (r.y + cam + .5) * FP.px.SCALE, P) < -2));
+      FP.assertEqual(bad.length, 0, 'milieu ' + m);
+    }
+  }
+});
+FP.test('bossPipes: corps des tuyaux et terre peints une fois dans un calque, seul le flux est dessiné à chaque image', () => {
+  const saved = FP.px.layer, L = pipeFakeLayer(); FP.px.layer = L.layer;
+  try {
+    const s = pipeRun(1), bl = s.world.bossLevel; s.camera.y = bl.head.solid.y - s.world.viewH / 2;
+    const live = () => { const g = skinCtx(); FP.bossPipes.draw(g, s); FP.bossEarth.draw(g, s); return g; };
+    live(); const made = L.made.length; const g = live();
+    FP.assertEqual(L.made.length, made, 'calques gardés d’une image à l’autre');
+    FP.assert(made >= 2, 'un calque pour les tuyaux, un pour la terre : ' + made);
+    FP.assert(g.rects.every(r => FP.palette.boss.flow.includes(r.c)), 'en direct : seulement le flux');
+    FP.assert(g.images.length >= 2, 'les calques sont recopiés');
+    FP.boss.destroy(s, 0); live(); FP.assert(L.made.length > made, 'une pompe cassée refait le calque des tuyaux');
+  } finally { FP.px.layer = saved; }
+});
