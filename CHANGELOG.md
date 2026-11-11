@@ -2,6 +2,14 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v5.6.0 — Habillage des boss : la Bétonneuse
+
+- les boss reçoivent une vraie apparence (PixelLab, retouchée) : matière répétée dans les parois (ancrée au monde, contour et rivets gardés), images des cibles, de la tête blindée, des plaques (même quand elles tombent) et des tourelles ; la tête à nu, les épaves et les tirs restent dessinés par le code ;
+- profondeur : une usine lointaine défile derrière le boss (0,6× la caméra) et des éléments flous de premier plan (chaîne de grue, grillage) passent devant, plus vite que la caméra (1,4 à 1,8×), en tremblant davantage pendant un avertissement et à la mort du boss ; le flou est préparé une seule fois par image ;
+- les menaces (hachures, visée, tirs) sont dessinées après tout le reste : jamais cachées par le premier plan ;
+- la Bétonneuse est la première habillée (8 images, `assets/boss/art/friche/`) ; les trois autres boss gardent leurs formes du code jusqu'à leurs images (v5.7.0) ; outil `dev/tools/import-boss.js` ;
+- banc : 667 tests.
+
 ## v5.5.0 — Réglages de playtest : tourelles, gammes, frôlement, bonus
 
 - une tourelle de plus à chaque boss : la Bétonneuse en a désormais une (sous le parapet droit, tirs lents), les trois autres en ont trois ; les tirs sont plus serrés (espacement 2 / 1,75 / 1,5 s au lieu de 2,6 / 2,3 / 2) — positions provisoires, à recaler sur les images des boss ;
