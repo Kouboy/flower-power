@@ -31,21 +31,12 @@ global.window = { FP: {} };
 require(path.join(__dirname, 'silhouette.js'));
 const S = window.FP.silhouette;
 
-function crop(im) {
-  let x0 = im.width, y0 = im.height, x1 = -1, y1 = -1;
-  for (let y = 0; y < im.height; y++) for (let x = 0; x < im.width; x++) if (im.data[(y * im.width + x) * 4 + 3] >= 128) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
-  if (x1 < 0) throw new Error('image vide');
-  const w = x1 - x0 + 1, h = y1 - y0 + 1, out = { width: w, height: h, data: Buffer.alloc(w * h * 4) };
-  for (let y = 0; y < h; y++) Buffer.from(im.data.buffer, im.data.byteOffset).copy(out.data, y * w * 4, ((y + y0) * im.width + x0) * 4, ((y + y0) * im.width + x0 + w) * 4);
-  return out;
-}
-
 const src = process.argv[2];
 if (!src) { console.error('Usage : node dev/tools/import-pixel.js <dossier des PNG bruts>'); process.exit(1); }
 fs.mkdirSync(OUT, { recursive: true });
 const manifest = {};
 for (const [kind, file] of Object.entries(FILES)) {
-  const im = crop(png.decode(fs.readFileSync(path.join(src, file + '.png'))));
+  const im = png.crop(png.decode(fs.readFileSync(path.join(src, file + '.png'))));
   const grid = { w: im.width, h: im.height, get: (x, y) => im.data[(y * im.width + x) * 4 + 3] >= 128 };
   const zoom = ZOOM[kind] || 1, signature = !!SIGNATURE[kind];
   const points = S.polygon(S.erode(S.mask(grid), INSET)).map(([x, y]) => [x - im.width / 2, y - im.height / 2]);

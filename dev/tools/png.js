@@ -1,4 +1,4 @@
-// dev/tools/png.js — PNG minimal (RGBA ou RGB 8 bits, sans entrelacement) : lecture et écriture, sans dépendance (zlib de Node).
+// dev/tools/png.js — PNG minimal (RGBA ou RGB 8 bits, sans entrelacement) : lecture, écriture et recadrage, sans dépendance (zlib de Node).
 'use strict';
 const zlib = require('zlib');
 
@@ -43,4 +43,14 @@ function encode({ width: w, height: h, data }) {
   return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(raw, { level: 9 })), chunk('IEND', Buffer.alloc(0))]);
 }
 
-module.exports = { decode, encode };
+// Recadre une image { width, height, data } sur ses pixels opaques (alpha ≥ 128) ; erreur si elle est vide.
+function crop(im) {
+  let x0 = im.width, y0 = im.height, x1 = -1, y1 = -1;
+  for (let y = 0; y < im.height; y++) for (let x = 0; x < im.width; x++) if (im.data[(y * im.width + x) * 4 + 3] >= 128) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+  if (x1 < 0) throw new Error('image vide');
+  const w = x1 - x0 + 1, h = y1 - y0 + 1, out = { width: w, height: h, data: Buffer.alloc(w * h * 4) };
+  for (let y = 0; y < h; y++) Buffer.from(im.data.buffer, im.data.byteOffset).copy(out.data, y * w * 4, ((y + y0) * im.width + x0) * 4, ((y + y0) * im.width + x0 + w) * 4);
+  return out;
+}
+
+module.exports = { decode, encode, crop };
