@@ -60,11 +60,14 @@
     fillPoly(g, pts, M.edge);
     if (S.target) { fillPoly(g, pts, M.dark, 1); FP.bossSkin.piece(g, pts, S.target, 1); } else fillPoly(g, pts, FP.palette.boss.weak[1], 1);
   }
-  function targetCore(g, pts, t, S) {
-    const pulse = Math.round((Math.sin(t * 6) + 1) / 2);
-    if (!S.target) { fillPoly(g, pts, FP.palette.boss.weak[0], 2 + pulse); return; }
-    const b = box(pts);
-    FP.px.disc(g, Math.round((b.x0 + b.x1) / 2), Math.round((b.y0 + b.y1) / 2), 1 + pulse, FP.palette.boss.weak[0]);
+  // Pompe (v5.7.0) : un piston bat au-dessus de la cible, à pumpHz, et la pousse le voit pomper le flux vers le cœur.
+  function targetCore(g, pts, t, S, M) {
+    const pulse = Math.round((Math.sin(t * 6) + 1) / 2), b = box(pts), cx = Math.round((b.x0 + b.x1) / 2);
+    if (!S.target) fillPoly(g, pts, FP.palette.boss.weak[0], 2 + pulse);
+    else FP.px.disc(g, cx, Math.round((b.y0 + b.y1) / 2), 1 + pulse, FP.palette.boss.weak[0]);
+    const stroke = Math.round((Math.sin(t * FP.TAU * FP.config.boss.pipes.pumpHz) + 1) * 1.5), w = Math.max(2, Math.round((b.x1 - b.x0) / 4));
+    FP.px.rect(g, cx - Math.floor(w / 2), Math.round(b.y0) - 2 - stroke, w, 2 + stroke, M.light);
+    FP.px.rect(g, cx - Math.floor(w / 2) - 1, Math.round(b.y0) - 3 - stroke, w + 2, 1, M.edge);
   }
 
   // Tête : bloc sombre tant qu'elle est blindée ; à nu, une lueur pulse au centre ; transpercée, une épave.
@@ -77,6 +80,9 @@
     if (!open) return;
     const r = 2 + Math.round((Math.sin(t * 5) + 1) * 1.5);
     FP.px.disc(g, cx, cy, r + 1, P.glow[1]); FP.px.disc(g, cx, cy, r, P.weak[1]); FP.px.disc(g, cx, cy, Math.max(1, r - 2), P.weak[0]);
+    // À nu (v5.7.0) : des étincelles jaillissent du cœur privé de son flux.
+    const R = Math.round((b.x1 - b.x0) / 2) + 1, f = Math.floor(t * 12);
+    for (let k = 0; k < 3; k++) { const a = ((f + k * 5) % 12) / 12 * FP.TAU; FP.px.rect(g, Math.round(cx + Math.cos(a) * R), Math.round(cy + Math.sin(a) * R * .6), 1, 1, P.weak[0]); }
   }
 
   // Plaque du blindage : son image répétée à l'échelle 1 depuis le coin de la plaque (une plaque haute et étroite ne la déforme pas),
@@ -229,9 +235,12 @@
     for (const tg of bl.targets) {
       if (!seen(tg.solid)) continue;
       const pts = artPoly(tg.solid, cam, shift(tg.solid));
-      if (tg.solid.off) wreck(g, pts, t, M); else targetCore(g, pts, t, S);
+      if (tg.solid.off) wreck(g, pts, t, M); else targetCore(g, pts, t, S, M);
     }
-    if (seen(bl.head.solid)) head(g, artPoly(bl.head.solid, cam), state.bossFight.headOpen, bl.head.solid.off, t, M, S);
+    // Cœur blindé (v5.7.0) : il tremble au rythme des pulsations qui arrivent, tant qu'une pompe tourne.
+    const C = FP.config.boss.pipes, fed = !state.bossFight.headOpen && bl.targets.some(q => !q.solid.off);
+    const jolt = fed ? (Math.floor(t * C.flowSpeed / C.pulseGap * 2) % 2) * C.headShake : 0;
+    if (seen(bl.head.solid)) head(g, artPoly(bl.head.solid, cam, jolt), state.bossFight.headOpen, bl.head.solid.off, t, M, S);
     turrets(g, state, bl, cam, M, S, bands);
   }
 

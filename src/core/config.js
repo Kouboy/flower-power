@@ -264,7 +264,11 @@
         nucleaire: { channelMin: 44, strike: 1.1, rest: .9, speedup: .18, shot: { speed: 520, gap: 1.5 } }
       },
       defense: { warn: 1.2, warnMin: 1 },
-      shot: { track: 1, lock: .3, r: 5 }
+      shot: { track: 1, lock: .3, r: 5 },
+      // Tuyaux et pompes (v5.7.0, render/boss-pipes.js, render/boss.js) : width = épaisseur d'un tuyau (px d'art) ; flowSpeed = vitesse du
+      // flux (px/s) ; pulseGap = écart entre deux pulsations (px) ; leakRate = gouttes par seconde d'un tuyau rompu ; pumpHz = battement du
+      // piston d'une pompe ; headShake = tremblement du cœur blindé (px d'art) au rythme du flux qui arrive.
+      pipes: { width: 6, flowSpeed: 60, pulseGap: 26, leakRate: 6, pumpHz: 1.6, headShake: 1 }
     },
 
     // Boutique de fin de pousse (v4.6.0) : 3 articles tirés (un à −50 %), achetés au score ; effets sur la pousse suivante.

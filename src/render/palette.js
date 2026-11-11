@@ -109,7 +109,10 @@
     glow: ['#e86a28', '#ff9a3a'], smoke: ['#5a5650', '#8a867e'], hole: '#0c0806',
     // Menaces (render/boss.js) : hachures orange de la défense, ligne de visée qui suit puis figée, projectile ; explosions (render/boss-fx.js).
     hatch: ['#ff9a3a', '#e86a28'], aim: ['#ffb060', '#ff3a2a'], shot: ['#ff3a2a', '#ffff80'], boom: ['#fff8b0', '#ffff80', '#ffe838', '#ff9a3a', '#e86a28'],
-    flash: '#f8ffd0'   // éclair du point faible détruit (render/boss-fx.js) : presque blanc, chaud, loin du rose pâle des limaces
+    flash: '#f8ffd0',   // éclair du point faible détruit (render/boss-fx.js) : presque blanc, chaud, loin du rose pâle des limaces
+    // Tuyaux de la machine (v5.7.0, render/boss-pipes.js) : fonte rouillée ; flow : flux vert toxique qui va des pompes au cœur (clair, sombre).
+    pipe: { body: '#5a4a3e', light: '#80684f', dark: '#2e241c', joint: '#3a3028', rust: '#8a4a22' },
+    flow: ['#9cff5a', '#3f9a2a']
   };
 
   // Teinte de terre du milieu id à une profondeur relative d (0 = surface, 1 = fond) ; k de 0 (claire) à 3 (sombre).
