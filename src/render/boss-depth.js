@@ -1,7 +1,7 @@
 // render/boss-depth.js — la profondeur des boss (v5.6.0) : arrière-plan d'usine lointain, répété, plus lent que la caméra ;
 // éléments de premier plan flous, plus rapides que la caméra, qui peuvent traverser l'écran. Les menaces passent par-dessus (frame.js).
 // Lit     : state.{seed, time, camera.y, run.milieu, bossFight.collapse, bossThreats.rooms}, state.world.{width, viewH, bossLevel},
-//           FP.config.{milieux, boss.skin (back, fore, blur, foreAlpha, foreAlphaNoBlur, foreGap, foreShake, backDim)},
+//           FP.config.{milieux, boss.skin (back, fore, blur, foreAlpha, foreAlphaNoBlur, foreGap, foreX, foreShake, backDim)},
 //           FP.bossSkin.{image, fore}, FP.bossPlan.zone, FP.palette.boss.milieux, FP.px (dont layer), FP.createRng.
 // Écrit   : rien dans l'état (la toile reçue ; une toile floutée en cache par image du premier plan).
 // Expose  : FP.bossDepth.parallax(y, camY, f) → y - camY × f (pur) ; place(seed, milieuId, top, bottom, viewH, n) → [{ i, y, x }] (pur) ;
@@ -21,7 +21,7 @@
     const K = FP.config.boss.skin, m = FP.config.milieux.findIndex(q => q.id === milieuId);
     const rng = FP.createRng((seed ^ Math.imul(m + 1, 0x85ebca6b) ^ 0xb055) >>> 0), out = [];
     for (let y = top + rng.next() * viewH, k = 0; y <= bottom; k++) {
-      out.push({ i: k % n, y, x: rng.next() });
+      out.push({ i: k % n, y, x: rng.range(K.foreX[0], K.foreX[1]) });
       y += viewH * rng.range(K.foreGap[0], K.foreGap[1]);
     }
     return out;
