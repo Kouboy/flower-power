@@ -274,7 +274,10 @@
       machines: { border: 1, drops: 5, puffs: 4, arcs: 3 },
       // Tourelles (v5.7.0, render/boss-machines.js) : size = diamètre du socle, barrel = longueur du canon, recoil = recul au tir (px d'art) ;
       // recoilTime = durée du recul (s).
-      turret: { size: 16, barrel: 10, recoil: 3, recoilTime: .15 }
+      turret: { size: 16, barrel: 10, recoil: 3, recoilTime: .15 },
+      // Terre (v5.7.0, render/boss-earth.js) : fringe = profondeur maximale de la frange qui ronge un bord extérieur (px d'art) ; clods =
+      // densité des mottes ; roots = racines par bord ; pocket = demi-largeur de la poche de terre sur la tête (px).
+      earth: { fringe: 5, clods: .35, roots: 2, pocket: 34 }
     },
 
     // Boutique de fin de pousse (v4.6.0) : 3 articles tirés (un à −50 %), achetés au score ; effets sur la pousse suivante.
