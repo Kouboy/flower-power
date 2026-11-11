@@ -3,16 +3,19 @@
 // extérieure. Au repos, la machine attend ; à l'avertissement, elle se prépare (gouttes, bouffées, veilleuses, lueur et arcs) ; au coup,
 // son effet remplit toute la moitié frappée (rideau de béton, jets de vapeur, nappe de flammes, rideau vert). Zones et durées inchangées
 // (play/boss-threats.js) ; le liseré de la zone visée est dessiné avec les autres menaces (render/boss.js, drawThreats).
-// Lit     : state.{time, camera.y, run.milieu, bossFight.destroyed, bossThreats.rooms}, state.world.{viewH, bossLevel.rooms},
-//           FP.config.{milieux, boss.machines (drops, puffs, arcs)}, FP.bossThreats.timing, FP.palette.boss.{milieux, machines}, FP.px.
+// Lit     : state.{time, camera.y, run.milieu, plant.tip, bossFight.destroyed, bossThreats.{rooms, aim, cooldown, shots}},
+//           state.world.{viewH, bossLevel.{rooms, turrets, head}}, FP.config.{milieux, boss.{machines (drops, puffs, arcs), turret, shot.track,
+//           ramp[id].shot.gap}}, FP.bossThreats.timing, FP.bossSkin.{image, piece}, FP.palette.boss.{milieux, machines, aim, weak}, FP.px.
 // Écrit   : rien dans l'état (la toile reçue).
 // Expose  : FP.bossMachines.layout(room, half, defense) → { kind, mount: 'ceiling' | 'wall', side (-1 gauche, 1 droite), x0, y0, x1, y1 }
-//           (pur, pixels du monde : la moitié de salle et l'emplacement de sa machine) ; FP.bossMachines.draw(g, state).
+//           (pur, pixels du monde : la moitié de salle et l'emplacement de sa machine) ;
+//           FP.bossMachines.turretPose(state, q) → { x, y, angle, muzzle: { x, y }, lens (0..1), recoil (px d'art) } (pur) ;
+//           FP.bossMachines.draw(g, state) : machines, puis tourelles.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
   const MOUNT = { beton: 'ceiling', radiation: 'ceiling', vapeur: 'wall', flamme: 'wall' };
-  const HOUSING = 6, NOZZLE_GAP = 12;   // hauteur d'une machine de plafond, écart entre deux buses (px d'art)
+  const HOUSING = 6, NOZZLE_GAP = 12, SHAKE_HZ = 30;   // hauteur d'une machine de plafond, écart entre deux buses (px d'art)
 
   function layout(room, half, defense) {
     const mid = (room.x0 + room.x1) / 2;
@@ -87,6 +90,40 @@
     }
   }
 
+  // --- Tourelles (v5.7.0) : socle vissé au mur, canon qui pivote vers la pousse pendant la visée, lentille qui passe de l'orange au rouge,
+  // recul et éclair juste après le tir. Au repos, le canon regarde l'intérieur de la salle. ---
+  function turretPose(state, q) {
+    const T = FP.config.boss.turret, th = state.bossThreats, bl = state.world.bossLevel, room = bl.rooms.find(r => r.id === q.room);
+    const aim = th.aim && th.aim.turret === q.id ? th.aim : null, to = aim && (aim.lockedAt || state.plant.tip);
+    const rest = room && q.x > (room.x0 + room.x1) / 2 ? Math.PI : 0;
+    const angle = to ? Math.atan2(to.y - q.y, to.x - q.x) : rest;
+    let recoil = 0;
+    const id = FP.config.milieux[state.run.milieu].id, age = FP.config.boss.ramp[id].shot.gap - th.cooldown;
+    if (!th.aim && age >= 0 && age < T.recoilTime) {
+      const mine = th.shots.some(s => Math.hypot(s.x - s.vx * age - q.x, s.y - s.vy * age - q.y) < 12);
+      if (mine) recoil = T.recoil * (1 - age / T.recoilTime);
+    }
+    const reach = (T.barrel - recoil) * FP.px.SCALE;
+    return { x: q.x, y: q.y, angle, muzzle: { x: q.x + Math.cos(angle) * reach, y: q.y + Math.sin(angle) * reach },
+      lens: aim ? Math.min(1, aim.t / FP.config.boss.shot.track) : 0, recoil };
+  }
+
+  function turrets(g, state, bl, cam, M, img) {
+    if (bl.head.solid.off) return;   // boss transpercé : ses tourelles tombent avec ses parois
+    const T = FP.config.boss.turret, A = FP.palette.boss.aim, top = state.camera.y, H = state.world.viewH, r = Math.floor(T.size / 2);
+    for (const q of bl.turrets) {
+      if (q.y < top - 20 || q.y > top + H + 20) continue;
+      const e = state.bossThreats.rooms[q.room], dx = e && e.stage === 'warn' ? (Math.floor(state.time * SHAKE_HZ) % 2 ? 1 : -1) : 0;   // la salle avertie tremble
+      const p = turretPose(state, q), x = FP.px.toArt(q.x) + dx, y = FP.px.toArt(q.y) - cam;
+      if (img) FP.bossSkin.piece(g, [[x - r, y - r], [x + r, y - r], [x + r, y + r], [x - r, y + r]], img);
+      else { FP.px.disc(g, x, y, r, M.edge); FP.px.disc(g, x, y, r - 1, M.dark); FP.px.disc(g, x, y, r - 4, M.light); }
+      const mx = FP.px.toArt(p.muzzle.x) + dx, my = FP.px.toArt(p.muzzle.y) - cam;
+      FP.px.line(g, x, y, mx, my, M.edge, 3); FP.px.line(g, x, y, mx, my, M.body);
+      if (p.lens > 0) FP.px.disc(g, mx, my, 1 + Math.round(p.lens * 1.5), p.lens < .6 ? A[0] : A[1]);
+      if (p.recoil > T.recoil / 2) FP.px.disc(g, Math.round(mx + Math.cos(p.angle) * 3), Math.round(my + Math.sin(p.angle) * 3), 3, FP.palette.boss.weak[0]);
+    }
+  }
+
   function draw(g, state) {
     const bl = state.world.bossLevel;
     if (!bl) return;
@@ -103,7 +140,8 @@
         if (hit && e.stage === 'warn') warn(g, b, a, e.t, Math.min(1, e.t / W), Q, K);
       }
     }
+    turrets(g, state, bl, cam, M, FP.bossSkin.image(id, 'turret'));
   }
 
-  FP.bossMachines = { layout, draw };
+  FP.bossMachines = { layout, turretPose, draw };
 })();

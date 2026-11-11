@@ -39,7 +39,8 @@ FP.test('bossSkin: cible, tête, plaque, tourelle en image quand elle existe', (
     FP.assert(at(bl.targets[0].solid).includes(imgs.target), 'cible');
     FP.assert(at(bl.plates[0].solid).includes(imgs.plate), 'plaque');
     FP.assert(at(bl.head.solid).includes(imgs.head), 'tête blindée');
-    FP.assert(at(bl.turrets[0]).includes(imgs.turret), 'tourelle');
+    s.camera.y = bl.turrets[0].y - s.world.viewH / 2; const gm = skinCtx(); FP.bossMachines.draw(gm, s);
+    FP.assert(gm.images.some(q => q.img === imgs.turret), 'tourelle (socle, render/boss-machines.js)');
     s.bossFight.headOpen = true; FP.assert(!at(bl.head.solid).includes(imgs.head), 'tête à nu : la lueur du code');
   } finally { FP.bossSkin._reset(); }
 });

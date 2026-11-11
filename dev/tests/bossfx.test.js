@@ -168,8 +168,9 @@ FP.test('bossRender: la salle avertie tremble (calque et tourelles) d’un pixel
   const s = bfxRun(1), bl = s.world.bossLevel, r = bl.rooms[0], tur = bl.turrets.find(q => q.room === r.id);
   const M = FP.palette.boss.milieux[s.world.milieu];
   s.camera.y = (r.y0 + r.y1) / 2 - s.world.viewH / 2;
-  const frame = (stage, time) => { s.bossThreats.rooms[r.id] = { stage, t: .2, half: 1 }; s.time = time; const g = bfxBlitCtx(); FP.bossRender.draw(g, s); return g; };
-  const lens = (g) => { const q = g.rects.find(o => o.c === M.edge && o.w === 9 && Math.abs(o.x + 4 - FP.px.toArt(tur.x)) <= 1); return q && q.x + 4; };
+  const frame = (stage, time) => { s.bossThreats.rooms[r.id] = { stage, t: .2, half: 1 }; s.time = time; const g = bfxBlitCtx(); FP.bossRender.draw(g, s); FP.bossMachines.draw(g, s); return g; };
+  const R = Math.floor(FP.config.boss.turret.size / 2);   // v5.7.0 : socle de la tourelle (render/boss-machines.js), rangée la plus large 2R + 1
+  const lens = (g) => { const q = g.rects.find(o => o.c === M.edge && o.w === 2 * R + 1 && Math.abs(o.x + R - FP.px.toArt(tur.x)) <= 1); return q && q.x + R; };
   const a = frame('warn', 0), b = frame('warn', 1.01 / 30);
   FP.assert(a.blits.some(q => q.dx !== 0) && b.blits.some(q => q.dx !== 0), 'rangées de la salle décalées');
   FP.assert(a.blits.every(q => Math.abs(q.dx) <= 1), '± 1 pixel');

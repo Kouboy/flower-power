@@ -52,3 +52,42 @@ FP.test('bossRender: liseré pendant l’avertissement, plus de hachures', () =>
   machState(s, room, 'strike', 1); const g = skinCtx(); FP.bossRender.drawThreats(g, s);
   FP.assertEqual(g.rects.filter(r => A.includes(r.c)).length, 0, 'pas de liseré pendant le coup');
 });
+
+// Tourelles (v5.7.0) : visibles, le canon vise la pousse, recul et éclair au tir ; elles tombent avec le boss transpercé.
+const turState = (m = 1) => { const s = pipeRun(m), q = s.world.bossLevel.turrets[0]; s.camera.y = q.y - s.world.viewH / 2; return { s, q }; };
+const turBox = (s) => { const g = skinCtx(); FP.bossMachines.draw(g, s); return g; };
+FP.test('bossMachines: la tourelle mesure au moins 14 pixels d’art', () => {
+  for (const m of [0, 1, 2, 3]) {
+    const { s, q } = turState(m), x = FP.px.toArt(q.x), y = FP.px.toArt(q.y) - FP.px.toArt(s.camera.y);
+    s.bossThreats.rooms = {}; const g = turBox(s);
+    const near = g.rects.filter(r => Math.abs(r.x - x) <= 12 && Math.abs(r.y - y) <= 12);
+    const xs = near.flatMap(r => [r.x, r.x + r.w]), ys = near.flatMap(r => [r.y, r.y + r.h]);
+    FP.assert(Math.max(...xs) - Math.min(...xs) >= 14 && Math.max(...ys) - Math.min(...ys) >= 14, 'taille, milieu ' + m);
+  }
+});
+FP.test('bossMachines: le canon vise la pousse, puis le point figé', () => {
+  const { s, q } = turState(1);
+  s.plant.tip = { x: q.x + 100, y: q.y + 60 };
+  s.bossThreats.aim = { turret: q.id, t: .5, lockedAt: null };
+  let p = FP.bossMachines.turretPose(s, q);
+  FP.assert(Math.abs(p.angle - Math.atan2(60, 100)) < .05, 'vers la pousse ' + p.angle);
+  FP.assert(p.lens > 0, 'la lentille s’allume');
+  s.bossThreats.aim.lockedAt = { x: q.x - 80, y: q.y }; p = FP.bossMachines.turretPose(s, q);
+  FP.assert(Math.abs(Math.abs(p.angle) - Math.PI) < .05, 'vers le point figé ' + p.angle);
+  FP.assert(Math.hypot(p.muzzle.x - q.x, p.muzzle.y - q.y) > 6, 'la bouche du canon est au bout du canon');
+});
+FP.test('bossMachines: recul et éclair après un tir, puis repos', () => {
+  const { s, q } = turState(1), id = FP.config.milieux[1].id, gap = FP.config.boss.ramp[id].shot.gap;
+  s.bossThreats.aim = null; s.bossThreats.cooldown = gap - .02;
+  s.bossThreats.shots = [{ x: q.x + 400 * .02, y: q.y, vx: 400, vy: 0, solid: {} }];
+  FP.assert(FP.bossMachines.turretPose(s, q).recoil > 0, 'recul juste après le tir');
+  s.bossThreats.cooldown = gap - 1; s.bossThreats.shots = [{ x: q.x + 400, y: q.y, vx: 400, vy: 0, solid: {} }];
+  FP.assertEqual(FP.bossMachines.turretPose(s, q).recoil, 0, 'au repos ensuite');
+  const other = s.world.bossLevel.turrets.find(t => Math.hypot(t.x - q.x, t.y - q.y) > 40);
+  if (other) { s.bossThreats.cooldown = gap - .02; s.bossThreats.shots = [{ x: q.x + 8, y: q.y, vx: 400, vy: 0, solid: {} }]; FP.assertEqual(FP.bossMachines.turretPose(s, other).recoil, 0, 'seule la tourelle qui a tiré recule'); }
+});
+FP.test('bossMachines: tourelles absentes quand la tête est transpercée', () => {
+  const { s, q } = turState(1); s.bossThreats.rooms = {};
+  const before = turBox(s).rects.length; s.world.bossLevel.head.solid.off = true;
+  FP.assert(turBox(s).rects.length < before, 'moins de dessin sans tourelles');   // le socle lui-même : bossdeath.test.js
+});

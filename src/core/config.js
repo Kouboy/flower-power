@@ -271,7 +271,10 @@
       pipes: { width: 6, flowSpeed: 60, pulseGap: 26, leakRate: 6, pumpHz: 1.6, headShake: 1 },
       // Machines de défense (v5.7.0, render/boss-machines.js, render/boss.js) : border = épaisseur du liseré de la zone visée (px d'art) ;
       // drops, puffs, arcs = gouttes de béton, bouffées de vapeur par buse, arcs de radiation pendant l'avertissement.
-      machines: { border: 1, drops: 5, puffs: 4, arcs: 3 }
+      machines: { border: 1, drops: 5, puffs: 4, arcs: 3 },
+      // Tourelles (v5.7.0, render/boss-machines.js) : size = diamètre du socle, barrel = longueur du canon, recoil = recul au tir (px d'art) ;
+      // recoilTime = durée du recul (s).
+      turret: { size: 16, barrel: 10, recoil: 3, recoilTime: .15 }
     },
 
     // Boutique de fin de pousse (v4.6.0) : 3 articles tirés (un à −50 %), achetés au score ; effets sur la pousse suivante.

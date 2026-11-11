@@ -32,7 +32,7 @@
 
   // Images du milieu (v5.6.0, render/boss-skin.js) : null pour chaque rôle sans image prête.
   const skinOf = (id) => ({ matter: FP.bossSkin.image(id, 'matter'), target: FP.bossSkin.image(id, 'target'), head: FP.bossSkin.image(id, 'head'),
-    plate: FP.bossSkin.image(id, 'plate'), turret: FP.bossSkin.image(id, 'turret') });
+    plate: FP.bossSkin.image(id, 'plate') });
 
   // Paroi : contour, puis la matière du boss ancrée au monde (ox, oy : origine du monde dans g) ou, sans image, reflet, liseré d'ombre
   // à 3 pixels du bord et corps ; rivets réguliers le long du haut.
@@ -157,7 +157,7 @@
     FP.px.rect(g, xa, ya, w, yb - ya, A[1]); FP.px.rect(g, xb - w, ya, w, yb - ya, A[1]);
   }
 
-  // Ligne de visée : de la tourelle vers la pointe (orange, pointillée) ; une fois figée, rouge et continue, prolongée au-delà du point visé.
+  // Ligne de visée : de la bouche du canon (render/boss-machines.js) vers la pointe (orange, pointillée) ; une fois figée, rouge et continue, prolongée au-delà du point visé.
   function aimLine(g, tur, to, locked, cam) {
     const P = FP.palette.boss, ax = FP.px.toArt(tur.x), ay = FP.px.toArt(tur.y) - cam;
     const dx = FP.px.toArt(to.x) - ax, dy = FP.px.toArt(to.y) - cam - ay, len = Math.hypot(dx, dy) || 1, reach = locked ? 400 : len;
@@ -175,27 +175,6 @@
     FP.px.disc(g, x, y, Math.max(1, FP.px.toArt(FP.config.boss.shot.r) - 2), P.shot[1]);
   }
 
-  // Tourelle : son image ou un socle, et une lentille (rouge quand elle vise), décalée de dx quand sa salle tremble.
-  function turret(g, q, aiming, cam, M, dx, S) {
-    const x = FP.px.toArt(q.x) + dx, y = FP.px.toArt(q.y) - cam;
-    if (S.turret) {
-      g.drawImage(S.turret, x - Math.floor(S.turret.width / 2), y - Math.floor(S.turret.height / 2));
-      if (aiming) FP.px.disc(g, x, y, 1, FP.palette.boss.weak[1]);
-      return;
-    }
-    FP.px.disc(g, x, y, 4, M.edge); FP.px.disc(g, x, y, 3, M.light); FP.px.disc(g, x, y, 1, aiming ? FP.palette.boss.weak[1] : M.dark);
-  }
-
-  // Tourelles (socle et lentille) : avec le corps du boss, sous le premier plan ; elles tremblent avec leur salle.
-  function turrets(g, state, bl, cam, M, S, bands) {
-    const th = state.bossThreats, top = state.camera.y, H = state.world.viewH;
-    for (const q of bl.head.solid.off ? [] : bl.turrets) {   // boss transpercé : ses tourelles tombent avec ses parois
-      if (q.y < top - 10 || q.y > top + H + 10) continue;
-      const b = bands.find(s => s.id === q.room);
-      turret(g, q, !!th.aim && th.aim.turret === q.id, cam, M, b ? b.dx : 0, S);
-    }
-  }
-
   // Menaces (v5.6.0 : à part, dessinées après tout le reste du monde, premier plan compris) : défenses, visée, projectiles.
   function drawThreats(g, state) {
     const bl = state.world.bossLevel;
@@ -203,7 +182,7 @@
     const th = state.bossThreats, top = state.camera.y, H = state.world.viewH, cam = FP.px.toArt(top);
     for (const r of bl.rooms) if (th.rooms[r.id] && r.y1 >= top && r.y0 <= top + H) danger(g, r, th.rooms[r.id], cam, state);
     const a = th.aim, tur = a && bl.turrets.find(q => q.id === a.turret), to = a && (a.lockedAt || state.plant.tip);
-    if (tur && to) aimLine(g, tur, to, !!a.lockedAt, cam);
+    if (tur && to) aimLine(g, FP.bossMachines.turretPose(state, tur).muzzle, to, !!a.lockedAt, cam);   // v5.7.0 : depuis la bouche du canon
     for (const s of th.shots) shot(g, s, cam);
   }
 
@@ -226,7 +205,6 @@
     const C = FP.config.boss.pipes, fed = !state.bossFight.headOpen && bl.targets.some(q => !q.solid.off);
     const jolt = fed ? (Math.floor(t * C.flowSpeed / C.pulseGap * 2) % 2) * C.headShake : 0;
     if (seen(bl.head.solid)) head(g, artPoly(bl.head.solid, cam, jolt), state.bossFight.headOpen, bl.head.solid.off, t, M, S);
-    turrets(g, state, bl, cam, M, S, bands);
   }
 
   FP.bossRender = { draw, drawThreats, fillPoly, artPoly };

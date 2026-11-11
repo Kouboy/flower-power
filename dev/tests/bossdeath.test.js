@@ -140,9 +140,10 @@ FP.test('music: la mort du boss coupe la musique net, le jingle de victoire écl
 FP.test('bossDeath: boss transpercé, ses tourelles ne restent pas sur les ruines', () => bossDirect(() => {
   const s = bdHead(), bl = s.world.bossLevel, q = bl.turrets[0], saved = FP.px.disc, at = [];
   s.camera.y = q.y - s.world.viewH / 2;
-  FP.px.disc = (g, x, y, r, c) => { if (Math.abs(x - FP.px.toArt(q.x)) <= 1 && r === 4) at.push(c); return saved(g, x, y, r, c); };
+  const R = Math.floor(FP.config.boss.turret.size / 2);   // v5.7.0 : le socle de la tourelle (render/boss-machines.js)
+  FP.px.disc = (g, x, y, r, c) => { if (Math.abs(x - FP.px.toArt(q.x)) <= 1 && r === R) at.push(c); return saved(g, x, y, r, c); };
   try {
-    FP.bossRender.draw(recCtx(), s); FP.assert(at.length > 0, 'tourelle dessinée tant que le boss vit');
-    at.length = 0; bdPierce(s); FP.bossRender.draw(recCtx(), s); FP.assertEqual(at.length, 0, 'plus de tourelle');
+    FP.bossMachines.draw(recCtx(), s); FP.assert(at.length > 0, 'tourelle dessinée tant que le boss vit');
+    at.length = 0; bdPierce(s); FP.bossMachines.draw(recCtx(), s); FP.assertEqual(at.length, 0, 'plus de tourelle');
   } finally { FP.px.disc = saved; }
 }));

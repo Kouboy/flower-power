@@ -83,7 +83,7 @@
     bossSeed: (n) => { n('bell', 76, .08, .14, .8); n('bell', 83, .16, .14, .9); n('bell', 88, .24, .35, 1); },
     bossWarn: (n, z, d, dur) => { for (let at = 0; at < dur - .06; at += .16 - .1 * at / dur) { const k = at / dur; n('organ', 52 + Math.round(16 * k), at, .1, .8 + .5 * k); } },   // dur : l'avertissement (s), qui monte et accélère jusqu'au coup
     bossLock: (n, z) => { n('clav', 88, 0, .04, 1.3); z(0, .04, .1, 3200, 'highpass'); },
-    bossShot: (n, z) => { z(0, .16, .12, 1800, 'bandpass'); n('pluck', 60, 0, .1, 1, .5); },
+    bossShot: (n, z) => { z(0, .16, .19, 1800, 'bandpass'); n('pluck', 60, 0, .1, 1.6, .5); },   // v5.7.0 : plus fort (on ne sentait pas les tourelles)
     bossHead: (n, z, d) => { d('kick', 0, 1.8); d('snare', .05, 1); z(0, .8, .16, 300, 'lowpass'); n('sub', 31, 0, .8, 1.5); for (const [m, at] of [[52, .1], [59, .18], [64, .26]]) n('brass', m, at, .3, 1.1); },
     // Mort du boss : chaque paroi explose (coup sourd, souffle), puis s'effondre (grondement, ferraille qui tombe) ; le paroxysme lance le jingle (audio.js).
     bossBlast: (n, z, d) => { d('kick', 0, 1.6); z(0, .5, .14, 500, 'lowpass'); n('sub', 33, 0, .4, 1.2, .8); n('clonk', 43, .02, .15, .7); },
