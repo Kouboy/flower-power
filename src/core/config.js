@@ -264,13 +264,7 @@
         nucleaire: { channelMin: 44, strike: 1.1, rest: .9, speedup: .18, shot: { speed: 520, gap: 1.5 } }
       },
       defense: { warn: 1.2, warnMin: 1 },
-      shot: { track: 1, lock: .3, r: 5 },
-      // Habillage (v5.6.0, render/boss-depth.js) : fore = vitesses du premier plan relatives à la caméra (du 1er au 2e élément) ;
-      // blur = flou du premier plan (pixels d'art, préparé une fois) ; foreAlpha, foreAlphaNoBlur = opacité du premier plan, avec ou sans
-      // flou possible ; foreGap = course de caméra entre deux éléments du premier plan (hauteurs d'écran, min et max) ; foreX = abscisses
-      // possibles du centre d'un élément (fraction de la largeur) ; foreShake = secousse en plus du premier plan (pixels d'art) pendant un
-      // avertissement et à la mort du boss.
-      skin: { fore: [1.4, 1.8], blur: 1.5, foreAlpha: .85, foreAlphaNoBlur: .6, foreGap: [1, 1.5], foreX: [.12, .88], foreShake: 2 }
+      shot: { track: 1, lock: .3, r: 5 }
     },
 
     // Boutique de fin de pousse (v4.6.0) : 3 articles tirés (un à −50 %), achetés au score ; effets sur la pousse suivante.

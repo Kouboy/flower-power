@@ -9,8 +9,8 @@ const png = require('./png.js');
 
 const ROOT = path.join(__dirname, '..', '..');
 const ART = path.join(ROOT, 'assets', 'boss', 'art.js');
-// Rôle de assets/boss/art.js → fichier ; fore : deux éléments de premier plan.
-const FILES = { matter: 'matiere', target: 'cible', head: 'tete', plate: 'plaque', turret: 'tourelle', fore: ['avant-chaine', 'avant-grillage'] };
+// Rôle de assets/boss/art.js → fichier.
+const FILES = { matter: 'matiere', target: 'cible', head: 'tete', plate: 'plaque', turret: 'tourelle' };
 const WHOLE = new Set(['matiere']);
 
 const [id, src] = process.argv.slice(2);
