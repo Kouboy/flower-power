@@ -71,7 +71,7 @@ FP.test('music: le morceau suit le milieu du niveau, sa variante la pousse', () 
 FP.test('music: niveau de boss → thème du boss, après une mort et sur la graine après la boutique', () => {
   const s = mRun(); inMilieu(s, 2, true); FP.assertEqual(FP.music.songFor(s).song, 'dechargeBoss');
   s.mode = 'ready'; FP.assertEqual(FP.music.songFor(s).song, 'dechargeBoss');
-  s.mode = 'shop'; FP.assertEqual(FP.music.songFor(s).song, 'shop');
+  s.mode = 'shop'; FP.assertEqual(FP.music.songFor(s).song, 'shop-decharge');
   s.mode = 'dying'; FP.level.generate(s); FP.assertEqual(FP.music.songFor(s).song, 'dechargeBoss');
 });
 FP.test('music: pendant l’éclosion, le morceau du niveau joué continue jusqu’à la régénération', () => {
@@ -95,15 +95,25 @@ FP.test('music: sur un niveau de boss, la couche de surface reste ouverte', () =
 });
 FP.test('music: relais en fin de mesure seulement entre deux variantes du même milieu', () => {
   FP.assert(FP.music.relay('friche0', 'friche1')); FP.assert(!FP.music.relay('nucleaire2', 'friche0'));
-  FP.assert(!FP.music.relay('industrie1', 'industrieBoss')); FP.assert(!FP.music.relay('shop', 'industrieBoss'));
+  FP.assert(!FP.music.relay('industrie1', 'industrieBoss')); FP.assert(!FP.music.relay('shop-industrie', 'industrieBoss'));
   FP.assert(!FP.music.relay(null, 'friche0'));
 });
 FP.test('music: écran de fin, titre et boutique inchangés', () => {
   const s = mRun(); inMilieu(s, 2, true);
   s.mode = 'won'; FP.assertEqual(FP.music.songFor(s).song, 'title'); s.mode = 'menu'; FP.assertEqual(FP.music.songFor(s).song, 'title');
-  s.mode = 'shop'; FP.assertEqual(FP.music.songFor(s).song, 'shop');
+  s.mode = 'shop'; FP.assertEqual(FP.music.songFor(s).song, 'shop-decharge');
 });
 FP.test('music: fin de la saison 1 — du boss du nucléaire droit au titre, sans repasser par la friche', () => {
   const s = mRun(); inMilieu(s, 3, true); s.mode = 'bloom'; s.flow.won = true;   // nextMilieu a armé l'écran de fin
   inMilieu(s, 0, false); FP.assertEqual(FP.music.songFor(s).song, 'title');
+});
+
+// v5.9.0 : le Shop prend la tonique du biome du niveau qui suit (déjà généré quand le bon s'ouvre), même si Lobbying le regénère.
+FP.test('music: le Shop suit le biome du niveau', () => {
+  for (const [i, id] of [[0, 'friche'], [1, 'industrie'], [2, 'decharge'], [3, 'nucleaire']]) {
+    const s = mRun(); inMilieu(s, i, false); s.mode = 'shop';
+    FP.assertEqual(FP.music.songFor(s).song, 'shop-' + id);
+    FP.level.generate(s, { lobbying: true }); FP.assertEqual(FP.music.songFor(s).song, 'shop-' + id, 'après Lobbying ' + id);
+    FP.assert(FP.songs[FP.music.songFor(s).song], 'morceau existant ' + id);
+  }
 });

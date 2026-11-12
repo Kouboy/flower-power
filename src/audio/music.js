@@ -4,7 +4,8 @@
 // Lit     : state.mode, state.run.step, state.bossFight.destroyed, FP.config.boss.tempoPerTarget, state.plant.{tip,corruption,toxicTimer,stemCount}, state.world.{surfaceY,height,milieu,boss,bossLevel.head.solid.off},
 //           state.graze.active, state.query.grazes, FP.certificate.canRestart, FP.songs, FP.sequencer.
 // Écrit   : rien dans l'état (le moteur audio uniquement).
-// Expose  : FP.music.{songFor (morceau du milieu du niveau, sa variante selon la pousse, thème du boss, reggae en boutique ; boss transpercé :
+// Expose  : FP.music.{songFor (morceau du milieu du niveau, sa variante selon la pousse, thème du boss, reggae en boutique dans la tonique du milieu du niveau
+//           (v5.9.0 : 'shop-' + world.milieu) ; boss transpercé :
 //           silence coupé net, cut, le temps de son jingle de victoire), layersFor,
 //           tempoFor, relay (relais en fin de mesure ?), filterFor, trebleFor, grazeDuck} (purs, testés), FP.music.update(state, events, backend),
 //           FP.music.MUSIC_GAIN.
@@ -19,7 +20,7 @@
   function songFor(state) {
     if (!state || state.mode === 'splash') return { song: null, gain: 0 };   // le son n'est pas encore débloqué
     if (state.mode === 'menu' || state.mode === 'won') return { song: 'title', gain: 1 };   // écran de fin de saison (v4.9.0) : le thème du titre
-    if (state.mode === 'shop') return { song: 'shop', gain: 1 };   // reggae de la boutique
+    if (state.mode === 'shop') return { song: 'shop-' + state.world.milieu, gain: 1 };   // reggae de la boutique, dans la tonique du niveau qui suit
     if (state.mode === 'over') return FP.certificate && FP.certificate.canRestart(state) ? { song: 'title', gain: .5 } : { song: null, gain: 0 };
     // Le morceau du niveau généré (v4.10.0) : il change sous le noir du fondu, quand le niveau est régénéré. Sur un niveau
     // de boss, le thème du boss ; sinon une variante par pousse, en boucle : la nouvelle tige démarre sur sa propre progression.
@@ -30,7 +31,8 @@
     if (state.world.boss) return { song: id + 'Boss', gain: 1 };
     return { song: id + ((Math.max(1, state.plant.stemCount) - 1) % FP.songs.variants(id)), gain: 1 };
   }
-  const isGame = (name) => !!name && name !== 'title' && name !== 'shop';   // un morceau de jeu (pas le titre ni la boutique)
+  const isShop = (name) => !!name && name.startsWith('shop-');
+  const isGame = (name) => !!name && name !== 'title' && !isShop(name);   // un morceau de jeu (pas le titre ni la boutique)
   // Relais en fin de mesure entre deux variantes du même milieu ; tout autre changement coupe net.
   const milieuOf = (name) => name.replace(/\d+$/, '');
   const relay = (from, to) => isGame(from) && isGame(to) && /\d$/.test(from) && /\d$/.test(to) && milieuOf(from) === milieuOf(to);
@@ -80,7 +82,7 @@
         atBar: relay(p.current(), want.song) });   // variante suivante : relais en fin de mesure
     }
     if (isGame(p.current())) { p.setTempo(tempoFor(state)); p.setLayers(layersFor(state)); }
-    if (p.current() === 'shop') p.setLayers(layersFor(state));
+    if (isShop(p.current())) p.setLayers(layersFor(state));
     for (const e of events || []) {
       if (e.type === 'death') m.duckUntil = Math.max(m.duckUntil, now + DEATH_TIME);
       if (e.type === 'blossom') m.duckUntil = Math.max(m.duckUntil, now + BLOSSOM_TIME);
