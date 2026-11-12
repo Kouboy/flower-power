@@ -4,6 +4,8 @@ const thrRoom = (s, k = 0) => s.world.bossLevel.rooms[k];
 const thrIn = (r, fx) => ({ x: r.x0 + (r.x1 - r.x0) * fx, y: (r.y0 + r.y1) / 2 });
 const thrStage = (s, r) => (s.bossThreats.rooms[r.id] || { stage: 'idle' }).stage;
 const thrStep = (s, dt = 1 / 60) => { FP.bossThreats.update(s, dt); };
+// v5.9.0 : jusqu'au coup, puis jusqu'à ce qu'il soit déployé (defense.deploy s).
+const thrStrike = (s, r) => { for (let i = 0; i < 400 && thrStage(s, r) !== 'strike'; i++) thrStep(s); for (let i = 0; i < 60 && FP.bossThreats.deployed(s.bossThreats.rooms[r.id]) < 1; i++) thrStep(s); };
 
 FP.test('threats: timing par boss — avertissement 1,2 s, coup et repos du boss, accélération par cible, avertissement ≥ 1 s', () => {
   for (const id of MILIEUX) {
@@ -46,7 +48,7 @@ FP.test('threats: la salle s’éveille quand la pointe entre et vise sa moitié
 FP.test('threats: la zone ne couvre jamais plus de la moitié de la salle', () => {
   for (const milieu of [0, 1, 2, 3]) for (const fx of [.1, .9]) {
     const s = thrRun(milieu), r = thrRoom(s); s.plant.tip = thrIn(r, fx);
-    for (let i = 0; i < 400 && thrStage(s, r) !== 'strike'; i++) thrStep(s);
+    thrStrike(s, r);
     FP.assertEqual(thrStage(s, r), 'strike'); FP.assertEqual(r.zone.off, false); FP.assert(s.world.solids.includes(r.zone), 'dans world.solids');
     const xs = r.zone.collision.map(q => r.zone.x + q[0]), ys = r.zone.collision.map(q => r.zone.y + q[1]);
     FP.assert(Math.max(...xs) - Math.min(...xs) <= (r.x1 - r.x0) / 2 + 1, 'largeur');
@@ -60,7 +62,7 @@ FP.test('threats: la zone ne couvre jamais plus de la moitié de la salle', () =
 FP.test('threats: le coup touche la moitié visée, épargne l’autre', () => {
   const s = thrRun(), r = thrRoom(s), a = thrIn(r, .2), b = thrIn(r, .8);
   s.plant.tip = a;
-  for (let i = 0; i < 400 && thrStage(s, r) !== 'strike'; i++) thrStep(s);
+  thrStrike(s, r);
   FP.assert(FP.collision.queryPoint(s.world, a.x, a.y, false).solid === r.zone, 'touché');
   FP.assert(FP.collision.queryPoint(s.world, b.x, b.y, false).solid !== r.zone, 'épargné');
 });
@@ -125,7 +127,7 @@ FP.test('threats: hors niveau de boss, rien', () => {
 FP.test('threats: un coup sur la pointe tue (kind defense, « emportée par la défense »)', () => {
   const s = bossRun(440, 1); FP.plant.launch(s); s.events.length = 0;
   const r = thrRoom(s); s.plant.tip = thrIn(r, .2);
-  for (let i = 0; i < 400 && thrStage(s, r) !== 'strike'; i++) thrStep(s);
+  thrStrike(s, r);
   s.events.length = 0; FP.collision.update(s); FP.flow.update(s, 0);
   const d = s.events.find(e => e.type === 'death');
   FP.assert(d && d.cause === 'solid' && d.kind === 'defense', 'mort par la défense');
@@ -340,4 +342,54 @@ FP.test('shots: la rafale s’annule avec la visée (défense qui frappe, tête 
   FP.assert(s.bossThreats.burst, 'rafale en cours');
   s.world.bossLevel.head.solid.off = true; thrStep(s);
   FP.assertEqual(s.bossThreats.burst, null, 'annulée'); FP.assertEqual(s.bossThreats.shots.length, 0);
+});
+
+// v5.9.0 (retour de jeu : « je peux mourir alors que l'effet n'est pas encore complètement déployé ») : le coup jaillit de sa machine
+// et la zone mortelle suit son front.
+const thrArea = (b) => (b.x1 - b.x0) * (b.y1 - b.y0);
+FP.test('threats: le coup se déploie depuis sa machine', () => {
+  const room = { x0: 100, y0: 1000, x1: 300, y1: 1200 };
+  for (const d of ['beton', 'radiation', 'vapeur', 'flamme']) for (const half of [-1, 1]) {
+    const r = { ...room, defense: d }, full = FP.bossMachines.layout(r, half, d), at = d + ' ' + half;
+    for (const p of [0, .5, 1]) {
+      const b = FP.bossThreats.reach(r, half, p);
+      FP.assert(b.x0 >= full.x0 - 1e-9 && b.x1 <= full.x1 + 1e-9 && b.y0 >= full.y0 - 1e-9 && b.y1 <= full.y1 + 1e-9, 'dans la moitié ' + at + ' p=' + p);
+      FP.assert(Math.abs(thrArea(b) - p * thrArea(full)) < 1e-6, 'aire ' + at + ' p=' + p);
+      if (FP.bossThreats.MOUNT[d] === 'ceiling') FP.assertEqual(b.y0, full.y0, 'collé au plafond ' + at);
+      else FP.assertEqual(half < 0 ? b.x0 : b.x1, half < 0 ? full.x0 : full.x1, 'collé à la paroi ' + at);
+    }
+    FP.assertEqual(JSON.stringify(FP.bossThreats.reach(r, half, 1)), JSON.stringify({ x0: full.x0, y0: full.y0, x1: full.x1, y1: full.y1 }), 'plein ' + at);
+  }
+});
+
+FP.test('threats: la zone mortelle suit le front', () => {
+  for (const m of [0, 1, 2, 3]) {
+    const s = thrRun(m), r = thrRoom(s), D = FP.config.boss.defense.deploy, mount = FP.bossThreats.MOUNT[r.defense];
+    FP.assertEqual(D, .25);
+    s.plant.tip = thrIn(r, .2);
+    for (let i = 0; i < 400 && thrStage(s, r) !== 'strike'; i++) thrStep(s);
+    const e = s.bossThreats.rooms[r.id]; FP.assertEqual(e.t, 0); FP.assertEqual(r.zone.off, true, 'rien au premier instant ' + m);
+    thrStep(s, D / 2);
+    const full = FP.bossMachines.layout(r, e.half, r.defense), xm = (full.x0 + full.x1) / 2;
+    const near = mount === 'ceiling' ? { x: xm, y: full.y0 + 2 } : { x: e.half < 0 ? full.x0 + 2 : full.x1 - 2, y: (full.y0 + full.y1) / 2 };
+    const far = mount === 'ceiling' ? { x: xm, y: full.y1 - 2 } : { x: e.half < 0 ? full.x1 - 2 : full.x0 + 2, y: (full.y0 + full.y1) / 2 };
+    FP.assertEqual(r.zone.off, false, 'à mi-course ' + m);
+    FP.assert(FP.collision.distanceTo(r.zone, near.x, near.y) <= 0, 'près de la machine ' + m);
+    FP.assert(FP.collision.distanceTo(r.zone, far.x, far.y) > 0, 'loin du front ' + m);
+    thrStep(s, D);
+    const xs = r.zone.collision.map(q => r.zone.x + q[0]), ys = r.zone.collision.map(q => r.zone.y + q[1]);
+    FP.assert(Math.abs(Math.min(...xs) - full.x0) < 1e-6 && Math.abs(Math.max(...xs) - full.x1) < 1e-6 && Math.abs(Math.min(...ys) - full.y0) < 1e-6 && Math.abs(Math.max(...ys) - full.y1) < 1e-6, 'toute la moitié ' + m);
+  }
+});
+
+FP.test('threats: une nouvelle génération ou le calme remet la zone off', () => {
+  const s = thrRun(), r = thrRoom(s); s.plant.tip = thrIn(r, .2);
+  for (let i = 0; i < 400 && thrStage(s, r) !== 'strike'; i++) thrStep(s);
+  thrStep(s, .1); FP.assertEqual(r.zone.off, false);
+  s.mode = 'dying'; thrStep(s); FP.assertEqual(r.zone.off, true, 'calme');
+  s.mode = 'playing'; s.plant.tip = thrIn(r, .2);
+  for (let i = 0; i < 400 && thrStage(s, r) !== 'strike'; i++) thrStep(s);
+  thrStep(s, .1); FP.level.generate(s);
+  FP.assert(s.world.bossLevel.rooms.every(q => q.zone.off), 'génération');
+  FP.assertEqual(FP.bossThreats.deployed({ stage: 'warn', t: 5 }), 0); FP.assertEqual(FP.bossThreats.deployed({ stage: 'strike', t: 5 }), 1);
 });

@@ -263,7 +263,7 @@
         decharge: { channelMin: 47, strike: 1.03, rest: 1.03, speedup: .16, shot: { speed: 480, gap: 1.75 } },
         nucleaire: { channelMin: 44, strike: 1.1, rest: .9, speedup: .18, shot: { speed: 520, gap: 1.5 } }
       },
-      defense: { warn: 1.2, warnMin: 1 },
+      defense: { warn: 1.2, warnMin: 1, deploy: .25 },   // v5.9.0 : deploy = temps (s) que met le coup à traverser sa moitié ; la zone mortelle suit son front
       shot: { track: .7, lock: .3, r: 5, burst: 3, burstGap: .12, spread: 8 },   // v5.8.0 : visée plus courte, rafale de 3 tirs (l'axe, puis ± spread°) espacés de burstGap s
       // Tuyaux et pompes (v5.7.0, render/boss-pipes.js, render/boss.js) : width = épaisseur d'un tuyau (px d'art) ; flowSpeed = vitesse du
       // flux (px/s) ; pulseGap = écart entre deux pulsations (px) ; leakRate = gouttes par seconde d'un tuyau rompu ; pumpHz = battement du

@@ -118,3 +118,49 @@ FP.test('bossMachines: la console de chaque tourelle s’accroche à un mur (4 b
     }
   }
 });
+
+// v5.9.0 : l'effet se dessine dans la part déployée seulement, et la couvre ; une fois déployée, la vapeur atteint le bout de la moitié.
+const machEffect = (g) => { const fx = new Set(Object.values(FP.palette.boss.machines).flat()); return g.rects.filter(r => fx.has(r.c)); };
+FP.test('machines: l’effet dessiné reste dans la part déployée', () => {
+  const C = FP.config.boss.machines.cover, D = FP.config.boss.defense.deploy;
+  for (const m of [0, 1, 2, 3]) {
+    const s = pipeRun(m); s.time = 2;
+    for (const room of s.world.bossLevel.rooms) for (const half of [-1, 1]) {
+      machState(s, room, 'strike', half, D / 2);
+      const g = skinCtx(); FP.bossMachines.draw(g, s);
+      const b = FP.bossThreats.reach(room, half, .5), cam = FP.px.toArt(s.camera.y), H = Math.ceil(s.world.viewH / FP.px.SCALE);
+      const xa = FP.px.toArt(b.x0), xb = FP.px.toArt(b.x1), ya = FP.px.toArt(b.y0) - cam, yb = FP.px.toArt(b.y1) - cam;
+      const lay = FP.bossMachines.layout(room, half, room.defense), la = FP.px.toArt(lay.x0), lb = FP.px.toArt(lay.x1), ly = FP.px.toArt(lay.y0) - cam, lyb = FP.px.toArt(lay.y1) - cam;
+      // l'effet du coup : dans la moitié, hors de la carcasse (plafond : un rect tout entier dans la carcasse ; paroi : tout entier dans la colonne des buses)
+      const housing = (r) => (FP.bossThreats.MOUNT[room.defense] === 'ceiling' ? r.y + r.h <= ly + 7 : (half < 0 ? r.x + r.w <= la + 4 : r.x >= lb - 4));
+      const rows = new Map();
+      for (const r of machEffect(g)) {
+        const inHalf = r.x >= la - 1 && r.x + r.w <= lb + 1 && r.y >= ly - 1 && r.y + r.h <= lyb + 1;
+        if (!inHalf || housing(r)) continue;
+        FP.assert(r.x >= xa - 1 && r.x + r.w <= xb + 1 && r.y >= ya - 1 && r.y + r.h <= yb + 1, `effet hors du front ${room.id} ${half} biome ${m} : ${JSON.stringify(r)} / ${[xa, xb, ya, yb]}`);
+        for (let y = r.y; y < r.y + r.h; y++) { const set = rows.get(y) || new Set(); for (let x = Math.max(r.x, xa); x < Math.min(r.x + r.w, xb); x++) set.add(x); rows.set(y, set); }
+      }
+      for (let y = Math.max(0, ya); y < Math.min(H, yb); y++) FP.assert((rows.get(y) || new Set()).size >= C * (xb - xa), `${room.id} ${half} rangée ${y}, biome ${m}`);
+    }
+  }
+});
+
+FP.test('machines: la vapeur atteint le bout de la moitié', () => {
+  let seen = 0;
+  for (const m of [0, 1, 2, 3]) {
+    const s = pipeRun(m);
+    for (const room of s.world.bossLevel.rooms) {
+      if (room.defense !== 'vapeur') continue;
+      for (const half of [-1, 1]) for (const t of [.3, .47, .81]) {
+        s.time = 2 + t; machState(s, room, 'strike', half, t); seen++;
+        const g = skinCtx(); FP.bossMachines.draw(g, s);
+        const b = FP.bossMachines.layout(room, half, 'vapeur'), cam = FP.px.toArt(s.camera.y), H = Math.ceil(s.world.viewH / FP.px.SCALE);
+        const far = half < 0 ? FP.px.toArt(b.x1) - 1 : FP.px.toArt(b.x0), ya = Math.max(0, FP.px.toArt(b.y0) - cam), yb = Math.min(H, FP.px.toArt(b.y1) - cam);
+        const steam = new Set(FP.palette.boss.machines.steam), hit = new Set();
+        for (const r of g.rects) if (steam.has(r.c) && r.x <= far && r.x + r.w > far) for (let y = r.y; y < r.y + r.h; y++) hit.add(y);
+        for (let y = ya; y < yb; y++) FP.assert(hit.has(y), `vapeur courte ${room.id} ${half} rangée ${y}`);
+      }
+    }
+  }
+  FP.assert(seen > 0, 'au moins une salle de vapeur');
+});
