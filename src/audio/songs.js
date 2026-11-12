@@ -1,8 +1,8 @@
 // audio/songs.js — partitions de la bande-son (données) : le thème du titre « psyché 60s qui a mal tourné » (A) et la musique
 // de jeu « funk 70s hanté » (B), dont l'orgue et le sitar de A forment des couches de danger.
-// Lit     : FP.score (thème du boss).
+// Lit     : FP.score (thème du boss), FP.tonality.pitch (le reggae de la boutique).
 // Écrit   : rien.
-// Expose  : FP.songs.title, FP.songs['shop-' + milieuId] (reggae de la boutique dans la tonique du milieu, v5.9.0 : SHOP_SHIFT), FP.songs.friche0..3 (variantes de la musique de la friche, une par pousse),
+// Expose  : FP.songs.title, FP.songs['shop-' + milieuId] (reggae de la boutique dans la tonique du milieu, v5.9.0 ; et son mode, v5.10.0 : FP.tonality), FP.songs.friche0..3 (variantes de la musique de la friche, une par pousse),
 //           FP.songs.fricheBoss (thème du boss de la friche, v4.10.0), FP.songs.variants(milieuId) (nombre de variantes d'un milieu)
 //           = { bpm, bars, beatsPerBar, pcs, notes, swing? }, FP.songs.jingles.{death,blossom,record,bossVictory} ; note = { beat, dur, inst, midi?, vel?, layer, bend?, detune? (cents) }.
 //           swing : retard aléatoire maximal (s) de la caisse claire et des charlestons (« boîte à rythmes qui boite »).
@@ -140,11 +140,10 @@
   }
 
   // --- Boutique (v4.6.0) : reggae d'ascenseur pollué, 72 BPM, mi mineur naturel (mi fa♯ sol la si do ré) ; v5.9.0 : transposé de
-  // `shift` demi-tons dans la tonique du milieu (SHOP_SHIFT), pour ne pas jurer avec sa musique et celle de son boss ------
+  // dans la tonique et le mode du milieu (FP.tonality), pour ne pas jurer avec sa musique et celle de son boss ------
   // One drop (grosse caisse et caisse claire sur le 3e temps), basse ronde qui traîne, skank désaccordé qui vacille
   // (cassette restée au soleil), bubble d'orgue, ritournelle de cloches discrète dont la dernière note dérape.
-  const SHOP_SHIFT = { friche: 0, industrie: 5, decharge: 3, nucleaire: 0 };   // mi, la, sol, mi
-  function shop(shift) {
+  function shop(id) {
     const n = [], L = 'groove', s16 = .25;
     const chords = [[64, 67, 71], [64, 69, 72], [62, 66, 69], [64, 67, 71]], roots = [40, 45, 38, 40];   // Em Am D Em
     const bass = [[0, 0, 6], [7, 0, 2], [10, 7, 3], [14, 5, 2]];
@@ -161,14 +160,15 @@
       for (const i of [3, 7, 11, 15]) n.push({ beat: at(bar, i * s16), dur: s16 * .6, inst: 'bubble', midi: ch[2] - 12, vel: .7, layer: L });
       for (const [i, m, d, bend] of bells[bar]) n.push({ beat: at(bar, i * s16), dur: d * s16, inst: 'bell', midi: m, vel: .35, layer: L, ...(bend ? { bend } : {}) });
     }
-    for (const x of n) if (x.midi !== undefined) x.midi += shift;
-    return { bpm: 72, bars: 4, beatsPerBar: 4, pcs: [4, 6, 7, 9, 11, 0, 2].map(p => (p + shift) % 12), notes: sorted(n) };
+    for (const x of n) if (x.midi !== undefined) x.midi = FP.tonality.pitch(x.midi, id);
+    const pcs = [...new Set([4, 6, 7, 9, 11, 0, 2].map(p => FP.tonality.pitch(48 + p, id) % 12))];
+    return { bpm: 72, bars: 4, beatsPerBar: 4, pcs, notes: sorted(n) };
   }
 
   // Nombre de variantes d'un milieu : les clés « <milieu><chiffre> » présentes (les fichiers de milieu s'y ajoutent).
   const variants = (id) => Object.keys(FP.songs).filter(k => k.startsWith(id) && /^\d+$/.test(k.slice(id.length))).length;
   FP.songs = { title: title(), jingles: jingles(), variants };
-  for (const [id, shift] of Object.entries(SHOP_SHIFT)) FP.songs['shop-' + id] = shop(shift);
+  for (const id of ['friche', 'industrie', 'decharge', 'nucleaire']) FP.songs['shop-' + id] = shop(id);
   VARIANTS.forEach((_, v) => { FP.songs['friche' + v] = friche(v); });
   FP.songs.fricheBoss = fricheBoss();
 })();

@@ -2,6 +2,13 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v5.10.0 — Sons accordés
+
+- tous les sons accordés prennent la tonique et le mode du biome, comme la musique : fanfare d'éclosion, mort, victoire du boss, départ, germination, bonus, sons du boss, foreuse (mi à la Friche, la mineur à la Zone industrielle, sol mineur à la Décharge, mi majeur au Site nucléaire) ; une note étrangère à la gamme glisse vers sa voisine du mode (`src/audio/tonality.js`) ; au menu et sur l'écran de fin, les sons restent en mi avec le thème du titre ;
+- l'air du Shop prend aussi le mode du biome ;
+- le frôlement se déclenche à 32 px d'un obstacle (22 auparavant) ;
+- banc : 728 tests (725 lancés ; les 3 du robot de combat non relancés pour ces réglages).
+
 ## v5.9.0 — Boss juste
 
 - le coup des défenses jaillit de sa machine et traverse la moitié frappée en 0,25 s ; on ne meurt que là où il est déjà arrivé (la zone mortelle suit son front, et le dessin montre exactement cette part) ; la vapeur couvre toute la largeur ;

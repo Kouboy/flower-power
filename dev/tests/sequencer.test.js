@@ -86,7 +86,7 @@ FP.test('sequencer: le désaccord d’une note part avec elle', () => {
 
 // v5.9.0 (retour de jeu : « c'est souvent dissonant de passer de l'un à l'autre ») : le reggae prend la tonique du biome.
 FP.test('songs: le Shop dans la tonique de chaque biome', () => {
-  const TONIC = { friche: 4, industrie: 9, decharge: 7, nucleaire: 4 }, SHIFT = { friche: 0, industrie: 5, decharge: 3, nucleaire: 0 };
+  const TONIC = { friche: 4, industrie: 9, decharge: 7, nucleaire: 4 };
   const ref = FP.songs['shop-friche'];
   FP.assertEqual(FP.songs.shop, undefined, 'plus de reggae sans biome');
   for (const id of Object.keys(TONIC)) {
@@ -95,7 +95,7 @@ FP.test('songs: le Shop dans la tonique de chaque biome', () => {
     FP.assertEqual(s.bpm, 72, id);
     const bass = s.notes.find(n => n.inst === 'bass');
     FP.assertEqual(((bass.midi % 12) + 12) % 12, TONIC[id], 'tonique ' + id);
-    FP.assertEqual(JSON.stringify(s.pcs), JSON.stringify(ref.pcs.map(p => (p + SHIFT[id]) % 12)), 'gamme ' + id);
+    FP.assertEqual(JSON.stringify(s.pcs), JSON.stringify([...new Set(ref.pcs.map(p => FP.tonality.pitch(48 + p, id) % 12))]), 'gamme ' + id);   // v5.10.0 : et le mode
     for (const n of s.notes) if (n.midi !== undefined) FP.assert(s.pcs.includes(((n.midi % 12) + 12) % 12), id + ' hors gamme : ' + n.midi);
   }
 });
