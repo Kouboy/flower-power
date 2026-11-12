@@ -1,14 +1,16 @@
 // ui/hud.js — HUD en pixels d'art, dans les coins du bas : graines restantes, ÉcoCrédits™, et seulement quand ils sont actifs,
 // le pollen et le combo ; « TOUCHER POUR POUSSER » entre deux niveaux.
 // Lit     : state.mode, state.time, state.plant.reserves, state.score.{eco,flowerBonus,combo}, state.run.{milieu,saison}, state.world.bossLevel, state.bossFight.{destroyed,headOpen}, FP.config.{plant.seeds,text.ready,milieux},
-//           FP.bossFx.flying (graines rendues encore en vol), FP.palette.{seed,boss}, FP.font, FP.px, FP.view.ui.
+//           FP.bossFx.flying (graines rendues encore en vol), FP.palette.{seed,boss}, FP.font, FP.px, FP.view.{ui,safe}.
 // Écrit   : state.fx.ui.hud uniquement (animations : score affiché, graines perdues ou gagnées, rebonds).
-// Expose  : FP.hud.items(state) (seeds : la réserve moins les graines rendues encore en vol, flying : celles-ci ; … boss : { targets: [bool ×3] (vrai une fois détruite), head: 'armored' | 'open' }, ou null hors boss), FP.hud.layout(h), FP.hud.seedCenter(i, h) (purs, testés), FP.hud.draw(g, state) (toile d'interface), FP.hud.{MARGIN, SEED_SCALE, SEED_STEP}.
+// Expose  : FP.hud.items(state) (seeds : la réserve moins les graines rendues encore en vol, flying : celles-ci ; … boss : { targets: [bool ×3] (vrai une fois détruite), head: 'armored' | 'open' }, ou null hors boss), FP.hud.layout(h), FP.hud.seedCenter(i, h) (purs, testés), FP.hud.draw(g, state) (toile d'interface),
+//           FP.hud.safe() → { top, right, bottom, left } (v5.11.0 : marges sûres, px d'interface — au moins MARGIN, et la marge système du
+//           téléphone, FP.view.safe, plus PAD), FP.hud.{MARGIN, SEED_SCALE, SEED_STEP}.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
-  const MARGIN = 4;                 // pixels d'art depuis les bords
-  const SEED_SCALE = 2, SEED_STEP = 16, LOST_TIME = .4, CRACK_TIME = .25, POP_TIME = .25;   // graines ×2 : lisibles sur téléphone ; POP_TIME : éclat d'une graine qui arrive
+  const MARGIN = 8, PAD = 4;        // pixels d'interface depuis les bords (16 px CSS) ; PAD : en plus de l'encoche ou de la barre d'accueil (v5.11.0)
+  const SEED_SCALE = 2, SEED_STEP = 14, LOST_TIME = .4, CRACK_TIME = .25, POP_TIME = .25;   // graines ×2 : lisibles sur téléphone (pas de 14 : v5.11.0, marges sûres) ; POP_TIME : éclat d'une graine qui arrive
   const BOSS_STEP = 11;             // écart des icônes du boss (trois cibles, puis la tête)
   const EMPTY = '#3a2a1e', SPROUT = '#7fb04a', MILIEU = '#c9a87a';
 
@@ -29,13 +31,19 @@
   }
 
   // Rangées du HUD pour une toile de hauteur h ; textY : l'aide et « TOUCHER POUR POUSSER », au-dessus du combo.
+  // Marges sûres (v5.11.0) : pas de texte ni de compteur sous l'encoche, la barre d'accueil ou dans les coins arrondis.
+  function safe() {
+    const s = (FP.view && FP.view.safe) || {}, m = (k) => Math.max(MARGIN, Math.ceil((s[k] || 0) + (s[k] ? PAD : 0)));
+    return { top: m('top'), right: m('right'), bottom: m('bottom'), left: m('left') };
+  }
+
   function layout(h) {
-    const seedY = h - MARGIN - 7 * SEED_SCALE, scoreY = h - MARGIN - FP.font.HEIGHT * 2, comboY = scoreY - 11;
-    return { seedY, scoreY, comboY, pollenY: seedY - 13, textY: comboY - 13 };
+    const S = safe(), seedY = h - S.bottom - 7 * SEED_SCALE, scoreY = h - S.bottom - FP.font.HEIGHT * 2, comboY = scoreY - 11;
+    return { seedY, scoreY, comboY, pollenY: seedY - 13, textY: comboY - 13, top: S.top, left: S.left, right: S.right };
   }
 
   // Centre de la graine i (pixels de la toile d'interface de hauteur h) : là où atterrit la graine rendue par un assaut (render/boss-fx.js).
-  const seedCenter = (i, h) => ({ x: MARGIN + i * SEED_STEP + 3 * SEED_SCALE, y: layout(h).seedY + 3.5 * SEED_SCALE });
+  const seedCenter = (i, h) => { const L = layout(h); return { x: L.left + i * SEED_STEP + 3 * SEED_SCALE, y: L.seedY + 3.5 * SEED_SCALE }; };
 
   function memo(state, it) {
     const ui = state.fx.ui || (state.fx.ui = {});
@@ -63,8 +71,8 @@
   }
 
   // Boss : trois cibles (carré plein, éteint et fumant une fois détruite), puis la tête (blindée : plaque grise ; à nu : lueur) ; sous le nom du milieu.
-  function bossIcons(g, boss, w) {
-    const P = FP.palette.boss, { px } = FP, n = boss.targets.length + 1, x0 = Math.round(w / 2 - (n - 1) * BOSS_STEP / 2), y = MARGIN + FP.font.HEIGHT + 7;
+  function bossIcons(g, boss, w, top) {
+    const P = FP.palette.boss, { px } = FP, n = boss.targets.length + 1, x0 = Math.round(w / 2 - (n - 1) * BOSS_STEP / 2), y = top + FP.font.HEIGHT + 7;
     boss.targets.forEach((done, i) => {
       const x = x0 + i * BOSS_STEP;
       px.rect(g, x - 4, y - 4, 9, 9, FP.font.INK);
@@ -91,30 +99,30 @@
       const lost = t - (m.lostAt[i] !== undefined ? m.lostAt[i] : -9);
       const full = i < it.seeds || lost < LOST_TIME, crack = i >= it.seeds && lost < LOST_TIME && lost >= 0;
       const pop = i < it.seeds && t - (m.gainAt[i] !== undefined ? m.gainAt[i] : -9) < POP_TIME;
-      seed(g, MARGIN + i * SEED_STEP, seedY, full && !(crack && lost > CRACK_TIME), crack, pop);
+      seed(g, L.left + i * SEED_STEP, seedY, full && !(crack && lost > CRACK_TIME), crack, pop);
     }
 
     // Score : compteur d'arcade qui rattrape le vrai score en ~0,5 s ; un score qui baisse (nouveau run) est repris tel quel.
     m.shownEco = it.eco < m.shownEco ? it.eco : m.shownEco + (it.eco - m.shownEco) * Math.min(1, dt * 8);
     if (Math.abs(it.eco - m.shownEco) < 1) m.shownEco = it.eco;
     const scoreY = L.scoreY;
-    const scoreW = font.draw(g, 'Ɇ' + Math.round(m.shownEco).toLocaleString('fr-FR'), w - MARGIN, scoreY, { scale: 2, color: font.COLORS.eco, align: 'right' });
-    if (it.mult > 1) font.draw(g, '×' + it.mult, w - MARGIN - scoreW - 4, scoreY + font.HEIGHT, { color: font.COLORS.gold, align: 'right' });   // saison 2 et plus
-    font.draw(g, it.milieu, w / 2, MARGIN, { align: 'center', color: MILIEU });   // le milieu, discret, en haut
-    if (it.boss) bossIcons(g, it.boss, w);
+    const scoreW = font.draw(g, 'Ɇ' + Math.round(m.shownEco).toLocaleString('fr-FR'), w - L.right, scoreY, { scale: 2, color: font.COLORS.eco, align: 'right' });
+    if (it.mult > 1) font.draw(g, '×' + it.mult, w - L.right - scoreW - 4, scoreY + font.HEIGHT, { color: font.COLORS.gold, align: 'right' });   // saison 2 et plus
+    font.draw(g, it.milieu, w / 2, L.top, { align: 'center', color: MILIEU });   // le milieu, discret, en haut
+    if (it.boss) bossIcons(g, it.boss, w, L.top);
 
     // Pollen et combo : apparaissent d'un petit bond, au-dessus des graines et du score.
     if (it.pollen !== m.pollen) { if (it.pollen) m.pollenAt = t; m.pollen = it.pollen; }
     if (it.pollen) {
       const y = L.pollenY - (t - m.pollenAt < .15 ? 2 : 0);
-      flower(g, MARGIN + 1, y);
-      font.draw(g, '+' + it.pollen, MARGIN + 10, y, { color: font.COLORS.pink });
+      flower(g, L.left + 1, y);
+      font.draw(g, '+' + it.pollen, L.left + 10, y, { color: font.COLORS.pink });
     }
     if (it.combo !== m.combo) { if (it.combo) m.comboAt = t; m.combo = it.combo; }
-    if (it.combo) font.draw(g, 'COMBO ×' + it.combo, w - MARGIN, L.comboY - (t - m.comboAt < .12 ? 1 : 0), { color: font.COLORS.gold, align: 'right' });
+    if (it.combo) font.draw(g, 'COMBO ×' + it.combo, w - L.right, L.comboY - (t - m.comboAt < .12 ? 1 : 0), { color: font.COLORS.gold, align: 'right' });
 
     if (it.ready && Math.floor(t * 2) % 2 === 0) font.draw(g, FP.config.text.ready, w / 2, L.textY, { align: 'center' });
   }
 
-  FP.hud = { items, layout, seedCenter, draw, MARGIN, SEED_SCALE, SEED_STEP };
+  FP.hud = { items, layout, seedCenter, safe, draw, MARGIN, SEED_SCALE, SEED_STEP };
 })();

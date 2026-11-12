@@ -1,7 +1,7 @@
 // ui/certificate.js — écran de fin : un « certificat d'éco-responsabilité » qui monte sur le jeu assombri, ses lignes qui
 // s'écrivent, puis le tampon « VALIDÉ* » qui s'abat ; la relance n'est possible qu'après le tampon.
 // Lit     : state.time, state.score.{flowers,eco,recordBefore}, state.plant.{stemCount,assaults}, state.run.{bosses,saison,milieu,playtest,done}, state.flow.overReason,
-//           FP.config.text.{certificate,again}, FP.font, FP.view.ui.
+//           FP.config.text.{certificate,again}, FP.font, FP.view.ui, FP.hud.safe (v5.11.0 : sous l'encoche).
 // Écrit   : state.fx.ui.{overAt, readyAfter, certCue} uniquement (début de la fin de partie ; délai avant relance, tampon compris).
 // Expose  : FP.certificate.lines(state), FP.certificate.canRestart(state), FP.certificate.cues(state) (purs hors mémoire, testés),
 //           FP.certificate.draw(g, state),
@@ -99,7 +99,7 @@
     const stampAt = S.stampAt, stampH = 26;
     ui.readyAfter = stampAt + SLAM;
     const ph = 8 + items.reduce((s, it) => s + it.h, 0) + stampH + 14, pw = w - 2 * MARGIN;
-    const py0 = Math.max(6, Math.round((h - ph) / 2) - 8), kr = clamp01((age - VEIL) / RISE);
+    const py0 = Math.max(FP.hud.safe().top, Math.round((h - ph) / 2) - 8), kr = clamp01((age - VEIL) / RISE);
     if (kr <= 0) return;
     const shake = age > stampAt && age < stampAt + SLAM + .15 ? (Math.floor(age * 60) % 2 ? 1 : -1) : 0;
     const px = MARGIN + shake, py = Math.round(py0 + (1 - ease(kr)) * (h - py0));

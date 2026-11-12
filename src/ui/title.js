@@ -1,6 +1,7 @@
 // ui/title.js — écran titre arcade. Au lancement, il est figé sous « PRESS TO START » (écran d'accueil) : le premier appui
 // débloque le son, passe en plein écran sur écran tactile et réveille le titre (logo animé, « TOUCHER POUR POUSSER »).
-// Lit     : state.mode, state.time, FP.config.text.{ready,pressStart,footer,record,saison,playtest}, FP.config.milieux, FP.params.sansboss, FP.scoring.records, FP.logo, FP.font, FP.view.ui.
+// Lit     : state.mode, state.time, FP.config.text.{ready,pressStart,footer,record,saison,playtest}, FP.config.milieux, FP.params.sansboss, FP.scoring.records, FP.logo, FP.font, FP.view.ui,
+//           FP.hud.safe (v5.11.0 : textes du bas et icône du son dans les marges sûres).
 // Écrit   : wake() — appelé par ui/menu.js au premier appui — passe state.mode de 'splash' à 'menu' et note state.fx.ui.awakeAt.
 // Expose  : FP.title.draw(g, state), FP.title.clock(state), FP.title.wake(state), FP.title.wantsFullscreen(pointerType),
 //           FP.title.iconRect(w, h), FP.title.hitIcon(artX, artY, w, h) (icône du réglage du son ; purs, testés), FP.title.playtestLine(params),
@@ -28,8 +29,8 @@
   const wantsFullscreen = (pointerType) => pointerType === 'touch' || pointerType === 'pen';
 
   // Icône du réglage du son : coin haut droit, 12 × 10 pixels d'art ; zone de toucher agrandie de 6 px pour le doigt.
-  const ICON = { w: 12, h: 10, margin: 4, touch: 6 };
-  const iconRect = (w, h) => ({ x: w - ICON.margin - ICON.w, y: ICON.margin, w: ICON.w, h: ICON.h });
+  const ICON = { w: 12, h: 10, touch: 6 };
+  const iconRect = (w) => { const S = FP.hud.safe(); return { x: w - S.right - ICON.w, y: S.top, w: ICON.w, h: ICON.h }; };
   function hitIcon(ax, ay, w, h) {
     const r = iconRect(w, h), t = ICON.touch;
     return ax >= r.x - t && ax <= r.x + r.w + t && ay >= r.y - t && ay <= r.y + r.h + t;
@@ -64,11 +65,12 @@
     g.restore();
     const tag = playtestLine(FP.params);
     if (tag) FP.font.draw(g, tag, w / 2, Math.round(h * .3 + (s + 1) * L.height / 2 + 6), { align: 'center', color: FOOTER });
-    if (Math.floor(t * 1.8) % 2 === 0) FP.font.draw(g, splash ? text.pressStart : text.ready, w / 2, h - 46, { align: 'center' });
+    const b = h - FP.hud.safe().bottom + 4;   // bas utile (v5.11.0) : au-dessus de la barre d'accueil ; sans elle, comme avant à 4 px près
+    if (Math.floor(t * 1.8) % 2 === 0) FP.font.draw(g, splash ? text.pressStart : text.ready, w / 2, b - 46, { align: 'center' });
     const record = splash ? null : recordLine(FP.scoring.records);
-    if (record) FP.font.draw(g, record, w / 2, h - 60, { align: 'center', color: FP.font.COLORS.gold });
-    FP.font.draw(g, text.footer[0], w / 2, h - 20, { align: 'center', color: FOOTER });
-    FP.font.draw(g, text.footer[1], w / 2, h - 11, { align: 'center', color: FOOTER });
+    if (record) FP.font.draw(g, record, w / 2, b - 60, { align: 'center', color: FP.font.COLORS.gold });
+    FP.font.draw(g, text.footer[0], w / 2, b - 20, { align: 'center', color: FOOTER });
+    FP.font.draw(g, text.footer[1], w / 2, b - 11, { align: 'center', color: FOOTER });
     if (!splash) drawIcon(g, w, h, FP.audio.setting());
   }
 

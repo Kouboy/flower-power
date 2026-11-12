@@ -2,6 +2,13 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v5.11.0 — Zones sûres
+
+- textes et compteurs à au moins 16 px de chaque bord, et sous l'encoche ou au-dessus de la barre d'accueil du téléphone (marges système + 8 px, `env(safe-area-inset-*)` lues par `render/view.js`) : HUD, nom du biome, icônes du boss, cris, écran titre, icône du son, certificat ; les graines du HUD se rapprochent un peu (pas de 14 px) pour laisser la place au score sur l'écran le plus étroit ;
+- bande sûre du jeu (`FP.camera.safeX`) : ce que rogne le zoom de cadrage, plus 12 px ; pièces, bonus et limaces (trajet et corps compris) y restent entiers — les limaces ne sortent plus du cadre ;
+- tourelles des boss entre 21,5 % et 78,5 % de la largeur, entières à l'écran même à 280 px, tenues au mur par leur console ; trois d'entre elles changent de hauteur pour rester loin des trajets ;
+- banc : NNN tests.
+
 ## v5.10.0 — Sons accordés
 
 - tous les sons accordés prennent la tonique et le mode du biome, comme la musique : fanfare d'éclosion, mort, victoire du boss, départ, germination, bonus, sons du boss, foreuse (mi à la Friche, la mineur à la Zone industrielle, sol mineur à la Décharge, mi majeur au Site nucléaire) ; une note étrangère à la gamme glisse vers sa voisine du mode (`src/audio/tonality.js`) ; au menu et sur l'écran de fin, les sons restent en mi avec le thème du titre ;
