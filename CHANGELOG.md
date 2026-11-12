@@ -2,6 +2,11 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v5.7.1 — Biome
+
+- les textes affichés disent « BIOME » au lieu de « MILIEU » (carton d'entrée : « BIOME 2/4 », « SAISON 2 — BIOME 1/4 ») ;
+- banc : 686 tests.
+
 ## v5.7.0 — Boss cohérent : une seule machine
 
 - les points faibles deviennent des pompes (piston qui bat) reliées au cœur par des tuyaux rouillés où circule un flux vert ; une pompe cassée rompt son tuyau, qui fuit, et son flux s'arrête ; le cœur blindé tremble au rythme du flux, à nu il lance des étincelles ; à la Bétonneuse, une vraie image de pompe ;

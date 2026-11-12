@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '5.7.0',
+    version: '5.7.1',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -327,7 +327,7 @@
     text: {
       // Cartons des milieux (v4.9.0, ui/cards.js) ; noms, lignes et boss : FP.config.milieux.
       cards: {
-        milieu: 'MILIEU', saison: 'SAISON', boss: 'BOSS', victory: 'BOSS VAINCU',
+        milieu: 'BIOME', saison: 'SAISON', boss: 'BOSS', victory: 'BOSS VAINCU',
         won: { title: 'SITE RÉHABILITÉ', lines: ['Le site est officiellement déclaré réhabilité.', 'Les actionnaires vous remercient.'], next: 'Toucher pour la saison' }
       },
       ready: 'MAINTENIR POUR POUSSER',
