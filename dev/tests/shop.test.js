@@ -238,3 +238,24 @@ FP.test('shop: avant ou pendant un boss, seulement les articles utiles au boss (
   FP.assertEqual([...normal].sort().join(), FP.config.shop.items.map(i => i.id).sort().join());
   FP.assertEqual(useful.join(), 'seed,membrane,compost,filter');
 });
+
+// v5.9.0 (retour de jeu) : sans les moyens d'acheter quoi que ce soit, seul le refus reste accessible, même à la dernière chance.
+FP.test('shop: sans les moyens, COMMANDER ne fait rien', () => {
+  const s = shopRun(); s.score.eco = 0; opened(s); s.events.length = 0;
+  FP.assertEqual(FP.shop.canOrder(s), false);
+  FP.shop.order(s); FP.assertEqual(s.shop.phase, 'idle'); FP.assertEqual(s.events.length, 0);
+  FP.shop.decline(s); FP.assertEqual(s.shop.phase, 'declined');
+});
+FP.test('shop: dernière chance sans les moyens de la graine', () => {
+  const s = shopRun(); opened(s, 'last'); const seed = s.shop.items.find(i => i.id === 'seed');
+  s.score.eco = seed.price - 1; for (const it of s.shop.items) if (it.id !== 'seed') it.price = 1;
+  FP.assertEqual(FP.shop.canOrder(s), false);
+  FP.shop.order(s); FP.assertEqual(s.shop.phase, 'idle');
+  FP.assertEqual(FP.config.text.shop.giveUp, 'ABANDONNER');
+});
+FP.test('shop: un article payable suffit', () => {
+  const s = shopRun(); opened(s); priced(s, [100, 9000, 9000]); s.score.eco = 100;
+  FP.assertEqual(FP.shop.canOrder(s), true);
+  FP.shop.toggle(s, 0); FP.assertEqual(FP.shop.canOrder(s), true, 'coché, le reste trop cher');
+  s.shop.items[0].checked = false; FP.shop.order(s); FP.assertEqual(s.shop.phase, 'declined', 'rien de coché : un refus');
+});
