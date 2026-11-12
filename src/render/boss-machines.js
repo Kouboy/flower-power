@@ -3,13 +3,14 @@
 // extérieure. Au repos, la machine attend ; à l'avertissement, elle se prépare (gouttes, bouffées, veilleuses, lueur et arcs) ; au coup,
 // son effet remplit toute la moitié frappée (rideau de béton, jets de vapeur, nappe de flammes, rideau vert). Zones et durées inchangées
 // (play/boss-threats.js) ; le liseré de la zone visée est dessiné avec les autres menaces (render/boss.js, drawThreats).
-// Lit     : state.{time, camera.y, run.milieu, plant.tip, bossFight.destroyed, bossThreats.{rooms, aim, cooldown, shots}},
+// Lit     : state.{time, camera.y, run.milieu, plant.tip, bossFight.destroyed, bossThreats.{rooms, aim, burst, cooldown, shots}},
 //           state.world.{viewH, bossLevel.{rooms, turrets, head}}, FP.config.{milieux, boss.{machines (drops, puffs, arcs), turret, shot.track,
 //           ramp[id].shot.gap}}, FP.bossThreats.timing, FP.bossSkin.{image, piece}, FP.palette.boss.{milieux, machines, aim, weak}, FP.px.
 // Écrit   : rien dans l'état (la toile reçue).
 // Expose  : FP.bossMachines.layout(room, half, defense) → { kind, mount: 'ceiling' | 'wall', side (-1 gauche, 1 droite), x0, y0, x1, y1 }
 //           (pur, pixels du monde : la moitié de salle et l'emplacement de sa machine) ;
 //           FP.bossMachines.turretPose(state, q) → { x, y, angle, muzzle: { x, y }, lens (0..1), recoil (px d'art) } (pur) ;
+//           FP.bossMachines.armEnd(bl, q) → { x, y } (bout de la console de la tourelle, dans un mur) ou null ;
 //           FP.bossMachines.draw(g, state) : machines, puis tourelles.
 (function () {
   'use strict';
@@ -67,26 +68,32 @@
     }
   }
 
-  // --- Coup : un aplat remplit toute la moitié frappée, puis des traînées dans le sens de l'effet (béton et flammes à la verticale,
-  // vapeur à l'horizontale depuis la paroi, rayon en bandes qui pulsent). ---
+  // --- Coup (v5.8.0 : sur fond transparent, sans aplat) : l'effet de la machine se dessine par-dessus le décor, assez dense pour se lire
+  // comme une zone (chaque rangée en porte sur au moins machines.cover de sa largeur). Béton : coulées verticales d'une colonne sur deux,
+  // qui glissent vers le bas ; flammes : langues d'une colonne sur deux, qui ondulent vers le haut ; vapeur : un jet par rangée depuis la
+  // paroi, de longueur qui varie ; radiation : pointillés verts qui défilent, et des éclairs. ---
   function strike(g, b, a, t, H, Q) {
     const ya = Math.max(0, a.ya), yb = Math.min(H, a.yb), w = a.xb - a.xa, h = yb - ya;
-    if (h <= 0) return;
-    const base = { beton: Q.concrete[1], vapeur: Q.steam[1], flamme: Q.flame[1], radiation: Q.ray[1] }[b.kind];
-    FP.px.rect(g, a.xa, ya, w, h, base);
-    if (b.kind === 'beton' || b.kind === 'flamme') {   // coulées qui descendent, langues qui montent
-      const C = b.kind === 'beton' ? Q.concrete : Q.flame, v = b.kind === 'beton' ? 60 : -80;
-      for (let x = a.xa; x < a.xb; x += 3) {
-        const k = (x - a.xa) / 3, len = 6 + (k * 7) % 11, y0 = ya + (((Math.floor(t * v) + k * 13) % h) + h) % h;
-        FP.px.rect(g, x, y0, 1, Math.min(len, yb - y0), C[k % 2 ? 0 : 2]);
+    if (h <= 0 || w <= 0) return;
+    if (b.kind === 'beton' || b.kind === 'flamme') {
+      const C = b.kind === 'beton' ? Q.concrete : Q.flame, v = b.kind === 'beton' ? 70 : -90;
+      for (let x = a.xa; x < a.xb; x += 2) {
+        const k = (x - a.xa) >> 1, phase = ((Math.floor(t * v) + k * 7) % 9 + 9) % 9, dx = b.kind === 'flamme' ? Math.round(Math.sin(t * 9 + k) * .6) : 0;
+        FP.px.rect(g, x + dx, ya, 1, h, C[(k + (phase > 5 ? 1 : 0)) % 3]);
+        for (let y = ya + phase; y < yb; y += 9) FP.px.rect(g, x + dx, y, 1, 2, C[(k + 2) % 3]);   // grumeaux, étincelles qui défilent
       }
-    } else if (b.kind === 'vapeur') {   // jets horizontaux qui partent de la paroi
-      for (let y = ya; y < yb; y += 3) {
-        const k = (y - ya) / 3, len = Math.round(w * (.4 + ((k * 5) % 6) / 10)), x0 = b.side < 0 ? a.xa : a.xb - len;
-        FP.px.rect(g, x0, y, len, 1, Q.steam[(k + Math.floor(t * 12)) % 2 ? 0 : 1]);
+    } else if (b.kind === 'vapeur') {
+      for (let y = ya; y < yb; y++) {
+        const k = y - ya, len = Math.round(w * (.45 + .4 * ((Math.sin(t * 11 + k * 1.7) + 1) / 2))), x0 = b.side < 0 ? a.xa : a.xb - len;
+        FP.px.rect(g, x0, y, len, 1, Q.steam[(k + Math.floor(t * 14)) % 3 ? 1 : 0]);
       }
-    } else {   // rideau vert : bandes claires qui pulsent
-      for (let y = ya + ((Math.floor(t * 30) % 6) + 6) % 6; y < yb; y += 6) FP.px.rect(g, a.xa, y, w, 2, Q.ray[0]);
+    } else {
+      const off = Math.floor(t * 24);
+      for (let x = a.xa + (off % 2); x < a.xb; x += 2) {   // voile vert : colonnes qui scintillent, des nœuds clairs qui remontent
+        const k = (x - a.xa) >> 1; FP.px.rect(g, x, ya, 1, h, Q.ray[1]);
+        for (let y = yb - 1 - ((off + k * 5) % 7); y >= ya; y -= 7) FP.px.rect(g, x, y, 1, 2, Q.ray[0]);
+      }
+      for (let k = 0; k < 3; k++) { const x0 = a.xa + ((off * 3 + k * 17) % w), y0 = ya + ((off * 5 + k * 29) % h); FP.px.line(g, x0, y0, x0 + 4, y0 + 6, Q.ray[0]); }
     }
   }
 
@@ -94,18 +101,38 @@
   // recul et éclair juste après le tir. Au repos, le canon regarde l'intérieur de la salle. ---
   function turretPose(state, q) {
     const T = FP.config.boss.turret, th = state.bossThreats, bl = state.world.bossLevel, room = bl.rooms.find(r => r.id === q.room);
-    const aim = th.aim && th.aim.turret === q.id ? th.aim : null, to = aim && (aim.lockedAt || state.plant.tip);
+    const aim = th.aim && th.aim.turret === q.id ? th.aim : null, burst = th.burst && th.burst.turret === q.id ? th.burst : null;
+    const to = aim ? (aim.lockedAt || state.plant.tip) : burst ? burst.to : null;   // pendant la rafale (v5.8.0), le canon reste sur le point figé
     const rest = room && q.x > (room.x0 + room.x1) / 2 ? Math.PI : 0;
     const angle = to ? Math.atan2(to.y - q.y, to.x - q.x) : rest;
-    let recoil = 0;
-    const id = FP.config.milieux[state.run.milieu].id, age = FP.config.boss.ramp[id].shot.gap - th.cooldown;
-    if (!th.aim && age >= 0 && age < T.recoilTime) {
-      const mine = th.shots.some(s => Math.hypot(s.x - s.vx * age - q.x, s.y - s.vy * age - q.y) < 12);
-      if (mine) recoil = T.recoil * (1 - age / T.recoilTime);
+    let recoil = 0, age = -1;
+    if (burst) age = burst.t - (burst.n - 1) * FP.config.boss.shot.burstGap;   // depuis le dernier tir de la rafale
+    else if (!th.aim) {   // juste après la rafale : depuis son dernier tir (le délai repart à ce moment-là), s'il vient bien de cette tourelle
+      const id = FP.config.milieux[state.run.milieu].id, a = FP.config.boss.ramp[id].shot.gap - th.cooldown;
+      if (th.shots.some(s => Math.hypot(s.x - s.vx * a - q.x, s.y - s.vy * a - q.y) < 12)) age = a;
     }
+    if (age >= 0 && age < T.recoilTime) recoil = T.recoil * (1 - age / T.recoilTime);
     const reach = (T.barrel - recoil) * FP.px.SCALE;
     return { x: q.x, y: q.y, angle, muzzle: { x: q.x + Math.cos(angle) * reach, y: q.y + Math.sin(angle) * reach },
       lens: aim ? Math.min(1, aim.t / FP.config.boss.shot.track) : 0, recoil };
+  }
+
+  // Bout de la console d'une tourelle (v5.8.0) : le premier point dans un mur, en partant de la tourelle vers la gauche, la droite, le haut
+  // ou le bas (le plus proche, à au plus ARM px) ; null s'il n'y en a pas. En cache par niveau.
+  const ARM = 90, armCache = new Map();
+  let armFor = null;
+  function armEnd(bl, q) {
+    if (armFor !== bl) { armCache.clear(); armFor = bl; }
+    if (armCache.has(q.id)) return armCache.get(q.id);
+    const walls = bl.walls.map(o => o.collision.map(([x, y]) => [o.x + x, o.y + y]));
+    let best = null;
+    for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) for (let d = 4; d <= ARM && (!best || d < best.d); d += 2) {
+      const x = q.x + dx * d, y = q.y + dy * d;
+      if (walls.some(P => FP.geom.sdPoly(x, y, P) <= 0)) { best = { x, y, d }; break; }
+    }
+    const end = best && { x: best.x, y: best.y };
+    armCache.set(q.id, end);
+    return end;
   }
 
   function turrets(g, state, bl, cam, M, img) {
@@ -115,6 +142,13 @@
       if (q.y < top - 20 || q.y > top + H + 20) continue;
       const e = state.bossThreats.rooms[q.room], dx = e && e.stage === 'warn' ? (Math.floor(state.time * SHAKE_HZ) % 2 ? 1 : -1) : 0;   // la salle avertie tremble
       const p = turretPose(state, q), x = FP.px.toArt(q.x) + dx, y = FP.px.toArt(q.y) - cam;
+      // Console de fixation (v5.8.0 : la tourelle est avancée vers l'intérieur) : rivetée jusqu'au mur le plus proche (armEnd).
+      const end = armEnd(bl, q);
+      if (end) {
+        const ex = FP.px.toArt(end.x) + dx, ey = FP.px.toArt(end.y) - cam;
+        if (ey === y) { const xa = Math.min(ex, x), xb = Math.max(ex, x); FP.px.rect(g, xa, y - 2, xb - xa, 5, M.edge); FP.px.rect(g, xa, y - 1, xb - xa, 3, M.dark); for (let k = xa + 3; k < xb - 2; k += 6) FP.px.rect(g, k, y, 1, 1, M.rivet); }
+        else { const ya = Math.min(ey, y), yb = Math.max(ey, y); FP.px.rect(g, x - 2, ya, 5, yb - ya, M.edge); FP.px.rect(g, x - 1, ya, 3, yb - ya, M.dark); for (let k = ya + 3; k < yb - 2; k += 6) FP.px.rect(g, x, k, 1, 1, M.rivet); }
+      }
       if (img) FP.bossSkin.piece(g, [[x - r, y - r], [x + r, y - r], [x + r, y + r], [x - r, y + r]], img);
       else { FP.px.disc(g, x, y, r, M.edge); FP.px.disc(g, x, y, r - 1, M.dark); FP.px.disc(g, x, y, r - 4, M.light); }
       const mx = FP.px.toArt(p.muzzle.x) + dx, my = FP.px.toArt(p.muzzle.y) - cam;
@@ -143,5 +177,5 @@
     turrets(g, state, bl, cam, M, FP.bossSkin.image(id, 'turret'));
   }
 
-  FP.bossMachines = { layout, turretPose, draw };
+  FP.bossMachines = { layout, turretPose, armEnd, draw };
 })();

@@ -6,7 +6,7 @@
 //           bossLevel = { plan, walls: [solid], targets: [{ id, i, plate (id de sa plaque), solid }], head: { solid },
 //             plates: [{ id, target (indice i de sa cible), solid }], rooms: [{ id, x0, y0, x1, y1, defense, turrets, zone (solide 'defense', off) }], turrets: [{ id, x, y, room }],
 //             pipes: [{ from, to, open, target, pts }] (v5.7.0 : tuyaux de la machine, décor) }.
-//           state.bossThreats remis à { rooms: {}, shots: [], aim: null, cooldown: 0 } (écrit ensuite par play/boss-threats.js).
+//           state.bossThreats remis à { rooms: {}, shots: [], aim: null, burst: null, cooldown: 0 } (écrit ensuite par play/boss-threats.js).
 // Expose  : FP.bossLevel.generate(state).
 // Graine propre : empreinte de (state.seed, saison, milieu), jamais state.rng : le niveau est le même d'une tentative à l'autre.
 // Solides du boss : { kind: 'boss' (paroi) | 'target' | 'head' | 'plate' | 'defense' (zone d'une salle, off hors coup), boss: true, x, y, a: 0, flip: 1, collision (local), broadR,
@@ -66,7 +66,7 @@
     const bl = build(plan, placed, state.bossFight.destroyed);
     world.bossLevel = bl;
     world.solids = [...bl.walls, ...bl.targets.map(t => t.solid), bl.head.solid, ...bl.plates.map(p => p.solid), ...bl.rooms.map(r => r.zone)];
-    state.bossThreats = { rooms: {}, shots: [], aim: null, cooldown: 0 };   // les menaces repartent de zéro avec le niveau
+    state.bossThreats = { rooms: {}, shots: [], aim: null, burst: null, cooldown: 0 };   // les menaces repartent de zéro avec le niveau
     world.toxics = placed.toxics.slice(0, FP.config.boss.toxics).map(t => FP.level.makeToxic(rng, t.x, t.y, false));
     world.leaks = []; world.bonuses = [];
     world.safePath = placed.paths.head.map(p => ({ x: p.x, y: p.y }));

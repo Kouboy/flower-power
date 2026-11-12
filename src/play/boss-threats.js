@@ -1,11 +1,12 @@
 // play/boss-threats.js — les défenses signature des salles de boss (v5.1.0) : quand la pointe entre dans une salle, un long
 // avertissement, puis un coup sur la moitié de la salle où elle se trouvait ; on l'évite en se déplaçant (la tige ne s'arrête jamais).
-// v5.1.0 (suite) : tirs visés — à chaque boss (v5.5.0 ; avant, à partir du boss 2), une tourelle suit la pointe (ligne de visée), fige la ligne peu avant de tirer, puis un
+// v5.1.0 (suite) : tirs visés — à chaque boss (v5.5.0 ; avant, à partir du boss 2), une tourelle suit la pointe (ligne de visée), fige la ligne peu avant de tirer, puis une rafale (v5.8.0) de
 // projectile rapide part le long de la ligne figée : on l'évite en virant après le figement. v5.3.1 : la tourelle vise pendant le repos de
 // la défense de sa salle, la pointe encore dedans ou déjà sortie (le coup, puis le tir).
 // Lit     : state.{mode, flow.freeze, world.bossLevel.head.solid.off, plant.tip, run.milieu, bossFight.destroyed}, state.world.{width,height,bossLevel.{rooms[].{x0,y0,x1,y1,zone,turrets},turrets[],walls,targets,plates,head}},
 //           FP.config.{boss.defense, boss.shot, boss.ramp[id].{strike,rest,speedup,shot}, milieux}, FP.collision.distanceTo.
-// Écrit   : state.bossThreats.{aim: { turret, t, lockedAt: null | { x, y } } | null, cooldown (s), shots: [{ x, y, vx, vy, solid }]} ; solides 'shot'
+// Écrit   : state.bossThreats.{aim: { turret, t, lockedAt: null | { x, y } } | null, burst: { turret, to, n (tirs partis), t } | null (v5.8.0 : rafale
+//           de shot.burst tirs, espacés de burstGap, l'axe puis ± spread°), cooldown (s, posé après le dernier tir de la rafale), shots: [{ x, y, vx, vy, solid }]} ; solides 'shot'
 //           (octogone de rayon shot.r) ajoutés à state.world.solids tant que le tir vole, retirés à la sortie du cadre, dans une pièce du boss
 //           (paroi, cible, plaque ou tête qui n'est pas tombée), à la mort et à la génération ;
 //           state.bossThreats.rooms[id] = { stage: 'idle'|'warn'|'strike'|'rest', t, half: -1 (gauche) | 1 (droite) } (seul ; vidé par
@@ -72,15 +73,17 @@
 
   function clearShots(state) {
     while (state.bossThreats.shots.length) dropShot(state, 0);
-    state.bossThreats.aim = null;
+    state.bossThreats.aim = null; state.bossThreats.burst = null;
   }
 
-  function fire(state, tur, to) {
-    const cfg = FP.config.boss.ramp[bossId(state)].shot, dx = to.x - tur.x, dy = to.y - tur.y, len = Math.hypot(dx, dy) || 1, th = state.bossThreats;
+  // Un tir de la rafale (v5.8.0) : le k-ième part vers `to`, tourné de BURST_ANGLES[k] × spread (l'axe d'abord, puis l'éventail).
+  const BURST_ANGLES = [0, -1, 1];
+  function fire(state, tur, to, k) {
+    const cfg = FP.config.boss.ramp[bossId(state)].shot, th = state.bossThreats;
+    const a = Math.atan2(to.y - tur.y, to.x - tur.x) + (BURST_ANGLES[k % BURST_ANGLES.length] || 0) * FP.config.boss.shot.spread * Math.PI / 180;
     const solid = shotSolid(tur.x, tur.y);
-    th.shots.push({ x: tur.x, y: tur.y, vx: cfg.speed * dx / len, vy: cfg.speed * dy / len, solid });
+    th.shots.push({ x: tur.x, y: tur.y, vx: cfg.speed * Math.cos(a), vy: cfg.speed * Math.sin(a), solid });
     state.world.solids.push(solid);
-    th.aim = null; th.cooldown = cfg.gap;
     state.events.push({ type: 'bossShot', turret: tur.id });
   }
 
@@ -95,12 +98,20 @@
       if (s.x < -cfg.r || s.x > w.width + cfg.r || s.y < -cfg.r || s.y > w.height + cfg.r || blocked(bl, s.x, s.y)) dropShot(state, i);
     }
     th.cooldown = Math.max(0, th.cooldown - dt);
+    const b = th.burst;
+    if (b) {   // rafale en cours : un tir tous les burstGap, puis le délai entre deux visées
+      const tur = bl.turrets.find(q => q.id === b.turret);
+      b.t += dt;
+      while (b.n < cfg.burst && b.t >= b.n * cfg.burstGap - 1e-9) fire(state, tur, b.to, b.n++);
+      if (b.n >= cfg.burst) { th.burst = null; th.cooldown = FP.config.boss.ramp[bossId(state)].shot.gap; }
+      return;
+    }
     const a = th.aim;
     if (a) {
       const tur = bl.turrets.find(q => q.id === a.turret);
       a.t += dt;
       if (!a.lockedAt && a.t >= cfg.track - cfg.lock) { a.lockedAt = { x: tip.x, y: tip.y }; state.events.push({ type: 'bossLock', turret: tur.id }); }
-      if (a.t >= cfg.track) fire(state, tur, a.lockedAt);
+      if (a.t >= cfg.track) { th.aim = null; th.burst = { turret: tur.id, to: a.lockedAt, n: 1, t: 0 }; fire(state, tur, a.lockedAt, 0); }
       return;
     }
     if (!tip || th.cooldown > 0) return;

@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '5.7.0',
+    version: '5.8.0',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -264,20 +264,28 @@
         nucleaire: { channelMin: 44, strike: 1.1, rest: .9, speedup: .18, shot: { speed: 520, gap: 1.5 } }
       },
       defense: { warn: 1.2, warnMin: 1 },
-      shot: { track: 1, lock: .3, r: 5 },
+      shot: { track: .7, lock: .3, r: 5, burst: 3, burstGap: .12, spread: 8 },   // v5.8.0 : visée plus courte, rafale de 3 tirs (l'axe, puis ± spread°) espacés de burstGap s
       // Tuyaux et pompes (v5.7.0, render/boss-pipes.js, render/boss.js) : width = épaisseur d'un tuyau (px d'art) ; flowSpeed = vitesse du
       // flux (px/s) ; pulseGap = écart entre deux pulsations (px) ; leakRate = gouttes par seconde d'un tuyau rompu ; pumpHz = battement du
       // piston d'une pompe ; headShake = tremblement du cœur blindé (px d'art) au rythme du flux qui arrive.
       pipes: { width: 6, flowSpeed: 60, pulseGap: 26, leakRate: 6, pumpHz: 1.6, headShake: 1 },
       // Machines de défense (v5.7.0, render/boss-machines.js, render/boss.js) : border = épaisseur du liseré de la zone visée (px d'art) ;
       // drops, puffs, arcs = gouttes de béton, bouffées de vapeur par buse, arcs de radiation pendant l'avertissement.
-      machines: { border: 1, drops: 5, puffs: 4, arcs: 3 },
+      // cover (v5.8.0) = part minimale de chaque rangée de la moitié frappée qui porte l'effet du coup (sur fond transparent).
+      machines: { border: 1, drops: 5, puffs: 4, arcs: 3, cover: .35 },
       // Tourelles (v5.7.0, render/boss-machines.js) : size = diamètre du socle, barrel = longueur du canon, recoil = recul au tir (px d'art) ;
       // recoilTime = durée du recul (s).
-      turret: { size: 16, barrel: 10, recoil: 3, recoilTime: .15 },
+      turret: { size: 24, barrel: 14, recoil: 3, recoilTime: .15 },   // v5.8.0 : plus grosses (on ne les voyait pas)
       // Terre (v5.7.0, render/boss-earth.js) : fringe = profondeur maximale de la frange qui ronge un bord extérieur (px d'art) ; clods =
       // densité des mottes ; roots = racines par bord ; pocket = demi-largeur de la poche de terre sur la tête (px).
-      earth: { fringe: 5, clods: .35, roots: 2, pocket: 34 }
+      earth: { fringe: 5, clods: .35, roots: 2, pocket: 34 },
+      // Pompes et cœur (v5.8.0, render/boss-core.js) : wheelHz = tours par seconde du volant d'une pompe ; bladeHz = tours par seconde des
+      // pales du cœur (un quart de moins par pompe cassée) ; beat = battements par seconde du noyau.
+      core: { wheelHz: .8, bladeHz: .5, beat: 1.4 },
+      // Structures de liaison (v5.8.0, render/boss-struts.js) : gap = écart vertical entre deux rangées d'ancrage (hauteurs d'écran) ;
+      // maxPerScreen = traversées au plus par hauteur d'écran ; beam = épaisseur d'une poutrelle, gear = rayon min et max d'un engrenage
+      // (px d'art) ; gearHz = tours par seconde, + gearBoost par pompe cassée ; clear = distance minimale aux pompes, tête, plaques, tourelles (px).
+      struts: { gap: .5, maxPerScreen: 2, beam: 7, gear: [12, 22], gearHz: .15, gearBoost: .5, clear: 8 }
     },
 
     // Boutique de fin de pousse (v4.6.0) : 3 articles tirés (un à −50 %), achetés au score ; effets sur la pousse suivante.
@@ -327,7 +335,7 @@
     text: {
       // Cartons des milieux (v4.9.0, ui/cards.js) ; noms, lignes et boss : FP.config.milieux.
       cards: {
-        milieu: 'MILIEU', saison: 'SAISON', boss: 'BOSS', victory: 'BOSS VAINCU',
+        milieu: 'BIOME', saison: 'SAISON', boss: 'BOSS', victory: 'BOSS VAINCU',
         won: { title: 'SITE RÉHABILITÉ', lines: ['Le site est officiellement déclaré réhabilité.', 'Les actionnaires vous remercient.'], next: 'Toucher pour la saison' }
       },
       ready: 'MAINTENIR POUR POUSSER',

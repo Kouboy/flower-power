@@ -11,7 +11,7 @@ FP.test('bossSkin: sans images, chaque boss se dessine comme avant (aucune image
   for (const m of [0, 1, 2, 3]) {
     const g = skinDraw(skinRun(m));
     FP.assertEqual(g.images.length, 0, 'milieu ' + m); FP.assert(g.rects.length > 0, 'dessin actuel, milieu ' + m);
-    for (const r of ['matter', 'target', 'head', 'plate', 'turret']) FP.assertEqual(FP.bossSkin.image(skinId(m), r), null);
+    for (const r of ['matter', 'plate', 'turret']) FP.assertEqual(FP.bossSkin.image(skinId(m), r), null);
   }
 });
 
@@ -30,18 +30,17 @@ FP.test('bossSkin: la matière remplit chaque paroi rangée par rangée, ancrée
   } finally { FP.bossSkin._reset(); }
 });
 
-FP.test('bossSkin: cible, tête, plaque, tourelle en image quand elle existe', () => {
+FP.test('bossSkin: plaque et tourelle en image quand elle existe ; pompe et cœur toujours dessinés par le code (v5.8.0)', () => {
   const imgs = { target: skinImg(), head: skinImg(), plate: skinImg(), turret: skinImg(12, 8) };
   try {
     for (const r in imgs) FP.bossSkin._set('friche', r, imgs[r]);
     const s = skinRun(0), bl = s.world.bossLevel;
     const at = (o) => { s.camera.y = o.y - s.world.viewH / 2; return skinDraw(s).images.map(q => q.img); };
-    FP.assert(at(bl.targets[0].solid).includes(imgs.target), 'cible');
+    FP.assert(!at(bl.targets[0].solid).includes(imgs.target), 'pompe dessinée par le code');
     FP.assert(at(bl.plates[0].solid).includes(imgs.plate), 'plaque');
-    FP.assert(at(bl.head.solid).includes(imgs.head), 'tête blindée');
+    FP.assert(!at(bl.head.solid).includes(imgs.head), 'cœur dessiné par le code');
     s.camera.y = bl.turrets[0].y - s.world.viewH / 2; const gm = skinCtx(); FP.bossMachines.draw(gm, s);
     FP.assert(gm.images.some(q => q.img === imgs.turret), 'tourelle (socle, render/boss-machines.js)');
-    s.bossFight.headOpen = true; FP.assert(!at(bl.head.solid).includes(imgs.head), 'tête à nu : la lueur du code');
   } finally { FP.bossSkin._reset(); }
 });
 
@@ -73,10 +72,11 @@ FP.test('bossSkin: le calque est refait quand une image devient prête', () => {
   } finally { FP.px.layer = saved; FP.bossSkin._reset(); }
 });
 
-FP.test('bossSkin: art.js — chaque milieu décrit a ses 5 images, sans premier plan', () => {
+FP.test('bossSkin: art.js — chaque biome décrit a sa matière, sa plaque et son socle de tourelle, sans pompe, tête ni premier plan', () => {
   for (const [id, a] of Object.entries(window.FLOWER_POWER_BOSS_ART)) {
     FP.assert(FP.config.milieux.some(m => m.id === id), 'milieu connu ' + id);
-    for (const r of ['matter', 'target', 'head', 'plate', 'turret']) FP.assert(typeof a[r] === 'string' && a[r].endsWith('.png'), id + ' ' + r);
+    for (const r of ['matter', 'plate', 'turret']) FP.assert(typeof a[r] === 'string' && a[r].endsWith('.png'), id + ' ' + r);
+    FP.assert(!('target' in a) && !('head' in a), id + ' : pompe et cœur dessinés par le code (v5.8.0)');
     FP.assert(!('fore' in a), id + ' : plus de premier plan (v5.7.0)');
   }
 });

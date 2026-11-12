@@ -283,3 +283,11 @@ FP.test('bossPlan: les tuyaux courent dans la masse de la machine, ou en colonne
     }
   });
 });
+
+// v5.8.0 (retour de jeu : tourelles invisibles au bord de l'écran) : centre d'une tourelle entre 10 % et 90 % de la largeur.
+FP.test('bossPlan: tourelles à au moins 10 % de chaque bord', () => {
+  for (const milieu of PLAN_MILIEUX) for (const t of window.FLOWER_POWER_BOSS_PLANS[milieu].pieces.filter(p => p.role === 'turret')) {
+    const xs = t.poly.map(q => q[0]), cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+    FP.assert(cx >= .1 - 1e-9 && cx <= .9 + 1e-9, `${milieu} ${t.id} à ${cx.toFixed(3)}`);
+  }
+});

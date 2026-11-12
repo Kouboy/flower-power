@@ -2,6 +2,19 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v5.8.0 — Boss infiltré
+
+- on s'infiltre dans une machine immense : poutrelles rivetées et câbles qui traversent les couloirs d'un mur à l'autre, grands engrenages accrochés aux murs qui tournent (plus vite à chaque pompe cassée, arrêtés à la mort du boss) ; opaques, fixés au monde, sans collision, jamais sur une pompe, la tête, une plaque ou une tourelle, jamais dans une salle ;
+- pompes et cœur dessinés et animés par le code : pompe à cuve lumineuse qui bouillonne, volant et pistons (cassée : cuve éteinte et fêlée, flaque, fumée) ; cœur en réacteur à pales qui tournent et noyau qui bat (à nu : pales arrêtées, noyau grand ouvert) ; les images PixelLab de la pompe et de la toupie sont retirées ;
+- les coups des machines se dessinent sur fond transparent (jets de vapeur, coulées de béton, langues de flammes, voile vert), sans aplat, sur au moins 35 % de chaque rangée de la zone frappée ;
+- tourelles visibles et dangereuses : avancées vers l'intérieur (au moins 10 % du bord) sur une console rivetée, 24 px, visée de 0,7 s puis rafale de 3 tirs en éventail (± 8°, 0,12 s d'écart) ; le robot de test bat toujours chaque boss ;
+- banc : 703 tests.
+
+## v5.7.1 — Biome
+
+- les textes affichés disent « BIOME » au lieu de « MILIEU » (carton d'entrée : « BIOME 2/4 », « SAISON 2 — BIOME 1/4 ») ;
+- banc : 686 tests.
+
 ## v5.7.0 — Boss cohérent : une seule machine
 
 - les points faibles deviennent des pompes (piston qui bat) reliées au cœur par des tuyaux rouillés où circule un flux vert ; une pompe cassée rompt son tuyau, qui fuit, et son flux s'arrête ; le cœur blindé tremble au rythme du flux, à nu il lance des étincelles ; à la Bétonneuse, une vraie image de pompe ;
