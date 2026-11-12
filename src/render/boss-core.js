@@ -1,5 +1,6 @@
-// render/boss-core.js — pompes et cœur des boss dessinés par le code (v5.8.0, boss infiltré) : plus de bloc gris ni d'image fixe, des
-// machines animées encastrées dans la machinerie. Pompe : châssis riveté, cuve vitrée où bouillonne le liquide lumineux (la seule chose
+// render/boss-core.js — pompes et cœur des boss (v5.8.0, boss infiltré) : des machines animées encastrées dans la machinerie. v5.9.0 :
+// la pompe est un sprite PixelLab du biome (pompe à hublot, ou tête de pompe sur une barre) animé par le code (liquide, bulles, volant) ;
+// sans image, et toujours une fois cassée, elle est dessinée par le code. Pompe dessinée : châssis riveté, cuve vitrée où bouillonne le liquide lumineux (la seule chose
 // claire : la cible évidente), volant qui tourne, deux pistons en alternance ; cassée : cuve éteinte et fêlée, flaque au pied, volant
 // arrêté. Cœur : anneaux rivetés, pales qui tournent (de moins en moins vite à chaque pompe cassée), noyau qui bat ; à nu, pales arrêtées
 // et noyau grand ouvert qui pulse fort.
@@ -36,20 +37,21 @@
     for (let k = 0; k < 4; k++) { const q = a + k * Math.PI / 2; FP.px.line(g, wx, wy, Math.round(wx + Math.cos(q) * r), Math.round(wy + Math.sin(q) * r), FP.palette.boss.core.wheel); }
   }
 
-  // v5.9.0 : pompe en sprite PixelLab (FP.bossSkin, rôle pump), animée par le code. Large : l'image dans la boîte (proportions gardées,
-  // centrée, comme FP.bossSkin.piece), le liquide dans sa cuve (FP.bossSkin.tank, fractions de l'image) et un volant qui tourne sur son
-  // flanc gauche. Haute (barre) : l'image en tête de pompe, à la largeur de la barre ; dessous, le tube vitré lumineux.
+  // v5.9.0 : pompe en sprite PixelLab (FP.bossSkin, rôle pump), animée par le code. Pompe à hublot (le biome a sa cuve, FP.bossSkin.tank) :
+  // un châssis remplit la boîte, l'image y est posée entière (proportions gardées, centrée, comme FP.bossSkin.piece), le liquide dans sa
+  // cuve (fractions de l'image) et un volant qui tourne sur son flanc gauche. Tête de pompe (pas de cuve : barres de la Décharge et du Site
+  // nucléaire) : l'image en haut de la barre, à sa largeur ; dessous, le tube vitré lumineux.
   function sprite(g, pts, t, M, img, id, b) {
-    const x0 = Math.round(b.x0), y0 = Math.round(b.y0), w = Math.round(b.x1 - b.x0), h = Math.round(b.y1 - b.y0);
-    if (h > w * 1.2) {
+    const x0 = Math.round(b.x0), y0 = Math.round(b.y0), w = Math.round(b.x1 - b.x0), h = Math.round(b.y1 - b.y0), T = FP.bossSkin.tank(id);
+    if (!T) {
       const ch = Math.min(Math.round(img.height * w / img.width), Math.floor(h / 3));
       FP.bossSkin.piece(g, [[x0, y0], [x0 + w, y0], [x0 + w, y0 + ch], [x0, y0 + ch]], img);
       if (w >= 3 && h - ch >= 4) vessel(g, x0 + 1, y0 + ch + 1, w - 2, h - ch - 2, t, false);
       return;
     }
+    FP.bossRender.fillPoly(g, pts, M.edge); FP.bossRender.fillPoly(g, pts, M.dark, 1);   // châssis autour de l'image (boîte d'une autre proportion)
     FP.bossSkin.piece(g, pts, img);
     const k = Math.min(w / img.width, h / img.height), iw = img.width * k, ih = img.height * k, dx = x0 + (w - iw) / 2, dy = y0 + (h - ih) / 2;
-    const T = FP.bossSkin.tank(id) || [.35, .35, .65, .65];
     const tx = Math.round(dx + T[0] * iw), ty = Math.round(dy + T[1] * ih), tw = Math.max(1, Math.round((T[2] - T[0]) * iw)), th = Math.max(2, Math.round((T[3] - T[1]) * ih));
     vessel(g, tx, ty, tw, th, t, false);
     wheel(g, Math.round(dx + iw * .1), Math.round(dy + ih * .5), Math.max(2, Math.round(ih * .1)), t, M, false);

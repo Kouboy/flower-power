@@ -31,7 +31,7 @@
     FP.hazardsRender.drawLeaks(g, state);
     FP.obstacles.draw(g, world, camY);
     FP.bossRender.draw(g, state);     // boss : parois, pompes, cœur, plaques (rien hors niveau de boss)
-    FP.bossEarth.draw(g, state);      // la machine surgit de la terre (v5.7.0) : bords rongés, poche d'éclosion sur la tête
+    FP.bossEarth.draw(g, state);      // la machine surgit de la terre (v5.7.0) : bords rongés
     FP.bossIntake.draw(g, state);          // bouche d'aspiration du boss (v5.9.0) : tôles, dents et grille de l'entrée
     FP.bossPipes.draw(g, state);      // tuyaux de la machine (v5.7.0) : sur les murs, des pompes au cœur, avec leur flux
     FP.bossMachines.draw(g, state);   // machines de défense (v5.7.0) : au repos, qui se préparent, qui frappent

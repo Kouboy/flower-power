@@ -164,3 +164,21 @@ FP.test('machines: la vapeur atteint le bout de la moitié', () => {
   }
   FP.assert(seen > 0, 'au moins une salle de vapeur');
 });
+
+// Revue en jeu (v5.9.0) : jusqu'au bout, mais des jets hachés qui défilent, pas un aplat : dans au moins la moitié des rangées, la vapeur laisse
+// des trous entre la paroi et le front.
+FP.test('machines: la vapeur reste des jets, pas un aplat', () => {
+  const s = pipeRun(1), room = s.world.bossLevel.rooms.find(r => r.defense === 'vapeur'), steam = new Set(FP.palette.boss.machines.steam);
+  for (const half of [-1, 1]) for (const t of [.3, .55]) {
+    s.time = 2 + t; machState(s, room, 'strike', half, t);
+    const g = skinCtx(); FP.bossMachines.draw(g, s);
+    const b = FP.bossMachines.layout(room, half, 'vapeur'), cam = FP.px.toArt(s.camera.y), H = Math.ceil(s.world.viewH / FP.px.SCALE);
+    const xa = FP.px.toArt(b.x0), xb = FP.px.toArt(b.x1), ya = Math.max(0, FP.px.toArt(b.y0) - cam), yb = Math.min(H, FP.px.toArt(b.y1) - cam);
+    let holed = 0, rows = 0;
+    for (let y = ya; y < yb; y++) {
+      const set = new Set(); for (const r of g.rects) if (steam.has(r.c) && y >= r.y && y < r.y + r.h) for (let x = Math.max(r.x, xa + 4); x < Math.min(r.x + r.w, xb - 4); x++) set.add(x);
+      rows++; if (set.size < (xb - xa - 8) * .9) holed++;
+    }
+    FP.assert(holed >= rows * .5, `vapeur en aplat (${holed}/${rows} rangées trouées), moitié ${half}`);
+  }
+});

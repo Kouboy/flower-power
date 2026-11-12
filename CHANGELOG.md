@@ -2,6 +2,16 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v5.9.0 — Boss juste
+
+- le coup des défenses jaillit de sa machine et traverse la moitié frappée en 0,25 s ; on ne meurt que là où il est déjà arrivé (la zone mortelle suit son front, et le dessin montre exactement cette part) ; la vapeur couvre toute la largeur ;
+- l'entrée du boss devient sa bouche d'aspiration : tôles rivetées, dents sur les lèvres de la gorge, grille au pied, et deux tuyaux qui montent jusqu'au cœur ;
+- les pompes passent en sprites PixelLab, un par biome (pompe à hublot à la Friche et dans la Zone industrielle, tête de pompe sur les barres de la Décharge et du Site nucléaire), animés par le code : liquide qui bouillonne, bulles, volant qui tourne ; cassées, l'épave du code ;
+- plus de poche de terre sur la tête : à la mort du boss, la pelouse revient et la fleur éclot comme avant ;
+- bon de commande : sans les moyens, COMMANDER est grisé et inactif, seul le refus reste (NON MERCI, ou ABANDONNER à la dernière chance) ;
+- le reggae de la boutique prend la tonique du biome du niveau qui suit (mi, la, sol, mi), pour ne plus jurer avec la musique du biome ni celle de son boss ;
+- banc : 723 tests.
+
 ## v5.8.0 — Boss infiltré
 
 - on s'infiltre dans une machine immense : poutrelles rivetées et câbles qui traversent les couloirs d'un mur à l'autre, grands engrenages accrochés aux murs qui tournent (plus vite à chaque pompe cassée, arrêtés à la mort du boss) ; opaques, fixés au monde, sans collision, jamais sur une pompe, la tête, une plaque ou une tourelle, jamais dans une salle ;

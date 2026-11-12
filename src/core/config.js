@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '5.8.0',
+    version: '5.9.0',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -273,11 +273,9 @@
       // drops, puffs, arcs = gouttes de béton, bouffées de vapeur par buse, arcs de radiation pendant l'avertissement.
       // cover (v5.8.0) = part minimale de chaque rangée de la moitié frappée qui porte l'effet du coup (sur fond transparent).
       machines: { border: 1, drops: 5, puffs: 4, arcs: 3, cover: .35 },
-      // Tourelles (v5.7.0, render/boss-machines.js) : size = diamètre du socle, barrel = longueur du canon, recoil = recul au tir (px d'art) ;
-      // recoilTime = durée du recul (s).
+      // Tourelles (v5.7.0, render/boss-machines.js) : size = socle, barrel = canon, recoil = recul au tir (px d'art) ; recoilTime = durée du recul (s).
       turret: { size: 24, barrel: 14, recoil: 3, recoilTime: .15 },   // v5.8.0 : plus grosses (on ne les voyait pas)
-      // Terre (v5.7.0, render/boss-earth.js) : fringe = profondeur maximale de la frange qui ronge un bord extérieur (px d'art) ; clods =
-      // densité des mottes ; roots = racines par bord (v5.9.0 : plus de poche de terre sur la tête).
+      // Terre (v5.7.0, render/boss-earth.js) : fringe = frange max d'un bord rongé (px d'art) ; clods = densité des mottes ; roots = racines par bord.
       earth: { fringe: 5, clods: .35, roots: 2 },
       // Pompes et cœur (v5.8.0, render/boss-core.js) : wheelHz = tours par seconde du volant d'une pompe ; bladeHz = tours par seconde des
       // pales du cœur (un quart de moins par pompe cassée) ; beat = battements par seconde du noyau.
@@ -286,8 +284,7 @@
       // maxPerScreen = traversées au plus par hauteur d'écran ; beam = épaisseur d'une poutrelle, gear = rayon min et max d'un engrenage
       // (px d'art) ; gearHz = tours par seconde, + gearBoost par pompe cassée ; clear = distance minimale aux pompes, tête, plaques, tourelles (px).
       struts: { gap: .5, maxPerScreen: 2, beam: 7, gear: [12, 22], gearHz: .15, gearBoost: .5, clear: 8 },
-      // Bouche d'aspiration (v5.9.0, render/boss-intake.js) : teeth = dents par lèvre de la gorge ; plateGap = écart entre deux coutures
-      // de tôle sur les murs de l'entrée (px d'art).
+      // Bouche d'aspiration (v5.9.0, render/boss-intake.js) : teeth = dents par lèvre de la gorge ; plateGap = écart des coutures de tôle (px d'art).
       intake: { teeth: 4, plateGap: 8 }
     },
 

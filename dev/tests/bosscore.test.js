@@ -74,10 +74,17 @@ FP.test('core: pompe en sprite', () => {
     const best = g.rects.reduce((a, r) => (lum(r.c) > lum(a.c) ? r : a));
     FP.assert(W.includes(best.c), 'la cuve est le plus clair');
     FP.assert(JSON.stringify(at(1).rects) !== JSON.stringify(at(1.1).rects), 'animation');
-    const tall = at(1.3, coreTall), cap = tall.images.find(q => q.img === img);
-    FP.assert(cap, 'tête de pompe en image');
+    // Revue en jeu : une pompe à hublot (avec sa cuve) dans une boîte haute reste posée entière, centrée sur un châssis qui remplit la boîte.
+    const hi = at(1.3, coreTall), lit2 = hi.rects.filter(r => r.c === W[0] || r.c === W[1]);
+    const k2 = Math.min(7 / 32, 120 / 32), dy2 = (120 - 32 * k2) / 2;
+    FP.assert(lit2.length > 0 && lit2.every(r => r.y >= dy2 + T[1] * 32 * k2 - 1 && r.y + r.h <= dy2 + T[3] * 32 * k2 + 1), 'pompe à hublot haute : la lumière reste dans le hublot');
+    FP.assert(hi.rects.some(r => r.c === coreM().dark && r.y < dy2 - 1), 'châssis autour du sprite');
+    // Une tête de pompe (sans cuve dans art.js : Décharge, Site nucléaire) se pose en haut de la barre, tube lumineux dessous.
+    FP.bossSkin._set('decharge', 'pump', img);
+    const g3 = skinCtx(); FP.bossCore.pump(g3, coreTall, 1.3, coreM(), false, 'decharge');
+    FP.assert(g3.images.some(q => q.img === img), 'tête de pompe en image');
     const capBottom = Math.round(img.height * 7 / img.width);
-    const tl = tall.rects.filter(r => r.c === W[0] || r.c === W[1]);
+    const tl = g3.rects.filter(r => r.c === W[0] || r.c === W[1]);
     FP.assert(tl.length > 0 && tl.every(r => r.y >= capBottom), 'tube lumineux sous la tête');
   } finally { FP.bossSkin._reset(); }
 });

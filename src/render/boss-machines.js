@@ -84,10 +84,14 @@
         for (let y = ya + phase; y < yb; y += 9) FP.px.rect(g, x + dx, y, 1, 2, C[(k + 2) % 3]);   // grumeaux, étincelles qui défilent
       }
     } else if (b.kind === 'vapeur') {
-      for (let y = ya; y < yb; y++) {   // un jet par rangée, de la paroi jusqu'au front ; un bout plus clair qui va et vient
-        const k = y - ya, puff = Math.round(w * (.45 + .4 * ((Math.sin(t * 11 + k * 1.7) + 1) / 2)));
-        FP.px.rect(g, a.xa, y, w, 1, Q.steam[1]);
-        if ((k + Math.floor(t * 14)) % 3 === 0) FP.px.rect(g, b.side < 0 ? a.xa : a.xb - puff, y, puff, 1, Q.steam[0]);
+      // Jets (v5.8.0) : un par rangée depuis la paroi, de longueur qui varie ; au-delà, la vapeur se défait en bouffées éparses qui filent
+      // jusqu'au front (v5.9.0 : elle couvre ainsi toute la part déployée, celle qui tue) ; une tête claire au front.
+      for (let y = ya; y < yb; y++) {
+        const k = y - a.ya, len = Math.min(w, Math.round(w * (.45 + .4 * ((Math.sin(t * 11 + k * 1.7) + 1) / 2)))), end = w - 2;   // k : ancré à la salle
+        const at = (d0, d1, c) => { if (d1 > d0) FP.px.rect(g, b.side < 0 ? a.xa + d0 : a.xb - d1, y, d1 - d0, 1, c); };
+        at(0, len, Q.steam[(k + Math.floor(t * 14)) % 3 ? 1 : 0]);
+        for (let d = len + 2 + ((Math.floor(t * 50) + k * 5) % 6); d < end; d += 6) at(d, Math.min(end, d + 3), Q.steam[1]);
+        at(end, w, Q.steam[0]);
       }
     } else {
       const off = Math.floor(t * 24);
