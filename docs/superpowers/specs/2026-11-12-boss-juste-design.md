@@ -51,8 +51,11 @@ gardé.
     nucléaire.
 - **Retouche, puis import :** chaque sprite est retouché (palette du biome, fond transparent), puis importé avec `dev/tools/import-boss.js`
   dans le rôle `pump`.
-- **Animation par le code, par-dessus le sprite :** liquide lumineux et bulles dans la cuve, volant qui tourne, pistons. La cuve reste la
-  chose la plus claire du boss.
+- **Pompes hautes :** celles de la Décharge et du Site nucléaire sont des barres de 7 px d'art de large et de 53 à 225 px de haut. Le
+  sprite y devient une **tête de pompe** (volant, vannes) posée en haut de la barre, à la largeur de la barre. Sous elle, le code dessine le
+  tube vitré lumineux.
+- **Animation par le code, par-dessus le sprite :** liquide lumineux et bulles dans la cuve, rayons du volant qui tournent. La cuve reste la
+  chose la plus claire du boss. Les pistons ne restent que dans le dessin de secours.
 - **Pompe cassée :** l'épave reste celle d'aujourd'hui, dessinée par le code (cuve brisée, fumée).
 - Sans image (chargement raté, banc de test), la pompe dessinée par le code de la v5.8.0 reste en secours.
 
