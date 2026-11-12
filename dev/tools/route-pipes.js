@@ -1,6 +1,6 @@
 // dev/tools/route-pipes.js — trace les tuyaux des boss (v5.7.0, boss cohérent) et les écrit dans assets/boss/plans.js.
 // Usage : node dev/tools/route-pipes.js
-// Pour chaque plan : un tuyau de chaque cible (pompe) jusqu'à la tête, et une liaison d'un bord à l'autre du plafond (LINKS), cherchés
+// Pour chaque plan : un tuyau de chaque cible (pompe) jusqu'à la tête, un de chaque mur de l'entrée (v5.9.0, bouche d'aspiration), et une liaison d'un bord à l'autre du plafond (LINKS), cherchés
 // sur une grille de GRID px (monde de REF_W × REF_H) par le plus court chemin dans la masse de la machine (murs, tête, cibles ; pas les
 // plaques, qui tombent), en préférant le cœur des murs au bord. Là où une cible flotte (Bétonneuse), un tronçon peut passer à l'air
 // libre, cher, loin des trajets de référence (au moins channelMin / 2 + MARGIN, sans leurs END derniers px) ; ses indices sont notés dans `open`.
@@ -70,14 +70,18 @@ function route(id) {
   const airOk = (x, y) => rooms.every(r => !inR(r, x, y) || x - r[0] <= EDGE || r[2] - x <= EDGE ||
     pumps.some(t => x >= t.x0 && x <= t.x1 && y <= t.top + IN + GRID && y >= t.roomTop - IN - GRID));
   const openMaxY = Math.max(...plan.pieces.filter(p => p.role === 'target').map(p => Math.min(...p.poly.map(q => q[1])))) * REF_H + IN + GRID;
-  const depth = new Float32Array(nx * ny), open = new Uint8Array(nx * ny);
+  // v5.9.0 : `low` = les mêmes colonnes, sans la limite de hauteur, pour les seuls tuyaux de l'entrée (la muraille de la Bétonneuse
+  // n'a pas de masse jusqu'au reste de la machine).
+  const depth = new Float32Array(nx * ny), open = new Uint8Array(nx * ny), low = new Uint8Array(nx * ny);
   for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
     const x = i * GRID, y = j * GRID, k = j * nx + i;
     let d = Infinity; for (const s of solids) d = Math.min(d, sdPoly(x, y, s));
     depth[k] = -d - IN;   // > 0 dans la masse, à IN px au moins du bord (l'arrondi au millième ne fait pas sortir un tuyau)
-    if (depth[k] <= 0 && y <= openMaxY && airOk(x, y)) { let r = Infinity; for (const p of refs) for (let q = 1; q < p.length; q++) r = Math.min(r, segDist(x, y, p[q - 1], p[q])); open[k] = r >= half + MARGIN ? 1 : 0; }
+    if (depth[k] <= 0 && airOk(x, y)) { let r = Infinity; for (const p of refs) for (let q = 1; q < p.length; q++) r = Math.min(r, segDist(x, y, p[q - 1], p[q])); low[k] = r >= half + MARGIN ? 1 : 0; open[k] = y <= openMaxY ? low[k] : 0; }
   }
-  const ok = (k, allowOpen) => depth[k] > 0 || (allowOpen && open[k]);
+  // allowOpen : false (dans la masse), true (colonnes sous le plafond), 'low' (colonnes à toute hauteur : tuyaux de l'entrée)
+  const air0 = (k, allowOpen) => (allowOpen === 'low' ? low[k] : allowOpen && open[k]);
+  const ok = (k, allowOpen) => depth[k] > 0 || air0(k, allowOpen);
   const cost = (k) => (depth[k] > 0 ? 1 + (depth[k] < DEEP ? (DEEP - depth[k]) / 2 : 0) : OPEN_COST);
   const cell = ([x, y]) => Math.round(y * REF_H / GRID) * nx + Math.round(x * REF_W / GRID);
 
@@ -115,7 +119,7 @@ function route(id) {
   const samples = (p, q) => { const n = Math.max(1, Math.ceil(Math.hypot(q[0] - p[0], q[1] - p[1]))), out = []; for (let s = 0; s <= n; s++) out.push([p[0] + (q[0] - p[0]) * s / n, p[1] + (q[1] - p[1]) * s / n]); return out; };
   const segOk = (p, q, allowOpen) => {
     const ss = samples(p, q), touches = ss.some(air);
-    if (!ss.every(s => depth[at(s)] > -IN || (allowOpen && open[at(s)]))) return false;
+    if (!ss.every(s => depth[at(s)] > -IN || air0(at(s), allowOpen))) return false;
     return !touches || p[0] === q[0];
   };
   function simplify(pts, allowOpen) {
@@ -144,6 +148,10 @@ function route(id) {
   // Dans la masse si possible, sinon avec des colonnes à l'air libre.
   const either = (from, to, a, b) => { try { add(from, to, a, b, false); } catch (e) { add(from, to, a, b, true); } };
   for (const t of plan.pieces.filter(p => p.role === 'target')) either(t.id, 'head', centre(t), centre(head));
+  // La bouche aspire pour le cœur ; là où sa muraille n'a pas de masse jusqu'à lui (Bétonneuse), par des colonnes plus basses.
+  for (const t of plan.pieces.filter(p => p.intake)) {
+    try { either(t.id, 'head', centre(t), centre(head)); } catch (e) { add(t.id, 'head', centre(t), centre(head), 'low'); }
+  }
   either(null, null, LINKS[id][0], LINKS[id][1]);
   return pipes;
 }

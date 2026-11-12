@@ -285,7 +285,10 @@
       // Structures de liaison (v5.8.0, render/boss-struts.js) : gap = écart vertical entre deux rangées d'ancrage (hauteurs d'écran) ;
       // maxPerScreen = traversées au plus par hauteur d'écran ; beam = épaisseur d'une poutrelle, gear = rayon min et max d'un engrenage
       // (px d'art) ; gearHz = tours par seconde, + gearBoost par pompe cassée ; clear = distance minimale aux pompes, tête, plaques, tourelles (px).
-      struts: { gap: .5, maxPerScreen: 2, beam: 7, gear: [12, 22], gearHz: .15, gearBoost: .5, clear: 8 }
+      struts: { gap: .5, maxPerScreen: 2, beam: 7, gear: [12, 22], gearHz: .15, gearBoost: .5, clear: 8 },
+      // Bouche d'aspiration (v5.9.0, render/boss-intake.js) : teeth = dents par lèvre de la gorge ; plateGap = écart entre deux coutures
+      // de tôle sur les murs de l'entrée (px d'art).
+      intake: { teeth: 4, plateGap: 8 }
     },
 
     // Boutique de fin de pousse (v4.6.0) : 3 articles tirés (un à −50 %), achetés au score ; effets sur la pousse suivante.

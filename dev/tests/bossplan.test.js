@@ -252,7 +252,7 @@ const pipeSamples = (pts) => pathSamples(pts.map(([x, y]) => ({ x, y })));
 FP.test('bossPlan: chaque cible a un tuyau jusqu’à la tête, et au moins une liaison', () => {
   eachPlan(({ placed, at }) => {
     const piece = (id) => placed.pieces.find(p => p.id === id), head = placed.pieces.find(p => p.role === 'head');
-    const targets = placed.pieces.filter(p => p.role === 'target').map(p => p.id).sort();
+    const targets = placed.pieces.filter(p => p.role === 'target' || p.intake).map(p => p.id).sort();   // v5.9.0 : la bouche aussi
     const feeds = placed.pipes.filter(p => p.to === 'head');
     FP.assertEqual(feeds.map(p => p.from).sort().join(), targets.join(), 'un tuyau par cible ' + at);
     for (const p of feeds) {
@@ -290,4 +290,26 @@ FP.test('bossPlan: tourelles à au moins 10 % de chaque bord', () => {
     const xs = t.poly.map(q => q[0]), cx = (Math.min(...xs) + Math.max(...xs)) / 2;
     FP.assert(cx >= .1 - 1e-9 && cx <= .9 + 1e-9, `${milieu} ${t.id} à ${cx.toFixed(3)}`);
   }
+});
+
+// v5.9.0 (retour de jeu : « le couloir du début ne se rattache pas au boss ») : l'entonnoir d'entrée est la bouche d'aspiration.
+FP.test('bossPlan: deux pièces d’entrée par plan, de part et d’autre du départ', () => {
+  eachPlan(({ placed, at }) => {
+    const intake = placed.pieces.filter(p => p.intake);
+    FP.assertEqual(intake.length, 2, 'deux pièces ' + at);
+    FP.assert(intake.every(p => p.role === 'wall'), 'des murs ' + at);
+    const start = placed.paths.head[0], bottom = Math.max(...intake.map(p => Math.max(...p.poly.map(q => q[1]))));
+    const y = bottom - 4, hitAt = (dir) => { for (let x = start.x; x >= 0 && x <= placed.pieces.length * 1e4; x += dir) { const p = placed.pieces.find(o => o.role === 'wall' && FP.geom.sdPoly(x, y, o.poly) < 0); if (p) return p; if (x <= 0 || x > 2000) return null; } return null; };
+    const left = hitAt(-1), right = hitAt(1);
+    FP.assert(left && left.intake && right && right.intake && left !== right, `la gorge passe entre les deux (${left && left.id}, ${right && right.id}) ` + at);
+  });
+});
+FP.test('bossPlan: deux tuyaux partent de l’entrée', () => {
+  eachPlan(({ placed, at }) => {
+    for (const p of placed.pieces.filter(o => o.intake)) {
+      const pipe = placed.pipes.find(q => q.from === p.id);
+      FP.assert(pipe && pipe.to === 'head', 'tuyau de ' + p.id + ' ' + at);
+      FP.assert(FP.geom.sdPoly(pipe.pts[0][0], pipe.pts[0][1], p.poly) <= 6, 'départ dans ' + p.id + ' ' + at);
+    }
+  });
 });

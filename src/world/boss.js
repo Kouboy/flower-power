@@ -3,7 +3,7 @@
 // Lit     : state.{seed,rng (non consommé)}, state.run.{saison,milieu}, state.bossFight.destroyed, state.world.{width,height,surfaceY},
 //           FP.config.{boss.toxics,milieux}, window.FLOWER_POWER_BOSS_PLANS, FP.bossPlan.toWorld, FP.createRng, FP.level.makeToxic, FP.coins.place.
 // Écrit   : state.bossThreats, state.world.{bossLevel,solids,toxics,leaks,bonuses,safePath,safeRadius} ; puis FP.coins.place écrit state.world.{coins,chains}.
-//           bossLevel = { plan, walls: [solid], targets: [{ id, i, plate (id de sa plaque), solid }], head: { solid },
+//           bossLevel = { plan, walls: [solid (intake: true sur les deux murs de l'entrée, v5.9.0)], targets: [{ id, i, plate (id de sa plaque), solid }], head: { solid },
 //             plates: [{ id, target (indice i de sa cible), solid }], rooms: [{ id, x0, y0, x1, y1, defense, turrets, zone (solide 'defense', off) }], turrets: [{ id, x, y, room }],
 //             pipes: [{ from, to, open, target, pts }] (v5.7.0 : tuyaux de la machine, décor) }.
 //           state.bossThreats remis à { rooms: {}, shots: [], aim: null, burst: null, cooldown: 0 } (écrit ensuite par play/boss-threats.js).
@@ -45,7 +45,7 @@
         bl.turrets.push({ id: p.id, x: (Math.min(...xs) + Math.max(...xs)) / 2, y: (Math.min(...ys) + Math.max(...ys)) / 2, room: room ? room.id : null });
         continue;
       }
-      if (p.role === 'wall') bl.walls.push(makeSolid(KIND.wall, p.poly, false));
+      if (p.role === 'wall') { const w = makeSolid(KIND.wall, p.poly, false); if (p.intake) w.intake = true; bl.walls.push(w); }   // v5.9.0 : mur de la bouche
       else if (p.role === 'head') bl.head = { solid: makeSolid(KIND.head, p.poly, false) };
       else if (p.role === 'target') { const i = bl.targets.length; bl.targets.push({ id: p.id, i, plate: p.plate, solid: makeSolid(KIND.target, p.poly, !!destroyed[i]) }); }
       else { const i = targetOf[p.id]; bl.plates.push({ id: p.id, target: i, solid: makeSolid(KIND.plate, p.poly, !!destroyed[i]) }); }
