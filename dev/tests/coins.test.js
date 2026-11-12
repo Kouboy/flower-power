@@ -109,3 +109,12 @@ FP.test('coins: densité homogène du haut au bas du niveau', () => {
     FP.assert(Math.min(...thirds) >= .6 * Math.max(...thirds), W + '×' + H + ' : ' + thirds.join(' / '));
   }
 });
+// v5.11.0 (zones sûres) : une pièce est entièrement dans la bande que le zoom de cadrage laisse voir, plus safePad.
+FP.test('coins: toutes dans la bande sûre', () => {
+  FP.assert(Math.abs(FP.camera.safeX(375) - (375 * (1 - 1 / FP.config.camera.framing) / 2 + FP.config.camera.safePad)) < 1e-9, 'safeX');
+  for (const W of [280, 375, 440]) for (let seed = 1; seed <= 6; seed++) {
+    const s = FP.state.createRun(seed, { W, H: Math.round(W * 16 / 9) }); FP.level.startRun(s); FP.level.generate(s);
+    const m = FP.camera.safeX(W), r = FP.config.coins.radius;
+    for (const c of s.world.coins) FP.assert(c.x - r >= m - 1e-6 && c.x + r <= W - m + 1e-6, `pièce à x=${c.x | 0} (W=${W}, graine ${seed})`);
+  }
+});

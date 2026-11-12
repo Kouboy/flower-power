@@ -1,6 +1,6 @@
 // world/coins.js — circuits de pièces (v4.5.0) : chapelets posés à la génération du niveau.
 // Lit     : state.seed, state.level, state.world.{width,height,viewH,surfaceY,safeRadius,safePath,solids,toxics,leaks},
-//           FP.config.coins, FP.createRng, FP.level.pathXAt, FP.collision.{distanceTo,grazeBand}.
+//           FP.config.coins, FP.camera.safeX, FP.createRng, FP.level.pathXAt, FP.collision.{distanceTo,grazeBand}.
 // Écrit   : state.world.coins ({ x, y, chain, rank, taken }) et state.world.chains ({ kind, anchor, total, got, missed, done }).
 // Expose  : FP.coins.place(state), FP.coins.slices(world) (purs, testés).
 // Tirage propre (graine ^ salt ^ niveau) : state.rng n'est jamais consommé, les niveaux restent ceux d'avant.
@@ -31,7 +31,8 @@
   // et sans toucher une pièce d'un chapelet déjà posé.
   function fits(world, x, y) {
     const k = FP.config.coins;
-    if (x < k.radius + k.edge || x > world.width - k.radius - k.edge || y <= world.surfaceY + k.sliceMargin || y >= startLine(world)) return false;
+    const m = FP.camera.safeX(world.width) + k.radius;   // v5.11.0 : dans la bande sûre
+    if (x < m || x > world.width - m || y <= world.surfaceY + k.sliceMargin || y >= startLine(world)) return false;
     // Rejet rapide en hauteur (même résultat) : un obstacle ou une nappe trop haut ou trop bas ne peut pas toucher la pièce.
     return world.solids.every(o => o.off || Math.abs(o.y - y) > o.broadR + k.radius + 2 || FP.collision.distanceTo(o, x, y) >= k.radius + 2) &&
       world.toxics.every(t => Math.abs(t.y - y) > Math.max(t.rx, t.ry) || ellipseK(t, x, y) >= 1 - k.toxicBite) &&

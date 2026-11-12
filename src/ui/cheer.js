@@ -1,7 +1,7 @@
 // ui/cheer.js — cri du chapelet complet (v4.5.0) : « KARMA ! » en lettres dorées qui tombent et rebondissent au-dessus de la
 // pointe. Le montant s'affiche déjà avec le gain (render/effects.js) : le cri n'est que le mot.
 // Petit cri de la bière (v5.2.0) : « SANTÉ ! » en petites lettres crème, qui monte au-dessus de la pointe quand une limace éclate.
-// Lit     : state.events (chainDone, leakPop), state.time, state.camera.y, state.plant.tip, FP.config.text.pop, FP.font, FP.px.SCALE, FP.view.ui, FP.hud.MARGIN.
+// Lit     : state.events (chainDone, leakPop), state.time, state.camera.y, state.plant.tip, FP.config.text.pop, FP.font, FP.px.SCALE, FP.view.ui, FP.hud.safe (v5.11.0 : marges sûres).
 // Écrit   : state.fx.ui.{cheer, pop} uniquement (dernier cri ; dernier « SANTÉ ! »).
 // Expose  : FP.cheer.textFor(event), FP.cheer.width(text, scale), FP.cheer.layout(word, tipX, tipY, uiW, scale?), FP.cheer.anchor(state) (purs, testés),
 //           FP.cheer.draw(g, state).
@@ -18,10 +18,10 @@
   // La pointe dans le repère d'interface : le cri la suit (comme le « +Ɇ » du gain), au lieu de défiler avec le terrain.
   const anchor = (state) => ({ x: state.plant.tip.x / FP.px.SCALE, y: (state.plant.tip.y - state.camera.y) / FP.px.SCALE });
 
-  // Coin haut-gauche du mot : centré au-dessus de la pointe, ramené dans l'écran (marge du HUD).
+  // Coin haut-gauche du mot : centré au-dessus de la pointe, ramené dans l'écran (marges sûres du HUD).
   function layout(word, tipX, tipY, uiW, scale = 2) {
-    const w = width(word, scale), m = FP.hud.MARGIN;
-    return { x: Math.round(Math.max(m, Math.min(uiW - m - w, tipX - w / 2))), y: Math.round(tipY - (scale === 2 ? RISE : POP_RISE)) };
+    const w = width(word, scale), S = FP.hud.safe();
+    return { x: Math.round(Math.max(S.left, Math.min(uiW - S.right - w, tipX - w / 2))), y: Math.round(tipY - (scale === 2 ? RISE : POP_RISE)) };
   }
 
   // Largeur de la toile d'interface (celle de l'écran le plus étroit sous Node, sans toile).

@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '5.10.0',
+    version: '5.11.0',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -77,16 +77,16 @@
         // v4.1.0 : plus de limaces, plus vite (v3 : base 1, perLevel .10, maxExtra 3).
         // v4.8.0 : maxExtra 3, plafond ≈ 7 limaces (était 4 → ≈ 10).
         base: 2, perLevel: .35, maxExtra: 3, scale: .68, tries: 120, relaxAfter: 32, jitter: .24, minDepth: .22,
-        nearRouteChance: .46, routeTop: 86, routeBottom: 142, routeOffset: [22, 62], routeMarginX: 42,
+        nearRouteChance: .46, routeTop: 86, routeBottom: 142, routeOffset: [22, 62],
         angledChance: .90, angleJitter: .24, len: [42, 176], lenPerLevel: 3.2, lenLevelMax: 54, lenDepth: 22,
-        rate: [.24, .92], r: [11, 16.2], marginX: 24, top: 48, bottom: 116,
+        rate: [.24, .92], r: [11, 16.2], top: 48, bottom: 116,
         solidPad: 20, toxicPad: 8, spacingCenter: 46, spacingPath: 28, safeK: .58,
         // v4.17.0 : limaces qui barrent le chemin sûr, à partir du niveau équivalent fromLevel ; jusqu'à chanceAtMax d'entre elles
         // au niveau levelAtMax ; clearPad : marge en plus quand, au bout de sa course, la limace libère le chemin.
         cross: { fromLevel: 6, chanceAtMax: .45, clearPad: 14 },
         // Angles inclinés (en fractions de π) et allures des limaces.
-        shape: { angles: [1 / 8, 1 / 5, 1 / 3, 2 / 5, 3 / 5, 2 / 3, 4 / 5, 7 / 8], morphs: ['clear', 'fat', 'debris'] },
-        minVisible: .5            // part minimale du trajet dans l'écran ; le centre du trajet reste dans [marginX, W − marginX]
+        // v5.11.0 : tout le trajet reste dans la bande sûre (FP.camera.safeX) ; il ne sort plus du cadre.
+        shape: { angles: [1 / 8, 1 / 5, 1 / 3, 2 / 5, 3 / 5, 2 / 3, 4 / 5, 7 / 8], morphs: ['clear', 'fat', 'debris'] }
       }
     },
 
@@ -189,7 +189,7 @@
     powerups: {
       formMax: .48, radius: { pollen: 13, water: 15, spore: 16 }, pickupPad: 9, missedBehind: 155, maxAge: 9.5,
       spawn: { dirCone: 48, idealAhead: 80, aheadRisk: 24, minAhead: 38, surfacePad: 48, aheadSlack: 7,
-        nearSurfaceUp: 92, minProjectionNear: 32, minProjection: 58, marginX: 30, top: 42, bottom: 52,
+        nearSurfaceUp: 92, minProjectionNear: 32, minProjection: 58, top: 42, bottom: 52,   // v5.11.0 : sur les côtés, la bande sûre
         leadNearSurface: 16, lead: 30, nearSurfaceSpan: 105, solidPad: 13, toxicMax: .10, leakPad: 22, spacing: 58, probeR: 16 },
       spore: { radius: 92, solidK: .55, toxicK: .38, ecoPerSolid: 2000, shakeBase: .22, shakePerSolid: .035 }
     },
@@ -206,7 +206,7 @@
       // startClear : rien dans les 180 px au-dessus de la graine (la pousse vient de démarrer, elle ne peut pas aller chercher).
       pickup: 20, radius: 5,   // pickup : rayon de ramassage d'un jeton (plus généreux que les collisions)
       missBelow: 40, value: 10, chainBonus: { easy: 50, bait: 150 }, toxicBite: 1 / 3,
-      minChain: 4, spinFps: 9, edge: 4
+      minChain: 4, spinFps: 9
     },
 
     // Milieux (v4.9.0) : une partie traverse les quatre dans l'ordre ; chacun dure `run.steps` pousses réussies, puis son boss.
@@ -259,9 +259,9 @@
         rain: 40, rainSpread: 120, rainLife: 2.5, crackArms: 4, crackStep: 5 },
       ramp: {
         friche: { channelMin: 52, strike: .9, rest: 1.3, speedup: .12, shot: { speed: 400, gap: 3.2 } },
-        industrie: { channelMin: 49, strike: .97, rest: 1.17, speedup: .14, shot: { speed: 440, gap: 2 } },
-        decharge: { channelMin: 47, strike: 1.03, rest: 1.03, speedup: .16, shot: { speed: 480, gap: 1.75 } },
-        nucleaire: { channelMin: 44, strike: 1.1, rest: .9, speedup: .18, shot: { speed: 520, gap: 1.5 } }
+        industrie: { channelMin: 49, strike: .97, rest: 1.17, speedup: .14, shot: { speed: 415, gap: 2 } },
+        decharge: { channelMin: 47, strike: 1.03, rest: 1.03, speedup: .16, shot: { speed: 430, gap: 1.75 } },
+        nucleaire: { channelMin: 44, strike: 1.1, rest: .9, speedup: .18, shot: { speed: 445, gap: 1.5 } }   // v5.11.0 : tirs plus lents (440, 480, 520 avant) : les tourelles avancées tirent de plus près
       },
       defense: { warn: 1.2, warnMin: 1, deploy: .25 },   // v5.9.0 : deploy = temps (s) que met le coup à traverser sa moitié ; la zone mortelle suit son front
       shot: { track: .7, lock: .3, r: 5, burst: 3, burstGap: .12, spread: 8 },   // v5.8.0 : visée plus courte, rafale de 3 tirs (l'axe, puis ± spread°) espacés de burstGap s
@@ -384,7 +384,8 @@
       followRatio: .52, rateDown: 7.8, rateUp: 5.4,
       framing: 1.18, grazeZoom: .22, nearIn: 26, nearOut: 18, zoomCurve: 1.55, zoomIn: 30, zoomOut: 22,
       // Point focal du zoom, borné dans la partie centrale de l'écran ; en dessous de zoomEpsilon, pas de zoom.
-      focalX: { min: .22, max: .78 }, focalY: { min: .20, max: .78 }, zoomEpsilon: 1.002
+      focalX: { min: .22, max: .78 }, focalY: { min: .20, max: .78 }, zoomEpsilon: 1.002,
+      safePad: 12   // v5.11.0 : bande sûre = ce que rogne le cadrage (zoom centré) + safePad px (FP.camera.safeX)
     },
 
     loop: {

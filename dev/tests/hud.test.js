@@ -15,7 +15,7 @@ FP.test('hud: graines = réserves, sur le total de départ', () => {
 });
 // Graines ×2 (v4.4.2) : lisibles sur téléphone ; le score ne les chevauche pas.
 const seedsW = () => (FP.config.plant.seeds - 1) * FP.hud.SEED_STEP + 6 * FP.hud.SEED_SCALE;
-const fitsBeside = (cssW, score) => FP.hud.MARGIN + seedsW() + 4 + FP.font.measure('Ɇ' + score.toLocaleString('fr-FR'), { scale: 2 }) + 2 + FP.hud.MARGIN <= cssW / FP.px.SCALE;
+const fitsBeside = (cssW, score) => FP.hud.MARGIN + seedsW() + 2 + FP.font.measure('Ɇ' + score.toLocaleString('fr-FR'), { scale: 2 }) + 2 + FP.hud.MARGIN <= cssW / FP.px.SCALE;
 FP.test('hud: graines deux fois plus grandes, posées sur la marge du bas', () => {
   FP.assertEqual(FP.hud.SEED_SCALE, 2);
   FP.assertEqual(FP.hud.layout(400).seedY + 7 * FP.hud.SEED_SCALE, 400 - FP.hud.MARGIN);
@@ -33,4 +33,18 @@ FP.test('hud: le nom du milieu et le multiplicateur de saison', () => {
   const s = FP.state.createRun(1, { W: 440, H: 783 }); s.run.milieu = 2;
   FP.assertEqual(FP.hud.items(s).milieu, 'DÉCHARGE'); FP.assertEqual(FP.hud.items(s).mult, 1);
   s.run.saison = 2; FP.assertEqual(FP.hud.items(s).mult, 2);
+});
+
+// v5.11.0 (zones sûres) : au moins 16 px CSS (8 px d'interface) de chaque bord, et la marge système du téléphone (encoche, barre
+// d'accueil, FP.view.safe) plus 8 px CSS quand elle est plus grande.
+const withSafe = (safe, fn) => { const v = FP.view; FP.view = { ...(v || {}), ui: (v && v.ui) || { w: 180, h: 400 }, safe }; try { fn(); } finally { FP.view = v; } };
+FP.test('hud: marges sûres, encoche et barre d’accueil comprises', () => {
+  FP.assertEqual(FP.hud.MARGIN, 8);
+  withSafe(undefined, () => { const s = FP.hud.safe(); FP.assertEqual(JSON.stringify(s), JSON.stringify({ top: 8, right: 8, bottom: 8, left: 8 })); });
+  withSafe({ top: 24, right: 0, bottom: 17, left: 6 }, () => {
+    const s = FP.hud.safe(); FP.assertEqual(JSON.stringify(s), JSON.stringify({ top: 28, right: 8, bottom: 21, left: 10 }));
+    const L = FP.hud.layout(400); FP.assertEqual(L.seedY + 7 * FP.hud.SEED_SCALE, 400 - 21, 'graines au-dessus de la barre d’accueil');
+    FP.assertEqual(FP.hud.seedCenter(0, 400).x, 10 + 3 * FP.hud.SEED_SCALE, 'graines décalées du bord');
+    FP.assertEqual(FP.cheer.layout('KARMA', 0, 200, 180).x, 10, 'cri ramené dans la marge');
+  });
 });

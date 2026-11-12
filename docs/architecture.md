@@ -32,7 +32,7 @@ src/
 │   ├── flow.js       ✅ morts (solide, lixiviat, brûlure toxique), exposition, éclosion, transitions (plus de messages texte : l'interface se déduit de l'état)
 │   ├── boss.js       ✅ le combat de boss (v5.1.0, FP.boss) : `state.bossFight` (cibles détruites, tête à nu, cinématique de mort `collapse`), reset, assaut d’une cible, tête transpercée (`pierceHead`), déroulé de la cinématique (`update` : parois qui explosent depuis la tête puis s'effondrent)
 │   ├── boss-threats.js ✅ les défenses signature des salles de boss (v5.1.0, FP.bossThreats) : la pointe entre → avertissement long, coup sur sa moitié de la salle, repos ; `timing` pur ; événements `bossWarn`, `bossStrike` ; tirs visés des boss 2 à 4, pendant le repos de la salle, tige dedans ou déjà sortie (`bossAim`, `bossLock`, `bossShot`)
-│   ├── camera.js     ✅ défilement, cadrage ×1,18 (zoomFrame, toScreen, toWorld), zoom de frôlement
+│   ├── camera.js     ✅ défilement, cadrage ×1,18 (zoomFrame, toScreen, toWorld), zoom de frôlement ; bande sûre (v5.11.0, safeX : ce que rogne le cadrage + 12 px, où restent pièces, bonus, limaces, tourelles)
 │   ├── graze.js      ✅ frôlement : suivi par objet, paiement à la sortie, annulation au contact, mesures du flyover
 │   ├── coins.js      ✅ ramassage des pièces (FP.coinPlay) : pièce au combo en cours, bonus du chapelet complet
 │   ├── shop.js       ✅ boutique de fin de pousse (FP.shop) : tirage de 3 articles (un à −50 %), coches, commande (v5.9.0 : inactive sans les moyens, `canOrder`), effets
@@ -42,7 +42,7 @@ src/
 ├── render/
 │   ├── palette.js    ✅ palettes nommées (ciel, strates, pelouse, tige, graine, héros, fleurs) ; couleurs réservées au danger
 │   ├── px.js         ✅ boîte à outils pixel : rect, line, disc, ring, dither, downscale, posterize, outline
-│   ├── view.js       ✅ canvas, DPR, 9:16 ; toile monde à mi-résolution (FP.view.art)
+│   ├── view.js       ✅ canvas, DPR, 9:16 ; toile monde à mi-résolution (FP.view.art) ; marges système du téléphone (v5.11.0, FP.view.safe, depuis les --safe-* de style.css)
 │   ├── sprites.js    ✅ chargement des PNG, FP.sprites.get(clé)
 │   ├── decor-tube.js  ✅ conduites usées (coudes, cassures, rouille, galeries effondrées) pour les décors enterrés (FP.decorTube)
 │   ├── decor-friche.js, decor-industrie.js, decor-decharge.js, decor-nucleaire.js ✅ décor de chaque milieu (v4.11.0) : astre et météo, horizon, accessoires de surface, décor enterré, petites animations (FP.decor[id], contrat commun)
@@ -85,7 +85,7 @@ src/
 │   └── audio.js      ✅ chef d'orchestre : déblocage, événements → effets et musique, réglage tout / effets seuls / muet, pause onglet caché
 ├── ui/
 │   ├── font.js       ✅ police bitmap 5×7 (FP.font : has, measure, wrap, draw), glyphes rendus en cache
-│   ├── hud.js        ✅ HUD des coins du bas (FP.hud.items, pur) : graines, ÉcoCrédits™, pollen et combo actifs, « TOUCHER POUR POUSSER »
+│   ├── hud.js        ✅ HUD des coins du bas (FP.hud.items, pur ; v5.11.0 : FP.hud.safe, marges sûres de toute l'interface) : graines, ÉcoCrédits™, pollen et combo actifs, « TOUCHER POUR POUSSER »
 │   ├── shout.js      ✅ cri de mort (FP.shout.textFor), aide de première pousse (FP.shout.helpFor)
 │   ├── cheer.js      ✅ cri du chapelet complet (« KARMA ! », « GREEN ! », « 0 DÉCHET ! ») et son montant ; petit « SANTÉ ! » d'une limace qui éclate
 │   ├── order.js      ✅ bon de commande en papier recyclé (FP.orderForm) : mise en page, zones de toucher, dessin

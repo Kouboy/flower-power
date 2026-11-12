@@ -6,6 +6,8 @@
 // rooms  : { id, rect: [x0, y0, x1, y1] (où agissent les menaces), defense, turrets } ;
 // paths  : un trajet par cible et un vers la tête ('head') ; la graine (sous la zone) est ajoutée devant par toWorld ;
 // toxics : centres des nappes.
+// v5.11.0 (zones sûres) : centre des tourelles entre .215 et .785 de la largeur (socle entier dans la bande que le cadrage laisse voir, même à
+// 280 px), tenues au mur par leur console (render/boss-machines.js) ; contrôlé par dev/tests/bossplan.test.js.
 // Composés sur un monde de 360 px de large : canaux d'au moins config.boss.ramp[milieu].channelMin (52 px au boss 1 … 44 au boss 4 ; le plus
 // serré de chaque plan l'approche à 4 px près, retours de playtest), trajets toujours montants, en pente plutôt
 // qu'à plat ; salles larges, tourelles sur leurs parois ; rien au-dessus de la tête jusqu'à la surface.
@@ -36,7 +38,7 @@ window.FLOWER_POWER_BOSS_PLANS = {
       { id: 'plaque-g', role: 'plate', poly: [[.278, .03], [.361, .03], [.361, .082], [.278, .082]] },   // blindage gauche de la toupie, sous le plafond
       { id: 'plaque-h', role: 'plate', poly: [[.403, .004], [.597, .004], [.597, .017], [.403, .017]] },   // blindage du dessus
       { id: 'plaque-d', role: 'plate', poly: [[.639, .03], [.722, .03], [.722, .082], [.639, .082]] },   // blindage droit, sous le plafond
-      { id: 'tourelle-d', role: 'turret', poly: [[.776, .3], [.816, .3], [.816, .326], [.776, .326]] }    // tourelle sous le parapet droit (v5.5.0)
+      { id: 'tourelle-d', role: 'turret', poly: [[.765, .3], [.805, .3], [.805, .326], [.765, .326]] }    // tourelle sous le parapet droit (v5.5.0)
     ],
     rooms: [
       // la galerie des vannes, défendue en trois sections, chacune centrée sur le débouché de sa meurtrière (une seule salle d'un bord à
@@ -86,9 +88,9 @@ window.FLOWER_POWER_BOSS_PLANS = {
       { id: 'plaque-g', role: 'plate', poly: [[.361, .082], [.417, .082], [.417, .148], [.361, .148]] },   // blindage gauche de la torchère
       { id: 'plaque-h', role: 'plate', poly: [[.417, .052], [.583, .052], [.583, .065], [.417, .065]] },   // blindage du dessus
       { id: 'plaque-d', role: 'plate', poly: [[.583, .082], [.639, .082], [.639, .148], [.583, .148]] },   // blindage droit
-      { id: 'tourelle-bas', role: 'turret', poly: [[.881, .668], [.919, .668], [.919, .694], [.881, .694]] },   // tourelle sur le flanc droit de la chambre basse
-      { id: 'tourelle-haut', role: 'turret', poly: [[.115, .313], [.153, .313], [.153, .339], [.115, .339]] },   // tourelle sur l'épaule gauche de la chambre haute
-      { id: 'tourelle-bas-g', role: 'turret', poly: [[.081, .668], [.119, .668], [.119, .694], [.081, .694]] }    // tourelle sur le flanc gauche de la chambre basse (v5.5.0)
+      { id: 'tourelle-bas', role: 'turret', poly: [[.766, .668], [.804, .668], [.804, .694], [.766, .694]] },   // tourelle sur le flanc droit de la chambre basse
+      { id: 'tourelle-haut', role: 'turret', poly: [[.196, .313], [.234, .313], [.234, .339], [.196, .339]] },   // tourelle sur l'épaule gauche de la chambre haute
+      { id: 'tourelle-bas-g', role: 'turret', poly: [[.196, .668], [.234, .668], [.234, .694], [.196, .694]] }    // tourelle sur le flanc gauche de la chambre basse (v5.5.0)
     ],
     rooms: [
       { id: 'chambre-basse', rect: [.056, .625, .944, .781], defense: 'vapeur', turrets: ['tourelle-bas', 'tourelle-bas-g'] },
@@ -125,9 +127,9 @@ window.FLOWER_POWER_BOSS_PLANS = {
       { id: 'plaque-g', role: 'plate', poly: [[.375, .122], [.417, .122], [.417, .187], [.375, .187]] },   // blindage gauche de la gueule
       { id: 'plaque-h', role: 'plate', poly: [[.417, .109], [.583, .109], [.583, .122], [.417, .122]] },   // blindage du dessus
       { id: 'plaque-d', role: 'plate', poly: [[.583, .122], [.625, .122], [.625, .187], [.583, .187]] },   // blindage droit
-      { id: 'tourelle-g', role: 'turret', poly: [[.081, .556], [.12, .556], [.12, .582], [.081, .582]] },   // tourelle sur la paroi gauche
-      { id: 'tourelle-d', role: 'turret', poly: [[.881, .434], [.919, .434], [.919, .46], [.881, .46]] },   // tourelle sur la paroi droite
-      { id: 'tourelle-g-haut', role: 'turret', poly: [[.081, .3], [.12, .3], [.12, .326], [.081, .326]] }    // tourelle en haut de la paroi gauche (v5.5.0)
+      { id: 'tourelle-g', role: 'turret', poly: [[.196, .556], [.234, .556], [.234, .582], [.196, .582]] },   // tourelle sur la paroi gauche
+      { id: 'tourelle-d', role: 'turret', poly: [[.766, .25], [.804, .25], [.804, .276], [.766, .276]] },   // tourelle sur la paroi droite
+      { id: 'tourelle-g-haut', role: 'turret', poly: [[.196, .3], [.234, .3], [.234, .326], [.196, .326]] }    // tourelle en haut de la paroi gauche (v5.5.0)
     ],
     rooms: [
       { id: 'salle', rect: [.042, .243, .958, .66], defense: 'flamme', turrets: ['tourelle-g', 'tourelle-d', 'tourelle-g-haut'] }
@@ -163,9 +165,9 @@ window.FLOWER_POWER_BOSS_PLANS = {
       { id: 'plaque-g', role: 'plate', poly: [[.375, .082], [.417, .082], [.417, .139], [.375, .139]] },   // blindage gauche du cœur
       { id: 'plaque-h', role: 'plate', poly: [[.417, .061], [.583, .061], [.583, .074], [.417, .074]] },   // blindage du dessus
       { id: 'plaque-d', role: 'plate', poly: [[.583, .082], [.625, .082], [.625, .139], [.583, .139]] },   // blindage droit
-      { id: 'tourelle-g', role: 'turret', poly: [[.081, .451], [.119, .451], [.119, .477], [.081, .477]] },   // tourelle sur la paroi gauche
-      { id: 'tourelle-d', role: 'turret', poly: [[.881, .373], [.919, .373], [.919, .399], [.881, .399]] },   // tourelle sur la paroi droite
-      { id: 'tourelle-d-bas', role: 'turret', poly: [[.881, .52], [.919, .52], [.919, .546], [.881, .546]] }    // tourelle en bas de la paroi droite (v5.5.0)
+      { id: 'tourelle-g', role: 'turret', poly: [[.196, .5], [.234, .5], [.234, .526], [.196, .526]] },   // tourelle sur la paroi gauche
+      { id: 'tourelle-d', role: 'turret', poly: [[.766, .26], [.804, .26], [.804, .286], [.766, .286]] },   // tourelle sur la paroi droite
+      { id: 'tourelle-d-bas', role: 'turret', poly: [[.766, .52], [.804, .52], [.804, .546], [.766, .546]] }    // tourelle en bas de la paroi droite (v5.5.0)
     ],
     rooms: [
       { id: 'coeur', rect: [.056, .26, .944, .578], defense: 'radiation', turrets: ['tourelle-g', 'tourelle-d', 'tourelle-d-bas'] }

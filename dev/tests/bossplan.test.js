@@ -284,12 +284,16 @@ FP.test('bossPlan: les tuyaux courent dans la masse de la machine, ou en colonne
   });
 });
 
-// v5.8.0 (retour de jeu : tourelles invisibles au bord de l'écran) : centre d'une tourelle entre 10 % et 90 % de la largeur.
-FP.test('bossPlan: tourelles à au moins 10 % de chaque bord', () => {
-  for (const milieu of PLAN_MILIEUX) for (const t of window.FLOWER_POWER_BOSS_PLANS[milieu].pieces.filter(p => p.role === 'turret')) {
-    const xs = t.poly.map(q => q[0]), cx = (Math.min(...xs) + Math.max(...xs)) / 2;
-    FP.assert(cx >= .1 - 1e-9 && cx <= .9 + 1e-9, `${milieu} ${t.id} à ${cx.toFixed(3)}`);
-  }
+// v5.8.0 (retour de jeu : tourelles invisibles au bord de l'écran) : centre d'une tourelle entre 10 % et 90 % de la largeur ;
+// v5.11.0 (zones sûres) : tout le socle dans la bande sûre (FP.camera.safeX), à toutes les largeurs d'écran.
+FP.test('bossPlan: tourelles entières dans la bande sûre', () => {
+  eachPlan(({ s, W, placed, at }) => {
+    const r = FP.config.boss.turret.size / 2 * FP.px.SCALE, m = FP.camera.safeX(W);
+    for (const t of placed.pieces.filter(p => p.role === 'turret')) {
+      const xs = t.poly.map(q => q[0]), cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+      FP.assert(cx - r >= m - 1e-6 && cx + r <= W - m + 1e-6, `${t.id} à x=${cx | 0} (bande ${m | 0}) ` + at);
+    }
+  });
 });
 
 // v5.9.0 (retour de jeu : « le couloir du début ne se rattache pas au boss ») : l'entonnoir d'entrée est la bouche d'aspiration.

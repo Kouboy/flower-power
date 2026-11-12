@@ -3,6 +3,7 @@
 // Écrit   : state.camera.{y,manual,near,zoom,shake}.
 // Expose  : FP.camera.update(state, dt), FP.camera.maxY(world), FP.camera.scrollBy(state, dy), FP.camera.totalZoom(state),
 //           FP.camera.zoomFrame(state) → { z, fx, fy } | null (zoom et point focal en pixels d'écran, appliqués par render/frame.js),
+//           FP.camera.safeX(width) (bande sûre, pur),
 //           FP.camera.toScreen(state, x, y) / FP.camera.toWorld(state, sx, sy) (monde ↔ écran par ce cadrage, sans la secousse ; purs).
 // Porté de la v3.43.16 (updateScrollCamera, updateCamera, viewScaleBase en cadrage B).
 (function () {
@@ -11,6 +12,9 @@
   const { clamp, lerp } = FP.math;
 
   const maxY = (world) => Math.max(0, world.height - world.viewH);
+  // Bande sûre (v5.11.0) : de chaque côté, ce que le zoom de cadrage rogne (point focal au centre), plus safePad ; les éléments de jeu
+  // qui comptent (pièces, bonus, limaces, tourelles) restent entre safeX et width − safeX.
+  const safeX = (width) => width * (1 - 1 / FP.config.camera.framing) / 2 + FP.config.camera.safePad;
 
   // Le cadrage ×1,18 s'applique partout sauf au menu et sur l'écran de fin (comme le draw() de la v3) :
   // pas de saut de zoom au moment d'une rupture.
@@ -67,5 +71,5 @@
     state.camera.y = clamp(state.camera.y + dy, 0, maxY(state.world));
   }
 
-  FP.camera = { update, maxY, scrollBy, totalZoom, zoomFrame, toScreen, toWorld };
+  FP.camera = { safeX, update, maxY, scrollBy, totalZoom, zoomFrame, toScreen, toWorld };
 })();
