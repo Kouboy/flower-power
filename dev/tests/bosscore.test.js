@@ -57,3 +57,37 @@ FP.test('bossCore: le cœur blindé n’a pas la couleur des cibles ; il tousse 
   FP.assert(draw(1.3).some(r => r.c === Sp), 'étincelles juste après la pompe cassée');
   FP.assert(!draw(3).some(r => r.c === Sp), 'puis plus rien');
 });
+
+// v5.9.0 : pompe en sprite, animée par le code ; sans image (ou cassée), le dessin du code reste.
+const coreTall = [[0, 0], [7, 0], [7, 120], [0, 120]];
+FP.test('core: pompe en sprite', () => {
+  const img = skinImg(32, 32), W = FP.palette.boss.weak;
+  try {
+    FP.bossSkin._set('friche', 'pump', img);
+    const at = (t, box = coreBox) => { const g = skinCtx(); FP.bossCore.pump(g, box, t, coreM(), false, 'friche'); return g; };
+    const g = at(1.3);
+    FP.assert(g.images.some(q => q.img === img), 'le sprite est posé');
+    const T = FP.bossSkin.tank('friche'), k = Math.min(40 / 32, 26 / 32), iw = 32 * k, ih = 32 * k, dx = (40 - iw) / 2, dy = (26 - ih) / 2;
+    const lit = g.rects.filter(r => r.c === W[0] || r.c === W[1]);
+    FP.assert(lit.length > 0, 'liquide lumineux');
+    for (const r of lit) FP.assert(r.x >= dx + T[0] * iw - 1 && r.x + r.w <= dx + T[2] * iw + 1 && r.y >= dy + T[1] * ih - 1 && r.y + r.h <= dy + T[3] * ih + 1, 'lumière dans la cuve : ' + JSON.stringify(r));
+    const best = g.rects.reduce((a, r) => (lum(r.c) > lum(a.c) ? r : a));
+    FP.assert(W.includes(best.c), 'la cuve est le plus clair');
+    FP.assert(JSON.stringify(at(1).rects) !== JSON.stringify(at(1.1).rects), 'animation');
+    const tall = at(1.3, coreTall), cap = tall.images.find(q => q.img === img);
+    FP.assert(cap, 'tête de pompe en image');
+    const capBottom = Math.round(img.height * 7 / img.width);
+    const tl = tall.rects.filter(r => r.c === W[0] || r.c === W[1]);
+    FP.assert(tl.length > 0 && tl.every(r => r.y >= capBottom), 'tube lumineux sous la tête');
+  } finally { FP.bossSkin._reset(); }
+});
+FP.test('core: sans image, la pompe de secours', () => {
+  FP.bossSkin._reset();
+  const draw = (id, broken = false) => { const g = skinCtx(); FP.bossCore.pump(g, coreBox, 1.3, coreM(), broken, id); return g; };
+  FP.assertEqual(JSON.stringify(draw('friche').rects), JSON.stringify(draw(undefined).rects), 'même dessin sans image');
+  FP.assertEqual(draw('friche').images.length, 0);
+  try {
+    FP.bossSkin._set('friche', 'pump', skinImg(32, 32));
+    const b = draw('friche', true); FP.assertEqual(b.images.length, 0, 'pompe cassée : l’épave du code');
+  } finally { FP.bossSkin._reset(); }
+});

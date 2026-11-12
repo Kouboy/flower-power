@@ -175,7 +175,7 @@
     for (const tg of bl.targets) {
       if (!seen(tg.solid)) continue;
       const pts = artPoly(tg.solid, cam, shift(tg.solid));
-      FP.bossCore.pump(g, pts, t, M, tg.solid.off);   // pompe (v5.8.0) ; cassée, elle fume
+      FP.bossCore.pump(g, pts, t, M, tg.solid.off, id);   // pompe (v5.8.0 ; v5.9.0 : en sprite si le biome a son image) ; cassée, elle fume
       if (tg.solid.off) smoke(g, pts, t);
     }
     // Cœur blindé (v5.7.0) : il tremble au rythme des pulsations qui arrivent, tant qu'une pompe tourne.
