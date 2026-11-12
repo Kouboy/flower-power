@@ -1,9 +1,11 @@
-// audio/sfx.js — effets sonores en FM (même moteur que la musique, accordés en mi ; ramassages dans la gamme du milieu) : sons de jeu, sons d'interface, jingles,
-// bourdonnement continu du frôlement et grattement de la tige qui creuse.
-// Lit     : state.mode, state.graze.active, state.query.grazes, FP.songs.jingles, FP.sequencer.notesBetween, FP.synth.DRUMS.
+// audio/sfx.js — effets sonores en FM (même moteur que la musique, composés en mi ; ramassages dans la gamme du milieu ; v5.10.0 : les
+// autres sons accordés, les jingles et la foreuse prennent la tonique et le mode du biome, FP.tonality) : sons de jeu, sons d'interface,
+// jingles, bourdonnement continu du frôlement et grattement de la tige qui creuse.
+// Lit     : state.mode, state.graze.active, state.query.grazes, FP.songs.jingles, FP.sequencer.notesBetween, FP.synth.DRUMS, FP.tonality.pitch.
 // Écrit   : rien dans l'état (le moteur audio uniquement ; anti-rafale rangé sur le moteur).
-// Expose  : FP.sfx.play(backend, name, intensity?, key?) (key : id du milieu, gamme des ramassages ; friche par défaut), FP.sfx.jingle(backend, name), FP.sfx.drone(backend, state, events), FP.sfx.hum(backend, state, events) (nappe toxique, effort de germination),
-//           FP.sfx.scrape(backend, k), FP.sfx.NAMES.
+// Expose  : FP.sfx.play(backend, name, intensity?, key?) (key : id du milieu — gamme des ramassages, tonique et mode des autres sons ;
+//           absent : en mi, gamme de la friche), FP.sfx.jingle(backend, name, key?), FP.sfx.drone(backend, state, events), FP.sfx.hum(backend, state, events) (nappe toxique, effort de germination),
+//           FP.sfx.scrape(backend, k, key?), FP.sfx.NAMES.
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
@@ -98,26 +100,29 @@
     toggle: (n) => { n('pluck', 76, 0, .05, .8); }
   };
   const NAMES = Object.keys(RECIPES);
+  // Sons qui ne suivent pas la tonique du biome : ramassages (déjà dans la gamme du milieu, KEYS), papier, crayon, tiroir-caisse (bruits).
+  const FIXED = new Set(['coin', 'chain', 'eco', 'grazeStart', 'crumple', 'crumpleOut', 'pencil', 'register']);
 
   function play(b, name, intensity, key) {
     const r = RECIPES[name];
     if (!b || !r || !allowed(b, name)) return;
     const t = b.now();
-    const n = (inst, midi, at, dur, vel, bend) => b.note(inst, midi, t + at, dur, vel, bend ? { bus: 'sfx', bend } : SFX);
+    const tone = FIXED.has(name) ? null : key;
+    const n = (inst, midi, at, dur, vel, bend) => b.note(inst, FP.tonality.pitch(midi, tone), t + at, dur, vel, bend ? { bus: 'sfx', bend } : SFX);
     const z = (at, dur, gain, hz, type, q) => b.burst(t + at, dur, gain, hz, type, SFX, q);
     const d = (kind, at, vel) => b.drum(kind, t + at, vel, SFX);
     r(n, z, d, intensity === undefined ? 1 : intensity, KEYS[key] || KEYS.friche);
   }
 
   // Jingle : une petite partition de FP.songs.jingles, jouée tout de suite sur le bus des effets.
-  function jingle(b, name) {
+  function jingle(b, name, key) {
     const song = FP.songs.jingles && FP.songs.jingles[name];
     if (!b || !song || !allowed(b, 'jingle:' + name)) return;
     const t = b.now(), spb = 60 / song.bpm;
     for (const { note: x, beat } of FP.sequencer.notesBetween(song, 0, song.bars * song.beatsPerBar)) {
       const at = t + beat * spb, route = x.bend ? { bus: 'sfx', bend: x.bend } : SFX;
       if (FP.synth.DRUMS.includes(x.inst)) b.drum(x.inst, at, x.vel === undefined ? 1 : x.vel, SFX);
-      else b.note(x.inst, x.midi, at, x.dur * spb, x.vel === undefined ? 1 : x.vel, route);
+      else b.note(x.inst, FP.tonality.pitch(x.midi, key), at, x.dur * spb, x.vel === undefined ? 1 : x.vel, route);
     }
   }
 
@@ -126,10 +131,10 @@
   // Joué une quinzaine de fois par seconde : sur trois voix permanentes (v4.7.5), sans créer de nœuds à chaque battement.
   let drillStep = 0;
   const DRILL = { bus: 'sfx', mono: 'drill' }, SOIL = { bus: 'sfx', mono: 'soil' }, SCRATCH = { bus: 'sfx', mono: 'scratch' };
-  function scrape(b, k) {
+  function scrape(b, k, key) {
     if (!allowed(b, 'scrape')) return;
     const t = b.now();
-    b.note('drill', drillStep++ % 2 ? 59 : 52, t, .06, .8 + k * .4, DRILL);   // mi3 / si3 : audible même sur des haut-parleurs d'ordinateur portable
+    b.note('drill', FP.tonality.pitch(drillStep++ % 2 ? 59 : 52, key), t, .06, .8 + k * .4, DRILL);   // mi3 / si3 : audible même sur des haut-parleurs d'ordinateur portable
     b.burst(t, .05, .025 + k * .015, 240, 'lowpass', SOIL);
     if (drillStep % 2) b.burst(t + .01, .03, .02 + k * .015, 1300 + Math.random() * 500, 'bandpass', SCRATCH);   // grattement discret, un battement sur deux
   }
