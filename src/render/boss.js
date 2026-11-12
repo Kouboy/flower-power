@@ -1,8 +1,8 @@
-// render/boss.js — le corps du boss (v5.1.0 ; habillé des images du milieu depuis la v5.6.0, sinon formes du code) : parois, pompes (cibles) dont le piston bat, tête qui tremble au rythme du flux, plaques ; et ses menaces (liseré de la zone visée, visée depuis la bouche du canon, projectiles). Tuyaux, machines de défense, tourelles et terre : render/boss-pipes.js, boss-machines.js, boss-earth.js (v5.7.0).
+// render/boss.js — le corps du boss (v5.1.0 ; matière et plaques en images depuis la v5.6.0, sinon formes du code) : parois, pompes et cœur (dessinés par render/boss-core.js, v5.8.0), plaques ; et ses menaces (liseré de la zone visée, visée depuis la bouche du canon, projectiles). Tuyaux, machines de défense, tourelles, terre et structures de liaison : render/boss-pipes.js, boss-machines.js, boss-earth.js, boss-struts.js.
 // Lit     : state.{time,camera.y,run.milieu,plant.tip,bossFight.{headOpen,destroyed},bossThreats.{rooms,aim,shots}}, state.world.{width,height,viewH,bossLevel.{walls,targets,head,plates,rooms,turrets}} (x, y, collision, off de chaque solide),
 //           FP.config.milieux, FP.palette.boss, FP.bossThreats.timing, FP.px (dont layer et blit), FP.bossSkin (images du milieu, v5.6.0 ; sans image : formes du code).
 // Écrit   : rien dans l'état (la toile reçue ; un calque en cache, créé à la première utilisation).
-// Expose  : FP.bossRender.draw(g, state) (corps : parois, cibles, tête, plaques, tourelles) et FP.bossRender.drawThreats(g, state) (menaces :
+// Expose  : FP.bossRender.draw(g, state) (corps : parois, pompes, cœur, plaques) et FP.bossRender.drawThreats(g, state) (menaces :
 //           défenses, visée, projectiles ; v5.6.0, dessinées après tout le reste du monde) — repère d'art, la caméra est appliquée ici ;
 //           rien hors niveau de boss ; fillPoly, artPoly (pour boss-fx.js).
 // Cible détruite (off) : épave sombre qui fume ; plaque tombée ou paroi effondrée (off) : rien ; tête à nu (bossFight.headOpen) : lueur qui pulse ; tête transpercée (off) : épave.
@@ -31,8 +31,7 @@
   }
 
   // Images du milieu (v5.6.0, render/boss-skin.js) : null pour chaque rôle sans image prête.
-  const skinOf = (id) => ({ matter: FP.bossSkin.image(id, 'matter'), target: FP.bossSkin.image(id, 'target'), head: FP.bossSkin.image(id, 'head'),
-    plate: FP.bossSkin.image(id, 'plate') });
+  const skinOf = (id) => ({ matter: FP.bossSkin.image(id, 'matter'), plate: FP.bossSkin.image(id, 'plate') });
 
   // Paroi : contour, puis la matière du boss ancrée au monde (ox, oy : origine du monde dans g) ou, sans image, reflet, liseré d'ombre
   // à 3 pixels du bord et corps ; rivets réguliers le long du haut.
@@ -44,44 +43,22 @@
     for (let x = Math.ceil(b.x0) + 4; x < b.x1 - 4; x += 9) FP.px.rect(g, x, Math.ceil(b.y0) + 2, 1, 1, M.rivet);
   }
 
-  // Épave (cible détruite, tête transpercée) : trou sombre d'où monte de la fumée.
-  function wreck(g, pts, t, M) {
+  // Fumée qui monte d'une pièce détruite (pompe cassée, tête transpercée).
+  function smoke(g, pts, t) {
     const P = FP.palette.boss, b = box(pts), cx = Math.round((b.x0 + b.x1) / 2);
-    fillPoly(g, pts, M.edge);
-    fillPoly(g, pts, P.hole, 1);
     for (let j = 0; j < 3; j++) {
       const rise = Math.floor((t * 9 + j * 6) % 18);
       FP.px.disc(g, cx + Math.round(Math.sin(t * 2 + j * 2.1) * 2) + (j - 1) * Math.round((b.x1 - b.x0) / 4), Math.round(b.y0) - rise, rise < 9 ? 1 : 2, P.smoke[rise < 9 ? 0 : 1]);
     }
   }
 
-  // Cible intacte : bloc incandescent ou son image (fond peint dans le calque) dont le cœur pulse ; sur l'image, un éclat au centre.
-  function targetBase(g, pts, M, S) {
-    fillPoly(g, pts, M.edge);
-    if (S.target) { fillPoly(g, pts, M.dark, 1); FP.bossSkin.piece(g, pts, S.target, 1); } else fillPoly(g, pts, FP.palette.boss.weak[1], 1);
-  }
-  // Pompe (v5.7.0) : un piston bat au-dessus de la cible, à pumpHz, et la pousse le voit pomper le flux vers le cœur.
-  function targetCore(g, pts, t, S, M) {
-    const pulse = Math.round((Math.sin(t * 6) + 1) / 2), b = box(pts), cx = Math.round((b.x0 + b.x1) / 2);
-    if (!S.target) fillPoly(g, pts, FP.palette.boss.weak[0], 2 + pulse);
-    else FP.px.disc(g, cx, Math.round((b.y0 + b.y1) / 2), 1 + pulse, FP.palette.boss.weak[0]);
-    const stroke = Math.round((Math.sin(t * FP.TAU * FP.config.boss.pipes.pumpHz) + 1) * 1.5), w = Math.max(2, Math.round((b.x1 - b.x0) / 4));
-    FP.px.rect(g, cx - Math.floor(w / 2), Math.round(b.y0) - 2 - stroke, w, 2 + stroke, M.light);
-    FP.px.rect(g, cx - Math.floor(w / 2) - 1, Math.round(b.y0) - 3 - stroke, w + 2, 1, M.edge);
-  }
-
-  // Tête : bloc sombre tant qu'elle est blindée ; à nu, une lueur pulse au centre ; transpercée, une épave.
-  function head(g, pts, open, off, t, M, S) {
-    if (off) { wreck(g, pts, t, M); return; }
-    const P = FP.palette.boss, b = box(pts), cx = Math.round((b.x0 + b.x1) / 2), cy = Math.round((b.y0 + b.y1) / 2);
-    fillPoly(g, pts, M.edge);
-    if (!open && S.head) { fillPoly(g, pts, M.dark, 1); FP.bossSkin.piece(g, pts, S.head, 1); return; }
-    fillPoly(g, pts, open ? P.glow[0] : M.dark, 1);
-    if (!open) return;
-    const r = 2 + Math.round((Math.sin(t * 5) + 1) * 1.5);
-    FP.px.disc(g, cx, cy, r + 1, P.glow[1]); FP.px.disc(g, cx, cy, r, P.weak[1]); FP.px.disc(g, cx, cy, Math.max(1, r - 2), P.weak[0]);
-    // À nu (v5.7.0) : des étincelles jaillissent du cœur privé de son flux.
-    const R = Math.round((b.x1 - b.x0) / 2) + 1, f = Math.floor(t * 12);
+  // Tête : le cœur du boss (v5.8.0, render/boss-core.js) ; à nu, des étincelles en jaillissent ; transpercée, une épave qui fume.
+  function head(g, pts, t, state) {
+    const P = FP.palette.boss;
+    if (state.world.bossLevel.head.solid.off) { fillPoly(g, pts, P.hole); smoke(g, pts, t); return; }
+    FP.bossCore.heart(g, pts, t, state);
+    if (!state.bossFight.headOpen) return;
+    const b = box(pts), cx = Math.round((b.x0 + b.x1) / 2), cy = Math.round((b.y0 + b.y1) / 2), R = Math.round((b.x1 - b.x0) / 2) + 1, f = Math.floor(t * 12);
     for (let k = 0; k < 3; k++) { const a = ((f + k * 5) % 12) / 12 * FP.TAU; FP.px.rect(g, Math.round(cx + Math.cos(a) * R), Math.round(cy + Math.sin(a) * R * .6), 1, 1, P.weak[0]); }
   }
 
@@ -100,7 +77,6 @@
   // shift(o) : décalage en x d'une pièce (le tremblement, en direct) ; seen(o) : pièce à peindre.
   function still(g, bl, M, S, cam, shift, seen) {
     for (const o of bl.walls) if (!o.off && seen(o)) wall(g, artPoly(o, cam, shift(o)), M, S, shift(o), -cam);
-    for (const tg of bl.targets) if (!tg.solid.off && seen(tg.solid)) targetBase(g, artPoly(tg.solid, cam, shift(tg.solid)), M, S);
     for (const p of bl.plates) if (!p.solid.off && seen(p.solid)) plate(g, artPoly(p.solid, cam, shift(p.solid)), S);
   }
 
@@ -140,7 +116,7 @@
     cut(oy + h, 0);
   }
 
-  // --- Menaces : zone de la défense (hachures), visée des tourelles, projectiles. ---
+  // --- Menaces : liseré de la zone visée, visée des tourelles, projectiles. ---
 
   // Liseré de la zone visée (v5.7.0, à la place des hachures) : un cadre fin autour de la moitié de salle qui va être frappée, qui
   // clignote de plus en plus vite pendant l'avertissement (de 2 à 12 Hz) ; la machine elle-même dit ce qui va frapper (render/boss-machines.js).
@@ -199,12 +175,13 @@
     for (const tg of bl.targets) {
       if (!seen(tg.solid)) continue;
       const pts = artPoly(tg.solid, cam, shift(tg.solid));
-      if (tg.solid.off) wreck(g, pts, t, M); else targetCore(g, pts, t, S, M);
+      FP.bossCore.pump(g, pts, t, M, tg.solid.off);   // pompe (v5.8.0) ; cassée, elle fume
+      if (tg.solid.off) smoke(g, pts, t);
     }
     // Cœur blindé (v5.7.0) : il tremble au rythme des pulsations qui arrivent, tant qu'une pompe tourne.
     const C = FP.config.boss.pipes, fed = !state.bossFight.headOpen && bl.targets.some(q => !q.solid.off);
     const jolt = fed ? (Math.floor(t * C.flowSpeed / C.pulseGap * 2) % 2) * C.headShake : 0;
-    if (seen(bl.head.solid)) head(g, artPoly(bl.head.solid, cam, jolt), state.bossFight.headOpen, bl.head.solid.off, t, M, S);
+    if (seen(bl.head.solid)) head(g, artPoly(bl.head.solid, cam, jolt), t, state);
   }
 
   FP.bossRender = { draw, drawThreats, fillPoly, artPoly };

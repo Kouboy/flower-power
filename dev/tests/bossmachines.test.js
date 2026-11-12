@@ -13,17 +13,23 @@ FP.test('bossMachines: emplacement selon la défense et la moitié', () => {
   FP.assertEqual(L('beton', 1).y0, 1000); FP.assertEqual(L('beton', 1).y1, 1200); FP.assertEqual(L('flamme', 1).kind, 'flamme');
 });
 
-FP.test('bossMachines: en coup, l’effet couvre toute la moitié visée, pour chaque salle de chaque boss', () => {
-  for (const m of [0, 1, 2, 3]) {
-    const s = pipeRun(m);
+// v5.8.0 (retour de jeu : « un gros rectangle gris avec des lignes claires ») : le coup se dessine sur fond transparent, sans aplat, mais
+// assez dense pour se lire comme une zone : chaque rangée de la moitié frappée contient de l'effet sur au moins `cover` de sa largeur.
+FP.test('bossMachines: en coup, l’effet couvre au moins cover de chaque rangée, sans aplat (4 biomes, 2 largeurs, niveau étiré)', () => {
+  const C = FP.config.boss.machines.cover;
+  for (const W of [280, 440]) for (const stems of [0, 1e3]) for (const m of [0, 1, 2, 3]) {
+    const s = FP.state.createRun(7, { W, H: Math.round(W * 16 / 9) }); FP.level.startRun(s); s.run.milieu = m; s.run.boss = true; s.plant.stemCount = stems;
+    FP.level.generate(s); s.mode = 'playing'; s.time = 2;
     for (const room of s.world.bossLevel.rooms) for (const half of [-1, 1]) {
       machState(s, room, 'strike', half);
       const g = skinCtx(); FP.bossMachines.draw(g, s);
       const b = FP.bossMachines.layout(room, half, room.defense), cam = FP.px.toArt(s.camera.y), H = Math.ceil(s.world.viewH / FP.px.SCALE);
       const xa = FP.px.toArt(b.x0), xb = FP.px.toArt(b.x1), ya = Math.max(0, FP.px.toArt(b.y0) - cam), yb = Math.min(H, FP.px.toArt(b.y1) - cam);
+      const fx = new Set(Object.values(FP.palette.boss.machines).flat());   // couleurs d'effet (pas la carcasse de la machine)
+      FP.assert(!g.rects.some(r => fx.has(r.c) && r.w > (xb - xa) / 2 && r.h > 2), `aplat dans ${room.id}, biome ${m} W=${W}`);
       const rows = new Map();
       for (const r of g.rects) for (let y = r.y; y < r.y + r.h; y++) { if (y < ya || y >= yb) continue; const set = rows.get(y) || new Set(); for (let x = Math.max(r.x, xa); x < Math.min(r.x + r.w, xb); x++) set.add(x); rows.set(y, set); }
-      for (let y = ya; y < yb; y++) FP.assert((rows.get(y) || new Set()).size >= .8 * (xb - xa), `${room.id} ${half} rangée ${y} couverte à ${(rows.get(y) || new Set()).size}/${xb - xa}, milieu ${m}`);
+      for (let y = ya; y < yb; y++) FP.assert((rows.get(y) || new Set()).size >= C * (xb - xa), `${room.id} ${half} rangée ${y} : ${(rows.get(y) || new Set()).size}/${xb - xa}, biome ${m} W=${W}`);
     }
   }
 });
@@ -56,13 +62,13 @@ FP.test('bossRender: liseré pendant l’avertissement, plus de hachures', () =>
 // Tourelles (v5.7.0) : visibles, le canon vise la pousse, recul et éclair au tir ; elles tombent avec le boss transpercé.
 const turState = (m = 1) => { const s = pipeRun(m), q = s.world.bossLevel.turrets[0]; s.camera.y = q.y - s.world.viewH / 2; return { s, q }; };
 const turBox = (s) => { const g = skinCtx(); FP.bossMachines.draw(g, s); return g; };
-FP.test('bossMachines: la tourelle mesure au moins 14 pixels d’art', () => {
+FP.test('bossMachines: la tourelle mesure au moins 22 pixels d’art (v5.8.0)', () => {
   for (const m of [0, 1, 2, 3]) {
     const { s, q } = turState(m), x = FP.px.toArt(q.x), y = FP.px.toArt(q.y) - FP.px.toArt(s.camera.y);
     s.bossThreats.rooms = {}; const g = turBox(s);
-    const near = g.rects.filter(r => Math.abs(r.x - x) <= 12 && Math.abs(r.y - y) <= 12);
+    const near = g.rects.filter(r => Math.abs(r.x - x) <= 16 && Math.abs(r.y - y) <= 16);
     const xs = near.flatMap(r => [r.x, r.x + r.w]), ys = near.flatMap(r => [r.y, r.y + r.h]);
-    FP.assert(Math.max(...xs) - Math.min(...xs) >= 14 && Math.max(...ys) - Math.min(...ys) >= 14, 'taille, milieu ' + m);
+    FP.assert(Math.max(...xs) - Math.min(...xs) >= 22 && Math.max(...ys) - Math.min(...ys) >= 22, 'taille, milieu ' + m);
   }
 });
 FP.test('bossMachines: le canon vise la pousse, puis le point figé', () => {

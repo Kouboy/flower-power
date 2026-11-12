@@ -67,26 +67,32 @@
     }
   }
 
-  // --- Coup : un aplat remplit toute la moitié frappée, puis des traînées dans le sens de l'effet (béton et flammes à la verticale,
-  // vapeur à l'horizontale depuis la paroi, rayon en bandes qui pulsent). ---
+  // --- Coup (v5.8.0 : sur fond transparent, sans aplat) : l'effet de la machine se dessine par-dessus le décor, assez dense pour se lire
+  // comme une zone (chaque rangée en porte sur au moins machines.cover de sa largeur). Béton : coulées verticales d'une colonne sur deux,
+  // qui glissent vers le bas ; flammes : langues d'une colonne sur deux, qui ondulent vers le haut ; vapeur : un jet par rangée depuis la
+  // paroi, de longueur qui varie ; radiation : pointillés verts qui défilent, et des éclairs. ---
   function strike(g, b, a, t, H, Q) {
     const ya = Math.max(0, a.ya), yb = Math.min(H, a.yb), w = a.xb - a.xa, h = yb - ya;
-    if (h <= 0) return;
-    const base = { beton: Q.concrete[1], vapeur: Q.steam[1], flamme: Q.flame[1], radiation: Q.ray[1] }[b.kind];
-    FP.px.rect(g, a.xa, ya, w, h, base);
-    if (b.kind === 'beton' || b.kind === 'flamme') {   // coulées qui descendent, langues qui montent
-      const C = b.kind === 'beton' ? Q.concrete : Q.flame, v = b.kind === 'beton' ? 60 : -80;
-      for (let x = a.xa; x < a.xb; x += 3) {
-        const k = (x - a.xa) / 3, len = 6 + (k * 7) % 11, y0 = ya + (((Math.floor(t * v) + k * 13) % h) + h) % h;
-        FP.px.rect(g, x, y0, 1, Math.min(len, yb - y0), C[k % 2 ? 0 : 2]);
+    if (h <= 0 || w <= 0) return;
+    if (b.kind === 'beton' || b.kind === 'flamme') {
+      const C = b.kind === 'beton' ? Q.concrete : Q.flame, v = b.kind === 'beton' ? 70 : -90;
+      for (let x = a.xa; x < a.xb; x += 2) {
+        const k = (x - a.xa) >> 1, phase = ((Math.floor(t * v) + k * 7) % 9 + 9) % 9, dx = b.kind === 'flamme' ? Math.round(Math.sin(t * 9 + k) * .6) : 0;
+        FP.px.rect(g, x + dx, ya, 1, h, C[(k + (phase > 5 ? 1 : 0)) % 3]);
+        for (let y = ya + phase; y < yb; y += 9) FP.px.rect(g, x + dx, y, 1, 2, C[(k + 2) % 3]);   // grumeaux, étincelles qui défilent
       }
-    } else if (b.kind === 'vapeur') {   // jets horizontaux qui partent de la paroi
-      for (let y = ya; y < yb; y += 3) {
-        const k = (y - ya) / 3, len = Math.round(w * (.4 + ((k * 5) % 6) / 10)), x0 = b.side < 0 ? a.xa : a.xb - len;
-        FP.px.rect(g, x0, y, len, 1, Q.steam[(k + Math.floor(t * 12)) % 2 ? 0 : 1]);
+    } else if (b.kind === 'vapeur') {
+      for (let y = ya; y < yb; y++) {
+        const k = y - ya, len = Math.round(w * (.45 + .4 * ((Math.sin(t * 11 + k * 1.7) + 1) / 2))), x0 = b.side < 0 ? a.xa : a.xb - len;
+        FP.px.rect(g, x0, y, len, 1, Q.steam[(k + Math.floor(t * 14)) % 3 ? 1 : 0]);
       }
-    } else {   // rideau vert : bandes claires qui pulsent
-      for (let y = ya + ((Math.floor(t * 30) % 6) + 6) % 6; y < yb; y += 6) FP.px.rect(g, a.xa, y, w, 2, Q.ray[0]);
+    } else {
+      const off = Math.floor(t * 24);
+      for (let x = a.xa + (off % 2); x < a.xb; x += 2) {   // voile vert : colonnes qui scintillent, des nœuds clairs qui remontent
+        const k = (x - a.xa) >> 1; FP.px.rect(g, x, ya, 1, h, Q.ray[1]);
+        for (let y = yb - 1 - ((off + k * 5) % 7); y >= ya; y -= 7) FP.px.rect(g, x, y, 1, 2, Q.ray[0]);
+      }
+      for (let k = 0; k < 3; k++) { const x0 = a.xa + ((off * 3 + k * 17) % w), y0 = ya + ((off * 5 + k * 29) % h); FP.px.line(g, x0, y0, x0 + 4, y0 + 6, Q.ray[0]); }
     }
   }
 
@@ -115,6 +121,13 @@
       if (q.y < top - 20 || q.y > top + H + 20) continue;
       const e = state.bossThreats.rooms[q.room], dx = e && e.stage === 'warn' ? (Math.floor(state.time * SHAKE_HZ) % 2 ? 1 : -1) : 0;   // la salle avertie tremble
       const p = turretPose(state, q), x = FP.px.toArt(q.x) + dx, y = FP.px.toArt(q.y) - cam;
+      // Bras de fixation (v5.8.0 : la tourelle est avancée vers l'intérieur) : une console rivetée jusqu'à la paroi la plus proche de sa salle.
+      const room = bl.rooms.find(o => o.id === q.room);
+      if (room) {
+        const wx = FP.px.toArt(q.x - room.x0 < room.x1 - q.x ? room.x0 : room.x1) + dx, xa = Math.min(wx, x), xb = Math.max(wx, x);
+        FP.px.rect(g, xa, y - 2, xb - xa, 5, M.edge); FP.px.rect(g, xa, y - 1, xb - xa, 3, M.dark);
+        for (let k = xa + 3; k < xb - 2; k += 6) FP.px.rect(g, k, y, 1, 1, M.rivet);
+      }
       if (img) FP.bossSkin.piece(g, [[x - r, y - r], [x + r, y - r], [x + r, y + r], [x - r, y + r]], img);
       else { FP.px.disc(g, x, y, r, M.edge); FP.px.disc(g, x, y, r - 1, M.dark); FP.px.disc(g, x, y, r - 4, M.light); }
       const mx = FP.px.toArt(p.muzzle.x) + dx, my = FP.px.toArt(p.muzzle.y) - cam;

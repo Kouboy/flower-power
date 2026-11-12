@@ -2,7 +2,7 @@
 // images des pièces découpées par leur polygone. Un milieu sans images garde son boss dessiné par le code (render/boss.js).
 // Lit     : window.FLOWER_POWER_BOSS_ART.
 // Écrit   : rien dans l'état (la toile reçue).
-// Expose  : FP.bossSkin.image(milieuId, role) → image prête ou null (role : matter | target | head | plate | turret) ;
+// Expose  : FP.bossSkin.image(milieuId, role) → image prête ou null (role : matter | plate | turret) ;
 //           FP.bossSkin.version() → augmente à chaque image devenue prête (clé du calque de render/boss.js) ;
 //           FP.bossSkin.spans(pts, inset, fn) → appelle fn(y, a, b) pour chaque morceau de rangée du polygone (règle pair-impair) ;
 //           FP.bossSkin.wall(g, pts, img, ox, oy, inset) : img répétée dans le polygone, ancrée au monde (ox, oy : origine du monde
@@ -13,7 +13,7 @@
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
-  const ROLES = ['matter', 'target', 'head', 'plate', 'turret'];
+  const ROLES = ['matter', 'plate', 'turret'];
   let entries = {}, version = 0;
 
   function load(src) {

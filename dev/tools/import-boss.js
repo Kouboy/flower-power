@@ -1,7 +1,7 @@
 // dev/tools/import-boss.js — importe les images d'un boss (v5.6.0), retouchées après PixelLab, et met à jour assets/boss/art.js.
 // Usage : node dev/tools/import-boss.js <milieuId> <dossier des PNG bruts>
 //   ex.   node dev/tools/import-boss.js friche "../pixellab-boss/friche"
-// Le dossier contient les 8 fichiers ci-dessous (FILES). Chacun est recadré sur ses pixels opaques, sauf la matière,
+// Le dossier contient les fichiers ci-dessous (FILES). Chacun est recadré sur ses pixels opaques, sauf la matière,
 // gardée entière (elle se répète), puis écrit dans assets/boss/art/<milieuId>/. 1 pixel PixelLab = 1 pixel d'art : pas de rééchantillonnage.
 'use strict';
 const fs = require('fs'), path = require('path');
@@ -10,7 +10,7 @@ const png = require('./png.js');
 const ROOT = path.join(__dirname, '..', '..');
 const ART = path.join(ROOT, 'assets', 'boss', 'art.js');
 // Rôle de assets/boss/art.js → fichier.
-const FILES = { matter: 'matiere', target: 'cible', head: 'tete', plate: 'plaque', turret: 'tourelle' };
+const FILES = { matter: 'matiere', plate: 'plaque', turret: 'tourelle' };   // v5.8.0 : pompe et cœur sont dessinés par le code
 const WHOLE = new Set(['matiere']);
 
 const [id, src] = process.argv.slice(2);

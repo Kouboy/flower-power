@@ -113,13 +113,13 @@ FP.test('threats: tout se vide à la régénération du niveau', () => {
   for (let i = 0; i < 400 && thrStage(s, r) !== 'strike'; i++) thrStep(s);
   s.bossThreats.shots.push({ x: 1, y: 2 });
   FP.level.generate(s);
-  FP.assertEqual(JSON.stringify(s.bossThreats), '{"rooms":{},"shots":[],"aim":null,"cooldown":0}');
+  FP.assertEqual(JSON.stringify(s.bossThreats), '{"rooms":{},"shots":[],"aim":null,"burst":null,"cooldown":0}');
   FP.assert(s.world.bossLevel.rooms.every(q => q.zone.off), 'zones éteintes');
 });
 
 FP.test('threats: hors niveau de boss, rien', () => {
   const s = FP.state.createRun(5, { W: 360, H: 640 }); FP.level.startRun(s); FP.level.generate(s); s.mode = 'playing';
-  FP.bossThreats.update(s, .1); FP.assertEqual(JSON.stringify(s.bossThreats), '{"rooms":{},"shots":[],"aim":null,"cooldown":0}');
+  FP.bossThreats.update(s, .1); FP.assertEqual(JSON.stringify(s.bossThreats), '{"rooms":{},"shots":[],"aim":null,"burst":null,"cooldown":0}');
 });
 
 FP.test('threats: un coup sur la pointe tue (kind defense, « emportée par la défense »)', () => {
@@ -195,7 +195,8 @@ FP.test('shots: la ligne se fige 0,3 s avant le tir, le projectile suit la ligne
 FP.test('shots: au moins l’espacement du boss entre deux tirs', () => {
   const s = shotRun(2), r = shotRoom(s); s.plant.tip = thrIn(r, .4);
   let t = 0; const at = [];
-  for (let i = 0; i < 60 * 14; i++, t += 1 / 60) { s.events.length = 0; thrStep(s); if (shotEvents(s, 'bossShot').length) at.push(t); }
+  // v5.8.0 : le premier tir de chaque rafale (les suivants partent burstGap après)
+  for (let i = 0; i < 60 * 14; i++, t += 1 / 60) { s.events.length = 0; thrStep(s); if (shotEvents(s, 'bossShot').length && (!at.length || t - at[at.length - 1] > FP.config.boss.shot.burst * FP.config.boss.shot.burstGap)) at.push(t); }
   FP.assert(at.length >= 2, 'plusieurs tirs : ' + at.length);
   for (let i = 1; i < at.length; i++) FP.assert(at[i] - at[i - 1] >= FP.config.boss.ramp.decharge.shot.gap - 1e-6, 'écart ' + (at[i] - at[i - 1]));
 });
@@ -316,4 +317,27 @@ FP.test('shots: un projectile qui entre dans une pièce du boss disparaît, pas 
     FP.assert(!into(o), 'arrêté par ' + o.kind); FP.assert(!s.world.solids.includes(sh.solid), 'solide retiré (' + o.kind + ')');
   }
   bl.targets[1].solid.off = true; FP.assert(into(bl.targets[1].solid), 'une cible détruite ne l’arrête plus');
+});
+
+// v5.8.0 : une visée finit en rafale de 3 tirs (axe, −spread, +spread) espacés de burstGap ; le délai repart après le dernier.
+const burstRun = () => {
+  const s = shotRun(1), r = shotRoom(s); s.plant.tip = thrIn(r, .4); toRest(s, r);
+  const at = [];
+  for (let i = 0, t = 0; i < 600 && at.length < 3; i++, t += 1 / 60) { s.events.length = 0; thrStep(s); for (const e of shotEvents(s, 'bossShot')) at.push(t); }
+  return { s, r, at };
+};
+FP.test('shots: une visée finit en rafale de 3 tirs espacés de burstGap, en éventail de ± spread', () => {
+  const C = FP.config.boss.shot, { s, at } = burstRun();
+  FP.assertEqual(at.length, C.burst, 'trois tirs');
+  for (let i = 1; i < at.length; i++) FP.assert(Math.abs(at[i] - at[i - 1] - C.burstGap) < .03, 'écart ' + (at[i] - at[i - 1]));
+  const ang = s.bossThreats.shots.map(q => Math.atan2(q.vy, q.vx) * 180 / Math.PI), d = (a, b) => ((a - b + 540) % 360) - 180;
+  FP.assert(Math.abs(Math.abs(d(ang[1], ang[0])) - C.spread) < 1 && Math.abs(Math.abs(d(ang[2], ang[0])) - C.spread) < 1 && Math.sign(d(ang[1], ang[0])) !== Math.sign(d(ang[2], ang[0])), 'éventail ' + ang.map(a => a.toFixed(1)));
+  FP.assert(Math.abs(s.bossThreats.cooldown - FP.config.boss.ramp.industrie.shot.gap) < 1 / 60 + 1e-6, 'délai après le dernier tir : ' + s.bossThreats.cooldown);
+});
+FP.test('shots: la rafale s’annule avec la visée (défense qui frappe, tête transpercée, mort)', () => {
+  const s = shotRun(1), r = shotRoom(s); s.plant.tip = thrIn(r, .4); toRest(s, r);
+  for (let i = 0; i < 600 && !s.bossThreats.burst; i++) thrStep(s);
+  FP.assert(s.bossThreats.burst, 'rafale en cours');
+  s.world.bossLevel.head.solid.off = true; thrStep(s);
+  FP.assertEqual(s.bossThreats.burst, null, 'annulée'); FP.assertEqual(s.bossThreats.shots.length, 0);
 });
