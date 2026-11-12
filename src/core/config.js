@@ -259,9 +259,9 @@
         rain: 40, rainSpread: 120, rainLife: 2.5, crackArms: 4, crackStep: 5 },
       ramp: {
         friche: { channelMin: 52, strike: .9, rest: 1.3, speedup: .12, shot: { speed: 400, gap: 3.2 } },
-        industrie: { channelMin: 49, strike: .97, rest: 1.17, speedup: .14, shot: { speed: 440, gap: 2 } },
-        decharge: { channelMin: 47, strike: 1.03, rest: 1.03, speedup: .16, shot: { speed: 480, gap: 1.75 } },
-        nucleaire: { channelMin: 44, strike: 1.1, rest: .9, speedup: .18, shot: { speed: 520, gap: 1.5 } }
+        industrie: { channelMin: 49, strike: .97, rest: 1.17, speedup: .14, shot: { speed: 415, gap: 2 } },
+        decharge: { channelMin: 47, strike: 1.03, rest: 1.03, speedup: .16, shot: { speed: 430, gap: 1.75 } },
+        nucleaire: { channelMin: 44, strike: 1.1, rest: .9, speedup: .18, shot: { speed: 445, gap: 1.5 } }   // v5.11.0 : tirs plus lents (440, 480, 520 avant) : les tourelles avancées tirent de plus près
       },
       defense: { warn: 1.2, warnMin: 1, deploy: .25 },   // v5.9.0 : deploy = temps (s) que met le coup à traverser sa moitié ; la zone mortelle suit son front
       shot: { track: .7, lock: .3, r: 5, burst: 3, burstGap: .12, spread: 8 },   // v5.8.0 : visée plus courte, rafale de 3 tirs (l'axe, puis ± spread°) espacés de burstGap s

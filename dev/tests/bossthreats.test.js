@@ -24,7 +24,7 @@ FP.test('threats: un cran de difficulté par boss — canaux, coup, repos, accé
   FP.assertEqual(R[0].strike, .9); FP.assertEqual(R[3].strike, 1.1);
   FP.assertEqual(R[0].rest, 1.3); FP.assertEqual(R[3].rest, .9);
   FP.assertEqual(R[0].speedup, .12); FP.assertEqual(R[3].speedup, .18);
-  FP.assertEqual(list(r => [r.shot.speed, r.shot.gap]), '[[400,3.2],[440,2],[480,1.75],[520,1.5]]');   // v5.5.0 : tirs dès le boss 1, plus serrés ensuite
+  FP.assertEqual(list(r => [r.shot.speed, r.shot.gap]), '[[400,3.2],[415,2],[430,1.75],[445,1.5]]');   // v5.5.0 : tirs dès le boss 1, plus serrés ensuite ; v5.11.0 : plus lents (tourelles avancées)
   for (let k = 0; k < 3; k++) {
     const a = R[k], b = R[k + 1], at = MILIEUX[k] + ' → ' + MILIEUX[k + 1];
     FP.assert(b.channelMin < a.channelMin && b.strike > a.strike && b.rest < a.rest && b.speedup > a.speedup, 'plus dur ' + at);

@@ -6,8 +6,8 @@ Une entrée par version (voir `AGENTS.md`).
 
 - textes et compteurs à au moins 16 px de chaque bord, et sous l'encoche ou au-dessus de la barre d'accueil du téléphone (marges système + 8 px, `env(safe-area-inset-*)` lues par `render/view.js`) : HUD, nom du biome, icônes du boss, cris, écran titre, icône du son, certificat ; les graines du HUD se rapprochent un peu (pas de 14 px) pour laisser la place au score sur l'écran le plus étroit ;
 - bande sûre du jeu (`FP.camera.safeX`) : ce que rogne le zoom de cadrage, plus 12 px ; pièces, bonus et limaces (trajet et corps compris) y restent entiers — les limaces ne sortent plus du cadre ;
-- tourelles des boss entre 21,5 % et 78,5 % de la largeur, entières à l'écran même à 280 px, tenues au mur par leur console ; trois d'entre elles changent de hauteur pour rester loin des trajets ;
-- banc : NNN tests.
+- tourelles des boss entre 21,5 % et 78,5 % de la largeur, entières à l'écran même à 280 px, tenues au mur par leur console ; trois d'entre elles changent de hauteur pour rester loin des trajets ; plus proches de la pousse, elles tirent moins vite pour garder la difficulté (415, 430 et 445 px/s aux boss 2 à 4, au lieu de 440, 480 et 520 ; Bétonneuse inchangée à 400) ;
+- banc : 731 tests (728 lancés ; les 3 du robot de combat laissés à la partie de l'utilisateur).
 
 ## v5.10.0 — Sons accordés
 
