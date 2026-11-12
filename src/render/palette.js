@@ -122,7 +122,9 @@
     core: { frame: '#14110e', glass: '#2c3836', wheel: '#a89c88', ring: ['#3a342e', '#5a5048'], rivet: '#c8bca8', blade: '#8a8070',
       ember: '#b0461c', spark: '#ffd0a0' },   // noyau du cœur blindé (braise, pas la couleur des cibles) ; étincelles quand une pompe casse
     // Structures de liaison (v5.8.0, render/boss-struts.js) : acier sombre, reflet, rivets, câble.
-    strut: { edge: '#100e0c', body: '#3e3a34', light: '#6a6258', rivet: '#9a9080', cable: '#2a2622' }
+    strut: { edge: '#100e0c', body: '#3e3a34', light: '#6a6258', rivet: '#9a9080', cable: '#2a2622' },
+    // Bouche d'aspiration (v5.9.0, render/boss-intake.js) : dents d'acier pâle, barreaux de la grille.
+    intake: { tooth: '#beb6a2', grille: '#1c1e22' }
   };
 
   // Teinte de terre du milieu id à une profondeur relative d (0 = surface, 1 = fond) ; k de 0 (claire) à 3 (sombre).

@@ -4,7 +4,7 @@
 // 3. L'interface (doigt, HUD, cri, titre, certificat) est dessinée dans la toile FP.view.ui, agrandie sans secousse ni zoom.
 // 4. Les outils de réglage et le fondu, à pleine résolution, par-dessus tout.
 // Lit     : state.world, state.camera.y, FP.view, FP.camera.zoomFrame,
-//           FP.view.art, FP.px.SCALE, state.flow.fade, FP.sky, FP.soil, FP.hazardsRender, FP.obstacles, FP.bossRender, FP.bossEarth, FP.bossPipes, FP.bossMachines, FP.bossStruts, FP.bossFx, FP.bossDeath, FP.coinsRender, FP.powerupsRender, FP.plantRender, FP.flowersRender,
+//           FP.view.art, FP.px.SCALE, state.flow.fade, FP.sky, FP.soil, FP.hazardsRender, FP.obstacles, FP.bossRender, FP.bossEarth, FP.bossIntake, FP.bossPipes, FP.bossMachines, FP.bossStruts, FP.bossFx, FP.bossDeath, FP.coinsRender, FP.powerupsRender, FP.plantRender, FP.flowersRender,
 //           FP.effects, FP.particles, FP.drillFx, FP.ui ; state.camera.shake (secousse) ; FP.perf, FP.flydebug (outils de réglage).
 // Écrit   : rien lui-même (le canvas) ; effects et particles, qu'il appelle, tiennent state.fx.
 // Expose  : FP.render.frame(state).
@@ -31,7 +31,8 @@
     FP.hazardsRender.drawLeaks(g, state);
     FP.obstacles.draw(g, world, camY);
     FP.bossRender.draw(g, state);     // boss : parois, pompes, cœur, plaques (rien hors niveau de boss)
-    FP.bossEarth.draw(g, state);      // la machine surgit de la terre (v5.7.0) : bords rongés, poche d'éclosion sur la tête
+    FP.bossEarth.draw(g, state);      // la machine surgit de la terre (v5.7.0) : bords rongés
+    FP.bossIntake.draw(g, state);          // bouche d'aspiration du boss (v5.9.0) : tôles, dents et grille de l'entrée
     FP.bossPipes.draw(g, state);      // tuyaux de la machine (v5.7.0) : sur les murs, des pompes au cœur, avec leur flux
     FP.bossMachines.draw(g, state);   // machines de défense (v5.7.0) : au repos, qui se préparent, qui frappent
     FP.bossFx.update(state);          // explosions, plaques qui tombent, graine rendue : nées des événements de la frame

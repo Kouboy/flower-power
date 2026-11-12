@@ -2,7 +2,8 @@
 // Lit     : state.seed, state.run.boss, state.score.eco, state.time, state.mode, FP.config.shop, FP.createRng.
 // Écrit   : state.shop, state.shopVisits, state.mode ('shop'), state.events (shopOpen, shopTick, shopOrder, shopClose) ; à la commande :
 //           state.score.eco, state.plant.reserves, state.boosts ; Lobbying regénère le niveau (FP.level.generate, FP.plant.prepare).
-// Expose  : FP.shop.open(state, { after }), FP.shop.total(state), FP.shop.canCheck(state, i), FP.shop.toggle(state, i),
+// Expose  : FP.shop.open(state, { after }), FP.shop.total(state), FP.shop.canCheck(state, i), FP.shop.canOrder(state) (v5.9.0 : au moins un
+//           article cochable ; sinon COMMANDER ne fait rien, seul le refus reste), FP.shop.toggle(state, i),
 //           FP.shop.co2(state), FP.shop.order(state), FP.shop.decline(state), FP.shop.update(state). after : 'death' | 'bloom' | 'last'
 //           (dernière chance : la Graine Bio™ est garantie ; avant et pendant un boss, seulement FP.config.shop.bossItems). Les effets (state.boosts) valent pour la pousse suivante :
 //           FP.plant.launch applique membrane et spore, les autres systèmes lisent leur drapeau ; la fin de pousse les efface.
@@ -38,6 +39,7 @@
     if (sh.lastChance && it.id !== 'seed' && !seedChecked(sh)) return false;
     return it.price <= state.score.eco - total(state);
   }
+  const canOrder = (state) => state.shop.items.some((_, i) => canCheck(state, i));
 
   function toggle(state, i) {
     const sh = state.shop;
@@ -58,10 +60,10 @@
     else state.boosts[id] = true;
   }
 
-  // Commande : rien de coché → comme un refus. Lobbying d'abord (le niveau est regénéré), puis les autres articles.
+  // Commande : sans les moyens, rien ; rien de coché → comme un refus. Lobbying d'abord (le niveau est regénéré), puis les autres articles.
   function order(state) {
     const sh = state.shop;
-    if (!sh || sh.phase !== 'idle') return;
+    if (!sh || sh.phase !== 'idle' || !canOrder(state)) return;   // sans les moyens : COMMANDER est inactif
     const bought = sh.items.filter(it => it.checked).map(it => it.id);
     if (!bought.length) { decline(state); return; }
     state.score.eco = Math.max(0, state.score.eco - total(state));
@@ -89,5 +91,5 @@
     if (done) { state.shop = null; FP.flow.afterShop(state, sh.after); }
   }
 
-  FP.shop = { open, total, canCheck, toggle, co2, order, decline, update };
+  FP.shop = { open, total, canCheck, canOrder, toggle, co2, order, decline, update };
 })();

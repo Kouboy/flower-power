@@ -3,7 +3,7 @@
 //           (assets/boss/plans.js) et un monde { width, height, baseHeight, surfaceY }, passés en argument.
 // Écrit   : rien (fonctions pures).
 // Expose  : FP.bossPlan.zone(world) → { top, bottom } : de surfaceY + config.boss.top à height - config.boss.bottom ;
-//           FP.bossPlan.toWorld(plan, world) → { pieces: [{ id, role, plate, poly }], rooms: [{ id, rect, defense, turrets }],
+//           FP.bossPlan.toWorld(plan, world) → { pieces: [{ id, role, plate, intake, poly }], rooms: [{ id, rect, defense, turrets }],
 //             paths: { id: [{ x, y }] }, toxics: [{ x, y }], pipes: [{ from, to, open, pts: [[x, y]] }] (v5.7.0), channelMin } : x × largeur, y sur la hauteur de la zone (au-delà de y = 1, la bande d'envol garde la hauteur de départ baseHeight) ;
 //             chaque trajet commence à la graine (x = W / 2, y = height - plant.seedOffset), ajoutée devant les points du plan ;
 //             channelMin = config.boss.ramp[id].channelMin × W / 360, id = milieu du plan (réglage propre à chaque boss, donné pour un monde de 360 px de large) ;
@@ -34,7 +34,7 @@
       paths[id] = [seed].concat(plan.paths[id].map(p => { const [x, y] = px(p); return { x, y }; }));
     }
     return {
-      pieces: plan.pieces.map(p => ({ id: p.id, role: p.role, plate: p.plate || null, poly: p.poly.map(px) })),
+      pieces: plan.pieces.map(p => ({ id: p.id, role: p.role, plate: p.plate || null, intake: !!p.intake, poly: p.poly.map(px) })),
       rooms: plan.rooms.map(r => {
         const [x0, y0] = px([r.rect[0], r.rect[1]]), [x1, y1] = px([r.rect[2], r.rect[3]]);
         return { id: r.id, rect: [x0, y0, x1, y1], defense: r.defense, turrets: r.turrets.slice() };

@@ -1,5 +1,6 @@
 // ui/order.js — bon de commande en papier recyclé (v4.6.0), posé de travers par-dessus le jeu assombri.
-// Lit     : state.shop, state.score.eco, state.time, FP.shop.{total,canCheck,co2}, FP.config.{shop,text.shop}, FP.font, FP.view.ui.
+// Lit     : state.shop, state.score.eco, state.time, FP.shop.{total,canCheck,canOrder,co2}, FP.config.{shop,text.shop}, FP.font, FP.view.ui.
+// v5.9.0 : sans les moyens (FP.shop.canOrder faux), COMMANDER est grisé ; seul le refus reste actif.
 // Écrit   : rien (le canvas uniquement).
 // Expose  : FP.orderForm.layout(uiW, uiH), FP.orderForm.hitAt(layout, ax, ay), FP.orderForm.money(n) (purs, testés),
 //           FP.orderForm.hit(state, ax, ay), FP.orderForm.draw(g, state), FP.orderForm.BOX.
@@ -92,8 +93,13 @@
     text(g, String(FP.shop.co2(state)).replace('.', ',') + ' KG CO2 ' + t.offset, right, L.delivery + dy + ROW, C.faint, 'right');
     text(g, t.total, cx, L.totalY + dy, C.ink); text(g, money(FP.shop.total(state)), right, L.totalY + dy, C.ink, 'right');
     const o = { ...L.order, y: L.order.y + dy }, d = { ...L.decline, y: L.decline.y + dy };
-    rect(g, o.x, o.y, o.w, o.h, C.ink); rect(g, o.x + 1, o.y + 1, o.w - 2, o.h - 4, C.green); rect(g, o.x + 1, o.y + o.h - 3, o.w - 2, 2, C.greenDark);
-    text(g, t.order, o.x + o.w / 2, o.y + 6, C.cream, 'center');
+    if (FP.shop.canOrder(state)) {
+      rect(g, o.x, o.y, o.w, o.h, C.ink); rect(g, o.x + 1, o.y + 1, o.w - 2, o.h - 4, C.green); rect(g, o.x + 1, o.y + o.h - 3, o.w - 2, 2, C.greenDark);
+      text(g, t.order, o.x + o.w / 2, o.y + 6, C.cream, 'center');
+    } else {   // grisé : rien d'achetable
+      rect(g, o.x, o.y, o.w, o.h, C.off); rect(g, o.x + 1, o.y + 1, o.w - 2, o.h - 2, C.paper);
+      text(g, t.order, o.x + o.w / 2, o.y + 6, C.off, 'center');
+    }
     rect(g, d.x, d.y, d.w, d.h, C.ink); rect(g, d.x + 1, d.y + 1, d.w - 2, d.h - 2, C.paper);
     text(g, sh.lastChance ? t.giveUp : t.decline, d.x + d.w / 2, d.y + 6, C.ink, 'center');
     text(g, t.fine, mid, L.fineY + dy, C.faint, 'center'); text(g, t.fine2, mid, L.fineY + dy + ROW, C.faint, 'center');

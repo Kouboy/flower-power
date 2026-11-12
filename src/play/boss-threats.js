@@ -4,16 +4,20 @@
 // projectile rapide part le long de la ligne figée : on l'évite en virant après le figement. v5.3.1 : la tourelle vise pendant le repos de
 // la défense de sa salle, la pointe encore dedans ou déjà sortie (le coup, puis le tir).
 // Lit     : state.{mode, flow.freeze, world.bossLevel.head.solid.off, plant.tip, run.milieu, bossFight.destroyed}, state.world.{width,height,bossLevel.{rooms[].{x0,y0,x1,y1,zone,turrets},turrets[],walls,targets,plates,head}},
-//           FP.config.{boss.defense, boss.shot, boss.ramp[id].{strike,rest,speedup,shot}, milieux}, FP.collision.distanceTo.
+//           FP.config.{boss.defense (warn, warnMin, deploy), boss.shot, boss.ramp[id].{strike,rest,speedup,shot}, milieux}, FP.collision.distanceTo.
 // Écrit   : state.bossThreats.{aim: { turret, t, lockedAt: null | { x, y } } | null, burst: { turret, to, n (tirs partis), t } | null (v5.8.0 : rafale
 //           de shot.burst tirs, espacés de burstGap, l'axe puis ± spread°), cooldown (s, posé après le dernier tir de la rafale), shots: [{ x, y, vx, vy, solid }]} ; solides 'shot'
 //           (octogone de rayon shot.r) ajoutés à state.world.solids tant que le tir vole, retirés à la sortie du cadre, dans une pièce du boss
 //           (paroi, cible, plaque ou tête qui n'est pas tombée), à la mort et à la génération ;
 //           state.bossThreats.rooms[id] = { stage: 'idle'|'warn'|'strike'|'rest', t, half: -1 (gauche) | 1 (droite) } (seul ; vidé par
-//           world/boss.js à chaque génération), la zone (solide 'defense') de chaque salle : off sauf pendant le coup, polygone = moitié visée ;
+//           world/boss.js à chaque génération), la zone (solide 'defense') de chaque salle : off sauf pendant le coup, polygone = part déployée
+//           de la moitié visée (v5.9.0 : le coup jaillit de sa machine en defense.deploy s, la zone mortelle suit son front ; off tant qu'elle est vide) ;
 //           state.events (bossWarn { room, half } à chaque avertissement, bossStrike { room, half } à chaque coup ; bossAim / bossLock / bossShot { turret } : le dessin et le son sont ailleurs).
 // Expose  : FP.bossThreats.update(state, dt), FP.bossThreats.timing(destroyedCount, id) → { warn, strike, rest } (pur ; id : milieu du boss,
-//             coup, repos et accélération propres à chaque boss — config.boss.ramp —, avertissement commun).
+//             coup, repos et accélération propres à chaque boss — config.boss.ramp —, avertissement commun) ;
+//           FP.bossThreats.MOUNT (défense → 'ceiling' | 'wall' : où est sa machine) ; FP.bossThreats.deployed(roomState) → 0..1 (part déployée
+//             du coup, 0 hors coup) ; FP.bossThreats.reach(room, half, p) → { x0, y0, x1, y1 } (pur, monde : la part déployée de la moitié
+//             `half` à p — du plafond vers le bas, ou de la paroi extérieure vers le milieu ; le rendu dessine l'effet dans cette même part).
 // Hors niveau de boss, hors mode playing, et dès que la tête est transpercée (le boss meurt : sa cinématique, puis ses ruines) : tout repasse
 // au repos, visée et tirs effacés ; pendant l'arrêt sur image (flow.freeze) rien ne progresse.
 (function () {
@@ -29,11 +33,22 @@
 
   const inside = (r, x, y) => x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1;
 
-  // Zone = moitié `half` de la salle (de son milieu à son bord), pleine hauteur ; broadR et centre suivent.
-  function aim(r, half) {
-    const mid = (r.x0 + r.x1) / 2, xa = half < 0 ? r.x0 : mid, xb = half < 0 ? mid : r.x1, z = r.zone;
-    z.x = (xa + xb) / 2; z.y = (r.y0 + r.y1) / 2;
-    const hw = (xb - xa) / 2, hh = (r.y1 - r.y0) / 2;
+  const MOUNT = { beton: 'ceiling', radiation: 'ceiling', vapeur: 'wall', flamme: 'wall' };
+  const deployed = (e) => (e && e.stage === 'strike' ? Math.min(1, e.t / FP.config.boss.defense.deploy) : 0);
+
+  // Part déployée de la moitié `half` (de son bord extérieur au milieu de la salle, pleine hauteur) : depuis le plafond, ou depuis la paroi.
+  function reach(r, half, p) {
+    const mid = (r.x0 + r.x1) / 2, xa = half < 0 ? r.x0 : mid, xb = half < 0 ? mid : r.x1;
+    if (MOUNT[r.defense] === 'ceiling') return { x0: xa, y0: r.y0, x1: xb, y1: r.y0 + (r.y1 - r.y0) * p };
+    const w = (xb - xa) * p;
+    return half < 0 ? { x0: xa, y0: r.y0, x1: xa + w, y1: r.y1 } : { x0: xb - w, y0: r.y0, x1: xb, y1: r.y1 };
+  }
+
+  // Zone = part déployée ; vide (moins d'1 px) : éteinte. broadR et centre suivent.
+  function aim(r, half, p) {
+    const b = reach(r, half, p), z = r.zone, hw = (b.x1 - b.x0) / 2, hh = (b.y1 - b.y0) / 2;
+    z.off = hw * 2 < 1 || hh * 2 < 1;
+    z.x = (b.x0 + b.x1) / 2; z.y = (b.y0 + b.y1) / 2;
     z.collision = [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]];
     z.broadR = Math.hypot(hw, hh);
   }
@@ -140,10 +155,12 @@
       e.t += dt;
       if (e.stage === 'warn' && e.t >= tm.warn) {
         if (!here) { e.stage = 'idle'; e.t = 0; continue; }       // la pointe est partie : pas de coup
-        e.stage = 'strike'; e.t = 0; aim(r, e.half); r.zone.off = false;
+        e.stage = 'strike'; e.t = 0; aim(r, e.half, 0);
         state.events.push({ type: 'bossStrike', room: r.id, half: e.half });
       } else if (e.stage === 'strike' && e.t >= tm.strike) {
         e.stage = 'rest'; e.t = 0; r.zone.off = true;
+      } else if (e.stage === 'strike') {
+        aim(r, e.half, deployed(e));   // le front avance
       } else if (e.stage === 'rest' && e.t >= tm.rest) {
         if (here) wake(state, r, e, tip); else { e.stage = 'idle'; e.t = 0; }
       }
@@ -151,5 +168,5 @@
     shoot(state, bl, tip, dt);
   }
 
-  FP.bossThreats = { update, timing };
+  FP.bossThreats = { update, timing, MOUNT, deployed, reach };
 })();

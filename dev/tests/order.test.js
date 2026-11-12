@@ -32,3 +32,22 @@ FP.test('orderForm: les textes du bon tiennent dans leur ligne', () => {
   for (const tr of FP.config.shop.transports) FP.assert(m(t.by + tr) <= cw, tr);
   FP.assert(m('99,9 KG CO2 ' + t.offset) <= cw && m(t.from + '000042') <= cw && m(t.fine) <= cw && m(t.fine2) <= cw);
 });
+
+// v5.9.0 : sans les moyens, le bouton COMMANDER est grisé (ni vert ni crème).
+FP.test('order: COMMANDER grisé sans les moyens', () => {
+  const view = FP.view, font = FP.font.draw; FP.view = { ...(view || {}), ui: { w: 200, h: 356 } };
+  FP.font.draw = (g, text, x, y, o) => { g.fillStyle = o.color; g.fillRect(Math.round(x), y, 1, 1); return 0; };   // pas de toile sous Node : un point à la couleur du texte
+  try {
+    const paint = (eco) => {
+      const s = FP.state.createRun(3, { W: 440, H: 783 }); FP.level.startRun(s); FP.plant.launch(s); s.score.eco = eco;
+      FP.shop.open(s, { after: 'death' }); s.shop.phase = 'idle'; s.shop.t0 = s.time - 10;
+      const rects = []; const g = { set fillStyle(c) { this._c = c; }, get fillStyle() { return this._c; }, fillRect(x, y, w, h) { rects.push({ x, y, w, h, c: this._c }); }, drawImage() {} };
+      FP.orderForm.draw(g, s);
+      const b = FP.orderForm.layout(200, 356).order;
+      return rects.filter(r => r.x >= b.x && r.x < b.x + b.w && r.y >= b.y - 2 && r.y < b.y + b.h + 2).map(r => r.c);
+    };
+    const rich = paint(1e6), poor = paint(0), lit = ['#4f9a2c', '#fff6c8'];
+    FP.assert(rich.some(c => lit.includes(c)), 'bouton vert quand on peut acheter');
+    FP.assert(poor.length > 0 && !poor.some(c => lit.includes(c)), 'bouton grisé sans les moyens');
+  } finally { FP.view = view; FP.font.draw = font; }
+});

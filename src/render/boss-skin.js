@@ -2,7 +2,8 @@
 // images des pièces découpées par leur polygone. Un milieu sans images garde son boss dessiné par le code (render/boss.js).
 // Lit     : window.FLOWER_POWER_BOSS_ART.
 // Écrit   : rien dans l'état (la toile reçue).
-// Expose  : FP.bossSkin.image(milieuId, role) → image prête ou null (role : matter | plate | turret) ;
+// Expose  : FP.bossSkin.image(milieuId, role) → image prête ou null (role : matter | plate | turret | pump (v5.9.0)) ;
+//           FP.bossSkin.tank(milieuId) → [x0, y0, x1, y1] (la cuve dans l'image de la pompe, fractions) ou null ;
 //           FP.bossSkin.version() → augmente à chaque image devenue prête (clé du calque de render/boss.js) ;
 //           FP.bossSkin.spans(pts, inset, fn) → appelle fn(y, a, b) pour chaque morceau de rangée du polygone (règle pair-impair) ;
 //           FP.bossSkin.wall(g, pts, img, ox, oy, inset) : img répétée dans le polygone, ancrée au monde (ox, oy : origine du monde
@@ -13,7 +14,7 @@
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
-  const ROLES = ['matter', 'plate', 'turret'];
+  const ROLES = ['matter', 'plate', 'turret', 'pump'];
   let entries = {}, version = 0;
 
   function load(src) {
@@ -35,6 +36,7 @@
 
   const ready = (e) => (e && e.ready ? e.img : null);
   const image = (id, role) => ready(entries[id] && entries[id][role]);
+  const tank = (id) => { const a = (window.FLOWER_POWER_BOSS_ART || {})[id]; return a && a.pumpTank ? a.pumpTank : null; };
 
   // Morceaux de rangées d'un polygone quelconque (concave compris), rognés de inset aux deux bouts et en haut et en bas.
   function spans(pts, inset, fn) {
@@ -89,5 +91,5 @@
   function _reset() { entries = {}; version++; }
 
   loadAll();
-  FP.bossSkin = { image, version: () => version, spans, wall, piece, _set, _reset };
+  FP.bossSkin = { image, tank, version: () => version, spans, wall, piece, _set, _reset };
 })();

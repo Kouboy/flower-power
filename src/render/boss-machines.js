@@ -1,11 +1,12 @@
 // render/boss-machines.js — les machines de défense des boss (v5.7.0, boss cohérent) : chaque salle porte sa défense, dans chacune de ses
 // moitiés, sous forme d'une vraie machine — goulotte de béton ou émetteur de radiation au plafond, buses de vapeur ou brûleurs sur la paroi
 // extérieure. Au repos, la machine attend ; à l'avertissement, elle se prépare (gouttes, bouffées, veilleuses, lueur et arcs) ; au coup,
-// son effet remplit toute la moitié frappée (rideau de béton, jets de vapeur, nappe de flammes, rideau vert). Zones et durées inchangées
-// (play/boss-threats.js) ; le liseré de la zone visée est dessiné avec les autres menaces (render/boss.js, drawThreats).
+// son effet jaillit de la machine et remplit la moitié frappée (rideau de béton, jets de vapeur, nappe de flammes, rideau vert) ; v5.9.0 :
+// il n'est dessiné que dans la part déployée (FP.bossThreats.reach), celle-là même qui tue. Zones et durées : play/boss-threats.js ;
+// le liseré de la zone visée est dessiné avec les autres menaces (render/boss.js, drawThreats).
 // Lit     : state.{time, camera.y, run.milieu, plant.tip, bossFight.destroyed, bossThreats.{rooms, aim, burst, cooldown, shots}},
 //           state.world.{viewH, bossLevel.{rooms, turrets, head}}, FP.config.{milieux, boss.{machines (drops, puffs, arcs), turret, shot.track,
-//           ramp[id].shot.gap}}, FP.bossThreats.timing, FP.bossSkin.{image, piece}, FP.palette.boss.{milieux, machines, aim, weak}, FP.px.
+//           ramp[id].shot.gap}}, FP.bossThreats.{timing, MOUNT, deployed, reach}, FP.bossSkin.{image, piece}, FP.palette.boss.{milieux, machines, aim, weak}, FP.px.
 // Écrit   : rien dans l'état (la toile reçue).
 // Expose  : FP.bossMachines.layout(room, half, defense) → { kind, mount: 'ceiling' | 'wall', side (-1 gauche, 1 droite), x0, y0, x1, y1 }
 //           (pur, pixels du monde : la moitié de salle et l'emplacement de sa machine) ;
@@ -15,12 +16,11 @@
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
-  const MOUNT = { beton: 'ceiling', radiation: 'ceiling', vapeur: 'wall', flamme: 'wall' };
   const HOUSING = 6, NOZZLE_GAP = 12, SHAKE_HZ = 30;   // hauteur d'une machine de plafond, écart entre deux buses (px d'art)
 
   function layout(room, half, defense) {
     const mid = (room.x0 + room.x1) / 2;
-    return { kind: defense, mount: MOUNT[defense], side: half < 0 ? -1 : 1, x0: half < 0 ? room.x0 : mid, y0: room.y0, x1: half < 0 ? mid : room.x1, y1: room.y1 };
+    return { kind: defense, mount: FP.bossThreats.MOUNT[defense], side: half < 0 ? -1 : 1, x0: half < 0 ? room.x0 : mid, y0: room.y0, x1: half < 0 ? mid : room.x1, y1: room.y1 };
   }
 
   // Boîte en pixels d'art de l'écran.
@@ -71,7 +71,8 @@
   // --- Coup (v5.8.0 : sur fond transparent, sans aplat) : l'effet de la machine se dessine par-dessus le décor, assez dense pour se lire
   // comme une zone (chaque rangée en porte sur au moins machines.cover de sa largeur). Béton : coulées verticales d'une colonne sur deux,
   // qui glissent vers le bas ; flammes : langues d'une colonne sur deux, qui ondulent vers le haut ; vapeur : un jet par rangée depuis la
-  // paroi, de longueur qui varie ; radiation : pointillés verts qui défilent, et des éclairs. ---
+  // paroi, jusqu'au front (v5.9.0 : toute la largeur déployée, teinte qui scintille) ; radiation : pointillés verts qui défilent, et des
+  // éclairs. `a` : la part déployée (boîte d'art). ---
   function strike(g, b, a, t, H, Q) {
     const ya = Math.max(0, a.ya), yb = Math.min(H, a.yb), w = a.xb - a.xa, h = yb - ya;
     if (h <= 0 || w <= 0) return;
@@ -83,9 +84,14 @@
         for (let y = ya + phase; y < yb; y += 9) FP.px.rect(g, x + dx, y, 1, 2, C[(k + 2) % 3]);   // grumeaux, étincelles qui défilent
       }
     } else if (b.kind === 'vapeur') {
+      // Jets (v5.8.0) : un par rangée depuis la paroi, de longueur qui varie ; au-delà, la vapeur se défait en bouffées éparses qui filent
+      // jusqu'au front (v5.9.0 : elle couvre ainsi toute la part déployée, celle qui tue) ; une tête claire au front.
       for (let y = ya; y < yb; y++) {
-        const k = y - ya, len = Math.round(w * (.45 + .4 * ((Math.sin(t * 11 + k * 1.7) + 1) / 2))), x0 = b.side < 0 ? a.xa : a.xb - len;
-        FP.px.rect(g, x0, y, len, 1, Q.steam[(k + Math.floor(t * 14)) % 3 ? 1 : 0]);
+        const k = y - a.ya, len = Math.min(w, Math.round(w * (.45 + .4 * ((Math.sin(t * 11 + k * 1.7) + 1) / 2)))), end = w - 2;   // k : ancré à la salle
+        const at = (d0, d1, c) => { if (d1 > d0) FP.px.rect(g, b.side < 0 ? a.xa + d0 : a.xb - d1, y, d1 - d0, 1, c); };
+        at(0, len, Q.steam[(k + Math.floor(t * 14)) % 3 ? 1 : 0]);
+        for (let d = len + 2 + ((Math.floor(t * 50) + k * 5) % 6); d < end; d += 6) at(d, Math.min(end, d + 3), Q.steam[1]);
+        at(end, w, Q.steam[0]);
       }
     } else {
       const off = Math.floor(t * 24);
@@ -169,7 +175,7 @@
       const e = state.bossThreats.rooms[r.id];
       for (const half of [-1, 1]) {
         const b = layout(r, half, r.defense), a = artBox(b, cam), hit = e && e.half === half;
-        if (hit && e.stage === 'strike') strike(g, b, a, t, H, Q);
+        if (hit && e.stage === 'strike') strike(g, b, artBox(FP.bossThreats.reach(r, half, FP.bossThreats.deployed(e)), cam), t, H, Q);
         idle(g, b, a, M, Q);
         if (hit && e.stage === 'warn') warn(g, b, a, e.t, Math.min(1, e.t / W), Q, K);
       }

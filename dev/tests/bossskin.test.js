@@ -30,7 +30,7 @@ FP.test('bossSkin: la matière remplit chaque paroi rangée par rangée, ancrée
   } finally { FP.bossSkin._reset(); }
 });
 
-FP.test('bossSkin: plaque et tourelle en image quand elle existe ; pompe et cœur toujours dessinés par le code (v5.8.0)', () => {
+FP.test('bossSkin: plaque et tourelle en image quand elle existe ; cœur toujours dessiné par le code, ancien rôle target ignoré', () => {
   const imgs = { target: skinImg(), head: skinImg(), plate: skinImg(), turret: skinImg(12, 8) };
   try {
     for (const r in imgs) FP.bossSkin._set('friche', r, imgs[r]);
@@ -72,10 +72,12 @@ FP.test('bossSkin: le calque est refait quand une image devient prête', () => {
   } finally { FP.px.layer = saved; FP.bossSkin._reset(); }
 });
 
-FP.test('bossSkin: art.js — chaque biome décrit a sa matière, sa plaque et son socle de tourelle, sans pompe, tête ni premier plan', () => {
+FP.test('bossSkin: art.js — chaque biome décrit des images connues (matière, plaque, socle, pompe), sans tête ni premier plan', () => {
   for (const [id, a] of Object.entries(window.FLOWER_POWER_BOSS_ART)) {
     FP.assert(FP.config.milieux.some(m => m.id === id), 'milieu connu ' + id);
-    for (const r of ['matter', 'plate', 'turret']) FP.assert(typeof a[r] === 'string' && a[r].endsWith('.png'), id + ' ' + r);
+    for (const r of Object.keys(a)) FP.assert(['matter', 'plate', 'turret', 'pump', 'pumpTank'].includes(r), id + ' : rôle inconnu ' + r);
+    for (const r of ['matter', 'plate', 'turret', 'pump']) if (r in a) FP.assert(typeof a[r] === 'string' && a[r].endsWith('.png'), id + ' ' + r);
+    if ('pumpTank' in a) FP.assert('pump' in a && a.pumpTank.length === 4, id + ' : cuve d’une pompe');
     FP.assert(!('target' in a) && !('head' in a), id + ' : pompe et cœur dessinés par le code (v5.8.0)');
     FP.assert(!('fore' in a), id + ' : plus de premier plan (v5.7.0)');
   }
@@ -107,5 +109,20 @@ FP.test('bossSkin: une plaque habillée est répétée sans déformation', () =>
     const s = skinRun(0), p = s.world.bossLevel.plates[0].solid; s.camera.y = p.y - s.world.viewH / 2;
     const a = skinDraw(s).images.filter(q => q.img === img);
     FP.assert(a.length > 0 && a.every(q => q.a[2] === q.a[6] && q.a[3] === q.a[7]), 'échelle 1');
+  } finally { FP.bossSkin._reset(); }
+});
+
+// v5.9.0 (retour de jeu : points faibles « pas super convaincants ») : la pompe en sprite PixelLab, rôle pump, et sa cuve dans art.js.
+FP.test('bossskin: rôle pump et sa cuve', () => {
+  const img = skinImg(32, 32);
+  try {
+    FP.bossSkin._set('friche', 'pump', img); FP.assertEqual(FP.bossSkin.image('friche', 'pump'), img);
+    const T = window.FLOWER_POWER_BOSS_ART.friche.pumpTank;
+    FP.assert(Array.isArray(T) && T.length === 4 && T[0] < T[2] && T[1] < T[3] && T.every(v => v >= 0 && v <= 1), 'cuve de la friche dans art.js');
+    FP.assertEqual(JSON.stringify(FP.bossSkin.tank('friche')), JSON.stringify(T));
+    FP.assertEqual(FP.bossSkin.tank('inconnu'), null);
+    for (const id of ['friche', 'industrie', 'decharge', 'nucleaire']) FP.assert(window.FLOWER_POWER_BOSS_ART[id] && window.FLOWER_POWER_BOSS_ART[id].pump, 'image de pompe ' + id);
+    const s = skinRun(0), t = s.world.bossLevel.targets[0]; s.camera.y = t.solid.y - s.world.viewH / 2;
+    FP.assert(skinDraw(s).images.some(q => q.img === img), 'le boss dessine la pompe en image');
   } finally { FP.bossSkin._reset(); }
 });

@@ -59,7 +59,7 @@ FP.test('sequencer: en changeant de morceau, le nouveau démarre après ce que l
 });
 // Musique de la boutique (v4.6.0) : reggae pollué, sono de supermarché.
 FP.test('songs: le reggae de la boutique reste en mi mineur, mesures complètes', () => {
-  const s = FP.songs.shop;
+  const s = FP.songs['shop-friche'];
   FP.assertEqual(s.bpm, 72); FP.assertEqual(s.bars, 4);
   for (const n of s.notes) {
     if (n.midi !== undefined) FP.assert(s.pcs.includes(n.midi % 12), 'hors gamme : ' + n.midi);
@@ -70,7 +70,7 @@ FP.test('songs: le reggae de la boutique reste en mi mineur, mesures complètes'
 });
 FP.test('music: le bon de commande joue le reggae, aigus poussés, sans filtre de veille', () => {
   const s = FP.state.createRun(1, { W: 440, H: 783 }); s.mode = 'shop';
-  FP.assertEqual(FP.music.songFor(s).song, 'shop');
+  FP.assertEqual(FP.music.songFor(s).song, 'shop-' + s.world.milieu);
   FP.assertEqual(FP.music.trebleFor(s), 7);
   s.mode = 'ready'; const asleep = FP.music.filterFor(s); s.mode = 'shop';
   FP.assert(FP.music.filterFor(s) > asleep);
@@ -82,4 +82,20 @@ FP.test('sequencer: le désaccord d’une note part avec elle', () => {
   p.play('__d', { fade: 0, gain: 1 }); p.update(0);
   const n = spy.calls.find(c => c[0] === 'note'); FP.assertEqual(n[6].detune, -18);
   delete FP.songs.__d;
+});
+
+// v5.9.0 (retour de jeu : « c'est souvent dissonant de passer de l'un à l'autre ») : le reggae prend la tonique du biome.
+FP.test('songs: le Shop dans la tonique de chaque biome', () => {
+  const TONIC = { friche: 4, industrie: 9, decharge: 7, nucleaire: 4 }, SHIFT = { friche: 0, industrie: 5, decharge: 3, nucleaire: 0 };
+  const ref = FP.songs['shop-friche'];
+  FP.assertEqual(FP.songs.shop, undefined, 'plus de reggae sans biome');
+  for (const id of Object.keys(TONIC)) {
+    const s = FP.songs['shop-' + id];
+    FP.assert(s && s.notes.length === ref.notes.length, id);
+    FP.assertEqual(s.bpm, 72, id);
+    const bass = s.notes.find(n => n.inst === 'bass');
+    FP.assertEqual(((bass.midi % 12) + 12) % 12, TONIC[id], 'tonique ' + id);
+    FP.assertEqual(JSON.stringify(s.pcs), JSON.stringify(ref.pcs.map(p => (p + SHIFT[id]) % 12)), 'gamme ' + id);
+    for (const n of s.notes) if (n.midi !== undefined) FP.assert(s.pcs.includes(((n.midi % 12) + 12) % 12), id + ' hors gamme : ' + n.midi);
+  }
 });
