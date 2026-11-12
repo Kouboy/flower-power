@@ -206,7 +206,7 @@
       // startClear : rien dans les 180 px au-dessus de la graine (la pousse vient de démarrer, elle ne peut pas aller chercher).
       pickup: 20, radius: 5,   // pickup : rayon de ramassage d'un jeton (plus généreux que les collisions)
       missBelow: 40, value: 10, chainBonus: { easy: 50, bait: 150 }, toxicBite: 1 / 3,
-      minChain: 4, spinFps: 9, edge: 4
+      minChain: 4, spinFps: 9
     },
 
     // Milieux (v4.9.0) : une partie traverse les quatre dans l'ordre ; chacun dure `run.steps` pousses réussies, puis son boss.
@@ -384,7 +384,8 @@
       followRatio: .52, rateDown: 7.8, rateUp: 5.4,
       framing: 1.18, grazeZoom: .22, nearIn: 26, nearOut: 18, zoomCurve: 1.55, zoomIn: 30, zoomOut: 22,
       // Point focal du zoom, borné dans la partie centrale de l'écran ; en dessous de zoomEpsilon, pas de zoom.
-      focalX: { min: .22, max: .78 }, focalY: { min: .20, max: .78 }, zoomEpsilon: 1.002
+      focalX: { min: .22, max: .78 }, focalY: { min: .20, max: .78 }, zoomEpsilon: 1.002,
+      safePad: 12   // v5.11.0 : bande sûre = ce que rogne le cadrage (zoom centré) + safePad px (FP.camera.safeX)
     },
 
     loop: {
