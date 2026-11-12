@@ -6,7 +6,7 @@
 // Lit     : state.{seed, time, camera.y, bossFight.destroyed}, state.world.{width, height, viewH, bossLevel.{walls, targets, head, plates,
 //           turrets, rooms}}, FP.config.boss.{struts (gap, maxPerScreen, beam, gear, gearHz, gearBoost, clear), turret.size}, FP.bossPlan.zone,
 //           FP.palette.boss.strut, FP.px (dont layer et blit), FP.geom.sdPoly, FP.createRng.
-// Écrit   : rien dans l'état (la toile reçue ; le placement en cache par niveau ; poutrelles et câbles dans un calque, refait quand un mur
+// Écrit   : rien dans l'état (la toile reçue ; le placement en cache par boss et taille de niveau, gardé d'une tentative à l'autre ; poutrelles et câbles dans un calque, refait quand un mur
 //           tombe ; sans DOM, en direct).
 // Expose  : FP.bossStruts.place(bl, world, seed) → [{ kind: 'beam' | 'cable', walls: [a, b], x0, y0, x1, y1 } | { kind: 'gear', walls: [a],
 //           cx, cy, r }] (pur, pixels du monde) ; FP.bossStruts.gearAngle(t, state) (pur) ; FP.bossStruts.draw(g, state).
@@ -21,7 +21,9 @@
     const K = FP.config.boss.struts, H = world.viewH, W = world.width, z = FP.bossPlan.zone(world), rng = FP.createRng((seed ^ 0x5717) >>> 0);
     const walls = bl.walls.map(polyOf), prot = [...bl.targets.map(t => t.solid), bl.head.solid, ...bl.plates.map(p => p.solid)].map(polyOf);
     const tr = FP.config.boss.turret.size / 2 * FP.px.SCALE;
-    const wallAt = (x, y) => walls.findIndex(p => FP.geom.sdPoly(x, y, p) < 0);
+    // un mur n'est testé que si sa boîte englobe le point (la plupart des murs sont loin de la rangée balayée)
+    const boxes = walls.map(p => { const xs = p.map(q => q[0]), ys = p.map(q => q[1]); return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)]; });
+    const wallAt = (x, y) => walls.findIndex((p, i) => { const b = boxes[i]; return x >= b[0] && x <= b[2] && y >= b[1] && y <= b[3] && FP.geom.sdPoly(x, y, p) < 0; });
     const inRoom = (x, y) => bl.rooms.some(r => x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1);
     const safe = (x, y, pad) => prot.every(p => FP.geom.sdPoly(x, y, p) >= K.clear + pad) && bl.turrets.every(q => Math.hypot(x - q.x, y - q.y) >= tr + K.clear + pad);
     const out = [], crosses = [], gears = [], spacing = Math.max(H / K.maxPerScreen, H * K.gap);
@@ -85,7 +87,10 @@
     FP.px.disc(g, cx, cy, 2, S.rivet);
   }
 
-  let cache = null, cachedFor = null, layer = null, layerFor = null, layerKey = '';
+  // Le placement ne dépend que du plan, de la taille du niveau et de la graine : gardé d'une tentative à l'autre du même boss (un niveau
+  // régénéré après une mort a un nouveau bossLevel, mais les mêmes murs aux mêmes places).
+  let cache = null, cacheKey = '', layer = null, layerKey = '';
+  const levelKey = (bl, w, seed) => [Object.keys(window.FLOWER_POWER_BOSS_PLANS).find(k => window.FLOWER_POWER_BOSS_PLANS[k] === bl.plan), w.width, w.height, seed].join('|');
   const standing = (bl, e) => e.walls.every(i => !bl.walls[i].off);
   function crossings(g, bl, cam, H) {
     const S = FP.palette.boss.strut, w = FP.config.boss.struts.beam;
@@ -99,12 +104,13 @@
   function draw(g, state) {
     const w = state.world, bl = w.bossLevel;
     if (!bl) return;
-    if (cachedFor !== bl) { cache = place(bl, w, state.seed); cachedFor = bl; }
-    const cam = FP.px.toArt(state.camera.y), H = Math.ceil(w.viewH / FP.px.SCALE), key = bl.walls.map(q => +q.off).join('');
-    if (layerFor !== bl || layerKey !== key) {
+    const lk = levelKey(bl, w, state.seed);
+    if (cacheKey !== lk) { cache = place(bl, w, state.seed); cacheKey = lk; }
+    const cam = FP.px.toArt(state.camera.y), H = Math.ceil(w.viewH / FP.px.SCALE), key = lk + '|' + bl.walls.map(q => +q.off).join('');
+    if (layerKey !== key) {
       layer = FP.px.layer(Math.ceil(w.width / FP.px.SCALE), Math.ceil(w.height / FP.px.SCALE));
       if (layer) crossings(layer.g, bl, 0, null);
-      layerFor = bl; layerKey = key;
+      layerKey = key;
     }
     if (layer) FP.px.blit(g, layer, cam, H + 1); else crossings(g, bl, cam, H);
     const S = FP.palette.boss.strut, a = gearAngle(state.time, state);

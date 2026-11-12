@@ -60,3 +60,12 @@ FP.test('bossStruts: les engrenages tournent plus vite quand une pompe casse, et
   FP.assert(v0 > 0 && v1 > v0, `plus vite : ${v0} → ${v1}`);
   s.world.bossLevel.head.solid.off = true; FP.assertEqual(A(1.1), A(1), 'arrêtés');
 });
+
+// Revue finale (v5.8.0) : le placement (coûteux) est gardé d'une tentative à l'autre du même boss, pas recalculé à chaque niveau régénéré.
+FP.test('bossStruts: placement calculé une fois par boss, pas à chaque tentative', () => {
+  const s = strutRun(1); FP.bossStruts.draw(skinCtx(), s);
+  const saved = FP.geom.sdPoly; let n = 0; FP.geom.sdPoly = function () { n++; return saved.apply(this, arguments); };
+  FP.geom.sdPoly = saved; FP.level.generate(s); FP.geom.sdPoly = function () { n++; return saved.apply(this, arguments); };   // la régénération elle-même n'est pas comptée
+  try { FP.bossStruts.draw(skinCtx(), s); } finally { FP.geom.sdPoly = saved; }
+  FP.assertEqual(n, 0, 'aucun calcul de placement à la nouvelle tentative');
+});

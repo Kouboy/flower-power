@@ -97,3 +97,24 @@ FP.test('bossMachines: tourelles absentes quand la tête est transpercée', () =
   const before = turBox(s).rects.length; s.world.bossLevel.head.solid.off = true;
   FP.assert(turBox(s).rects.length < before, 'moins de dessin sans tourelles');   // le socle lui-même : bossdeath.test.js
 });
+
+// Revue finale (v5.8.0).
+FP.test('bossMachines: pendant la rafale, le canon vise le point figé et recule à chaque tir', () => {
+  const { s, q } = turState(1), C = FP.config.boss.shot;
+  s.bossThreats.aim = null; s.bossThreats.cooldown = 0;
+  const to = { x: q.x - 90, y: q.y + 40 };
+  s.bossThreats.burst = { turret: q.id, to, n: 2, t: C.burstGap + .02 };
+  const p = FP.bossMachines.turretPose(s, q);
+  FP.assert(Math.abs(p.angle - Math.atan2(to.y - q.y, to.x - q.x)) < .05, 'vers le point figé : ' + p.angle);
+  FP.assert(p.recoil > 0, 'recul après le 2e tir');
+});
+FP.test('bossMachines: la console de chaque tourelle s’accroche à un mur (4 biomes, 2 largeurs, étiré)', () => {
+  for (const W of [280, 440]) for (const stems of [0, 1e3]) for (const m of [0, 1, 2, 3]) {
+    const s = FP.state.createRun(7, { W, H: Math.round(W * 16 / 9) }); FP.level.startRun(s); s.run.milieu = m; s.run.boss = true; s.plant.stemCount = stems; FP.level.generate(s);
+    const bl = s.world.bossLevel, walls = bl.walls.map(o => o.collision.map(([x, y]) => [o.x + x, o.y + y]));
+    for (const q of bl.turrets) {
+      const e = FP.bossMachines.armEnd(bl, q);
+      FP.assert(e && walls.some(P => FP.geom.sdPoly(e.x, e.y, P) <= 1), `${q.id} sans mur, biome ${m} W=${W}`);
+    }
+  }
+});

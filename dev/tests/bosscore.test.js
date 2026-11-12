@@ -35,3 +35,25 @@ FP.test('bossCore: les pales du cœur tournent tant qu’une pompe vit, arrêté
   FP.assert(Math.max(...beats) - Math.min(...beats) > .3, 'le noyau bat');
   const g = skinCtx(); FP.bossCore.heart(g, [[0, 0], [60, 0], [60, 30], [0, 30]], 1, s); FP.assert(g.rects.length > 20, 'cœur dessiné');
 });
+
+// Revue finale (v5.8.0) : pompes hautes et étroites (brûleurs, barres) ; le cœur tousse et crache des étincelles à chaque pompe cassée.
+FP.test('bossCore: chaque pompe des plans se dessine dans sa boîte, même haute et étroite', () => {
+  for (const m of [0, 1, 2, 3]) {
+    const s = pipeRun(m), M = FP.palette.boss.milieux[FP.config.milieux[m].id];
+    for (const tg of s.world.bossLevel.targets) for (const broken of [false, true]) {
+      const pts = tg.solid.collision.map(([x, y]) => [FP.px.toArt(tg.solid.x + x), FP.px.toArt(tg.solid.y + y)]);
+      const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), g = skinCtx(); FP.bossCore.pump(g, pts, 1.3, M, broken);
+      for (const r of g.rects) FP.assert(r.x >= Math.min(...xs) - 1 && r.x + r.w <= Math.max(...xs) + 1 && r.y >= Math.min(...ys) - 1 && r.y + r.h <= Math.max(...ys) + 1, `${tg.id} déborde : ${JSON.stringify(r)}, biome ${m}`);
+      if (!broken) FP.assert(g.rects.some(r => r.c === FP.palette.boss.weak[0]), `${tg.id} : cuve lumineuse`);
+    }
+  }
+});
+FP.test('bossCore: le cœur blindé n’a pas la couleur des cibles ; il tousse et crache des étincelles après une pompe cassée', () => {
+  const s = pipeRun(0), W = FP.palette.boss.weak, box = [[0, 0], [60, 0], [60, 30], [0, 30]], Sp = FP.palette.boss.core.spark;
+  const draw = (t) => { const g = skinCtx(); FP.bossCore.heart(g, box, t, s); return g.rects; };
+  FP.assert(!draw(1).some(r => W.includes(r.c)), 'blindé : pas de couleur de cible');
+  FP.assert(!draw(1.1).some(r => r.c === Sp), 'pas d’étincelles au repos');
+  s.bossFight.destroyed = [true, false, false];
+  FP.assert(draw(1.3).some(r => r.c === Sp), 'étincelles juste après la pompe cassée');
+  FP.assert(!draw(3).some(r => r.c === Sp), 'puis plus rien');
+});

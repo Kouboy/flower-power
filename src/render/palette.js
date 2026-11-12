@@ -119,7 +119,8 @@
     machines: { concrete: ['#b4b0a6', '#8a867c', '#5e5a52'], slot: '#100c08', steam: ['#c8d8d4', '#98a4a0'], hot: '#d84a1a',
       flame: ['#ffe060', '#ff9a3a', '#d84a1a'], pilot: '#58a8ff', ray: ['#c8ff7a', '#5ad02a'] },
     // Pompes et cœur (v5.8.0, render/boss-core.js) : cadre et vitre de la cuve, rayons du volant, anneaux, rivets et pales du cœur.
-    core: { frame: '#14110e', glass: '#2c3836', wheel: '#a89c88', ring: ['#3a342e', '#5a5048'], rivet: '#c8bca8', blade: '#8a8070' },
+    core: { frame: '#14110e', glass: '#2c3836', wheel: '#a89c88', ring: ['#3a342e', '#5a5048'], rivet: '#c8bca8', blade: '#8a8070',
+      ember: '#b0461c', spark: '#ffd0a0' },   // noyau du cœur blindé (braise, pas la couleur des cibles) ; étincelles quand une pompe casse
     // Structures de liaison (v5.8.0, render/boss-struts.js) : acier sombre, reflet, rivets, câble.
     strut: { edge: '#100e0c', body: '#3e3a34', light: '#6a6258', rivet: '#9a9080', cable: '#2a2622' }
   };
