@@ -1,8 +1,8 @@
 // render/boss-earth.js — la machine surgit de la terre (v5.7.0, boss cohérent) : les bords extérieurs des murs (ceux qui ne donnent ni sur
-// un couloir ni dans une salle) sont rongés de terre — frange irrégulière, mottes, racines — aux couleurs du sous-sol du milieu ; une poche de
-// terre meuble monte du dessus de la tête jusqu'à la surface, là où la fleur éclot à la victoire. Purement visuel : aucun solide n'est touché.
-// Lit     : state.{camera.y, run.milieu}, state.world.{width, height, viewH, surfaceY, bossLevel.{plan, walls, head, rooms}}, FP.config.{milieux, boss.earth (fringe,
-//           clods, roots, pocket)}, FP.bossPlan.toWorld (trajets de référence, channelMin), FP.palette.milieux[id].strata, FP.px, FP.geom.sdPoly.
+// un couloir ni dans une salle) sont rongés de terre — frange irrégulière, mottes, racines — aux couleurs du sous-sol du milieu (v5.9.0 :
+// plus de poche de terre sur la tête, la pelouse revient à la mort du boss). Purement visuel : aucun solide n'est touché.
+// Lit     : state.{camera.y, run.milieu}, state.world.{width, height, viewH, bossLevel.{plan, walls, head, rooms}}, FP.config.{milieux, boss.earth (fringe,
+//           clods, roots)}, FP.bossPlan.toWorld (trajets de référence, channelMin), FP.palette.milieux[id].strata, FP.px, FP.geom.sdPoly.
 // Écrit   : rien dans l'état (la toile reçue ; les bords extérieurs en cache par niveau ; la terre peinte dans un calque, refait quand un mur
 //           s'effondre ; sans DOM, peinte en direct).
 // Expose  : FP.bossEarth.edges(bl, world) → [{ x0, y0, x1, y1, nx, ny (normale vers l'intérieur du mur) }] (pur, pixels du monde) ;
@@ -42,7 +42,7 @@
   let cache = null, cachedFor = null;
   // Toute la terre du boss, dans g (cam, H : culling en direct ; H null : calque de tout le niveau). Un mur effondré (off) perd sa terre.
   function paint(g, state, bl, cam, H) {
-    const w = state.world, id = FP.config.milieux[state.run.milieu].id, S = FP.palette.milieux[id].strata, K = FP.config.boss.earth;
+    const id = FP.config.milieux[state.run.milieu].id, S = FP.palette.milieux[id].strata, K = FP.config.boss.earth;
     const clay = S.clay, dark = S.humus[0], vis = (y) => H === null || (y >= -K.fringe && y <= H + K.fringe);
     // Bords rongés : à chaque pixel du bord, une frange de terre de 1 à fringe px qui mord dans le mur ; des mottes ; quelques racines.
     for (const [n, e] of cache.entries()) {
@@ -59,15 +59,6 @@
         const s = Math.floor(hash(n, k + 7) * L), x = ax + (bx - ax) * s / L, y = ay + (by - ay) * s / L - cam, len = 3 + Math.floor(hash(n, k + 11) * 4);
         FP.px.line(g, Math.round(x), Math.round(y), Math.round(x + (e.nx + e.ny * .6) * len), Math.round(y + (e.ny - e.nx * .6) * len), S.humus[3]);
       }
-    }
-    // Poche de terre meuble sur la tête, de son sommet jusqu'à la surface (là où la fleur éclot) : une colonne aux bords irréguliers,
-    // arrondie en bas sur le haut de la tête.
-    const h = bl.head.solid, top = h.y + Math.min(...h.collision.map(q => q[1])), cx = FP.px.toArt(h.x);
-    const yb = FP.px.toArt(top) + 1, ya = FP.px.toArt(w.surfaceY), rx = Math.round(K.pocket / FP.px.SCALE), round = Math.round(rx * .6);
-    for (let y = Math.max(ya, H === null ? ya : cam); y <= yb && (H === null || y <= cam + H); y++) {
-      const bottom = yb - y < round ? Math.sqrt(1 - ((round - (yb - y)) / round) ** 2) : 1;
-      const span = Math.round(rx * bottom) - Math.floor(hash(y, 77) * 3);
-      for (let dx = -span; dx <= span; dx++) { const r = hash(dx + 500, y); FP.px.rect(g, cx + dx, y - cam, 1, 1, r < .15 ? dark : clay[Math.floor(r * 4)]); }
     }
   }
 

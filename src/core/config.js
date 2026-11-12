@@ -277,8 +277,8 @@
       // recoilTime = durée du recul (s).
       turret: { size: 24, barrel: 14, recoil: 3, recoilTime: .15 },   // v5.8.0 : plus grosses (on ne les voyait pas)
       // Terre (v5.7.0, render/boss-earth.js) : fringe = profondeur maximale de la frange qui ronge un bord extérieur (px d'art) ; clods =
-      // densité des mottes ; roots = racines par bord ; pocket = demi-largeur de la poche de terre sur la tête (px).
-      earth: { fringe: 5, clods: .35, roots: 2, pocket: 34 },
+      // densité des mottes ; roots = racines par bord (v5.9.0 : plus de poche de terre sur la tête).
+      earth: { fringe: 5, clods: .35, roots: 2 },
       // Pompes et cœur (v5.8.0, render/boss-core.js) : wheelHz = tours par seconde du volant d'une pompe ; bladeHz = tours par seconde des
       // pales du cœur (un quart de moins par pompe cassée) ; beat = battements par seconde du noyau.
       core: { wheelHz: .8, bladeHz: .5, beat: 1.4 },

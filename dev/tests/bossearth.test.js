@@ -1,5 +1,5 @@
-// Terre des boss (v5.7.0, boss cohérent) : la machine surgit de la terre (bords extérieurs des murs rongés), poche de terre au-dessus de la
-// tête, où la fleur éclot. Aides : pipeRun (bosspipes.test.js), skinCtx (bossskin.test.js), PLAN_WIDTHS (bossplan.test.js).
+// Terre des boss (v5.7.0, boss cohérent) : la machine surgit de la terre (bords extérieurs des murs rongés) ; v5.9.0 : plus de poche de
+// terre au-dessus de la tête (la pelouse revient à la mort du boss, la fleur y éclot). Aides : pipeRun (bosspipes.test.js), skinCtx (bossskin.test.js), PLAN_WIDTHS (bossplan.test.js).
 const earthRun = (m, W = 440) => {
   const s = FP.state.createRun(7, { W, H: Math.round(W * 16 / 9) });
   FP.level.startRun(s); s.run.milieu = m; s.run.boss = true; FP.level.generate(s); s.mode = 'playing'; s.time = 2; return s;
@@ -30,13 +30,17 @@ FP.test('bossEarth: dessiner la terre ne change aucun solide', () => {
   }
 });
 
-FP.test('bossEarth: poche de terre au-dessus de la tête', () => {
+FP.test('earth: pas de poche au-dessus de la tête', () => {
+  FP.assertEqual(FP.config.boss.earth.pocket, undefined);
+  const near = (E, x, y, d) => E.some(e => { const dx = e.x1 - e.x0, dy = e.y1 - e.y0, L = dx * dx + dy * dy, t = L ? Math.max(0, Math.min(1, ((x - e.x0) * dx + (y - e.y0) * dy) / L)) : 0; return Math.hypot(e.x0 + t * dx - x, e.y0 + t * dy - y) <= d; });
   for (const m of [0, 1, 2, 3]) {
-    const s = earthRun(m), h = s.world.bossLevel.head.solid, P = FP.config.boss.earth.pocket;
-    s.camera.y = h.y - s.world.viewH / 2; const g = skinCtx(); FP.bossEarth.draw(g, s);
-    const cam = FP.px.toArt(s.camera.y), C = earthColors(m), top = h.y + Math.min(...h.collision.map(q => q[1]));
-    const inPocket = g.rects.filter(r => C.has(r.c) && Math.abs((r.x + .5) * FP.px.SCALE - h.x) <= P && (r.y + cam) * FP.px.SCALE <= top + 2);
-    FP.assert(inPocket.length > 10, 'poche, milieu ' + m + ' : ' + inPocket.length);
+    const s = earthRun(m), bl = s.world.bossLevel, h = bl.head.solid, E = FP.bossEarth.edges(bl, s.world), top = h.y + Math.min(...h.collision.map(q => q[1]));
+    const D = (FP.config.boss.earth.fringe + 3) * FP.px.SCALE, C = earthColors(m);
+    for (let cy = s.world.surfaceY; cy < top; cy += s.world.viewH / 2) {
+      s.camera.y = cy; const g = skinCtx(); FP.bossEarth.draw(g, s); const cam = FP.px.toArt(s.camera.y);
+      const stray = g.rects.filter(r => { const x = (r.x + .5) * FP.px.SCALE, y = (r.y + cam + .5) * FP.px.SCALE; return C.has(r.c) && Math.abs(x - h.x) <= 34 && y >= s.world.surfaceY && y <= top && !near(E, x, y, D); });
+      FP.assertEqual(stray.length, 0, 'terre hors des bords au-dessus de la tête, milieu ' + m);
+    }
   }
 });
 
@@ -48,12 +52,9 @@ FP.test('bossEarth: même terre d’une tentative à l’autre, rien hors boss',
   a.world.bossLevel = null; const g = skinCtx(); FP.bossEarth.draw(g, a); FP.assertEqual(g.rects.length, 0, 'hors boss');
 });
 
-FP.test('bossEarth: un mur effondré perd sa terre ; la poche monte jusqu’à la surface', () => {
+FP.test('bossEarth: un mur effondré perd sa terre', () => {
   for (const m of [0, 1, 2, 3]) {
-    const s = earthRun(m), bl = s.world.bossLevel, h = bl.head.solid; s.camera.y = s.world.surfaceY - 10;
-    const C = earthColors(m), cam = FP.px.toArt(s.camera.y), P = FP.config.boss.earth.pocket;
-    const g = skinCtx(); FP.bossEarth.draw(g, s);
-    FP.assert(g.rects.some(r => C.has(r.c) && Math.abs((r.x + .5) * FP.px.SCALE - h.x) <= P && (r.y + cam) * FP.px.SCALE <= s.world.surfaceY + 12), 'poche jusqu’à la surface, milieu ' + m);
+    const s = earthRun(m), bl = s.world.bossLevel;
     s.camera.y = bl.rooms[0].y0 - s.world.viewH / 2; const before = skinCtx(); FP.bossEarth.draw(before, s);
     for (const w of bl.walls) w.off = true; const after = skinCtx(); FP.bossEarth.draw(after, s);
     FP.assert(after.rects.length < before.rects.length, 'moins de terre sans murs, milieu ' + m);
