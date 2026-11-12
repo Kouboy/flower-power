@@ -1,6 +1,6 @@
 // world/level.js — génération d'un niveau à partir de la graine du run.
 // Lit     : state.rng, state.difficulty (niveau équivalent : réglages par niveau), state.level (réveil du T-Rex), state.run.{milieu,boss}, FP.config.shop.lobbyingK (option lobbying), state.world.{width,viewH,surfaceY,baseHeight,growK}, FP.state.levelHeightFor (hauteur du niveau), state.signature,
-//           FP.config.{level,spawnTables,signature,milieux,world.growMax,plant.speed}, FP.state.worldHeightFor, FP.catalog, FP.geom, FP.bossLevel.generate (niveau de boss).
+//           FP.config.{level,spawnTables,signature,milieux,world.growMax,plant.speed}, FP.camera.safeX (limaces), FP.state.worldHeightFor, FP.catalog, FP.geom, FP.bossLevel.generate (niveau de boss).
 // Écrit   : state.world.{height,baseHeight,growK (v5.3.0 : hauteur du niveau, décidée ici),milieu,level,boss,bossLevel,skyVariant,lawnVariant,safePath,safeRadius,hazardRadius,solidExtra,solids,toxics,leaks (crossing : barre le chemin sûr, v4.17.0),bonuses}, state.signature ;
 //           puis FP.coins.place écrit state.world.{coins,chains}.
 // Expose  : FP.level.startRun(state), FP.level.generate(state), FP.level.tableFor(milieu, band) (pur, testé),
@@ -306,7 +306,7 @@
   }
 
   function placeLeaks(state, grid) {
-    const world = state.world, rng = state.rng, c = FP.config.level.leaks, W = world.width;
+    const world = state.world, rng = state.rng, c = FP.config.level.leaks, W = world.width, safe = FP.camera.safeX(W);   // v5.11.0 : bande sûre
     const count = countFor(c, state);
     // v4.17.0 : dans les derniers niveaux, une part des limaces peut barrer le chemin sûr (on passe en attendant son moment).
     const x = c.cross, crossK = clamp((state.difficulty - x.fromLevel) / (FP.config.difficulty.levelAtMax - x.fromLevel), 0, 1);
@@ -318,7 +318,7 @@
         if (crossing || rng.next() < c.nearRouteChance) {
           const y = rng.range(world.surfaceY + c.routeTop, world.height - c.routeBottom);
           const side = rng.next() < .5 ? -1 : 1;
-          pos = { x: clamp(pathXAt(world, y) + side * rng.range(c.routeOffset[0], c.routeOffset[1]), c.routeMarginX, W - c.routeMarginX), y };
+          pos = { x: clamp(pathXAt(world, y) + side * rng.range(c.routeOffset[0], c.routeOffset[1]), safe, W - safe), y };
         } else {
           const cell = pickCell(grid, rng, cl => cl.r > 0 && cl.r < grid.rows - 1 && (tries > c.relaxAfter || depthK(world, cl.y) > c.minDepth));
           pos = cellPos(grid, rng, cell, c.jitter);
@@ -338,10 +338,8 @@
         const k0 = (Math.sin(leak.phase) + 1) * .5 - .5;
         leak.cx = pos.x + Math.cos(angle) * len * k0; leak.cy = pos.y + Math.sin(angle) * len * k0; leak.cr = leak.r;
         const pts = leakPoints(leak);
-        // Le trajet peut sortir par un bord, tant que son centre est dans le cadre et qu'on en voit au moins la moitié.
-        const visible = pts.filter(p => p.x >= 0 && p.x <= W).length / pts.length;
-        const inBounds = pos.x >= c.marginX && pos.x <= W - c.marginX && visible >= c.minVisible &&
-          pts.every(p => p.y > world.surfaceY + c.top && p.y < world.height - c.bottom);
+        // v5.11.0 (zones sûres) : tout le trajet, corps compris, reste dans la bande que le cadrage laisse voir (FP.camera.safeX).
+        const inBounds = pts.every(p => p.x - leak.r >= safe && p.x + leak.r <= W - safe && p.y > world.surfaceY + c.top && p.y < world.height - c.bottom);
         const notBuried = !nearSolid(world, pos.x, pos.y, c.solidPad) && !nearToxic(world, pos.x, pos.y, c.toxicPad);
         const breathing = !nearLeak(world, pos.x, pos.y, c.spacingCenter) && pts.every(p => !nearLeak(world, p.x, p.y, c.spacingPath));
         // Une limace peut mettre la pression près du chemin, jamais le condamner.

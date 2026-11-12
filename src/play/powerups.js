@@ -1,5 +1,5 @@
 // play/powerups.js — flyover → récompense (pollen, goutte, spore), ramassage, spore.
-// Lit     : state.mode, state.plant.{tip,dir}, state.input, state.query, state.world, state.power, FP.config.{flyover,powerups,shield,plant,text},
+// Lit     : state.mode, state.plant.{tip,dir}, state.input, state.query, state.world, state.power, FP.config.{flyover,powerups,shield,plant,text}, FP.camera.safeX,
 //           FP.collision.distanceTo, FP.collision.update (requête refaite après une spore), FP.hazards.toxicIntensityAt.
 // Écrit   : state.world.{bonuses,solids,toxics,leaks} (apparition, ramassage, nettoyage par la spore), solid.rewarded,
 //           state.power.{shield,shieldGrace}, state.score.flowerBonus, state.graze.active (objets effacés),
@@ -50,8 +50,8 @@
 
   // Un endroit libre, toujours devant la pousse, hors de tout danger et des autres récompenses.
   function spawnClear(state, x, y, r) {
-    const c = FP.config.powerups.spawn, w = state.world, tip = state.plant.tip;
-    if (x < c.marginX + r || x > w.width - c.marginX - r) return false;
+    const c = FP.config.powerups.spawn, w = state.world, tip = state.plant.tip, m = FP.camera.safeX(w.width) + r;   // v5.11.0 : bande sûre
+    if (x < m || x > w.width - m) return false;
     if (y < w.surfaceY + c.top || y > w.height - c.bottom) return false;
     const lead = tip.y - w.surfaceY < c.nearSurfaceSpan ? c.leadNearSurface : c.lead;
     if (y > tip.y - lead) return false;

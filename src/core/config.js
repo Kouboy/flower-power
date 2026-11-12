@@ -77,16 +77,16 @@
         // v4.1.0 : plus de limaces, plus vite (v3 : base 1, perLevel .10, maxExtra 3).
         // v4.8.0 : maxExtra 3, plafond ≈ 7 limaces (était 4 → ≈ 10).
         base: 2, perLevel: .35, maxExtra: 3, scale: .68, tries: 120, relaxAfter: 32, jitter: .24, minDepth: .22,
-        nearRouteChance: .46, routeTop: 86, routeBottom: 142, routeOffset: [22, 62], routeMarginX: 42,
+        nearRouteChance: .46, routeTop: 86, routeBottom: 142, routeOffset: [22, 62],
         angledChance: .90, angleJitter: .24, len: [42, 176], lenPerLevel: 3.2, lenLevelMax: 54, lenDepth: 22,
-        rate: [.24, .92], r: [11, 16.2], marginX: 24, top: 48, bottom: 116,
+        rate: [.24, .92], r: [11, 16.2], top: 48, bottom: 116,
         solidPad: 20, toxicPad: 8, spacingCenter: 46, spacingPath: 28, safeK: .58,
         // v4.17.0 : limaces qui barrent le chemin sûr, à partir du niveau équivalent fromLevel ; jusqu'à chanceAtMax d'entre elles
         // au niveau levelAtMax ; clearPad : marge en plus quand, au bout de sa course, la limace libère le chemin.
         cross: { fromLevel: 6, chanceAtMax: .45, clearPad: 14 },
         // Angles inclinés (en fractions de π) et allures des limaces.
-        shape: { angles: [1 / 8, 1 / 5, 1 / 3, 2 / 5, 3 / 5, 2 / 3, 4 / 5, 7 / 8], morphs: ['clear', 'fat', 'debris'] },
-        minVisible: .5            // part minimale du trajet dans l'écran ; le centre du trajet reste dans [marginX, W − marginX]
+        // v5.11.0 : tout le trajet reste dans la bande sûre (FP.camera.safeX) ; il ne sort plus du cadre.
+        shape: { angles: [1 / 8, 1 / 5, 1 / 3, 2 / 5, 3 / 5, 2 / 3, 4 / 5, 7 / 8], morphs: ['clear', 'fat', 'debris'] }
       }
     },
 
@@ -189,7 +189,7 @@
     powerups: {
       formMax: .48, radius: { pollen: 13, water: 15, spore: 16 }, pickupPad: 9, missedBehind: 155, maxAge: 9.5,
       spawn: { dirCone: 48, idealAhead: 80, aheadRisk: 24, minAhead: 38, surfacePad: 48, aheadSlack: 7,
-        nearSurfaceUp: 92, minProjectionNear: 32, minProjection: 58, marginX: 30, top: 42, bottom: 52,
+        nearSurfaceUp: 92, minProjectionNear: 32, minProjection: 58, top: 42, bottom: 52,   // v5.11.0 : sur les côtés, la bande sûre
         leadNearSurface: 16, lead: 30, nearSurfaceSpan: 105, solidPad: 13, toxicMax: .10, leakPad: 22, spacing: 58, probeR: 16 },
       spore: { radius: 92, solidK: .55, toxicK: .38, ecoPerSolid: 2000, shakeBase: .22, shakePerSolid: .035 }
     },

@@ -171,8 +171,18 @@ FP.test('powerups: la récompense apparaît sur la trajectoire de la pointe, dro
   }
 });
 FP.test('powerups: place prise devant → récompense décalée en secours', () => {
-  const s = puRun(), x = s.world.width - FP.config.powerups.spawn.marginX - 6, o = server(x - 50, 900);   // l'axe longe le bord droit : hors champ
+  const s = puRun(), x = s.world.width - FP.camera.safeX(s.world.width) - 6, o = server(x - 50, 900);   // l'axe longe le bord droit : hors champ
   s.world.solids = [o]; s.plant.tip = { x, y: 850 }; s.plant.dir = { x: 0, y: -1 };
   FP.powerups.onFlyover(s, o, record());
   const b = s.world.bonuses[0]; FP.assert(b && x - b.x > 10, b ? String(b.x) : 'pas de récompense');
+});
+
+// v5.11.0 (zones sûres) : une récompense apparaît toujours entière dans la bande sûre, même quand la pointe longe un bord.
+FP.test('powerups: récompense dans la bande sûre', () => {
+  for (const tx of [14, 40, 400, 426]) {
+    const s = puRun(), o = qualifyingFlyover(s); s.plant.tip = { x: tx, y: s.plant.tip.y }; s.plant.dir = { x: tx < 200 ? -.5 : .5, y: -Math.sqrt(.75) };
+    FP.powerups.onFlyover(s, o, record());
+    const m = FP.camera.safeX(s.world.width);
+    for (const b of s.world.bonuses) FP.assert(b.x - b.r >= m - 1e-6 && b.x + b.r <= s.world.width - m + 1e-6, `bonus à x=${b.x | 0} (pointe ${tx})`);
+  }
 });

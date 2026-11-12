@@ -107,20 +107,20 @@ FP.test('level: nappes et limaces assez visibles pour être anticipées', () => 
         if (x >= 0 && x <= w.width) inside++;
         FP.assert(y > w.surfaceY + 48 && y < w.height - 116, 'limace y ' + seed);
       }
-      FP.assert(inside / 9 >= .5 && l.x >= 24 && l.x <= w.width - 24, 'limace ' + seed);
+      FP.assert(inside === 9, 'limace ' + seed);
     }
   }
 });
-FP.test('level: des trajets de limaces peuvent dépasser du cadre', () => {
-  let out = 0;
-  for (let seed = 1; seed <= 60; seed++) {
-    const w = gen(seed, 440, 783, 8).world;
+// v5.11.0 (zones sûres) : tout le trajet d'une limace, corps compris, reste dans la bande sûre (FP.camera.safeX) — il ne sort plus du cadre.
+FP.test('level: les limaces restent dans la bande sûre', () => {
+  for (const W of [280, 375, 440]) for (let seed = 1; seed <= 30; seed++) {
+    const w = gen(seed, W, Math.round(W * 16 / 9), seed % 11).world, m = FP.camera.safeX(W);
+    FP.assert(w.leaks.length > 0 || seed % 11 === 0, `des limaces (W=${W}, graine ${seed})`);
     for (const l of w.leaks) for (let i = 0; i <= 8; i++) {
-      const k = -.5 + i / 8, x = l.x + Math.cos(l.angle) * l.len * k;
-      if (x < 24 || x > w.width - 24) out++;
+      const x = l.x + Math.cos(l.angle) * l.len * (-.5 + i / 8);
+      FP.assert(x - l.r >= m - 1e-6 && x + l.r <= W - m + 1e-6, `limace hors bande à x=${x | 0} (W=${W}, graine ${seed})`);
     }
   }
-  FP.assert(out > 0, 'aucun trajet ne dépasse');
 });
 // Difficulté v4.1.0 : plus dense dès le premier passage, et une rampe qui se sent (moyenne sur 12 graines, fenêtre 440 × 783).
 const meanSolids = (level) => { let n = 0; for (let seed = 1; seed <= 12; seed++) { const s = FP.state.createRun(seed, { W: 440, H: 783 }); s.level = level; s.difficulty = level; FP.level.startRun(s); n += s.world.solids.length; } return n / 12; };
