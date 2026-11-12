@@ -168,7 +168,7 @@
       holdPerSec: 120, holdMax: 900, peakExp: 2.2, peakGain: 360, step: 25, effBase: .45, effGain: .55,
       premium: { trex_signature: 1.18, nuclear: 1.18 }, leakMul: 1.12, leakFlashBase: .08, leakFlashGain: .18,
       broadPad: 10, minIntensity: .02,   // phase large de la requête de pointe ; en dessous, pas de frôlement
-      reachPad: 6   // v5.5.0 (retour de playtest) : la bande de frôlement s'étend de tant de px au-delà du grazeRadius de la fiche (16 → 22)
+      reachPad: 16   // v5.5.0 (retour de playtest) : la bande de frôlement s'étend de tant de px au-delà du grazeRadius de la fiche ; v5.10.0 : 16 → 32
     },
 
     // ÉcoCrédits™ : arrondis à 25, combo ×(1 + .22 par cran) si les gains s'enchaînent en moins de 2 s.
