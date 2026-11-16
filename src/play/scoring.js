@@ -1,5 +1,5 @@
 // play/scoring.js — ÉcoCrédits™, combo et records.
-// Lit     : state.score, state.run.{saison,milieu,won}, FP.config.{scoring,storageKey}, FP.storage.
+// Lit     : state.score, state.run.{saison,milieu,won,lab (v5.12.0 : pas de record au Lab)}, FP.config.{scoring,storageKey}, FP.storage.
 // Écrit   : state.score.{eco,combo,comboTimer}, state.camera.shake, state.events (eco) ;
 //           FP.scoring.records (persistant entre les runs, hors de FP.state) et le stockage local.
 // Expose  : FP.scoring.award(state, x, y, base, kind), FP.scoring.awardCoin(state, x, y, base), FP.scoring.awardFlat(state, x, y, amount), FP.scoring.update(state, dt),
@@ -67,6 +67,7 @@
       s.comboTimer -= dt;
       if (s.comboTimer <= 0) { s.comboTimer = 0; s.combo = 0; }
     }
+    if (state.run && state.run.lab) return;   // v5.12.0 : l'Encounter Lab (graines illimitées) n'écrit pas les records du jeu
     const run = state.run, further = run && reachBeyond(run, r.reach), won = run && run.won && !r.won;
     if (s.flowers > r.flowers || s.eco > r.eco || further || won) {
       r.flowers = Math.max(r.flowers, s.flowers);

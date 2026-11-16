@@ -87,7 +87,7 @@ FP.test('lab: une mort relance le même circuit sans perdre de graine', () => {
   const s = labRun(3); FP.plant.launch(s); const before = s.plant.reserves;
   const wall = s.world.solids[0]; s.plant.tip = { x: wall.x, y: wall.y }; FP.collision.update(s); FP.flow.update(s, 1 / 60);
   FP.assertEqual(s.mode, 'dying'); FP.assertEqual(s.plant.reserves, before, 'graine gardée');
-  FP.assertEqual(s.flow.overReason, 'écrasée contre le béton', 'cause de mort propre aux murs du Lab');
+  FP.assertEqual(s.flow.overReason, 'bétonnée', 'cause de mort propre aux murs du Lab');
   for (let i = 0; i < 600 && s.mode !== 'ready'; i++) { s.time += 1 / 60; FP.flow.update(s, 1 / 60); }
   FP.assertEqual(s.mode, 'ready'); FP.assertEqual(s.run.lab, 3); FP.assertEqual(s.shop, null);
 });
@@ -228,9 +228,6 @@ FP.test('labRender: buse annoncée, colonne de gaz et flèche', () => {
   const L = s.world.labLevel, lane = L.lanes[1];
   s.camera.y = lane.y1 - s.world.viewH / 2; let g = skinCtx(); FP.labRender.drawThreats(g, s);
   FP.assert(g.rects.some(r => r.c === P.glow), 'buse allumée');
-  s.camera.y = lane.y1 - s.world.viewH * 2; g = skinCtx(); FP.labRender.drawThreats(g, s);
-  const H = Math.ceil(s.world.viewH / FP.px.SCALE);
-  FP.assert(g.rects.some(r => r.c === P.glow && r.y > H - 12), 'flèche au bas de l’écran');
   for (let i = 0; i < 90; i++) { s.time += 1 / 60; FP.labPulse.update(s, 1 / 60); }
   const shot = s.labPulse.shots.find(q => !q.solid.off); FP.assert(shot, 'une colonne en vol');
   s.camera.y = shot.solid.y - s.world.viewH / 2; g = skinCtx(); FP.labRender.drawThreats(g, s);
@@ -287,3 +284,35 @@ FP.test('labStats: le tableau se dessine au menu avec &stats', () => withStore(s
   FP.assert(drawn.some(t => t.includes('GAZ ×1') && t.includes('MUR ×1')), 'causes lisibles : ' + drawn.join(' | '));
   for (const c of window.FLOWER_POWER_LAB) FP.assert(drawn.some(t => t.includes(c.name)), 'ligne ' + c.name);
 }));
+
+// --- Revue finale : la spore épargne le béton et le gaz, le Lab n'écrit pas les records, la flèche reste dans le cadre zoomé.
+FP.test('lab: une spore n’efface ni les murs ni le gaz', () => {
+  for (const n of [1, 4, 5]) {
+    const s = labRun(n), L = s.world.labLevel, before = s.world.solids.length;
+    FP.labPulse.update(s, 0);
+    FP.powerups.detonate(s, s.world.width / 2, L.top + (L.bottom - L.top) / 3);
+    FP.assertEqual(s.world.solids.filter(o => o.kind === 'lab').length, before, 'murs intacts, circuit ' + n);
+  }
+  const { s } = pulseSim(5, 0, .5, 2.5), cols = s.world.solids.filter(o => o.kind === 'pulse').length;
+  FP.assert(cols > 0, 'des colonnes'); FP.powerups.detonate(s, s.world.width / 2, s.world.labLevel.lanes[0].y1 - 100);
+  FP.assertEqual(s.world.solids.filter(o => o.kind === 'pulse').length, cols, 'gaz intact');
+});
+FP.test('lab: le Lab n’écrit pas les records du jeu normal', () => {
+  const r = FP.scoring.records, saved = JSON.stringify(r);
+  try {
+    const s = labRun(1); s.score.flowers = r.flowers + 50; s.score.eco = r.eco + 99999;
+    FP.scoring.update(s, 1 / 60);
+    FP.assertEqual(JSON.stringify(FP.scoring.records), saved, 'records inchangés');
+  } finally { Object.assign(FP.scoring.records, JSON.parse(saved)); }
+});
+FP.test('labRender: la flèche reste dans le cadre zoomé', () => {
+  const { s } = pulseSim(5, 0, .5, .2);   // annonce dans la voie 1, pointe haut dans la voie 0
+  const L = s.world.labLevel, lane = L.lanes[1], H = Math.ceil(s.world.viewH / FP.px.SCALE);
+  s.camera.y = lane.y1 - s.world.viewH * .97;   // buse juste sous le bas visible (rognée par le zoom), mais au-dessus du bas de la toile
+  const f = FP.camera.zoomFrame(s); FP.assert(f && f.z > 1, 'cadrage zoomé');
+  const visBottom = (f.fy + (s.world.viewH - f.fy) / f.z) / FP.px.SCALE;
+  const g = skinCtx(); FP.labRender.drawThreats(g, s);
+  const arrow = g.rects.filter(r => r.c === FP.palette.lab.glow);
+  FP.assert(arrow.length > 0, 'une flèche pour une buse rognée');
+  FP.assert(arrow.every(r => r.y + r.h <= visBottom && r.y < H), 'dans le cadre visible : ' + JSON.stringify(arrow.map(r => r.y)) + ' / ' + visBottom.toFixed(1));
+});

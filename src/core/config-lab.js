@@ -8,7 +8,7 @@
   const FP = window.FP = window.FP || {};
   FP.config.text.lab = 'LAB';   // mention de l'écran titre en mode Lab
   FP.config.text.death.pulse = 'soufflée par le gaz';   // mort par l'impulsion montante
-  FP.config.text.death.lab = 'écrasée contre le béton';   // mort contre un mur d'un circuit
+  FP.config.text.death.lab = 'bétonnée';   // mort contre un mur d'un circuit (court : le cri tient sur l'écran le plus étroit)
   FP.config.lab = {
     channelMin: 48,   // passage minimal des circuits à 360 px de large (× W / 360)
     // Sols (play/plant.js) : blend = durée (s) de la transition à l'entrée et à la sortie ; argile : braquage et suivi du doigt × ;

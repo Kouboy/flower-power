@@ -9,7 +9,7 @@ Une entrée par version (voir `AGENTS.md`).
 - impulsion montante : la buse s'allume et siffle 1 s avant chaque départ (une flèche au bas de l'écran si elle est sous l'écran), une colonne de gaz remonte la voie à 1,6 fois la vitesse de la pousse, la première dans la voie où la pointe n'est pas, puis en alternance ; « soufflée par le gaz » ;
 - mesure par circuit (passages réussis, morts et causes, temps moyen, frôlements et pièces par passage), gardée dans le navigateur : `?lab=1&stats` affiche le tableau sur l'écran titre, `&stats=reset` le vide ;
 - jeu normal inchangé (même niveau pour une même graine, vérifié par une empreinte) ;
-- banc : 762 tests (759 lancés ; les 3 du robot de combat non relancés, le Lab ne touche pas aux boss).
+- banc : 765 tests (762 lancés ; les 3 du robot de combat non relancés, le Lab ne touche pas aux boss).
 
 ## v5.11.0 — Zones sûres
 

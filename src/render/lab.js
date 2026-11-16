@@ -4,7 +4,7 @@
 // l'impulsion, allumées pendant l'annonce, la colonne de gaz qui remonte, et une flèche au bas de l'écran quand la buse annoncée est
 // sous l'écran. Rien hors du Lab.
 // Lit     : state.{camera.y, time, plant.tip}, state.world.{width, height, viewH, labLevel}, FP.labLevel.soilAt, FP.palette.lab, FP.px (dont layer
-//           et blit), FP.bossSkin.spans, state.labPulse.shots (impulsion).
+//           et blit), FP.bossSkin.spans, state.labPulse.shots (impulsion), FP.camera.zoomFrame (bas visible).
 // Écrit   : rien dans l'état (la toile reçue ; le calque en cache par circuit et taille de niveau).
 // Expose  : FP.labRender.draw(g, state), FP.labRender.drawThreats(g, state).
 (function () {
@@ -80,16 +80,18 @@
     const w = state.world, L = w.labLevel, st = state.labPulse;
     if (!L || !L.circuit.pulse) return;
     const P = FP.palette.lab, cam = FP.px.toArt(state.camera.y), H = Math.ceil(w.viewH / FP.px.SCALE), t = state.time;
+    // Bas réellement visible (le cadrage zoome la toile du monde autour de son point focal) : une buse plus bas est hors cadre.
+    const f = FP.camera.zoomFrame(state), vis = Math.floor(f ? (f.fy + (w.viewH - f.fy) / f.z) / FP.px.SCALE : H);
     const warned = new Set(st && st.level === L ? st.shots.filter(s => s.warn > 0).map(s => s.lane) : []);
     for (const i of L.circuit.pulse.lanes) {
       const l = L.lanes[i], x0 = FP.px.toArt(l.x0) + 1, x1 = FP.px.toArt(l.x1) - 1, y = FP.px.toArt(l.y1) - cam;
       const lit = warned.has(i);
-      if (y >= -4 && y <= H + 4) {
+      if (y >= -4 && y <= vis - 2) {
         FP.px.rect(g, x0, y - 2, x1 - x0, 4, P.concrete[3]);
         for (let x = x0 + 1; x < x1 - 1; x += 3) FP.px.rect(g, x, y - 1, 2, 2, lit ? P.glow : P.crack);
-      } else if (warned.has(i) && y > H) {   // flèche au bas de l'écran, sur la voie
+      } else if (warned.has(i) && y > vis - 2) {   // flèche au bas du cadre visible, sur la voie
         const cx = Math.round((x0 + x1) / 2);
-        for (let k = 0; k < 4; k++) FP.px.rect(g, cx - k, H - 5 + k, 2 * k + 1, 1, P.glow);
+        for (let k = 0; k < 4; k++) FP.px.rect(g, cx - k, vis - 6 + k, 2 * k + 1, 1, P.glow);
       }
     }
     if (!st || st.level !== L) return;
