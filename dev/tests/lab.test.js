@@ -87,6 +87,7 @@ FP.test('lab: une mort relance le même circuit sans perdre de graine', () => {
   const s = labRun(3); FP.plant.launch(s); const before = s.plant.reserves;
   const wall = s.world.solids[0]; s.plant.tip = { x: wall.x, y: wall.y }; FP.collision.update(s); FP.flow.update(s, 1 / 60);
   FP.assertEqual(s.mode, 'dying'); FP.assertEqual(s.plant.reserves, before, 'graine gardée');
+  FP.assertEqual(s.flow.overReason, 'écrasée contre le béton', 'cause de mort propre aux murs du Lab');
   for (let i = 0; i < 600 && s.mode !== 'ready'; i++) { s.time += 1 / 60; FP.flow.update(s, 1 / 60); }
   FP.assertEqual(s.mode, 'ready'); FP.assertEqual(s.run.lab, 3); FP.assertEqual(s.shop, null);
 });

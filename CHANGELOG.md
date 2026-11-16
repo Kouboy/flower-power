@@ -2,6 +2,15 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v5.12.0 — Encounter Lab
+
+- mode de test `?lab=N` (spec `docs/superpowers/specs/2026-11-16-encounter-lab-design.md`, d'après l'addendum « micro-circuits, sols à propriétés et menaces arrière ») : 6 micro-circuits faits à la main, un par niveau, en béton neutre dans la terre de la Friche — slalom, slalom argile, la rigole (sable), la fourche (argile courte / sable long avec pièces), la cheminée (deux voies, impulsions en alternance), le combiné (entonnoir puis fourche, impulsion lente sur une voie) ; une éclosion passe au suivant (après le 6e, retour au 1er), une mort relance le même sans perdre de graine ; ni boutique, ni boss, ni obstacles tirés au hasard ; vitesse d'un premier niveau ; « LAB » sur l'écran titre ;
+- sols : l'argile ralentit le braquage et le suivi du doigt (×0,55), le sable accélère (×1,35) et rend le braquage nerveux (×1,4), transition de 0,3 s ;
+- impulsion montante : la buse s'allume et siffle 1 s avant chaque départ (une flèche au bas de l'écran si elle est sous l'écran), une colonne de gaz remonte la voie à 1,6 fois la vitesse de la pousse, la première dans la voie où la pointe n'est pas, puis en alternance ; « soufflée par le gaz » ;
+- mesure par circuit (passages réussis, morts et causes, temps moyen, frôlements et pièces par passage), gardée dans le navigateur : `?lab=1&stats` affiche le tableau sur l'écran titre, `&stats=reset` le vide ;
+- jeu normal inchangé (même niveau pour une même graine, vérifié par une empreinte) ;
+- banc : 762 tests (759 lancés ; les 3 du robot de combat non relancés, le Lab ne touche pas aux boss).
+
 ## v5.11.0 — Zones sûres
 
 - textes et compteurs à au moins 16 px de chaque bord, et sous l'encoche ou au-dessus de la barre d'accueil du téléphone (marges système + 8 px, `env(safe-area-inset-*)` lues par `render/view.js`) : HUD, nom du biome, icônes du boss, cris, écran titre, icône du son, certificat ; les graines du HUD se rapprochent un peu (pas de 14 px) pour laisser la place au score sur l'écran le plus étroit ;

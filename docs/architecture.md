@@ -16,6 +16,7 @@ src/
 │   ├── fp.js         ✅ window.FP, maths, RNG seedée, paramètres d'URL, stockage sûr
 │   ├── geom.js       ✅ distance point-segment, local→monde, SAT, cône vers le haut, distance signée à un polygone
 │   ├── config.js     ✅ tous les réglages
+│   ├── config-lab.js ✅ réglages de l'Encounter Lab (v5.12.0, FP.config.lab : passages, sols, impulsion ; textes LAB et mort par le gaz)
 │   ├── state.js      ✅ FP.state.createRun(seed) et FP.state.current
 │   └── loop.js       ✅ FP.loop.step / start, ordre fixe d'une frame
 ├── world/
@@ -24,6 +25,7 @@ src/
 │   ├── coins.js      ✅ circuits de pièces (v4.5.0) : un chapelet facile et un appât par hauteur d'écran, tirage propre
 │   ├── boss-plan.js  ✅ plans de boss → monde (v5.1.0, FP.bossPlan) : zone du boss, proportions → coordonnées, trajets depuis la graine, distance aux parois
 │   ├── boss.js       ✅ niveau de boss (v5.1.0, FP.bossLevel) : construit depuis le plan du milieu (assets/boss/plans.js) — parois, cibles, tête, plaques, salles, tourelles, nappes ; graine propre à (graine, saison, milieu)
+│   ├── lab.js        ✅ niveau de l'Encounter Lab (v5.12.0, FP.labLevel, ?lab=N) : un circuit de assets/lab/circuits.js posé dans un niveau à lui (demi-écran libre, circuit, demi-écran), murs de béton solides, sols, voies d'impulsion, pièces ; soilAt
 │   ├── collision.js  ✅ requête de pointe : solide, intensité toxique, contact lixiviat (sous la bière : limaces à faire éclater), frôlements en cours, danger
 │   └── hazards.js    ✅ limaces en mouvement (cx, cy, cr, hitFlash), intensité des nappes
 ├── play/
@@ -31,6 +33,7 @@ src/
 │   ├── difficulty.js ✅ difficulté en dents de scie d'après l'avancée dans les milieux (v4.13.0)
 │   ├── flow.js       ✅ morts (solide, lixiviat, brûlure toxique), exposition, éclosion, transitions (plus de messages texte : l'interface se déduit de l'état)
 │   ├── boss.js       ✅ le combat de boss (v5.1.0, FP.boss) : `state.bossFight` (cibles détruites, tête à nu, cinématique de mort `collapse`), reset, assaut d’une cible, tête transpercée (`pierceHead`), déroulé de la cinématique (`update` : parois qui explosent depuis la tête puis s'effondrent)
+│   ├── lab-pulse.js  ✅ impulsion montante du Lab (v5.12.0, FP.labPulse) : annonce d'1 s, colonne de gaz qui remonte une voie, alternance ; lab-stats.js : mesure par circuit (FP.labStats, localStorage)
 │   ├── boss-threats.js ✅ les défenses signature des salles de boss (v5.1.0, FP.bossThreats) : la pointe entre → avertissement long, coup sur sa moitié de la salle, repos ; `timing` pur ; événements `bossWarn`, `bossStrike` ; tirs visés des boss 2 à 4, pendant le repos de la salle, tige dedans ou déjà sortie (`bossAim`, `bossLock`, `bossShot`)
 │   ├── camera.js     ✅ défilement, cadrage ×1,18 (zoomFrame, toScreen, toWorld), zoom de frôlement ; bande sûre (v5.11.0, safeX : ce que rogne le cadrage + 12 px, où restent pièces, bonus, limaces, tourelles)
 │   ├── graze.js      ✅ frôlement : suivi par objet, paiement à la sortie, annulation au contact, mesures du flyover
@@ -47,6 +50,7 @@ src/
 │   ├── decor-tube.js  ✅ conduites usées (coudes, cassures, rouille, galeries effondrées) pour les décors enterrés (FP.decorTube)
 │   ├── decor-friche.js, decor-industrie.js, decor-decharge.js, decor-nucleaire.js ✅ décor de chaque milieu (v4.11.0) : astre et météo, horizon, accessoires de surface, décor enterré, petites animations (FP.decor[id], contrat commun)
 │   ├── boss.js       ✅ le corps du boss (v5.1.0, FP.bossRender) : parois (matière en image), pompes et cœur via boss-core.js, plaques ; menaces à part (`drawThreats` : liseré, visée, tirs), dessinées en dernier
+│   ├── lab.js        ✅ Encounter Lab (v5.12.0, FP.labRender) : béton neutre, argile, sable (calque) ; drawThreats : buses, gaz, flèche hors écran
 │   ├── boss-skin.js  ✅ habillage des boss (v5.6.0, FP.bossSkin) : chargement des images de assets/boss/art.js, matière répétée dans les parois (ancrée au monde), images des pièces découpées par leur polygone
 │   ├── boss-pipes.js ✅ tuyaux de la machine (v5.7.0, FP.bossPipes) : des pompes au cœur (trajets des plans), flux vert, tuyau rompu qui fuit
 │   ├── boss-machines.js ✅ défenses en vraies machines (v5.7.0, FP.bossMachines) : goulotte, buses, brûleurs, émetteur (repos, avertissement, coup qui remplit la moitié frappée) ; tourelles (canon qui vise, lentille, recul)
@@ -93,6 +97,7 @@ src/
 │   ├── title.js      ✅ écran titre
 │   ├── certificate.js ✅ certificat de fin (FP.certificate.lines, canRestart, purs)
 │   ├── ui.js         ✅ FP.ui.draw : efface la toile d'interface et dessine l'écran du mode
+│   ├── lab-stats.js  ✅ tableau de la mesure du Lab (v5.12.0, FP.labStatsView), au menu avec &stats
 │   ├── menu.js       ✅ démarrage depuis le titre ou la fin (après le tampon) ; Espace / Entrée ; redimensionnement
 │   └── input.js      ✅ pointeur et touche → state.input (x monde, screenX, y, down, pressed)
 └── debug/
@@ -186,7 +191,7 @@ Spec : `docs/superpowers/specs/2026-10-22-interface-pixel-design.md` ; maquettes
 
 ## Ordre de chargement
 
-`index.html` charge : `assets/obstacles/manifest.js`, `assets/boss/plans.js`, `assets/boss/art.js`, `src/core/fp.js`, `geom.js`, `config.js`, `state.js`, `src/world/catalog.js`, `level.js`, `coins.js`, `boss-plan.js`, `boss.js`, `hazards.js`, `src/play/plant.js`, `src/world/collision.js`, `src/play/difficulty.js`, `flow.js`, `leakpop.js`, `graze.js`, `coins.js` (play), `shop.js`, `scoring.js`, `powerups.js`, `boss.js` (play), `boss-threats.js`, `src/play/camera.js`, `src/render/palette.js`, `decor-tube.js`, `decor-friche.js`, `decor-industrie.js`, `decor-decharge.js`, `decor-nucleaire.js`, `px.js`, `boss-skin.js`, `boss-core.js`, `boss.js` (rendu), `boss-earth.js`, `boss-intake.js`, `boss-pipes.js`, `boss-machines.js`, `boss-struts.js`, `boss-fx.js`, `boss-death.js`, `view.js`, `sprites.js`, `soil.js`, `sky.js`, `obstacles.js`, `hazards.js`, `powerups.js`, `faces.js`, `cast.js`, `cast2.js`, `hero.js`, `plant.js`, `effects.js`, `flowers.js`, `particles.js`, `drillfx.js`, `mound.js`, `src/ui/font.js`, `hud.js`, `shout.js`, `cheer.js`, `cards.js`, `logo.js`, `title.js`, `certificate.js`, `ui.js`, `src/render/frame.js`, `src/audio/synth.js`, `score.js`, `tonality.js`, `songs.js`, `songs-industrie.js`, `songs-decharge.js`, `songs-nucleaire.js`, `sequencer.js`, `music.js`, `sfx.js`, `audio.js`, `src/debug/perf.js`, `flydebug.js`, `src/core/loop.js`, `src/ui/input.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` et les dessins (pour le catalogue).
+`index.html` charge : `assets/obstacles/manifest.js`, `assets/boss/plans.js`, `assets/boss/art.js`, `assets/lab/circuits.js`, `src/core/fp.js`, `geom.js`, `config.js`, `config-lab.js`, `state.js`, `src/world/catalog.js`, `level.js`, `coins.js`, `boss-plan.js`, `boss.js`, `lab.js`, `hazards.js`, `src/play/plant.js`, `src/world/collision.js`, `src/play/difficulty.js`, `flow.js`, `leakpop.js`, `graze.js`, `coins.js` (play), `shop.js`, `scoring.js`, `powerups.js`, `boss.js` (play), `boss-threats.js`, `src/play/camera.js`, `src/render/palette.js`, `decor-tube.js`, `decor-friche.js`, `decor-industrie.js`, `decor-decharge.js`, `decor-nucleaire.js`, `px.js`, `boss-skin.js`, `boss-core.js`, `boss.js` (rendu), `boss-earth.js`, `boss-intake.js`, `boss-pipes.js`, `boss-machines.js`, `boss-struts.js`, `boss-fx.js`, `boss-death.js`, `view.js`, `sprites.js`, `soil.js`, `sky.js`, `obstacles.js`, `hazards.js`, `powerups.js`, `faces.js`, `cast.js`, `cast2.js`, `hero.js`, `plant.js`, `effects.js`, `flowers.js`, `particles.js`, `drillfx.js`, `mound.js`, `src/ui/font.js`, `hud.js`, `shout.js`, `cheer.js`, `cards.js`, `logo.js`, `title.js`, `certificate.js`, `ui.js`, `src/render/frame.js`, `src/audio/synth.js`, `score.js`, `tonality.js`, `songs.js`, `songs-industrie.js`, `songs-decharge.js`, `songs-nucleaire.js`, `sequencer.js`, `music.js`, `sfx.js`, `audio.js`, `src/debug/perf.js`, `flydebug.js`, `src/core/loop.js`, `src/ui/input.js`, `src/debug/freecam.js`, `src/ui/menu.js`, et enfin `FP.loop.start()`. `dev/check.html` charge aussi `manifest.js` et les dessins (pour le catalogue).
 
 `dev/check.html` charge aussi les fichiers `src/audio/*`, `src/debug/perf.js`, `flydebug.js` et `src/ui/input.js` (sans canvas ni paramètre d'URL : `FP.perf` et `FP.flydebug` valent `null`, le son reste muet, le pointeur n'est pas écouté).
 
