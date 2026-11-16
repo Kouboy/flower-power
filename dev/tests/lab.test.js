@@ -108,3 +108,19 @@ FP.test('lab: jeu normal intact', () => {
   }
   FP.assertEqual(out.join(), '2481539369,4256782594');
 });
+
+// --- Dessin (tâche 3) : béton neutre, argile, sable. Aides : skinCtx (bossskin.test.js).
+const labDraw = (s, y) => { s.camera.y = y; const g = skinCtx(); FP.labRender.draw(g, s); return g; };
+const labMid = (s, z) => { const ys = z.poly.map(q => q[1]); return (Math.min(...ys) + Math.max(...ys)) / 2 - s.world.viewH / 2; };
+FP.test('labRender: béton et sols dessinés, rien hors Lab', () => {
+  const s = labRun(4), L = s.world.labLevel, P = FP.palette.lab;
+  const g = labDraw(s, labMid(s, L.soils[0]));
+  for (const [name, cols] of [['béton', P.concrete], ['argile', P.argile], ['sable', P.sable]]) FP.assert(g.rects.some(r => cols.includes(r.c)), name);
+  const n = FP.state.createRun(3, { W: 360, H: 640 }); FP.level.startRun(n); const gn = skinCtx(); FP.labRender.draw(gn, n);
+  FP.assertEqual(gn.rects.length, 0, 'hors Lab');
+});
+FP.test('labRender: la frontière d’un sol se voit', () => {
+  const s = labRun(2), L = s.world.labLevel, z = L.soils[0], g = labDraw(s, labMid(s, z)), cam = FP.px.toArt(s.camera.y);
+  const xs = z.poly.map(q => FP.px.toArt(q[0])), x0 = Math.min(...xs), x1 = Math.max(...xs);
+  FP.assert(g.rects.some(r => r.c === FP.palette.lab.argile[0] && (Math.abs(r.x - x0) <= 1 || Math.abs(r.x + r.w - 1 - x1) <= 1)), 'bord clair de l’argile');
+});

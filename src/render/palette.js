@@ -2,7 +2,7 @@
 // Lit     : rien.
 // Écrit   : rien.
 // Expose  : FP.palette.{milieux (décor par milieu : sky, strata, lawn), strataBounds, strataTone(d, k, milieu), stem, seed, hero, cast, coin, flowers,
-//           toxic, slug, danger, boss, decor()}.
+//           toxic, slug, danger, boss, decor(), lab (v5.12.0 : Encounter Lab)}.
 // Les teintes de `danger` (violet chimique) signalent les dangers : interdites au décor, distinctes de la pousse.
 (function () {
   'use strict';
@@ -136,5 +136,10 @@
   // Toutes les teintes de décor de tous les milieux (test : aucune n'approche une teinte de danger).
   const decor = () => Object.values(milieux).flatMap(m => [...m.sky.flat(), ...m.strata.humus, ...m.strata.clay, ...m.strata.stone, ...m.lawn.flat()]);
 
-  FP.palette = { milieux, strataBounds, strataTone, stem, seed, hero, cast, coin, flowers, toxic, slug, danger, boss, decor };
+  // Encounter Lab (v5.12.0, render/lab.js) : béton neutre (clair, base, plaques, arête), fissure, terre ; argile et sable (bord clair, base, texture).
+  const lab = {
+    concrete: ['#b8b2a6', '#8e887c', '#837d71', '#4a463e'], crack: '#3a362f', dirt: '#5e4630',
+    argile: ['#e0a060', '#b8743a', '#a4652f'], sable: ['#f2e2b0', '#d8c48a', '#c2ab70']
+  };
+  FP.palette = { milieux, strataBounds, strataTone, stem, seed, hero, cast, coin, flowers, toxic, slug, danger, boss, decor, lab };
 })();
