@@ -124,3 +124,30 @@ FP.test('labRender: la frontière d’un sol se voit', () => {
   const xs = z.poly.map(q => FP.px.toArt(q[0])), x0 = Math.min(...xs), x1 = Math.max(...xs);
   FP.assert(g.rects.some(r => r.c === FP.palette.lab.argile[0] && (Math.abs(r.x - x0) <= 1 || Math.abs(r.x + r.w - 1 - x1) <= 1)), 'bord clair de l’argile');
 });
+
+// --- Sols (tâche 4) : l'argile ralentit le braquage et le suivi du doigt, le sable accélère et rend nerveux ; transition de 0,3 s.
+const labCenter = (z) => { const xs = z.poly.map(q => q[0]), ys = z.poly.map(q => q[1]); return { x: (Math.min(...xs) + Math.max(...xs)) / 2, y: (Math.min(...ys) + Math.max(...ys)) / 2 }; };
+const labSoil = (n, kind) => { const s = labRun(n); FP.plant.launch(s); const z = s.world.labLevel.soils.find(q => q.kind === kind); s.plant.tip = labCenter(z); return s; };
+FP.test('lab: l’argile ralentit le braquage, le sable accélère', () => {
+  const near = (a, b, at) => FP.assert(Math.abs(a - b) <= .02, `${at} : ${a.toFixed(3)} au lieu de ${b}`);
+  const a = labSoil(4, 'argile'); for (let i = 0; i < 60; i++) FP.plant.soilStep(a, 1 / 60);
+  let f = FP.plant.soilFactors(a); near(f.turn, .55, 'argile braquage'); near(f.guide, .55, 'argile doigt'); near(f.speed, 1, 'argile vitesse');
+  const s = labSoil(4, 'sable'), v = FP.plant.speed(s); for (let i = 0; i < 60; i++) FP.plant.soilStep(s, 1 / 60);
+  f = FP.plant.soilFactors(s); near(f.speed, 1.35, 'sable vitesse'); near(f.turn, 1.4, 'sable braquage'); near(FP.plant.speed(s) / v, 1.35, 'vitesse réelle');
+});
+FP.test('lab: transition douce', () => {
+  const s = labSoil(3, 'sable'); for (let i = 0; i < 6; i++) FP.plant.soilStep(s, 1 / 60);
+  FP.assert(s.plant.soil.sable >= .2 && s.plant.soil.sable <= .5, 'à 0,1 s : ' + s.plant.soil.sable);
+  for (let i = 0; i < 60; i++) FP.plant.soilStep(s, 1 / 60);
+  s.plant.tip = { x: s.world.width / 2, y: s.world.height - 30 };   // sortie : plus de sable
+  let prev = FP.plant.soilFactors(s).turn, maxStep = 0;
+  for (let i = 0; i < 60; i++) { FP.plant.soilStep(s, 1 / 60); const t = FP.plant.soilFactors(s).turn; maxStep = Math.max(maxStep, Math.abs(t - prev)); prev = t; }
+  FP.assert(maxStep <= .4 / 18 + 1e-9, 'pas de saut : ' + maxStep.toFixed(4));
+  const f = FP.plant.soilFactors(s); FP.assertEqual(JSON.stringify([f.turn, f.guide, f.speed]), '[1,1,1]', 'tout revenu à la normale');
+});
+FP.test('lab: hors Lab, aucun sol', () => {
+  const s = FP.state.createRun(3, { W: 360, H: 640 }); FP.level.startRun(s); FP.plant.launch(s);
+  FP.assertEqual(FP.labLevel.soilAt(s.world, s.plant.tip.x, s.plant.tip.y), null);
+  for (let i = 0; i < 30; i++) FP.plant.soilStep(s, 1 / 60);
+  const f = FP.plant.soilFactors(s); FP.assertEqual(JSON.stringify([f.turn, f.guide, f.speed]), '[1,1,1]');
+});

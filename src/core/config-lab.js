@@ -8,6 +8,9 @@
   const FP = window.FP = window.FP || {};
   FP.config.text.lab = 'LAB';   // mention de l'écran titre en mode Lab
   FP.config.lab = {
-    channelMin: 48   // passage minimal des circuits à 360 px de large (× W / 360)
+    channelMin: 48,   // passage minimal des circuits à 360 px de large (× W / 360)
+    // Sols (play/plant.js) : blend = durée (s) de la transition à l'entrée et à la sortie ; argile : braquage et suivi du doigt × ;
+    // sable : vitesse et braquage ×.
+    soils: { blend: .3, argile: { turn: .55, guide: .55 }, sable: { speed: 1.35, turn: 1.4 } }
   };
 })();
