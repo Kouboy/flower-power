@@ -2,6 +2,12 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v5.12.1 — Lab : impulsions jouables
+
+- retour de jeu sur la cheminée (« comment je fais là ?! ») : les colonnes de gaz, lentes (1,6 fois la pousse) et longues (0,4 écran), restaient plus de 4 s à hauteur de la pointe et bloquaient souvent les deux voies à la fois ; elles deviennent des bouffées courtes (0,15 écran) et rapides (4 fois la pousse), qui passent la pointe en 0,3 s environ ; annonce d'1 s et alternance inchangées ;
+- nouveau test : à chaque instant, une voie au moins reste libre à hauteur de la pointe qui monte ;
+- banc : 766 tests (763 lancés ; les 3 du robot de combat non relancés, le Lab ne touche pas aux boss).
+
 ## v5.12.0 — Encounter Lab
 
 - mode de test `?lab=N` (spec `docs/superpowers/specs/2026-11-16-encounter-lab-design.md`, d'après l'addendum « micro-circuits, sols à propriétés et menaces arrière ») : 6 micro-circuits faits à la main, un par niveau, en béton neutre dans la terre de la Friche — slalom, slalom argile, la rigole (sable), la fourche (argile courte / sable long avec pièces), la cheminée (deux voies, impulsions en alternance), le combiné (entonnoir puis fourche, impulsion lente sur une voie) ; une éclosion passe au suivant (après le 6e, retour au 1er), une mort relance le même sans perdre de graine ; ni boutique, ni boss, ni obstacles tirés au hasard ; vitesse d'un premier niveau ; « LAB » sur l'écran titre ;

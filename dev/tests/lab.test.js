@@ -316,3 +316,20 @@ FP.test('labRender: la flèche reste dans le cadre zoomé', () => {
   FP.assert(arrow.length > 0, 'une flèche pour une buse rognée');
   FP.assert(arrow.every(r => r.y + r.h <= visBottom && r.y < H), 'dans le cadre visible : ' + JSON.stringify(arrow.map(r => r.y)) + ' / ' + visBottom.toFixed(1));
 });
+
+// v5.12.1 (retour de jeu : « comment je fais là ?! ») : des colonnes lentes et longues bloquaient les deux voies à la fois à hauteur de
+// la pointe. La pousse monte à sa vitesse, et à chaque instant une voie au moins reste libre à sa hauteur.
+FP.test('lab: toujours une voie libre à hauteur de la pointe', () => {
+  for (const W of [280, 360, 440]) for (const [n, start] of [[5, 0], [5, 1], [6, 0]]) {
+    const s = labRun(n, W), L = s.world.labLevel; FP.plant.launch(s);
+    const lanes = L.circuit.pulse.lanes.map(i => L.lanes[i]), x = (lanes[start % lanes.length].x0 + lanes[start % lanes.length].x1) / 2, pad = 6;
+    s.plant.tip = { x, y: L.bottom - 2 };
+    for (let f = 0; f < 60 * 12 && s.plant.tip.y > L.top; f++) {
+      s.time += 1 / 60; FP.labPulse.update(s, 1 / 60);
+      s.plant.tip.y -= FP.plant.speed(s) / 60;
+      const y = s.plant.tip.y;
+      const blocked = L.circuit.pulse.lanes.filter(i => s.world.solids.some(o => o.kind === 'pulse' && !o.off && o.lane === i && Math.abs(o.y - y) <= o.collision[2][1] + pad));
+      if (lanes.length > 1) FP.assert(blocked.length < lanes.length, `les deux voies bloquées à y=${y | 0} (circuit ${n}, W=${W}, t=${(f / 60).toFixed(2)})`);
+    }
+  }
+});

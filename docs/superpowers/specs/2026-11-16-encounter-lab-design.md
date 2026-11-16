@@ -127,7 +127,7 @@ L'utilisateur a choisi **A**.
 - **Une buse par voie,** au pied du couloir.
 - **Annonce :** une seconde avant, la buse s'allume et siffle, avec le son d'avertissement des boss.
   - Si la buse est sous l'écran, une petite flèche lumineuse au bas de l'écran indique sa voie.
-- **L'impulsion :** une colonne de gaz qui remonte la voie à environ **1,6 fois la vitesse de la pousse**, mortelle au contact, puis
+- **L'impulsion :** une colonne de gaz qui remonte la voie à environ **4 fois la vitesse de la pousse** (v5.12.1 ; 1,6 fois en v5.12.0 bloquait les deux voies à la fois), mortelle au contact, puis
   qui se dissipe en haut du circuit.
 - **Cheminée :** les deux voies s'alternent.
 - **Combiné :** une seule voie de la fourche, avec une impulsion plus lente.
@@ -138,7 +138,7 @@ L'utilisateur a choisi **A**.
   - le délai d'au moins 1 s se compte entre le début de l'annonce et le moment où la colonne atteint la hauteur de la pointe, pas
     entre l'annonce et le départ de la buse ;
   - la première impulsion part toujours dans la voie où la pointe n'est pas à son entrée. Ensuite, c'est l'alternance ;
-  - une période d'environ 1,6 s entre deux départs, et une colonne d'environ 0,4 écran de long ;
+  - une période d'environ 1,6 s entre deux départs, et une colonne d'environ 0,15 écran de long (v5.12.1 ; 0,4 en v5.12.0) ;
   - une cheminée d'environ 1,2 écran donne donc 3 à 4 impulsions par passage ;
   - réglages dans `config.js`, sous `lab.pulse`, à affiner au Lab.
 
