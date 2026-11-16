@@ -239,3 +239,50 @@ FP.test('labRender: buse annoncée, colonne de gaz et flèche', () => {
 FP.test('lab: annonce et départ font un son', () => {
   for (const type of ['labWarn', 'labPulse']) withBackend(b => { FP.audio.consume([{ type, lane: 0 }], auRun(), 0); FP.assert(sounding(b).length > 0, type); });
 });
+
+// --- Mesure (tâche 6) : par circuit, passages réussis, morts et causes, temps moyen, frôlements et pièces par passage.
+const statsMem = () => { const m = {}; return { getItem: k => (k in m ? m[k] : null), setItem: (k, v) => { m[k] = String(v); }, removeItem: k => { delete m[k]; } }; };
+const withStore = (store, fn) => { const had = 'localStorage' in window, saved = window.localStorage; window.localStorage = store; FP.labStats.reset(); try { fn(); } finally { if (had) window.localStorage = saved; else delete window.localStorage; } };
+// Une frame de jeu au Lab : la pointe à y, les événements donnés, puis la mesure.
+const statsFrame = (s, y, events = [], dt = .5) => { s.plant.tip = { x: s.world.width / 2, y }; s.events.length = 0; s.events.push(...events); FP.labStats.update(s, dt); };
+FP.test('lab: un passage réussi enregistre temps, frôlements et pièces', () => withStore(statsMem(), () => {
+  const s = labRun(4), L = s.world.labLevel, mid = (L.top + L.bottom) / 2;
+  statsFrame(s, L.bottom + 50); statsFrame(s, mid); statsFrame(s, mid, [{ type: 'eco', kind: 'solid' }, { type: 'coin' }, { type: 'coin' }]); statsFrame(s, mid, [{ type: 'eco', kind: 'coin' }]);
+  statsFrame(s, L.top - 10, [{ type: 'bloom' }]);
+  const r = FP.labStats.summary().find(q => q.id === 'fourche');
+  FP.assertEqual(r.runs, 1); FP.assertEqual(r.deaths, 0); FP.assertEqual(r.avgTime, 1.5); FP.assertEqual(r.grazesPerRun, 1);
+  FP.assertEqual(r.coinsPerRun, 2); FP.assertEqual(r.coinsTotal, s.world.coins.length);
+}));
+FP.test('lab: une mort compte avec sa cause', () => withStore(statsMem(), () => {
+  const s = labRun(5), L = s.world.labLevel;
+  statsFrame(s, (L.top + L.bottom) / 2, [{ type: 'death', cause: 'solid', kind: 'pulse' }]);
+  statsFrame(s, (L.top + L.bottom) / 2, [{ type: 'death', cause: 'solid', kind: 'lab' }]);
+  const r = FP.labStats.summary().find(q => q.id === 'cheminee');
+  FP.assertEqual(r.deaths, 2); FP.assertEqual(r.runs, 0); FP.assertEqual(JSON.stringify(r.causes), '{"pulse":1,"lab":1}');
+}));
+FP.test('lab: summary fait les moyennes, reset vide', () => withStore(statsMem(), () => {
+  const s = labRun(1), L = s.world.labLevel, mid = (L.top + L.bottom) / 2;
+  for (const t of [2, 4]) { statsFrame(s, mid, [], t); statsFrame(s, L.top - 5, [{ type: 'bloom' }], 0); }
+  const r = FP.labStats.summary().find(q => q.id === 'slalom');
+  FP.assertEqual(r.runs, 2); FP.assertEqual(r.avgTime, 3);
+  FP.assertEqual(FP.labStats.summary().length, 6);
+  FP.labStats.reset(); FP.assertEqual(FP.labStats.summary().find(q => q.id === 'slalom').runs, 0);
+}));
+FP.test('lab: sans localStorage, rien ne casse', () => withStore({ getItem() { throw new Error('bloqué'); }, setItem() { throw new Error('bloqué'); }, removeItem() { throw new Error('bloqué'); } }, () => {
+  const s = labRun(2), L = s.world.labLevel;
+  statsFrame(s, (L.top + L.bottom) / 2); statsFrame(s, L.top - 5, [{ type: 'bloom' }]);
+  FP.assertEqual(FP.labStats.summary().find(q => q.id === 'slalom-argile').runs, 1, 'gardé en mémoire');
+}));
+FP.test('lab: hors Lab, la mesure ne fait rien', () => withStore(statsMem(), () => {
+  const s = FP.state.createRun(3, { W: 360, H: 640 }); FP.level.startRun(s); FP.plant.launch(s);
+  s.events.push({ type: 'bloom' }); FP.labStats.update(s, 1);
+  FP.assert(FP.labStats.summary().every(q => q.runs === 0 && q.deaths === 0), 'rien compté');
+}));
+FP.test('labStats: le tableau se dessine au menu avec &stats', () => withStore(statsMem(), () => {
+  const view = FP.view, font = FP.font.draw, drawn = [];
+  FP.view = { ...(view || {}), ui: { w: 195, h: 422 } }; FP.font.draw = (g, text) => { drawn.push(text); return 0; };
+  const s = labRun(5), L = s.world.labLevel; statsFrame(s, (L.top + L.bottom) / 2, [{ type: 'death', cause: 'solid', kind: 'pulse' }]); statsFrame(s, (L.top + L.bottom) / 2, [{ type: 'death', cause: 'solid', kind: 'lab' }]);
+  try { FP.labStatsView.draw(skinCtx(), labRun(1)); } finally { FP.view = view; FP.font.draw = font; }
+  FP.assert(drawn.some(t => t.includes('GAZ ×1') && t.includes('MUR ×1')), 'causes lisibles : ' + drawn.join(' | '));
+  for (const c of window.FLOWER_POWER_LAB) FP.assert(drawn.some(t => t.includes(c.name)), 'ligne ' + c.name);
+}));
