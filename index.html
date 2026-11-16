@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-<title>Flower Power v5.11.0</title>
+<title>Flower Power v5.12.0</title>
 <link rel="stylesheet" href="style.css" />
 <!-- Écran d'accueil (téléphone) : fichier de description, icônes, plein écran sans barre de navigateur. -->
 <link rel="manifest" href="manifest.webmanifest" />
@@ -20,16 +20,19 @@
 <!-- Ordre de chargement : voir docs/architecture.md. Ajouter un fichier = ajouter une ligne ici. -->
 <script src="assets/obstacles/manifest.js"></script>
 <script src="assets/boss/plans.js"></script>
+<script src="assets/lab/circuits.js"></script>
 <script src="assets/boss/art.js"></script>
 <script src="src/core/fp.js"></script>
 <script src="src/core/geom.js"></script>
 <script src="src/core/config.js"></script>
+<script src="src/core/config-lab.js"></script>
 <script src="src/core/state.js"></script>
 <script src="src/world/catalog.js"></script>
 <script src="src/world/level.js"></script>
 <script src="src/world/coins.js"></script>
 <script src="src/world/boss-plan.js"></script>
 <script src="src/world/boss.js"></script>
+<script src="src/world/lab.js"></script>
 <script src="src/world/hazards.js"></script>
 <script src="src/play/plant.js"></script>
 <script src="src/world/collision.js"></script>
@@ -43,6 +46,8 @@
 <script src="src/play/powerups.js"></script>
 <script src="src/play/boss.js"></script>
 <script src="src/play/boss-threats.js"></script>
+<script src="src/play/lab-pulse.js"></script>
+<script src="src/play/lab-stats.js"></script>
 <script src="src/play/camera.js"></script>
 <script src="src/render/palette.js"></script>
 <script src="src/render/decor-tube.js"></script>
@@ -59,6 +64,7 @@
 <script src="src/render/boss-pipes.js"></script>
 <script src="src/render/boss-machines.js"></script>
 <script src="src/render/boss-struts.js"></script>
+<script src="src/render/lab.js"></script>
 <script src="src/render/boss-fx.js"></script>
 <script src="src/render/boss-death.js"></script>
 <script src="src/render/view.js"></script>
@@ -81,6 +87,7 @@
 <script src="src/render/mound.js"></script>
 <script src="src/ui/font.js"></script>
 <script src="src/ui/hud.js"></script>
+<script src="src/ui/lab-stats.js"></script>
 <script src="src/ui/shout.js"></script>
 <script src="src/ui/cheer.js"></script>
 <script src="src/ui/cards.js"></script>

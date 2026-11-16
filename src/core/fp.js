@@ -30,7 +30,10 @@
       perf: q.get('perf') === '1',
       flydebug: q.get('flydebug') === '1',
       freecam: q.get('freecam') === '1',
-      sansboss: q.get('sansboss') === '1'   // v4.13.0 : version playtest sans boss
+      sansboss: q.get('sansboss') === '1',   // v4.13.0 : version playtest sans boss
+      // v5.12.0 : Encounter Lab — ?lab=N (circuit de 1 à 6 ; une valeur invalide ramène au 1), &stats (tableau de la mesure), &stats=reset.
+      lab: q.has('lab') ? (/^[1-6]$/.test(q.get('lab')) ? Number(q.get('lab')) : 1) : null,
+      stats: q.has('stats') ? (q.get('stats') === 'reset' ? 'reset' : true) : false
     };
   };
 

@@ -22,12 +22,12 @@ FP.test('state: graine aléatoire si absente', () => {
   FP.assert(Number.isInteger(s.seed) && s.seed >= 0 && s.seed < 999999, String(s.seed));
 });
 FP.test('config: version et clé de record', () => {
-  FP.assertEqual(FP.config.version, '5.11.0');
+  FP.assertEqual(FP.config.version, '5.12.0');
   FP.assertEqual(FP.config.storageKey, 'flower_power_v4_best');
 });
 FP.test('state: une partie commence en friche, saison 1, carton d’entrée', () => {
   const s = FP.state.createRun(1, { W: 440, H: 783 });
-  FP.assertEqual(JSON.stringify(s.run), JSON.stringify({ milieu: 0, step: 0, saison: 1, bosses: 0, boss: false, card: { kind: 'milieu', t0: 0 }, won: false, playtest: false, push: 0, done: false }));
+  FP.assertEqual(JSON.stringify(s.run), JSON.stringify({ milieu: 0, step: 0, saison: 1, bosses: 0, boss: false, card: { kind: 'milieu', t0: 0 }, won: false, playtest: false, push: 0, done: false, lab: null }));
   FP.assertEqual(s.world.milieu, 'friche');
   FP.assertEqual(FP.config.run.steps, 3);
 });

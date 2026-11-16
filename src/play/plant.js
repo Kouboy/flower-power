@@ -2,7 +2,8 @@
 // Lit     : state.flow.freeze (la pousse ne bouge pas pendant le gel), state.input (dont touch : doigt → joystick), state.time, state.rng, state.boosts (boutique), FP.config.{cast,shop}, state.score.flowers, state.world.{width,height,viewH}, state.plant.corruption, FP.config.plant.
 // Écrit   : state.plant, state.mode (lancement), state.camera.{y,shake}, state.events (stemStart, growthTick) ;
 //           remise à zéro par pousse de state.power.{shield,shieldGrace} et state.score.flowerBonus.
-// Expose  : FP.plant.prepare(state), FP.plant.launch(state), FP.plant.speed(state), FP.plant.update(state, dt), FP.plant.stickTurn(screenX, width).
+// Expose  : FP.plant.prepare(state), FP.plant.launch(state), FP.plant.speed(state), FP.plant.update(state, dt), FP.plant.stickTurn(screenX, width),
+//           FP.plant.soilStep(state, dt), FP.plant.soilFactors(state) → { turn, guide, speed } (v5.12.0 : sols du Lab, FP.labLevel.soilAt, FP.config.lab.soils).
 // Porté de la v3.43.16 (prepareStem, launchPreparedStem, partie « croissance » de update()).
 (function () {
   'use strict';
@@ -17,6 +18,7 @@
     p.trail = [];
     p.stemAge = 0;
     p.corruption = 0; p.toxicTimer = 0; p.recentToxic = 0;
+    p.soil = { argile: 0, sable: 0 };     // v5.12.0 : sols de l'Encounter Lab (mélange 0..1 de chaque sol sous la pointe)
     p.scrapeTimer = 0;
     p.germ = 0;                           // germination de la graine (play/flow.js, mode ready)                    // la nouvelle tige gratte dès sa première frame
     // Chaque pousse repart sans bouclier ni pollen (v3 : prepareStem).
@@ -53,14 +55,28 @@
   // milieu de l'écran (0 au centre, ±1 à la limite du tiers : aucun saut).
   function stickTurn(screenX, width) { return clamp((screenX - width / 2) / (width / 6), -1, 1); }
 
+  // Sols de l'Encounter Lab (v5.12.0) : le mélange de chaque sol suit la présence de la pointe en config.lab.soils.blend s (pas de saut) ;
+  // l'argile ralentit le braquage et le suivi du doigt, le sable accélère et rend le braquage nerveux.
+  function soilStep(state, dt) {
+    const p = state.plant, S = FP.config.lab.soils, here = p.tip ? FP.labLevel.soilAt(state.world, p.tip.x, p.tip.y) : null;
+    for (const k of ['argile', 'sable']) {
+      const target = here === k ? 1 : 0, step = dt / S.blend, v = p.soil[k];
+      p.soil[k] = target > v ? Math.min(target, v + step) : Math.max(target, v - step);
+    }
+  }
+  function soilFactors(state) {
+    const s = state.plant.soil || { argile: 0, sable: 0 }, S = FP.config.lab.soils;
+    return { turn: lerp(1, S.argile.turn, s.argile) * lerp(1, S.sable.turn, s.sable), guide: lerp(1, S.argile.guide, s.argile), speed: lerp(1, S.sable.speed, s.sable) };
+  }
+
   // Les tiges accélèrent à chaque pousse, à chaque fleur, et pendant une pousse longue.
   function speed(state) {
     const p = state.plant, s = FP.config.plant.speed;
-    const globalRamp = Math.max(0, p.stemCount - 1) * s.perStem + state.score.flowers * s.perFlower;
+    const globalRamp = state.run.lab ? 0 : Math.max(0, p.stemCount - 1) * s.perStem + state.score.flowers * s.perFlower;   // v5.12.0 : Lab, vitesse d'un premier niveau
     const liveRamp = Math.min(s.liveMax, p.stemAge * s.livePerSec);
     const base = Math.min(s.max, s.base + globalRamp + liveRamp) * s.framing * (p.corruption > 0 ? FP.config.plant.corrupted.speed : 1);
     const slow = state.boosts.compost ? FP.config.shop.compostK : 1;   // Compost lent (boutique)
-    return (state.input.down ? base * s.controlled : base) * slow;
+    return (state.input.down ? base * s.controlled : base) * slow * soilFactors(state).speed;
   }
 
   // La pointe qui creuse : un seul battement pour le grattement (audio) et les débris (rendu), comme en v3.
@@ -78,6 +94,8 @@
     if (state.mode !== 'playing' || state.flow.freeze > 0) return;   // arrêt sur image de la tête transpercée
     const p = state.plant, cfg = FP.config.plant, input = state.input, W = state.world.width;
     p.stemAge += dt;
+    soilStep(state, dt);
+    const soil = soilFactors(state);
     const v0 = speed(state);
     growthTick(state, dt, v0);
     const controlled = input.down;
@@ -91,7 +109,7 @@
       const c = cfg.control;
       const y01 = clamp(input.y / state.world.viewH, 0, 1);
       const lookAhead = lerp(c.lookAheadTop, c.lookAheadBottom, y01);
-      p.guide.x = lerp(p.guide.x, input.x, clamp(dt * c.guideRate, 0, 1));
+      p.guide.x = lerp(p.guide.x, input.x, clamp(dt * c.guideRate * soil.guide, 0, 1));
       p.guide.y = p.tip.y - lookAhead;
       // Au doigt (v4.7.0) : joystick sur la largeur de l'écran, quelle que soit la position de la tige ; à la souris, on vise le pointeur.
       const turn = input.touch ? stickTurn(input.screenX, state.world.width) : clamp((p.guide.x - p.tip.x) / c.turnDivisor, -1, 1);
@@ -111,7 +129,7 @@
 
     // La tige peut serpenter, mais jamais faire demi-tour : elle cherche le jour.
     let v = FP.geom.clampUpAngle(desiredX, desiredY, controlled ? (corrupted ? cc.maxAngle : cfg.maxAngleControlled) : cfg.maxAngleIdle);
-    const steer = controlled ? (corrupted ? cc.steerControlled : cfg.steerControlled) : (corrupted ? cc.steerIdle : cfg.steerIdle);
+    const steer = (controlled ? (corrupted ? cc.steerControlled : cfg.steerControlled) : (corrupted ? cc.steerIdle : cfg.steerIdle)) * soil.turn;
     p.dir.x = lerp(p.dir.x, v.x, clamp(dt * steer, 0, 1));
     p.dir.y = lerp(p.dir.y, v.y, clamp(dt * steer, 0, 1));
     v = FP.geom.clampUpAngle(p.dir.x, p.dir.y, cfg.maxAngleControlled);
@@ -134,5 +152,5 @@
     }
   }
 
-  FP.plant = { prepare, launch, speed, update, stickTurn };
+  FP.plant = { prepare, launch, speed, update, stickTurn, soilStep, soilFactors };
 })();

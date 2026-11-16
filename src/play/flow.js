@@ -53,7 +53,8 @@
     state.level += count;
     // Milieux (v4.9.0) : une éclosion fait avancer d'une pousse (pollen ou non) ; celle du niveau de boss le bat.
     const r = state.run;
-    if (r.boss) {
+    if (r.lab) { r.lab = r.lab % window.FLOWER_POWER_LAB.length + 1; state.flow.next = null; }   // v5.12.0 : Lab, circuit suivant (ni boutique ni boss)
+    else if (r.boss) {
       r.bosses += 1; r.card = { kind: 'victory', t0: state.time }; state.flow.next = 'milieu';
       FP.scoring.awardFlat(state, p.tip.x, state.world.surfaceY, FP.config.boss.bonus);
       state.events.push({ type: 'bossDown', x: p.tip.x, y: state.world.surfaceY });
@@ -100,7 +101,7 @@
 
   // cause : 'solid' | 'leak' | 'toxic' ; kind : famille de l'obstacle (cause solid uniquement).
   function die(state, cause, kind, reason) {
-    state.plant.reserves -= 1;
+    if (!state.run.lab) state.plant.reserves -= 1;   // v5.12.0 : au Lab, graines illimitées (on recommence le même circuit)
     enterDying(state, { cause, kind }, reason);
   }
 
