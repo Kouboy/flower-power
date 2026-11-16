@@ -2,6 +2,13 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v5.12.2 — Lab : cheminée et combiné évitables
+
+- retour de jeu (« elles me rattrapent avant la prochaine intersection ») : les passages de la cloison de la cheminée étaient espacés d'environ 3 s de montée ; la cloison devient une rangée de piliers, un passage à moins d'une seconde de montée ;
+- annonce de 1,5 s (au lieu d'1 s) ; une bouffée toutes les 2,4 s (au lieu de 1,6), à 3 fois la vitesse de la pousse (au lieu de 4) ; au combiné, dont la voie à gaz n'a pas d'échappatoire, une bouffée toutes les 6 s (on passe derrière l'une d'elles, ou on prend l'autre branche) ;
+- l'esquive est jugée en jeu par l'utilisateur ; le banc vérifie l'espacement des passages ;
+- banc : 767 tests (764 lancés ; les 3 du robot de combat non relancés, le Lab ne touche pas aux boss).
+
 ## v5.12.1 — Lab : impulsions jouables
 
 - retour de jeu sur la cheminée (« comment je fais là ?! ») : les colonnes de gaz, lentes (1,6 fois la pousse) et longues (0,4 écran), restaient plus de 4 s à hauteur de la pointe et bloquaient souvent les deux voies à la fois ; elles deviennent des bouffées courtes (0,15 écran) et rapides (4 fois la pousse), qui passent la pointe en 0,3 s environ ; annonce d'1 s et alternance inchangées ;

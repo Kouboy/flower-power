@@ -63,7 +63,7 @@
       st.k = away >= 0 ? away : 0; st.next = 0;
     }
     st.next -= dt;
-    if (st.next <= 0) { announce(state, pulse.lanes[st.k % pulse.lanes.length]); st.k++; st.next += cfg.period; }
+    if (st.next <= 0) { announce(state, pulse.lanes[st.k % pulse.lanes.length]); st.k++; st.next += pulse.period || cfg.period; }   // période propre au circuit (v5.12.2)
     for (let i = st.shots.length - 1; i >= 0; i--) {
       const s = st.shots[i], l = L.lanes[s.lane];
       if (s.warn > 0) {

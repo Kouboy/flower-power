@@ -333,3 +333,22 @@ FP.test('lab: toujours une voie libre à hauteur de la pointe', () => {
     }
   }
 });
+
+// v5.12.2 (retour de jeu : « elles me rattrapent avant la prochaine intersection ») : la cloison de la cheminée est en pointillés,
+// un passage à moins d'une seconde de montée ; l'esquive elle-même est jugée par l'utilisateur (simulation trop lente pour le banc).
+const labGaps = (s) => {   // passages de la cloison de la cheminée : intervalles de y libres entre deux tronçons (monde)
+  const L = s.world.labLevel, mid = (L.lanes[0].x1 + L.lanes[1].x0) / 2;
+  const posts = s.world.solids.filter(o => o.kind === 'lab' && Math.abs(o.x - mid) < 4).map(o => [o.y - o.collision[2][1], o.y + o.collision[2][1]]).sort((a, b) => a[0] - b[0]);
+  const gaps = []; for (let i = 1; i < posts.length; i++) gaps.push([posts[i - 1][1], posts[i][0]]);
+  return gaps;
+};
+FP.test('lab: la cheminée a un passage à moins d’une seconde de montée', () => {
+  for (const W of [280, 360, 440]) {
+    const s = labRun(5, W), L = s.world.labLevel, gaps = labGaps(s), v = FP.plant.speed(s);
+    FP.assert(gaps.length >= 4, 'cloison en pointillés : ' + gaps.length + ' passages');
+    const ys = [L.bottom, ...gaps.map(([a, b]) => (a + b) / 2), L.top].sort((a, b) => a - b);
+    for (let i = 1; i < ys.length; i++) FP.assert((ys[i] - ys[i - 1]) / v <= 1, `${((ys[i] - ys[i - 1]) / v).toFixed(2)} s entre deux passages (W=${W})`);
+    for (const [a, b] of gaps) FP.assert(b - a >= L.channelMin, `passage de ${(b - a) | 0} px (W=${W})`);
+  }
+});
+

@@ -16,6 +16,6 @@
     soils: { blend: .3, argile: { turn: .55, guide: .55 }, sable: { speed: 1.35, turn: 1.4 } },
     // Impulsion (play/lab-pulse.js) : warn = annonce avant chaque départ (s) ; period = écart entre deux départs (s) ; length = longueur de
     // la colonne (× hauteur d'écran) ; speedK = vitesse × celle de la pousse (× pulse.slow du circuit).
-    pulse: { warn: 1, period: 1.6, length: .15, speedK: 4 }   // v5.12.1 : bouffées courtes et rapides (.4 et 1,6 bloquaient les deux voies à la fois)
+    pulse: { warn: 1.5, period: 2.4, length: .15, speedK: 3 }   // v5.12.2 : annonce plus longue, bouffées plus espacées (période propre au circuit : pulse.period)
   };
 })();
