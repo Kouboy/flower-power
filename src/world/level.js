@@ -1,6 +1,6 @@
 // world/level.js — génération d'un niveau à partir de la graine du run.
 // Lit     : state.rng, state.difficulty (niveau équivalent : réglages par niveau), state.level (réveil du T-Rex), state.run.{milieu,boss}, FP.config.shop.lobbyingK (option lobbying), state.world.{width,viewH,surfaceY,baseHeight,growK}, FP.state.levelHeightFor (hauteur du niveau), state.signature,
-//           FP.config.{level,spawnTables,signature,milieux,world.growMax,plant.speed}, FP.camera.safeX (limaces), FP.state.worldHeightFor, FP.catalog, FP.geom, FP.bossLevel.generate (niveau de boss).
+//           FP.config.{level,spawnTables,signature,milieux,world.growMax,plant.speed}, FP.camera.safeX (limaces), FP.state.worldHeightFor, FP.catalog, FP.geom, FP.bossLevel.generate (niveau de boss), FP.labLevel.generate (v5.12.0 : Encounter Lab, state.run.lab).
 // Écrit   : state.world.{height,baseHeight,growK (v5.3.0 : hauteur du niveau, décidée ici),milieu,level,boss,bossLevel,skyVariant,lawnVariant,safePath,safeRadius,hazardRadius,solidExtra,solids,toxics,leaks (crossing : barre le chemin sûr, v4.17.0),bonuses}, state.signature ;
 //           puis FP.coins.place écrit state.world.{coins,chains}.
 // Expose  : FP.level.startRun(state), FP.level.generate(state), FP.level.tableFor(milieu, band) (pur, testé),
@@ -368,7 +368,8 @@
     world.boss = !!state.run.boss;   // v4.10.0 : la musique suit le niveau réellement généré (milieu, boss)
     world.skyVariant = Math.floor(rng.next() * FP.config.level.skyVariants);
     world.lawnVariant = Math.floor(rng.next() * FP.config.level.lawnVariants);
-    world.bossLevel = null;
+    world.bossLevel = null; world.labLevel = null;
+    if (state.run.lab) { FP.labLevel.generate(state); return; }   // v5.12.0 : Encounter Lab, un circuit fait à la main (world/lab.js)
     if (state.run.boss) { FP.bossLevel.generate(state); return; }   // v4.12.0 : le niveau de boss a sa propre génération (world/boss.js)
     const grid = makeGrid(world.width, world.surfaceY + g.topPad, world.height - g.bottomPad);
     generateSafePath(world, rng, state.difficulty);
