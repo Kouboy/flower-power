@@ -56,7 +56,7 @@
   // Les tiges accélèrent à chaque pousse, à chaque fleur, et pendant une pousse longue.
   function speed(state) {
     const p = state.plant, s = FP.config.plant.speed;
-    const globalRamp = Math.max(0, p.stemCount - 1) * s.perStem + state.score.flowers * s.perFlower;
+    const globalRamp = state.run.lab ? 0 : Math.max(0, p.stemCount - 1) * s.perStem + state.score.flowers * s.perFlower;   // v5.12.0 : Lab, vitesse d'un premier niveau
     const liveRamp = Math.min(s.liveMax, p.stemAge * s.livePerSec);
     const base = Math.min(s.max, s.base + globalRamp + liveRamp) * s.framing * (p.corruption > 0 ? FP.config.plant.corrupted.speed : 1);
     const slow = state.boosts.compost ? FP.config.shop.compostK : 1;   // Compost lent (boutique)

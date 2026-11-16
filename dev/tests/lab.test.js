@@ -65,3 +65,46 @@ FP.test('lab: hauteur du niveau', () => {
     FP.assert(w.solids.every(o => o.kind === 'lab'), 'seuls les murs du circuit ' + at);
   });
 });
+
+// --- Mode Lab (tâche 2) : lancement, enchaînement, morts, vitesse, jeu normal intact.
+FP.test('lab: paramètre', () => {
+  FP.assertEqual(FP.parseParams('?lab=3').lab, 3);
+  for (const q of ['?lab=7', '?lab=abc', '?lab=0', '?lab=', '?lab=-2', '?lab=2.5']) FP.assertEqual(FP.parseParams(q).lab, 1, q);
+  FP.assertEqual(FP.parseParams('').lab, null);
+  FP.assertEqual(FP.parseParams('?lab=2&stats=reset').stats, 'reset'); FP.assertEqual(FP.parseParams('?lab=2&stats').stats, true);
+  FP.assertEqual(FP.parseParams('?lab=2').stats, false);
+});
+const labBloom = (s) => { s.events.length = 0; s.plant.tip.y = s.world.surfaceY - 1; FP.flow.update(s, 1 / 60); for (let i = 0; i < 600 && s.mode !== 'ready'; i++) { s.time += 1 / 60; FP.flow.update(s, 1 / 60); } };
+FP.test('lab: une éclosion passe au circuit suivant, le 6e ramène au 1er', () => {
+  for (const [from, to] of [[1, 2], [5, 6], [6, 1]]) {
+    const s = labRun(from); FP.plant.launch(s); const seen = [];
+    labBloom(s);
+    FP.assertEqual(s.run.lab, to, `${from} → ${to}`); FP.assertEqual(s.mode, 'ready'); FP.assertEqual(s.world.labLevel.circuit.id, LAB_IDS[to - 1]);
+    FP.assertEqual(s.shop, null, 'pas de boutique'); FP.assert(!s.run.boss, 'pas de boss');
+  }
+});
+FP.test('lab: une mort relance le même circuit sans perdre de graine', () => {
+  const s = labRun(3); FP.plant.launch(s); const before = s.plant.reserves;
+  const wall = s.world.solids[0]; s.plant.tip = { x: wall.x, y: wall.y }; FP.collision.update(s); FP.flow.update(s, 1 / 60);
+  FP.assertEqual(s.mode, 'dying'); FP.assertEqual(s.plant.reserves, before, 'graine gardée');
+  for (let i = 0; i < 600 && s.mode !== 'ready'; i++) { s.time += 1 / 60; FP.flow.update(s, 1 / 60); }
+  FP.assertEqual(s.mode, 'ready'); FP.assertEqual(s.run.lab, 3); FP.assertEqual(s.shop, null);
+});
+FP.test('lab: vitesse d’un premier niveau', () => {
+  const s = labRun(1); FP.plant.launch(s);
+  s.plant.stemCount = 1; s.score.flowers = 0; const a = FP.plant.speed(s);
+  s.plant.stemCount = 30; s.score.flowers = 40; FP.assertEqual(FP.plant.speed(s), a);
+});
+// Empreinte de deux niveaux normaux (graines 3 et 11, 360 × 640), relevée avant le mode Lab : la génération n'a pas bougé.
+FP.test('lab: jeu normal intact', () => {
+  const out = [];
+  for (const seed of [3, 11]) {
+    const s = FP.state.createRun(seed, { W: 360, H: 640 }); FP.level.startRun(s); const w = s.world;
+    FP.assertEqual(s.run.lab, null); FP.assertEqual(w.labLevel, null);
+    const j = JSON.stringify([w.height, w.solids.map(o => [o.kind, Math.round(o.x), Math.round(o.y)]), w.toxics.map(t => [Math.round(t.x), Math.round(t.y)]),
+      w.leaks.map(l => [Math.round(l.x), Math.round(l.y)]), w.coins.map(c => [Math.round(c.x), Math.round(c.y)])]);
+    let h = 2166136261; for (const ch of j) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
+    out.push(h);
+  }
+  FP.assertEqual(out.join(), '2481539369,4256782594');
+});

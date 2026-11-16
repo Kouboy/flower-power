@@ -1,5 +1,5 @@
 // core/state.js — l'unique objet d'état d'une partie.
-// Lit     : FP.params.{seed (graine imposée par l'URL), sansboss (version playtest)}, FP.createRng, FP.config.view, FP.config.world, FP.config.plant.speed, FP.view.
+// Lit     : FP.params.{seed (graine imposée par l'URL), sansboss (version playtest), lab (v5.12.0 : Encounter Lab)}, FP.createRng, FP.config.view, FP.config.world, FP.config.plant.speed, FP.view.
 // Écrit   : FP.state.current (via ui/menu.js et core/loop.js).
 //           state.bossFight (cibles détruites du boss en cours, tête à nu ; écrit ensuite par play/boss.js), state.flow.freeze (arrêt sur image, 0 au départ ; écrit par play/boss.js, décompté par play/flow.js), state.flow.warp (ralenti, null au départ ; play/flow.js).
 // Expose  : FP.state.createRun(seed?, dims?), FP.state.applyView(state, dims), FP.state.worldHeightFor(viewH) (hauteur de départ d'un niveau, pure), FP.state.levelHeightFor(state) (hauteur du niveau suivant, pure), FP.state.current.
@@ -52,7 +52,8 @@
       // saison, boss vaincus, niveau de boss en cours, carton à montrer, première saison terminée ;
       // v4.13.0 : version playtest sans boss (?sansboss=1), avance du pollen dans le milieu, playtest terminé.
       run: { milieu: 0, step: 0, saison: 1, bosses: 0, boss: false, card: { kind: 'milieu', t0: 0 }, won: false,
-        playtest: !!(FP.params && FP.params.sansboss), push: 0, done: false },
+        playtest: !!(FP.params && FP.params.sansboss), push: 0, done: false,
+        lab: (FP.params && FP.params.lab) || null },   // v5.12.0 : circuit de l'Encounter Lab en cours (1 à 6), null hors Lab
       bossThreats: { rooms: {}, shots: [], aim: null, burst: null, cooldown: 0 },   // v5.1.0 : défense de chaque salle de boss (play/boss-threats.js) ; remis à zéro par world/boss.js
       bossFight: { destroyed: [false, false, false], headOpen: false },   // v5.1.0 : une case par cible, gardée après une mort ; tête à nu
       camera: { y: Math.max(0, height - dims.H), manual: false, near: 0, zoom: 1, shake: 0 },
