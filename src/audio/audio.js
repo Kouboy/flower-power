@@ -88,6 +88,8 @@
       case 'death': if (e.cause === 'assault') return;   // l'assaut : l'explosion de la cible (bossTarget) tient lieu de son, pas de jingle de mort
         FP.sfx.play(b, e.cause === 'solid' ? 'hit' : 'acid', 1, key); return FP.sfx.jingle(b, 'death', key);
       case 'bossWarn': return FP.sfx.play(b, 'bossWarn', warnTime(state), key);   // monte sur toute la durée de l'avertissement
+      case 'labWarn': return FP.sfx.play(b, 'bossWarn', FP.config.lab.pulse.warn, key);   // v5.12.0 : la buse du Lab siffle pendant l'annonce
+      case 'labPulse': return FP.sfx.play(b, 'bossShot', 1, key);   // départ de la colonne de gaz
       case 'bossTarget': case 'bossSeed': case 'bossLock': case 'bossShot': case 'bossHead': case 'bossBlast': case 'bossCrumble': return FP.sfx.play(b, e.type, 1, key);
       case 'bossPeak': return FP.sfx.jingle(b, 'bossVictory', key);   // la musique s'est tue à la tête transpercée (FP.music) : la victoire éclate dans le silence
       case 'leakPop': return FP.sfx.play(b, 'burp', 1, key);

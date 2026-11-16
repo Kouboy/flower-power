@@ -151,3 +151,91 @@ FP.test('lab: hors Lab, aucun sol', () => {
   for (let i = 0; i < 30; i++) FP.plant.soilStep(s, 1 / 60);
   const f = FP.plant.soilFactors(s); FP.assertEqual(JSON.stringify([f.turn, f.guide, f.speed]), '[1,1,1]');
 });
+
+// --- Impulsion montante (tâche 5) : annoncée ≥ 1 s avant d'atteindre la pointe, d'abord dans l'autre voie, puis en alternance.
+const laneX = (l) => (l.x0 + l.x1) / 2;
+// La pointe tenue à une hauteur fixe dans la voie k (la tige « fait du surplace » pour le test) ; rend les événements horodatés.
+const pulseSim = (n, k, frac, secs, tip0) => {
+  const s = labRun(n), L = s.world.labLevel, lane = L.lanes[k], log = [];
+  FP.plant.launch(s);
+  s.plant.tip = tip0 ? tip0(s) : { x: laneX(lane), y: lane.y1 - (lane.y1 - lane.y0) * frac };
+  for (let t = 0; t < secs; t += 1 / 60) {
+    s.events.length = 0; s.time += 1 / 60; FP.labPulse.update(s, 1 / 60);
+    for (const e of s.events) log.push({ t, ...e });
+    const hit = s.world.solids.some(o => o.kind === 'pulse' && !o.off && FP.collision.distanceTo(o, s.plant.tip.x, s.plant.tip.y) <= 0);
+    if (hit) log.push({ t, type: 'hit' });
+  }
+  return { s, L, log };
+};
+FP.test('lab: l’impulsion est annoncée au moins 1 s avant d’atteindre la pointe', () => {
+  for (const k of [0, 1]) for (const frac of [.02, .1, .4, .8]) {
+    const { log } = pulseSim(5, k, frac, 8);
+    const hits = log.filter(e => e.type === 'hit');
+    FP.assert(hits.length > 0, `touchée un jour (voie ${k}, ${frac})`);
+    const firstHit = hits[0].t, warn = log.filter(e => e.type === 'labWarn' && e.lane === k && e.t <= firstHit).pop();
+    FP.assert(warn && firstHit - warn.t >= 1 - 1e-6, `annonce ${warn ? (firstHit - warn.t).toFixed(2) : 'absente'} s avant (voie ${k}, ${frac})`);
+  }
+});
+FP.test('lab: la première impulsion vise l’autre voie, puis elles alternent', () => {
+  for (const k of [0, 1]) {
+    const lanes = pulseSim(5, k, .3, 6).log.filter(e => e.type === 'labWarn').map(e => e.lane);
+    FP.assert(lanes.length >= 3, 'plusieurs impulsions');
+    FP.assertEqual(lanes[0], 1 - k, 'la première dans l’autre voie');
+    for (let i = 1; i < lanes.length; i++) FP.assertEqual(lanes[i], 1 - lanes[i - 1], 'alternance');
+  }
+});
+FP.test('lab: une pointe dans l’autre voie n’est jamais touchée', () => {
+  const { s, log } = pulseSim(5, 0, .5, 6);
+  const L = s.world.labLevel, other = { x: laneX(L.lanes[1]), y: s.plant.tip.y };
+  FP.assert(!log.some(e => e.type === 'hit' && false), '');
+  for (let t = 0; t < 6; t += 1 / 60) {
+    s.time += 1 / 60; FP.labPulse.update(s, 1 / 60);
+    for (const o of s.world.solids.filter(q => q.kind === 'pulse' && !q.off && q.lane === 0)) FP.assert(FP.collision.distanceTo(o, other.x, other.y) > 0, 'voie 1 épargnée par la voie 0');
+  }
+});
+FP.test('lab: une impulsion tue', () => {
+  const s = labRun(5); FP.plant.launch(s); s.events.length = 0;
+  const L = s.world.labLevel; s.plant.tip = { x: laneX(L.lanes[1]), y: L.lanes[1].y1 - 40 };
+  for (let i = 0; i < 400 && s.mode === 'playing'; i++) { s.time += 1 / 60; FP.labPulse.update(s, 1 / 60); FP.collision.update(s); FP.flow.update(s, 1 / 60); }
+  const d = s.events.find(e => e.type === 'death');
+  FP.assert(d && d.kind === 'pulse', 'mort par l’impulsion'); FP.assertEqual(s.flow.overReason, FP.config.text.death.pulse);
+});
+FP.test('lab: rien ne reste après une mort, une génération ou hors du circuit', () => {
+  const live = (s) => s.world.solids.filter(o => o.kind === 'pulse' && !o.off).length;
+  let { s } = pulseSim(5, 0, .5, 3); FP.assert(live(s) > 0 || s.labPulse.active, 'actif');
+  s.mode = 'dying'; FP.labPulse.update(s, 1 / 60); FP.assertEqual(live(s), 0, 'mort'); FP.assertEqual(s.labPulse.active, false);
+  ({ s } = pulseSim(5, 0, .5, 3)); FP.level.generate(s); FP.labPulse.update(s, 0); FP.assertEqual(live(s), 0, 'génération');
+  ({ s } = pulseSim(5, 0, .5, 3)); s.plant.tip = { x: s.world.width / 2, y: s.world.labLevel.top - 80 }; FP.labPulse.update(s, 1 / 60); FP.assertEqual(live(s), 0, 'sortie');
+  const q = pulseSim(5, 0, .5, 3, (st) => ({ x: st.world.width / 2, y: st.world.labLevel.bottom + 120 }));
+  FP.assertEqual(q.log.filter(e => e.type === 'labWarn').length, 0, 'rien avant d’entrer');
+});
+FP.test('lab: le combiné, une seule voie et plus lent', () => {
+  const a = pulseSim(6, 0, .3, 8, (st) => ({ x: st.world.width * .68, y: st.world.labLevel.lanes[0].y1 - 10 }));
+  FP.assert(a.log.some(e => e.type === 'labPulse'), 'des impulsions'); FP.assert(a.log.filter(e => e.type === 'labWarn').every(e => e.lane === 0), 'une seule voie');
+  FP.assertEqual(FP.labPulse.speedFor(a.s, 0) / FP.labPulse.speedFor(pulseSim(5, 0, .3, .1).s, 0), .7);
+});
+FP.test('lab: hors Lab, rien', () => {
+  const s = FP.state.createRun(3, { W: 360, H: 640 }); FP.level.startRun(s); FP.plant.launch(s); s.events.length = 0;
+  FP.labPulse.update(s, .1); FP.assertEqual(s.events.length, 0); FP.assert(!s.world.solids.some(o => o.kind === 'pulse'), 'aucune colonne');
+});
+
+// Dessin et son de l'impulsion : la buse s'allume pendant l'annonce, la colonne de gaz se voit, une flèche au bas de l'écran signale une
+// buse sous l'écran ; l'annonce et le départ font un son.
+FP.test('labRender: buse annoncée, colonne de gaz et flèche', () => {
+  const P = FP.palette.lab;
+  const { s } = pulseSim(5, 0, .5, .2);   // une annonce en cours (voie 1)
+  const L = s.world.labLevel, lane = L.lanes[1];
+  s.camera.y = lane.y1 - s.world.viewH / 2; let g = skinCtx(); FP.labRender.drawThreats(g, s);
+  FP.assert(g.rects.some(r => r.c === P.glow), 'buse allumée');
+  s.camera.y = lane.y1 - s.world.viewH * 2; g = skinCtx(); FP.labRender.drawThreats(g, s);
+  const H = Math.ceil(s.world.viewH / FP.px.SCALE);
+  FP.assert(g.rects.some(r => r.c === P.glow && r.y > H - 12), 'flèche au bas de l’écran');
+  for (let i = 0; i < 90; i++) { s.time += 1 / 60; FP.labPulse.update(s, 1 / 60); }
+  const shot = s.labPulse.shots.find(q => !q.solid.off); FP.assert(shot, 'une colonne en vol');
+  s.camera.y = shot.solid.y - s.world.viewH / 2; g = skinCtx(); FP.labRender.drawThreats(g, s);
+  FP.assert(g.rects.some(r => P.gas.includes(r.c)), 'colonne de gaz');
+  const n = FP.state.createRun(3, { W: 360, H: 640 }); FP.level.startRun(n); const gn = skinCtx(); FP.labRender.drawThreats(gn, n); FP.assertEqual(gn.rects.length, 0, 'hors Lab');
+});
+FP.test('lab: annonce et départ font un son', () => {
+  for (const type of ['labWarn', 'labPulse']) withBackend(b => { FP.audio.consume([{ type, lane: 0 }], auRun(), 0); FP.assert(sounding(b).length > 0, type); });
+});

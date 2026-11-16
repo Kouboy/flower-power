@@ -1,7 +1,7 @@
 // core/loop.js — boucle principale, ordre fixe d'une frame.
 // Lit     : FP.config.loop, FP.state.current, les modules FP.<système> présents, FP.flow.warp (arrêt sur image et ralenti), FP.perf (?perf=1).
 // Écrit   : state.time (temps du jeu : ralenti par FP.flow.warp), vide state.events en fin de frame.
-// Expose  : FP.loop.UPDATE_ORDER, FP.loop.step(state, rawDt), FP.loop.start().
+// Expose  : FP.loop.UPDATE_ORDER (v5.12.0 : labPulse après bossThreats), FP.loop.step(state, rawDt), FP.loop.start().
 // Mise à jour, son et rendu sont gardés séparément : une erreur dans l'un est signalée une fois en console
 // et n'empêche pas les autres (l'image continue d'être dessinée, la partie de tourner).
 (function () {
@@ -15,7 +15,7 @@
   // powerups après scoring : ramassage et bouclier interceptent un choc avant que flow ne décide d'une mort.
   // coinPlay (v4.5.0) après graze, avant scoring : une pièce relance le délai du combo avant qu'il ne s'écoule.
   // shop (v4.6.0) avant flow : à la fin du bon de commande, le déroulé reprend dans la même frame.
-  const UPDATE_ORDER = ['input', 'plant', 'hazards', 'bossThreats', 'boss', 'collision', 'graze', 'coinPlay', 'scoring', 'powerups', 'shop', 'flow', 'camera'];
+  const UPDATE_ORDER = ['input', 'plant', 'hazards', 'bossThreats', 'labPulse', 'boss', 'collision', 'graze', 'coinPlay', 'scoring', 'powerups', 'shop', 'flow', 'camera'];
 
   // Messages déjà signalés : une erreur qui se répète à chaque frame ne s'affiche qu'une fois (50 au plus).
   const reported = new Set();

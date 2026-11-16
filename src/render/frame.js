@@ -56,6 +56,7 @@
     FP.drillFx.drawOver(g, state);    // ondes et étincelles : devant la tête, comme des débris projetés
     FP.bossStruts.draw(g, state);          // structures de liaison du boss (v5.8.0) : devant tout, sous les menaces
     FP.bossRender.drawThreats(g, state);   // menaces du boss (v5.6.0) : par-dessus tout, jamais cachées
+    FP.labRender.drawThreats(g, state);    // impulsion du Lab (v5.12.0) : buses, gaz, flèche, par-dessus tout
   }
 
   function frame(state) {

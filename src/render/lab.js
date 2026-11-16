@@ -1,10 +1,12 @@
 // render/lab.js — l'Encounter Lab (v5.12.0) : murs de béton neutre (arêtes, fissures, taches de terre ; ni rivets ni tuyaux, pour ne pas
 // ressembler aux boss), poches d'argile (ocre, lisse, au bord net et plus clair) et de sable (grain pâle, rides, grains qui volent derrière la
-// pointe). Murs et sols peints une fois par circuit dans un calque ; le reste en direct. Rien hors du Lab.
+// pointe). Murs et sols peints une fois par circuit dans un calque ; le reste en direct. Par-dessus tout (drawThreats) : les buses de
+// l'impulsion, allumées pendant l'annonce, la colonne de gaz qui remonte, et une flèche au bas de l'écran quand la buse annoncée est
+// sous l'écran. Rien hors du Lab.
 // Lit     : state.{camera.y, time, plant.tip}, state.world.{width, height, viewH, labLevel}, FP.labLevel.soilAt, FP.palette.lab, FP.px (dont layer
-//           et blit), FP.bossSkin.spans.
+//           et blit), FP.bossSkin.spans, state.labPulse.shots (impulsion).
 // Écrit   : rien dans l'état (la toile reçue ; le calque en cache par circuit et taille de niveau).
-// Expose  : FP.labRender.draw(g, state).
+// Expose  : FP.labRender.draw(g, state), FP.labRender.drawThreats(g, state).
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
@@ -73,5 +75,35 @@
     }
   }
 
-  FP.labRender = { draw };
+  // Menace : buses (grille au pied de chaque voie d'impulsion, allumée pendant l'annonce), colonnes de gaz, flèche hors écran.
+  function drawThreats(g, state) {
+    const w = state.world, L = w.labLevel, st = state.labPulse;
+    if (!L || !L.circuit.pulse) return;
+    const P = FP.palette.lab, cam = FP.px.toArt(state.camera.y), H = Math.ceil(w.viewH / FP.px.SCALE), t = state.time;
+    const warned = new Set(st && st.level === L ? st.shots.filter(s => s.warn > 0).map(s => s.lane) : []);
+    for (const i of L.circuit.pulse.lanes) {
+      const l = L.lanes[i], x0 = FP.px.toArt(l.x0) + 1, x1 = FP.px.toArt(l.x1) - 1, y = FP.px.toArt(l.y1) - cam;
+      const lit = warned.has(i);
+      if (y >= -4 && y <= H + 4) {
+        FP.px.rect(g, x0, y - 2, x1 - x0, 4, P.concrete[3]);
+        for (let x = x0 + 1; x < x1 - 1; x += 3) FP.px.rect(g, x, y - 1, 2, 2, lit ? P.glow : P.crack);
+      } else if (warned.has(i) && y > H) {   // flèche au bas de l'écran, sur la voie
+        const cx = Math.round((x0 + x1) / 2);
+        for (let k = 0; k < 4; k++) FP.px.rect(g, cx - k, H - 5 + k, 2 * k + 1, 1, P.glow);
+      }
+    }
+    if (!st || st.level !== L) return;
+    for (const s of st.shots) {
+      if (s.solid.off) continue;
+      const o = s.solid, hw = o.collision[1][0], hh = o.collision[2][1];
+      const xa = FP.px.toArt(o.x - hw), xb = FP.px.toArt(o.x + hw), ya = FP.px.toArt(o.y - hh) - cam, yb = FP.px.toArt(o.y + hh) - cam;
+      for (let y = Math.max(0, ya); y < Math.min(H, yb); y++) {
+        const k = y + cam, wob = Math.round(Math.sin(k * .35 + t * 9) * 2);
+        for (let x = xa + 1 + ((k + Math.floor(t * 20)) % 2); x < xb - 1; x += 2) FP.px.rect(g, x + (x % 4 === 0 ? wob : 0), y, 1, 1, P.gas[(x + k) % 3 === 0 ? 0 : 1]);
+      }
+      for (let x = xa; x < xb; x += 2) FP.px.rect(g, x, Math.max(0, ya), 2, 1, P.gas[0]);   // le front, plus dense
+    }
+  }
+
+  FP.labRender = { draw, drawThreats };
 })();

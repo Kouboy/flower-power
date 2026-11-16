@@ -139,7 +139,8 @@
   // Encounter Lab (v5.12.0, render/lab.js) : béton neutre (clair, base, plaques, arête), fissure, terre ; argile et sable (bord clair, base, texture).
   const lab = {
     concrete: ['#b8b2a6', '#8e887c', '#837d71', '#4a463e'], crack: '#3a362f', dirt: '#5e4630',
-    argile: ['#e0a060', '#b8743a', '#a4652f'], sable: ['#f2e2b0', '#d8c48a', '#c2ab70']
+    argile: ['#e0a060', '#b8743a', '#a4652f'], sable: ['#f2e2b0', '#d8c48a', '#c2ab70'],
+    glow: '#ffd040', gas: ['#e6f2c8', '#b8d48a']   // buse allumée et flèche ; gaz de l'impulsion (front clair, corps)
   };
   FP.palette = { milieux, strataBounds, strataTone, stem, seed, hero, cast, coin, flowers, toxic, slug, danger, boss, decor, lab };
 })();
