@@ -1,7 +1,7 @@
 // play/lab-stats.js — la mesure de l'Encounter Lab (v5.12.0) : pour chaque circuit, les passages réussis (éclosion), les morts et leurs
 // causes, le temps passé dans le circuit, les frôlements payés et les pièces prises, gardés dans le navigateur du testeur
 // (localStorage) pour que l'utilisateur relève le tableau (?lab=…&stats ; &stats=reset le vide).
-// Lit     : state.{events (eco de kind solid ou leak : frôlement payé ; coin ; bloom ; death), plant.tip}, state.world.{labLevel, coins},
+// Lit     : state.{events (eco de kind solid ou leak : frôlement payé ; coin ; bloom ; death), plant.tip}, state.run.lab, state.world.{modules[0], coins},
 //           window.FLOWER_POWER_LAB, FP.params.stats, window.localStorage (chaque accès protégé : sans stockage, la mesure vit en mémoire).
 // Écrit   : localStorage['flower_power_lab_stats'] = { [id]: { runs, deaths, causes: { [kind]: n }, time, grazes, coins, coinsTotal } }.
 // Expose  : FP.labStats.update(state, dt), FP.labStats.summary() → [{ id, name, runs, deaths, avgTime, grazesPerRun, coinsPerRun, coinsTotal,
@@ -31,7 +31,7 @@
   }
 
   function update(state, dt) {
-    const L = state.world.labLevel, tip = state.plant.tip;
+    const L = state.run.lab ? state.world.modules[0] : null, tip = state.plant.tip;   // v5.14.0 : la mesure reste propre au Lab
     if (!L) return;
     if (!cur || cur.id !== L.circuit.id || cur.level !== L) cur = { id: L.circuit.id, level: L, time: 0, grazes: 0, coins: 0 };
     if (tip && tip.y >= L.top && tip.y <= L.bottom) cur.time += dt;

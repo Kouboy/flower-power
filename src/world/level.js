@@ -258,7 +258,7 @@
     world.boss = !!state.run.boss;   // v4.10.0 : la musique suit le niveau réellement généré (milieu, boss)
     world.skyVariant = Math.floor(rng.next() * FP.config.level.skyVariants);
     world.lawnVariant = Math.floor(rng.next() * FP.config.level.lawnVariants);
-    world.bossLevel = null; world.labLevel = null;
+    world.bossLevel = null; world.modules = [];   // v5.14.0 : modules du Lab posés dans le niveau (aucun hors Lab et ?modules)
     if (state.run.lab) { FP.labLevel.generate(state); return; }   // v5.12.0 : Encounter Lab, un circuit fait à la main (world/lab.js)
     if (state.run.boss) { FP.bossLevel.generate(state); return; }   // v4.12.0 : le niveau de boss a sa propre génération (world/boss.js)
     const grid = makeGrid(world.width, world.surfaceY + g.topPad, world.height - g.bottomPad);

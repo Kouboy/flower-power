@@ -24,7 +24,7 @@ FP.test('lab: 10 modules, dans l’ordre de la spec', () => {
 
 FP.test('lab: chaque module se traverse, dans les deux sens', () => {
   labEach(({ s, at }) => {
-    const L = s.world.labLevel, walls = labPolys(s), half = L.channelMin / 2;
+    const L = s.world.modules[0], walls = labPolys(s), half = L.channelMin / 2;
     for (const path of [L.path, ...L.alt]) {
       FP.assert(path[0].y > L.bottom && path[path.length - 1].y < L.top, 'du dessous au-dessus du module ' + at);
       for (const q of labSamples(path)) for (const P of walls) FP.assert(FP.geom.sdPoly(q.x, q.y, P) >= half - 1e-6, `trajet à ${FP.geom.sdPoly(q.x, q.y, P).toFixed(1)} px d'un mur en (${q.x | 0},${q.y | 0}) ` + at);
@@ -34,7 +34,7 @@ FP.test('lab: chaque module se traverse, dans les deux sens', () => {
 
 FP.test('lab: tout dans la bande sûre, dans les deux sens', () => {
   labEach(({ s, W, at }) => {
-    const L = s.world.labLevel, m = FP.camera.safeX(W), r = FP.config.coins.radius, inBand = (x, pad = 0) => x - pad >= m - 1e-6 && x + pad <= W - m + 1e-6;
+    const L = s.world.modules[0], m = FP.camera.safeX(W), r = FP.config.coins.radius, inBand = (x, pad = 0) => x - pad >= m - 1e-6 && x + pad <= W - m + 1e-6;
     for (const l of L.lanes) FP.assert(inBand(l.x0) && inBand(l.x1), 'voie ' + at);
     for (const c of s.world.coins) FP.assert(inBand(c.x, r), 'pièce ' + at);
     for (const l of s.world.leaks) for (const k of [-.5, .5]) FP.assert(inBand(l.x + Math.cos(l.angle) * l.len * k, l.r), 'limace ' + at);
@@ -45,14 +45,14 @@ FP.test('lab: tout dans la bande sûre, dans les deux sens', () => {
 
 FP.test('lab: les murs ferment les bords du monde', () => {
   labEach(({ s, W, at }) => {
-    const L = s.world.labLevel, walls = labPolys(s);
+    const L = s.world.modules[0], walls = labPolys(s);
     for (let y = L.top + 2; y <= L.bottom - 2; y += 6) for (const x of [2, W - 2]) FP.assert(walls.some(P => FP.geom.sdPoly(x, y, P) <= 0), `bord ouvert en (${x},${y | 0}) ` + at);
   });
 });
 
 // Ligne de tir libre entre une tourelle et un point (le béton l'arrête).
 const labSees = (s, q, p) => { const walls = labPolys(s); for (let k = 1; k < 60; k++) { const x = q.x + (p.x - q.x) * k / 60, y = q.y + (p.y - q.y) * k / 60; if (walls.some(P => FP.geom.sdPoly(x, y, P) <= 0)) return false; } return true; };
-const labExposed = (s, path) => { const L = s.world.labLevel, pts = labSamples(path).filter(q => q.y >= L.top && q.y <= L.bottom); return pts.filter(p => L.turrets.some(q => labSees(s, q, p))).length / pts.length; };
+const labExposed = (s, path) => { const L = s.world.modules[0], pts = labSamples(path).filter(q => q.y >= L.top && q.y <= L.bottom); return pts.filter(p => L.turrets.some(q => labSees(s, q, p))).length / pts.length; };
 FP.test('lab: chaque module tient sa promesse', () => {
   const C = labMod, periods = (c) => c.slugs.map(l => l.period);
   FP.assertEqual(C('gueule').slugs.length, 2); FP.assert(C('gueule').coins.every(([x]) => x > .37 && x < .63), 'les pièces dans la gorge');
@@ -63,15 +63,15 @@ FP.test('lab: chaque module tient sa promesse', () => {
   FP.assertEqual(C('dents-de-scie').toxics.length, 3); FP.assertEqual(C('tetris').turrets.length, 1);
   FP.assertEqual(C('tour-de-guet').turrets.length, 2); FP.assert(C('tour-de-guet').turrets[0].offset !== C('tour-de-guet').turrets[1].offset, 'en alternance');
   FP.assertEqual(C('herse').toxics.length, 1); FP.assertEqual(C('herse').slugs.length, 2);
-  const g = labRun(10), G = g.world.labLevel, lane = G.lanes[0], inLane = (q) => q.x >= lane.x0 && q.x <= lane.x1;
+  const g = labRun(10), G = g.world.modules[0], lane = G.lanes[0], inLane = (q) => q.x >= lane.x0 && q.x <= lane.x1;
   FP.assert(G.path.every(inLane), 'la corde sous l’impulsion'); FP.assert(G.alt[0].slice(1, -1).some(q => !inLane(q)), 'les boucles hors de l’impulsion');
-  const t = labRun(7); FP.assert(labExposed(t, t.world.labLevel.path) > labExposed(t, t.world.labLevel.alt[0]), 'tetris : le chemin court plus à découvert');
-  const e = labRun(2), x = labExposed(e, e.world.labLevel.path); FP.assert(x > .25 && x < .75, 'escalier : des abris en chemin, ' + x.toFixed(2));
+  const t = labRun(7); FP.assert(labExposed(t, t.world.modules[0].path) > labExposed(t, t.world.modules[0].alt[0]), 'tetris : le chemin court plus à découvert');
+  const e = labRun(2), x = labExposed(e, e.world.modules[0].path); FP.assert(x > .25 && x < .75, 'escalier : des abris en chemin, ' + x.toFixed(2));
 });
 
 FP.test('lab: hauteur du niveau', () => {
   labEach(({ s, at }) => {
-    const w = s.world, L = w.labLevel, c = labMod(L.circuit.id);
+    const w = s.world, L = w.modules[0], c = labMod(L.circuit.id);
     FP.assertEqual(w.height, FP.labLevel.heightFor(c, w), at);
     FP.assert(Math.abs(w.height - FP.config.plant.seedOffset - L.bottom - w.viewH / 2) < 1e-6, 'demi-écran libre au départ ' + at);
     FP.assert(Math.abs(L.top - w.surfaceY - w.viewH / 2) < 1e-6, 'demi-écran jusqu’à la surface ' + at);
@@ -94,7 +94,7 @@ FP.test('lab: une éclosion passe au module suivant, le 10e ramène au 1er', () 
   for (const [from, to] of [[1, 2], [9, 10], [10, 1]]) {
     const s = labRun(from); FP.plant.launch(s);
     labBloom(s);
-    FP.assertEqual(s.run.lab, to, `${from} → ${to}`); FP.assertEqual(s.mode, 'ready'); FP.assertEqual(s.world.labLevel.circuit.id, LAB_IDS[to - 1]);
+    FP.assertEqual(s.run.lab, to, `${from} → ${to}`); FP.assertEqual(s.mode, 'ready'); FP.assertEqual(s.world.modules[0].circuit.id, LAB_IDS[to - 1]);
     FP.assertEqual(s.shop, null, 'pas de boutique'); FP.assert(!s.run.boss, 'pas de boss');
   }
 });
@@ -116,7 +116,7 @@ FP.test('lab: jeu normal intact', () => {
   const out = [];
   for (const seed of [3, 11]) {
     const s = FP.state.createRun(seed, { W: 360, H: 640 }); FP.level.startRun(s); const w = s.world;
-    FP.assertEqual(s.run.lab, null); FP.assertEqual(w.labLevel, null);
+    FP.assertEqual(s.run.lab, null); FP.assertEqual(w.modules.length, 0);
     const j = JSON.stringify([w.height, w.solids.map(o => [o.kind, Math.round(o.x), Math.round(o.y)]), w.toxics.map(t => [Math.round(t.x), Math.round(t.y)]),
       w.leaks.map(l => [Math.round(l.x), Math.round(l.y)]), w.coins.map(c => [Math.round(c.x), Math.round(c.y)])]);
     let h = 2166136261; for (const ch of j) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
@@ -126,7 +126,7 @@ FP.test('lab: jeu normal intact', () => {
 });
 
 FP.test('labRender: béton dessiné, rien hors Lab', () => {
-  const s = labRun(1), L = s.world.labLevel; s.camera.y = (L.top + L.bottom - s.world.viewH) / 2; const g = skinCtx(); FP.labRender.draw(g, s);
+  const s = labRun(1), L = s.world.modules[0]; s.camera.y = (L.top + L.bottom - s.world.viewH) / 2; const g = skinCtx(); FP.labRender.draw(g, s);
   FP.assert(g.rects.some(r => FP.palette.lab.concrete.includes(r.c)), 'béton');
   const n = FP.state.createRun(3, { W: 360, H: 640 }); FP.level.startRun(n); const gn = skinCtx(); FP.labRender.draw(gn, n);
   FP.assertEqual(gn.rects.length, 0, 'hors Lab');
@@ -138,7 +138,7 @@ const withStore = (store, fn) => { const had = 'localStorage' in window, saved =
 // Une frame de jeu au Lab : la pointe à y, les événements donnés, puis la mesure.
 const statsFrame = (s, y, events = [], dt = .5) => { s.plant.tip = { x: s.world.width / 2, y }; s.events.length = 0; s.events.push(...events); FP.labStats.update(s, dt); };
 FP.test('lab: un passage réussi enregistre temps, frôlements et pièces', () => withStore(statsMem(), () => {
-  const s = labRun(4), L = s.world.labLevel, mid = (L.top + L.bottom) / 2;
+  const s = labRun(4), L = s.world.modules[0], mid = (L.top + L.bottom) / 2;
   statsFrame(s, L.bottom + 50); statsFrame(s, mid); statsFrame(s, mid, [{ type: 'eco', kind: 'solid' }, { type: 'coin' }, { type: 'coin' }]); statsFrame(s, mid, [{ type: 'eco', kind: 'coin' }]);
   statsFrame(s, L.top - 10, [{ type: 'bloom' }]);
   const r = FP.labStats.summary().find(q => q.id === 'sablier');
@@ -146,14 +146,14 @@ FP.test('lab: un passage réussi enregistre temps, frôlements et pièces', () =
   FP.assertEqual(r.coinsPerRun, 2); FP.assertEqual(r.coinsTotal, s.world.coins.length);
 }));
 FP.test('lab: une mort compte avec sa cause', () => withStore(statsMem(), () => {
-  const s = labRun(5), L = s.world.labLevel;
+  const s = labRun(5), L = s.world.modules[0];
   statsFrame(s, (L.top + L.bottom) / 2, [{ type: 'death', cause: 'solid', kind: 'pulse' }]);
   statsFrame(s, (L.top + L.bottom) / 2, [{ type: 'death', cause: 'solid', kind: 'lab' }]);
   const r = FP.labStats.summary().find(q => q.id === 'carrefour');
   FP.assertEqual(r.deaths, 2); FP.assertEqual(r.runs, 0); FP.assertEqual(JSON.stringify(r.causes), '{"pulse":1,"lab":1}');
 }));
 FP.test('lab: summary fait les moyennes, reset vide', () => withStore(statsMem(), () => {
-  const s = labRun(1), L = s.world.labLevel, mid = (L.top + L.bottom) / 2;
+  const s = labRun(1), L = s.world.modules[0], mid = (L.top + L.bottom) / 2;
   for (const t of [2, 4]) { statsFrame(s, mid, [], t); statsFrame(s, L.top - 5, [{ type: 'bloom' }], 0); }
   const r = FP.labStats.summary().find(q => q.id === 'gueule');
   FP.assertEqual(r.runs, 2); FP.assertEqual(r.avgTime, 3);
@@ -161,7 +161,7 @@ FP.test('lab: summary fait les moyennes, reset vide', () => withStore(statsMem()
   FP.labStats.reset(); FP.assertEqual(FP.labStats.summary().find(q => q.id === 'gueule').runs, 0);
 }));
 FP.test('lab: sans localStorage, rien ne casse', () => withStore({ getItem() { throw new Error('bloqué'); }, setItem() { throw new Error('bloqué'); }, removeItem() { throw new Error('bloqué'); } }, () => {
-  const s = labRun(2), L = s.world.labLevel;
+  const s = labRun(2), L = s.world.modules[0];
   statsFrame(s, (L.top + L.bottom) / 2); statsFrame(s, L.top - 5, [{ type: 'bloom' }]);
   FP.assertEqual(FP.labStats.summary().find(q => q.id === 'escalier').runs, 1, 'gardé en mémoire');
 }));
@@ -173,7 +173,7 @@ FP.test('lab: hors Lab, la mesure ne fait rien', () => withStore(statsMem(), () 
 FP.test('labStats: le tableau se dessine au menu avec &stats', () => withStore(statsMem(), () => {
   const view = FP.view, font = FP.font.draw, drawn = [];
   FP.view = { ...(view || {}), ui: { w: 195, h: 422 } }; FP.font.draw = (g, text) => { drawn.push(text); return 0; };
-  const s = labRun(5), L = s.world.labLevel; statsFrame(s, (L.top + L.bottom) / 2, [{ type: 'death', cause: 'solid', kind: 'pulse' }]); statsFrame(s, (L.top + L.bottom) / 2, [{ type: 'death', cause: 'solid', kind: 'lab' }]);
+  const s = labRun(5), L = s.world.modules[0]; statsFrame(s, (L.top + L.bottom) / 2, [{ type: 'death', cause: 'solid', kind: 'pulse' }]); statsFrame(s, (L.top + L.bottom) / 2, [{ type: 'death', cause: 'solid', kind: 'lab' }]);
   try { FP.labStatsView.draw(skinCtx(), labRun(1)); } finally { FP.view = view; FP.font.draw = font; }
   FP.assert(drawn.some(t => t.includes('GAZ ×1') && t.includes('MUR ×1')), 'causes lisibles : ' + drawn.join(' | '));
   for (const c of window.FLOWER_POWER_LAB) FP.assert(drawn.some(t => t.includes(c.name)), 'ligne ' + c.name);
@@ -182,7 +182,7 @@ FP.test('labStats: le tableau se dessine au menu avec &stats', () => withStore(s
 // --- Revue finale : la spore épargne le béton, le Lab n'écrit pas les records, la flèche reste dans le cadre zoomé.
 FP.test('lab: une spore n’efface pas les murs', () => {
   for (const n of [1, 4, 5]) {
-    const s = labRun(n), L = s.world.labLevel, before = s.world.solids.length;
+    const s = labRun(n), L = s.world.modules[0], before = s.world.solids.length;
     FP.labPulse.update(s, 0);
     FP.powerups.detonate(s, s.world.width / 2, L.top + (L.bottom - L.top) / 3);
     FP.assertEqual(s.world.solids.filter(o => o.kind === 'lab').length, before, 'murs intacts, module ' + n);

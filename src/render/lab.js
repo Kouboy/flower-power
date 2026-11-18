@@ -1,11 +1,11 @@
 // render/lab.js — l'Encounter Lab (v5.12.0) : murs de béton neutre (arêtes, fissures, taches de terre ; ni rivets ni tuyaux, pour ne pas
 // ressembler aux boss), poches d'argile (ocre, lisse, au bord net et plus clair) et de sable (grain pâle, rides, grains qui volent derrière la
-// pointe). Murs et sols peints une fois par circuit dans un calque ; le reste en direct. Par-dessus tout (drawThreats) : les buses de
-// l'impulsion, allumées pendant l'annonce, la colonne de gaz qui remonte, et une flèche au bas de l'écran quand la buse annoncée est
-// sous l'écran. Rien hors du Lab.
-// Lit     : state.{camera.y, time, plant.tip}, state.world.{width, height, viewH, labLevel}, FP.labLevel.soilAt, FP.palette.lab, FP.px (dont layer
-//           et blit), FP.bossSkin.spans, FP.labTurretView (tourelles), state.labPulse.shots (impulsion), FP.camera.zoomFrame (bas visible).
-// Écrit   : rien dans l'état (la toile reçue ; le calque en cache par circuit et taille de niveau).
+// pointe). Murs et sols de tous les modules du niveau (v5.14.0 : un ou plusieurs) peints une fois dans un calque ; le reste en direct.
+// Par-dessus tout (drawThreats), module par module : tourelles, buses de l'impulsion allumées pendant l'annonce, colonne de gaz qui
+// remonte, et une flèche au bas de l'écran quand la buse annoncée est sous l'écran. Rien dans un niveau sans module.
+// Lit     : state.{camera.y, time, plant.tip}, state.world.{width, height, viewH, modules}, FP.labLevel.soilAt, FP.palette.lab, FP.px (dont layer
+//           et blit), FP.bossSkin.spans, FP.labTurretView (tourelles), module.live.pulse.shots (impulsion), FP.camera.zoomFrame (bas visible).
+// Écrit   : rien dans l'état (la toile reçue ; le calque en cache par jeu de modules et taille de niveau).
 // Expose  : FP.labRender.draw(g, state), FP.labRender.drawThreats(g, state).
 (function () {
   'use strict';
@@ -49,22 +49,23 @@
     FP.bossSkin.spans(pts, 1, (y, a, b) => { if (hash(Math.round(a), y + cam) < .04) FP.px.rect(g, a + 1, y, Math.min(4, b - a - 2), 1, P.concrete[0]); });   // éclats clairs sur l'arête
   }
 
-  function paint(g, L, cam, P, H) {
-    for (const z of L.soils) soil(g, z, cam, P, H);
-    for (const w of L.walls) wall(g, w, cam, P, H);
+  function paint(g, mods, cam, P, H) {
+    for (const M of mods) for (const z of M.soils) soil(g, z, cam, P, H);
+    for (const M of mods) for (const w of M.walls) wall(g, w, cam, P, H);
   }
 
   let layer = null, layerKey = '';
   function draw(g, state) {
-    const w = state.world, L = w.labLevel;
-    if (!L) return;
-    const P = FP.palette.lab, cam = FP.px.toArt(state.camera.y), H = Math.ceil(w.viewH / FP.px.SCALE), key = [L.circuit.id, w.width, w.height].join('|');
+    const w = state.world, mods = w.modules;
+    if (!mods || !mods.length) return;
+    const P = FP.palette.lab, cam = FP.px.toArt(state.camera.y), H = Math.ceil(w.viewH / FP.px.SCALE);
+    const key = [...mods.map(M => [M.circuit.id, M.mirror ? 'm' : '', Math.round(M.top)].join(':')), w.width, w.height].join('|');
     if (layerKey !== key) {
       layer = FP.px.layer(Math.ceil(w.width / FP.px.SCALE), Math.ceil(w.height / FP.px.SCALE));
-      if (layer) paint(layer.g, L, 0, P, null);
+      if (layer) paint(layer.g, mods, 0, P, null);
       layerKey = key;
     }
-    if (layer) FP.px.blit(g, layer, cam, H + 1); else paint(g, L, cam, P, H);
+    if (layer) FP.px.blit(g, layer, cam, H + 1); else paint(g, mods, cam, P, H);
     // Grains de sable qui volent derrière la pointe.
     const tip = state.plant.tip;
     if (tip && FP.labLevel.soilAt(w, tip.x, tip.y) === 'sable') {
@@ -77,13 +78,15 @@
 
   // Menace : buses (grille au pied de chaque voie d'impulsion, allumée pendant l'annonce), colonnes de gaz, flèche hors écran.
   function drawThreats(g, state) {
-    const w = state.world, L = w.labLevel, st = state.labPulse;
-    if (L) FP.labTurretView.draw(g, state);   // v5.13.0 : tourelles des modules
-    if (!L || !L.circuit.pulse) return;
+    for (const M of state.world.modules || []) { FP.labTurretView.draw(g, state, M); if (M.circuit.pulse) drawPulse(g, state, M); }
+  }
+
+  function drawPulse(g, state, L) {
+    const w = state.world, st = L.live.pulse;
     const P = FP.palette.lab, cam = FP.px.toArt(state.camera.y), H = Math.ceil(w.viewH / FP.px.SCALE), t = state.time;
     // Bas réellement visible (le cadrage zoome la toile du monde autour de son point focal) : une buse plus bas est hors cadre.
     const f = FP.camera.zoomFrame(state), vis = Math.floor(f ? (f.fy + (w.viewH - f.fy) / f.z) / FP.px.SCALE : H);
-    const warned = new Set(st && st.level === L ? st.shots.filter(s => s.warn > 0).map(s => s.lane) : []);
+    const warned = new Set(st.shots.filter(s => s.warn > 0).map(s => s.lane));
     for (const i of L.circuit.pulse.lanes) {
       const l = L.lanes[i], x0 = FP.px.toArt(l.x0) + 1, x1 = FP.px.toArt(l.x1) - 1, y = FP.px.toArt(l.y1) - cam;
       const lit = warned.has(i);
@@ -95,7 +98,6 @@
         for (let k = 0; k < 4; k++) FP.px.rect(g, cx - k, vis - 6 + k, 2 * k + 1, 1, P.glow);
       }
     }
-    if (!st || st.level !== L) return;
     for (const s of st.shots) {
       if (s.solid.off) continue;
       const o = s.solid, hw = o.collision[1][0], hh = o.collision[2][1];
