@@ -1,6 +1,6 @@
 // world/coins.js — circuits de pièces (v4.5.0) : chapelets posés à la génération du niveau.
 // Lit     : state.seed, state.level, state.world.{width,height,viewH,surfaceY,safeRadius,safePath,solids,toxics,leaks},
-//           FP.config.coins, FP.camera.safeX, FP.createRng, FP.level.pathXAt, FP.collision.{distanceTo,grazeBand}.
+//           FP.config.coins, FP.camera.safeX, FP.createRng, FP.level.pathXAt, FP.collision.{distanceTo,grazeBand}, FP.levelModules.blocked (v5.14.0).
 // Écrit   : state.world.coins ({ x, y, chain, rank, taken }) et state.world.chains ({ kind, anchor, total, got, missed, done }).
 // Expose  : FP.coins.place(state), FP.coins.slices(world) (purs, testés).
 // Tirage propre (graine ^ salt ^ niveau) : state.rng n'est jamais consommé, les niveaux restent ceux d'avant.
@@ -33,6 +33,7 @@
     const k = FP.config.coins;
     const m = FP.camera.safeX(world.width) + k.radius;   // v5.11.0 : dans la bande sûre
     if (x < m || x > world.width - m || y <= world.surfaceY + k.sliceMargin || y >= startLine(world)) return false;
+    if (FP.levelModules.blocked(world, y - k.radius, y + k.radius)) return false;   // v5.14.0 : les modules ont leurs propres pièces
     // Rejet rapide en hauteur (même résultat) : un obstacle ou une nappe trop haut ou trop bas ne peut pas toucher la pièce.
     return world.solids.every(o => o.off || Math.abs(o.y - y) > o.broadR + k.radius + 2 || FP.collision.distanceTo(o, x, y) >= k.radius + 2) &&
       world.toxics.every(t => Math.abs(t.y - y) > Math.max(t.rx, t.ry) || ellipseK(t, x, y) >= 1 - k.toxicBite) &&

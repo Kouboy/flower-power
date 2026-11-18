@@ -27,7 +27,7 @@ FP.test('config: version et clé de record', () => {
 });
 FP.test('state: une partie commence en friche, saison 1, carton d’entrée', () => {
   const s = FP.state.createRun(1, { W: 440, H: 783 });
-  FP.assertEqual(JSON.stringify(s.run), JSON.stringify({ milieu: 0, step: 0, saison: 1, bosses: 0, boss: false, card: { kind: 'milieu', t0: 0 }, won: false, playtest: false, push: 0, done: false, lab: null, labPasses: {} }));
+  FP.assertEqual(JSON.stringify(s.run), JSON.stringify({ milieu: 0, step: 0, saison: 1, bosses: 0, boss: false, card: { kind: 'milieu', t0: 0 }, won: false, playtest: false, push: 0, done: false, lab: null, labPasses: {}, modules: false }));
   FP.assertEqual(s.world.milieu, 'friche');
   FP.assertEqual(FP.config.run.steps, 3);
 });

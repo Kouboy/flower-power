@@ -53,6 +53,7 @@
     const c = FP.config.powerups.spawn, w = state.world, tip = state.plant.tip, m = FP.camera.safeX(w.width) + r;   // v5.11.0 : bande sûre
     if (x < m || x > w.width - m) return false;
     if (y < w.surfaceY + c.top || y > w.height - c.bottom) return false;
+    if (FP.levelModules.blocked(w, y - r, y + r)) return false;   // v5.14.0 : rien de tiré dans un module
     const lead = tip.y - w.surfaceY < c.nearSurfaceSpan ? c.leadNearSurface : c.lead;
     if (y > tip.y - lead) return false;
     for (const o of w.solids) {
