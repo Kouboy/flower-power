@@ -1,6 +1,6 @@
 // world/level-hazards.js — nappes et limaces d'un niveau tiré au hasard (sorti de world/level.js en v5.14.0, sans changement).
 // Lit     : state.{rng, difficulty}, state.world.{width,height,surfaceY,hazardRadius,safePath,solids,toxics,leaks}, FP.config.{level.toxics,
-//           level.leaks, difficulty.levelAtMax}, FP.camera.safeX (limaces), FP.geom.distPointToSegment, FP.levelModules.blocked (v5.14.0), FP.level.{pickCell, cellPos, countFor,
+//           level.leaks, difficulty.levelAtMax}, FP.camera.safeX (limaces), FP.geom.distPointToSegment, FP.level.{pickCell, cellPos, countFor,
 //           pathSamples, segmentToSafePath, distToSafePath, pathXAt, depthK, makeToxic}.
 // Écrit   : state.world.{toxics, leaks (crossing : barre le chemin sûr, v4.17.0)}.
 // Expose  : FP.levelHazards.placeToxics(state, grid), FP.levelHazards.placeLeaks(state, grid).
@@ -36,8 +36,7 @@
         // Une nappe peut déborder du cadre, mais on doit en voir assez pour l'anticiper.
         const visible = (Math.min(world.width, o.x + o.rx) - Math.max(0, o.x - o.rx)) / (2 * o.rx);
         // Loin du chemin (centre), et l'ellipse elle-même ne s'en approche pas à moins d'une demi-marge.
-        if (visible >= c.minVisible && !FP.levelModules.blocked(world, o.y - Math.max(o.rx, o.ry), o.y + Math.max(o.rx, o.ry)) &&   // v5.14.0 : rien dans un module
-          distToSafePath(world, o.x, o.y) > world.hazardRadius + Math.max(o.rx, o.ry) * c.safeK + c.safeExtra &&
+        if (visible >= c.minVisible && distToSafePath(world, o.x, o.y) > world.hazardRadius + Math.max(o.rx, o.ry) * c.safeK + c.safeExtra &&
           toxicClear(o, pts, world.hazardRadius * .5)) { world.toxics.push(o); placed = true; }
         else cell.used = false;
       }
@@ -106,8 +105,7 @@
         leak.cx = pos.x + Math.cos(angle) * len * k0; leak.cy = pos.y + Math.sin(angle) * len * k0; leak.cr = leak.r;
         const pts = leakPoints(leak);
         // v5.11.0 (zones sûres) : tout le trajet, corps compris, reste dans la bande que le cadrage laisse voir (FP.camera.safeX).
-        const inBounds = pts.every(p => p.x - leak.r >= safe && p.x + leak.r <= W - safe && p.y > world.surfaceY + c.top && p.y < world.height - c.bottom) &&
-          !pts.some(p => FP.levelModules.blocked(world, p.y - leak.r, p.y + leak.r));   // v5.14.0 : rien dans un module
+        const inBounds = pts.every(p => p.x - leak.r >= safe && p.x + leak.r <= W - safe && p.y > world.surfaceY + c.top && p.y < world.height - c.bottom);
         const notBuried = !nearSolid(world, pos.x, pos.y, c.solidPad) && !nearToxic(world, pos.x, pos.y, c.toxicPad);
         const breathing = !nearLeak(world, pos.x, pos.y, c.spacingCenter) && pts.every(p => !nearLeak(world, p.x, p.y, c.spacingPath));
         // Une limace peut mettre la pression près du chemin, jamais le condamner.

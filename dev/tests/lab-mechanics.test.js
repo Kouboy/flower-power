@@ -302,26 +302,3 @@ FP.test('lab: une limace de module regarde où elle va', () => {
   }
   FP.assertEqual(seen.size, 2, 'aller et retour');
 });
-
-// --- Plusieurs modules par niveau (v5.14.0) : chacun son horloge, ses tirs et ses bouffées.
-// Le module d'essai posé deux fois dans un niveau : bas du premier à 85 % de la hauteur, bas du second juste au-dessus du premier.
-const twoModules = () => {
-  const s = fixtureRun(), w = s.world, h = LAB_FIXTURE.height * w.viewH;
-  w.height = Math.round(w.surfaceY + 3 * h + 2 * w.viewH); const b0 = w.height - w.viewH, b1 = b0 - h - 60;
-  const parts = [FP.labLevel.build(s, LAB_FIXTURE, false, b0, 0), FP.labLevel.build(s, LAB_FIXTURE, false, b1, 1)];
-  w.modules = parts.map(p => p.module); w.solids = parts.flatMap(p => p.solids); w.leaks = parts.flatMap(p => p.leaks); w.toxics = []; w.coins = [];
-  FP.plant.launch(s); s.events.length = 0;
-  return s;
-};
-const modTick = (s, secs) => { for (let i = 0; i < Math.round(secs * 60); i++) { s.events.length = 0; s.time += 1 / 60; FP.labHazards.update(s, 1 / 60); FP.labTurret.update(s, 1 / 60); } };
-FP.test('modules: deux modules dans un niveau, chacun son horloge', () => {
-  const s = twoModules(), [A, B] = s.world.modules;
-  s.plant.tip = { x: s.world.width * .6, y: (A.top + A.bottom) / 2 }; modTick(s, 1 / 60);
-  const pre = s.world.leaks.filter(l => l.lab.module === 1).map(l => l.cx).join(); modTick(s, 4);
-  FP.assert(A.live.on && A.live.t > 3.9, 'horloge du bas'); FP.assert(!B.live.on && B.live.t === 0, 'celle du haut attend');
-  FP.assert(A.live.turret.shots.length || Object.keys(A.live.turret.aims).length, 'la tourelle du bas travaille'); FP.assertEqual(Object.keys(B.live.turret.aims).length, 0, 'celle du haut ne vise pas');
-  FP.assertEqual(s.world.leaks.filter(l => l.lab.module === 1).map(l => l.cx).join(), pre, 'limaces du haut immobiles avant l’entrée');
-  s.plant.tip = { x: s.world.width * .6, y: (B.top + B.bottom) / 2 }; modTick(s, 1 / 60);
-  FP.assertEqual(A.live.turret.shots.length, 0, 'tirs du bas effacés'); FP.assert(!s.world.solids.some(o => o.kind === 'shot' && o.y > B.bottom), 'aucun tir du bas dans le monde');
-  FP.assert(B.live.on && B.live.t < .05, 'horloge du haut partie à 0');
-});

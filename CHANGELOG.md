@@ -2,6 +2,12 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v5.14.1 — Retrait de ?modules
+
+- retour de jeu sur l'essai de la v5.14.0 : les modules rendaient le jeu plus facile (couloirs larges, aucun déchet, rythmes d'un premier niveau), les transitions entre déchets et béton étaient brutales, le vide des modules semblait arbitraire, et les déchets, gardés en même nombre, se tassaient entre les modules ; conclusion de l'utilisateur : échec de l'intégration, retour au Lab, les modules manquent de personnalité, d'intérêt et de défi ;
+- `?modules` retiré (`world/modules.js`, le drapeau, les réserves de bandes dans le tirage, « MODULES » au titre) ; le Lab garde la liste de modules (un seul) et le découpage `world/level-hazards.js` ;
+- jeu normal identique (empreinte du banc).
+
 ## v5.14.0 — Modules en partie (?modules, à l'essai)
 
 - [`?modules`](https://kouboy.github.io/flower-power/?modules) (spec `docs/superpowers/specs/2026-11-18-modules-en-partie-design.md`) : à partir du 2e niveau de chaque biome, des modules du Lab posés dans le niveau tiré au hasard ; un au moins, plusieurs quand le niveau grandit ; sélection par biome (Friche : Gueule, Dents de scie, Herse, Carrefour ; Industrie : Peigne, Sablier, Grand Huit, Carrefour ; Décharge : Escalier, Tetris, Herse, Dents de scie ; Nucléaire : Tour de guet, Escalier, Grand Huit, Peigne), tirage au hasard dedans, miroir au hasard ; « MODULES » sur l'écran titre ;

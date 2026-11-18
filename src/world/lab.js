@@ -1,6 +1,6 @@
-// world/lab.js — les modules de l'Encounter Lab (assets/lab/circuits.js) posés dans le monde. Au Lab (v5.12.0), un module seul dans un
-// niveau à lui : un demi-écran de terre libre au départ, le module, un demi-écran jusqu'à la surface ; rien de tiré au hasard. v5.14.0 :
-// un module se pose aussi à une hauteur donnée dans un niveau tiré au hasard (world/modules.js, ?modules) ; un niveau a une liste de modules.
+// world/lab.js — les modules de l'Encounter Lab (assets/lab/circuits.js) posés dans le monde (v5.12.0) : un module seul dans un niveau à
+// lui, un demi-écran de terre libre au départ, le module, un demi-écran jusqu'à la surface ; rien de tiré au hasard. Le niveau porte une
+// liste de modules (world.modules, v5.14.0), d'un seul module au Lab, vide ailleurs.
 // Lit     : state.run.{lab, labPasses}, state.world.{width,viewH,surfaceY,modules}, window.FLOWER_POWER_LAB, FP.config.{lab.channelMin, plant.seedOffset},
 //           FP.geom.sdPoly, FP.catalog.makeSolid (obstacles), FP.level.makeToxic (nappes), FP.createRng.
 // Écrit   : (generate, Lab) state.world.{height,baseHeight,growK,solids,toxics,leaks,bonuses,modules,safePath,safeRadius,hazardRadius,solidExtra,coins,chains}.
@@ -8,8 +8,8 @@
 //           turrets: [{ id, x, y, side, period, offset }], live } (pixels du monde) ; live = son état de jeu, recréé avec le niveau :
 //           { t, on (horloge, play/lab-hazards.js), pulse: { active, next, k, shots } (play/lab-pulse.js), turret: { aims, shots } (play/lab-turret.js) }.
 //           Ses obstacles sont des solides du catalogue, ses nappes des world.toxics, ses limaces des world.leaks (lab : { period, phase, module }).
-// Expose  : FP.labLevel.place(circuit, world, mirror, bottom?) (pur), FP.labLevel.heightFor(circuit, world) (pur),
-//           FP.labLevel.build(state, circuit, mirror, bottom, index) → { module, solids, toxics, leaks, coins } (sans rien écrire),
+// Expose  : FP.labLevel.place(circuit, world, mirror) (pur), FP.labLevel.heightFor(circuit, world) (pur),
+//           FP.labLevel.build(state, circuit, mirror, index) → { module, solids, toxics, leaks, coins } (sans rien écrire),
 //           FP.labLevel.generate(state, circuit?) (niveau du Lab),
 //           FP.labLevel.soilAt(world, x, y) → 'argile' | 'sable' | null (pur), FP.labLevel.circuitOf(n).
 // Murs : solides { kind: 'lab', lab: true, … } (collision et frôlement comme un obstacle ; dessinés par render/lab.js, pas par obstacles.js).
@@ -25,15 +25,13 @@
   const heightFor = (circuit, world) => world.surfaceY + world.viewH + circuit.height * world.viewH + FP.config.plant.seedOffset;
 
   // mirror (v5.13.0) : le module retourné gauche-droite (x → 1 − x ; angles, côtés des consoles et voies suivent).
-  // bottom (v5.14.0) : bas du module dans le monde ; sans lui, la place du Lab, et les trajets vont de la graine à la surface. Avec lui, les
-  // trajets vont de la porte du bas à celle du haut.
-  function place(circuit, world, mirror, bottom) {
-    const W = world.width, ch = circuit.height * world.viewH, lab = bottom === undefined;
-    const b = lab ? heightFor(circuit, world) - FP.config.plant.seedOffset - world.viewH / 2 : bottom, top = b - ch;
+  function place(circuit, world, mirror) {
+    const W = world.width, ch = circuit.height * world.viewH;
+    const b = heightFor(circuit, world) - FP.config.plant.seedOffset - world.viewH / 2, top = b - ch;
     const fx = (x) => (mirror ? 1 - x : x) * W, fy = (y) => top + y * ch;
     const px = ([x, y]) => [fx(x), fy(y)], pt = (p) => { const [x, y] = px(p); return { x, y }; };
     const seed = { x: W / 2, y: b + world.viewH / 2 }, sky = (q) => ({ x: q.x, y: world.surfaceY });
-    const route = (pts) => { const r = pts.map(pt); return lab ? [seed, ...r, sky(r[r.length - 1])] : r; };
+    const route = (pts) => { const r = pts.map(pt); return [seed, ...r, sky(r[r.length - 1])]; };
     return {
       top, bottom: b, channelMin: FP.config.lab.channelMin * W / 360,
       walls: circuit.walls.map(p => p.map(px)),
@@ -64,8 +62,8 @@
   const seedOf = (id) => [...id].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0, 2166136261);
 
   // Un module posé, et ce qu'il ajoute au monde (rien n'est écrit ici).
-  function build(state, circuit, mirror, bottom, index) {
-    const world = state.world, placed = place(circuit, world, mirror, bottom), rng = FP.createRng(seedOf(circuit.id));
+  function build(state, circuit, mirror, index) {
+    const world = state.world, placed = place(circuit, world, mirror), rng = FP.createRng(seedOf(circuit.id));
     const module = { index, circuit, mirror, top: placed.top, bottom: placed.bottom, channelMin: placed.channelMin, walls: placed.walls, soils: placed.soils,
       lanes: placed.lanes, path: placed.path, alt: placed.alt, turrets: placed.turrets,
       live: { t: 0, on: false, pulse: { active: false, next: 0, k: 0, shots: [] }, turret: { aims: {}, shots: [] } } };
@@ -81,7 +79,7 @@
   // Lab : un module explicite (banc d'essai) ; sinon celui de state.run.lab. Miroir un passage réussi sur deux (state.run.labPasses).
   function generate(state, explicit) {
     const world = state.world, circuit = explicit || circuitOf(state.run.lab);
-    const mirror = ((state.run.labPasses && state.run.labPasses[circuit.id]) || 0) % 2 === 1, b = build(state, circuit, mirror, undefined, 0);
+    const mirror = ((state.run.labPasses && state.run.labPasses[circuit.id]) || 0) % 2 === 1, b = build(state, circuit, mirror, 0);
     world.height = heightFor(circuit, world); world.baseHeight = world.height; world.growK = 1;
     world.solids = b.solids; world.toxics = b.toxics; world.leaks = b.leaks; world.bonuses = [];
     world.modules = [b.module];

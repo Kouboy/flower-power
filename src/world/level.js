@@ -1,9 +1,8 @@
 // world/level.js — génération d'un niveau à partir de la graine du run.
 // Lit     : state.rng, state.difficulty (niveau équivalent : réglages par niveau), state.level (réveil du T-Rex), state.run.{milieu,boss}, FP.config.shop.lobbyingK (option lobbying), state.world.{width,viewH,surfaceY,baseHeight,growK}, FP.state.levelHeightFor (hauteur du niveau), state.signature,
 //           FP.config.{level,spawnTables,signature,milieux,world.growMax,plant.speed}, FP.state.worldHeightFor, FP.catalog, FP.geom, FP.bossLevel.generate (niveau de boss), FP.labLevel.generate (v5.12.0 : Encounter Lab, state.run.lab),
-//           FP.levelHazards.{placeToxics, placeLeaks} (nappes et limaces, world/level-hazards.js),
-//           FP.levelModules.{generate, joinPath, finish, blocked} (v5.14.0, ?modules : modules du Lab dans le niveau, world/modules.js).
-// Écrit   : state.world.{height,baseHeight,growK (v5.3.0 : hauteur du niveau, décidée ici),milieu,level,boss,bossLevel,modules (v5.14.0 : remis à vide ; world/modules.js),skyVariant,lawnVariant,safePath,safeRadius,hazardRadius,solidExtra,solids,toxics,leaks (crossing : barre le chemin sûr, v4.17.0),bonuses}, state.signature ;
+//           FP.levelHazards.{placeToxics, placeLeaks} (nappes et limaces, world/level-hazards.js).
+// Écrit   : state.world.{height,baseHeight,growK (v5.3.0 : hauteur du niveau, décidée ici),milieu,level,boss,bossLevel,modules (vide hors Lab),skyVariant,lawnVariant,safePath,safeRadius,hazardRadius,solidExtra,solids,toxics,leaks (crossing : barre le chemin sûr, v4.17.0),bonuses}, state.signature ;
 //           puis FP.coins.place écrit state.world.{coins,chains}.
 // Expose  : FP.level.startRun(state), FP.level.generate(state), FP.level.tableFor(milieu, band) (pur, testé),
 //           FP.level.makeToxic(rng, x, y, big),
@@ -141,13 +140,10 @@
     if (o.x < f.centerMarginX || o.x > W - f.centerMarginX) return false;
     if (o.y < world.surfaceY + f.centerTop || o.y > world.height - f.centerBottom) return false;
     const out = o.signature ? f.maxOutside.signature : f.maxOutside.authored;
-    let y0 = Infinity, y1 = -Infinity;
     for (const p of FP.catalog.visibleFootprint(o)) {
       if (p.x < -out || p.x > W + out) return false;
       if (p.y < world.surfaceY + f.edgeTop || p.y > world.height - f.edgeBottom) return false;
-      y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y);
     }
-    if (FP.levelModules.blocked(world, y0, y1)) return false;   // v5.14.0 : rien dans un module
     if (!clearOfSafePath(world, o, world.solidExtra)) return false;
     for (const other of world.solids) {
       if (FP.geom.convexPolysOverlap(o.footprint, other.footprint)) return false;
@@ -265,16 +261,13 @@
     world.bossLevel = null; world.modules = [];   // v5.14.0 : modules du Lab posés dans le niveau (aucun hors Lab et ?modules)
     if (state.run.lab) { FP.labLevel.generate(state); return; }   // v5.12.0 : Encounter Lab, un circuit fait à la main (world/lab.js)
     if (state.run.boss) { FP.bossLevel.generate(state); return; }   // v4.12.0 : le niveau de boss a sa propre génération (world/boss.js)
-    FP.levelModules.generate(state);   // v5.14.0, ?modules : modules du Lab (tirage à part ; rien sans le drapeau)
     const grid = makeGrid(world.width, world.surfaceY + g.topPad, world.height - g.bottomPad);
     generateSafePath(world, rng, state.difficulty);
-    FP.levelModules.joinPath(world);
     placeSignature(state, grid);
     placeSolids(state, grid, opts.lobbying ? FP.config.shop.lobbyingK : 1);
     FP.levelHazards.placeToxics(state, grid);
     FP.levelHazards.placeLeaks(state, grid);
     FP.coins.place(state);   // chapelets de pièces, tirage propre (world/coins.js)
-    FP.levelModules.finish(state);   // murs, nappes, limaces et pièces des modules
   }
 
   // Début de run : tirage du T-Rex signature, puis premier niveau.
