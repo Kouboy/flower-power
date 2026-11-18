@@ -352,3 +352,58 @@ FP.test('lab: la cheminée a un passage à moins d’une seconde de montée', ()
   }
 });
 
+// --- Modules (v5.13.0, tâche 1) : obstacles, limaces, nappes et tourelles posés à la main, miroir, horloge de module.
+const LAB_FIXTURE = {
+  id: 'essai', name: 'ESSAI', idea: 'module d’essai du banc', height: 1,
+  walls: [[[0, 0], [.2, 0], [.2, 1], [0, 1]], [[1, 0], [1, 1], [.8, 1], [.8, 0]]],
+  obstacles: [{ kind: 'tire', x: .35, y: .5, a: .3, flip: 1 }], slugs: [{ x0: .3, y0: .3, x1: .7, y1: .3, period: 2, phase: 0 }],
+  toxics: [{ x: .6, y: .7 }], turrets: [{ x: .3, y: .85, side: -1, period: 3, offset: .5 }],
+  soils: [], lanes: [], pulse: null, coins: [[.5, .5]], path: [[.6, 1], [.6, 0]], alt: [[[.6, 1], [.6, 0]]]
+};
+const fixtureRun = (W = 360) => { const s = FP.state.createRun(7, { W, H: Math.round(W * 16 / 9) }); s.run.lab = 1; FP.level.startRun(s); FP.labLevel.generate(s, LAB_FIXTURE); s.mode = 'playing'; return s; };
+FP.test('lab: obstacles, nappes et limaces posés', () => {
+  const a = fixtureRun(), b = fixtureRun(), w = a.world;
+  FP.assert(w.solids.some(o => o.kind === 'tire'), 'obstacle'); FP.assertEqual(w.toxics.length, 1); FP.assertEqual(w.leaks.length, 1);
+  FP.assertEqual(w.leaks[0].lab.period, 2); FP.assertEqual(w.labLevel.turrets.length, 1);
+  const key = (s) => JSON.stringify([s.world.solids.map(o => [o.kind, Math.round(o.x), Math.round(o.y)]), s.world.toxics.map(t => [Math.round(t.x), Math.round(t.y), Math.round(t.rx)]), s.world.leaks.map(l => [Math.round(l.x), Math.round(l.y), Math.round(l.len)])]);
+  FP.assertEqual(key(a), key(b), 'déterministe');
+});
+FP.test('lab: miroir', () => {
+  const s = fixtureRun(), W = s.world.width, n = FP.labLevel.place(LAB_FIXTURE, s.world, false), m = FP.labLevel.place(LAB_FIXTURE, s.world, true);
+  n.walls.forEach((P, i) => P.forEach(([x, y], k) => { FP.assert(Math.abs(m.walls[i][k][0] - (W - x)) < 1e-6 && m.walls[i][k][1] === y, 'mur'); }));
+  n.coins.forEach((c, i) => FP.assert(Math.abs(m.coins[i].x - (W - c.x)) < 1e-6, 'pièce'));
+  FP.assertEqual(m.turrets[0].side, 1); FP.assert(Math.abs(m.turrets[0].x - (W - n.turrets[0].x)) < 1e-6, 'tourelle');
+  FP.assertEqual(m.obstacles[0].a, -n.obstacles[0].a); FP.assertEqual(m.obstacles[0].flip, -n.obstacles[0].flip);
+});
+FP.test('lab: un passage réussi inverse le sens, une mort non', () => {
+  const s = labRun(1); FP.plant.launch(s);
+  FP.assertEqual(s.world.labLevel.mirror, false, 'premier passage normal');
+  const id = s.world.labLevel.circuit.id;
+  labBloom(s); FP.assertEqual(s.run.labPasses[id], 1, 'une réussite');
+  s.run.lab = 1; FP.level.generate(s); FP.assertEqual(s.world.labLevel.mirror, true, 'retour au même module : miroir');
+  FP.plant.prepare(s); FP.plant.launch(s); s.mode = 'playing';
+  const wall = s.world.solids.find(o => o.kind === 'lab'); s.plant.tip = { x: wall.x, y: wall.y }; FP.collision.update(s); FP.flow.update(s, 1 / 60);
+  for (let i = 0; i < 600 && s.mode !== 'ready'; i++) { s.time += 1 / 60; FP.flow.update(s, 1 / 60); }
+  FP.assertEqual(s.run.labPasses[id], 1, 'une mort ne compte pas'); FP.assertEqual(s.world.labLevel.mirror, true, 'même sens au retry');
+});
+FP.test('lab: horloge et patrouille', () => {
+  const at = (frac) => {
+    const s = fixtureRun(), L = s.world.labLevel, l = s.world.leaks[0];
+    s.plant.tip = { x: s.world.width / 2, y: L.bottom + 50 };
+    for (let i = 0; i < 60; i++) FP.labHazards.update(s, 1 / 60);   // 1 s avant l'entrée : rien ne bouge
+    const start = [l.cx, l.cy];
+    s.plant.tip.y = (L.top + L.bottom) / 2; FP.labHazards.update(s, 0);
+    for (let i = 0; i < Math.round(60 * 2 * frac); i++) FP.labHazards.update(s, 1 / 60);
+    return { s, l, start };
+  };
+  const a = at(0);
+  FP.assert(Math.abs(a.start[0] - a.s.world.width * .3) < 1e-6, 'phase de départ avant l’entrée : ' + a.start[0]);
+  const h = at(.5); FP.assert(Math.abs(h.l.cx - h.s.world.width * .7) < 1, 'tout le trajet à mi-période : ' + h.l.cx);
+  const q1 = at(.25), q2 = at(.25); FP.assertEqual(q1.l.cx, q2.l.cx, 'même position au même t');
+});
+// Empreinte relevée avant le Lab v5.13 : seed 3, 360 × 640, 30 pas de 1/60 s.
+FP.test('lab: les limaces du jeu normal ne changent pas', () => {
+  const s = FP.state.createRun(3, { W: 360, H: 640 }); FP.level.startRun(s); FP.plant.launch(s);
+  for (let i = 0; i < 30; i++) { s.time += 1 / 60; FP.hazards.update(s, 1 / 60); FP.labHazards.update(s, 1 / 60); }
+  FP.assertEqual(s.world.leaks.map(l => l.cx.toFixed(3) + ',' + l.cy.toFixed(3)).join(' '), '245.971,794.729 226.872,457.198 137.701,542.710');
+});

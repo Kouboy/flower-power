@@ -53,7 +53,10 @@
     state.level += count;
     // Milieux (v4.9.0) : une éclosion fait avancer d'une pousse (pollen ou non) ; celle du niveau de boss le bat.
     const r = state.run;
-    if (r.lab) { r.lab = r.lab % window.FLOWER_POWER_LAB.length + 1; state.flow.next = null; }   // v5.12.0 : Lab, circuit suivant (ni boutique ni boss)
+    if (r.lab) {   // v5.12.0 : Lab, module suivant (ni boutique ni boss) ; v5.13.0 : le passage réussi compte (miroir un passage sur deux)
+      const L = state.world.labLevel; if (L) r.labPasses[L.circuit.id] = (r.labPasses[L.circuit.id] || 0) + 1;
+      r.lab = r.lab % window.FLOWER_POWER_LAB.length + 1; state.flow.next = null;
+    }   // v5.12.0 : Lab, circuit suivant (ni boutique ni boss)
     else if (r.boss) {
       r.bosses += 1; r.card = { kind: 'victory', t0: state.time }; state.flow.next = 'milieu';
       FP.scoring.awardFlat(state, p.tip.x, state.world.surfaceY, FP.config.boss.bonus);
