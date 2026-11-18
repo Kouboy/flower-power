@@ -104,3 +104,18 @@ FP.test('modules: une mort dans un module coûte une graine et retire le niveau'
   FP.assertEqual(s.mode, 'ready'); FP.assert(s.world.modules.length >= 1 && s.world.modules[0] !== M, 'nouveau niveau, nouveaux modules');
   FP.assert(!s.world.solids.some(o => o.kind === 'shot' || o.kind === 'pulse'), 'ni tir ni bouffée');
 });
+
+// Revue finale : le chemin sûr va jusqu'à la surface (et part du départ), même quand un module est tout près ; au Lab, les bonus de survol
+// peuvent toujours apparaître dans le module (la réserve ne vaut que pour les modules posés dans un niveau tiré au hasard).
+FP.test('modules: le chemin sûr va du départ à la surface', () => {
+  const end = FP.config.level.safePath.endPad, start = FP.config.level.safePath.startPad;
+  for (const H of [520, 640, 900]) for (const W of [280, 440]) MOD_BIOMES.forEach((id, m) => { for (const seed of [1, 2, 3, 4, 5]) for (const grow of [0, 200]) {
+    const s = FP.state.createRun(seed, { W, H }); s.run.modules = true; s.run.milieu = m; s.run.step = 1; s.plant.stemCount = grow; s.score.flowers = grow; FP.level.generate(s);
+    const P = s.world.safePath, at = `${id} ${W}×${H} graine ${seed}`;
+    FP.assert(P[P.length - 1].y <= s.world.surfaceY + end + 1e-6, 'jusqu’à la surface ' + at); FP.assert(P[0].y >= s.world.height - start - 1e-6, 'depuis le départ ' + at);
+  } });
+});
+FP.test('modules: au Lab, rien n’est réservé (les bonus peuvent apparaître dans le module)', () => {
+  const s = FP.state.createRun(7, { W: 360, H: 640 }); s.run.lab = 1; s.run.modules = true; FP.level.startRun(s);
+  const M = s.world.modules[0]; FP.assert(!FP.levelModules.blocked(s.world, (M.top + M.bottom) / 2, (M.top + M.bottom) / 2), 'Lab');
+});

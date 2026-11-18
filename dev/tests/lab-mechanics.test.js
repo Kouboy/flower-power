@@ -324,5 +324,4 @@ FP.test('modules: deux modules dans un niveau, chacun son horloge', () => {
   s.plant.tip = { x: s.world.width * .6, y: (B.top + B.bottom) / 2 }; modTick(s, 1 / 60);
   FP.assertEqual(A.live.turret.shots.length, 0, 'tirs du bas effacés'); FP.assert(!s.world.solids.some(o => o.kind === 'shot' && o.y > B.bottom), 'aucun tir du bas dans le monde');
   FP.assert(B.live.on && B.live.t < .05, 'horloge du haut partie à 0');
-  FP.assertEqual(FP.labLevel.moduleAt(s.world, (B.top + B.bottom) / 2), B); FP.assertEqual(FP.labLevel.moduleAt(s.world, B.bottom + 30), null);
 });

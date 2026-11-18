@@ -10,7 +10,7 @@
 //           Ses obstacles sont des solides du catalogue, ses nappes des world.toxics, ses limaces des world.leaks (lab : { period, phase, module }).
 // Expose  : FP.labLevel.place(circuit, world, mirror, bottom?) (pur), FP.labLevel.heightFor(circuit, world) (pur),
 //           FP.labLevel.build(state, circuit, mirror, bottom, index) → { module, solids, toxics, leaks, coins } (sans rien écrire),
-//           FP.labLevel.generate(state, circuit?) (niveau du Lab), FP.labLevel.moduleAt(world, y) → module | null (pur),
+//           FP.labLevel.generate(state, circuit?) (niveau du Lab),
 //           FP.labLevel.soilAt(world, x, y) → 'argile' | 'sable' | null (pur), FP.labLevel.circuitOf(n).
 // Murs : solides { kind: 'lab', lab: true, … } (collision et frôlement comme un obstacle ; dessinés par render/lab.js, pas par obstacles.js).
 (function () {
@@ -91,12 +91,10 @@
     world.chains = b.coins.length ? [{ kind: 'easy', anchor: 'lab', total: b.coins.length, got: 0, missed: false, done: false }] : [];
   }
 
-  const moduleAt = (world, y) => (world.modules || []).find(M => y >= M.top && y <= M.bottom) || null;
-
   function soilAt(world, x, y) {
     for (const M of world.modules || []) { const z = M.soils.find(s => FP.geom.sdPoly(x, y, s.poly) <= 0); if (z) return z.kind; }
     return null;
   }
 
-  FP.labLevel = { place, heightFor, build, generate, moduleAt, soilAt, circuitOf };
+  FP.labLevel = { place, heightFor, build, generate, soilAt, circuitOf };
 })();
