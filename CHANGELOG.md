@@ -2,6 +2,13 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v5.13.1 — Lab : de vraies nappes
+
+- retour de jeu (« ce ne sont que de petits points ») : les nappes des modules passent de 12 à 14 px de rayon à 48 px environ, la taille d'une nappe du jeu normal ;
+- Dents de scie : les nappes quittent le fond des creux (à moitié cachées sous le béton) pour l'extérieur de chaque virage ; qui prend large s'y brûle ; les pièces sont sur les lignes droites ;
+- La Herse : la nappe remplit son créneau ;
+- banc : les tests du Lab passent (51/51).
+
 ## v5.13.0 — Lab : dix modules à silhouette
 
 - première livraison de modules (spec `docs/superpowers/specs/2026-11-18-modules-premiere-livraison-design.md`, fiches `docs/lab/modules.md`) : les 6 circuits de la v5.12 laissent la place à 10 modules qu'on peut nommer, chacun avec son dilemme — [La Gueule](https://kouboy.github.io/flower-power/?lab=1), [L'Escalier](https://kouboy.github.io/flower-power/?lab=2), [Le Peigne](https://kouboy.github.io/flower-power/?lab=3), [Le Sablier](https://kouboy.github.io/flower-power/?lab=4), [Le Carrefour](https://kouboy.github.io/flower-power/?lab=5), [Les Dents de scie](https://kouboy.github.io/flower-power/?lab=6), [Le Tetris](https://kouboy.github.io/flower-power/?lab=7), [La Tour de guet](https://kouboy.github.io/flower-power/?lab=8), [La Herse](https://kouboy.github.io/flower-power/?lab=9), [Le Grand Huit](https://kouboy.github.io/flower-power/?lab=10) ; `?lab=N` de 1 à 10 ;

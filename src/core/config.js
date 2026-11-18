@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '5.13.0',
+    version: '5.13.1',
     storageKey: 'flower_power_v4_best',
 
     view: {

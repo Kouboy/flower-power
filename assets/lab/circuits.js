@@ -61,12 +61,12 @@
       path: [[.5, 1], [.5, 0]],
       alt: [[[.5, 1], [.5, .7], [.5, .58], [.24, .5], [.5, .42], [.5, 0]]] },
 
-    // 6. Les Dents de scie : des parois en dents décalées, des nappes dans les creux ; coller aux pointes paie.
-    { ...base, id: 'dents-de-scie', name: 'LES DENTS DE SCIE', idea: 'onduler entre les dents, au plus près pour les frôlements', height: 1.3,
+    // 6. Les Dents de scie : des parois en dents décalées, de grosses nappes à l'extérieur des virages ; qui prend large s'y brûle.
+    { ...base, id: 'dents-de-scie', name: 'LES DENTS DE SCIE', idea: 'serrer chaque dent, ou prendre large et mordre la nappe', height: 1.3,
       walls: [[[0, 0], [.28, 0], [.28, .05], [.42, .12], [.28, .19], [.28, .41], [.42, .48], [.28, .55], [.28, .77], [.42, .84], [.28, .91], [.28, 1], [0, 1]],
         [[1, 0], [1, 1], [.72, 1], [.72, .73], [.58, .66], [.72, .59], [.72, .37], [.58, .3], [.72, .23], [.72, 0]]],
-      toxics: [{ x: .33, y: .3, rx: 12, ry: 9 }, { x: .67, y: .48, rx: 12, ry: 9 }, { x: .33, y: .66, rx: 12, ry: 9 }],
-      coins: [[.4, .3], [.6, .48], [.4, .66]],
+      toxics: [{ x: .36, y: .3, rx: 48, ry: 40 }, { x: .64, y: .48, rx: 48, ry: 40 }, { x: .36, y: .66, rx: 48, ry: 40 }],
+      coins: [[.5, .21], [.5, .39], [.5, .57], [.5, .75]],
       path: [[.5, 1], [.56, .84], [.44, .66], [.56, .48], [.44, .3], [.56, .12], [.5, 0]],
       alt: [[[.5, 1], [.62, .84], [.4, .66], [.62, .48], [.4, .3], [.62, .12], [.5, 0]]] },
 
@@ -92,7 +92,7 @@
     { ...base, id: 'herse', name: 'LA HERSE', idea: 'choisir son créneau, puis improviser derrière', height: 1,
       walls: [[[0, 0], [.13, 0], [.13, 1], [0, 1]], [[1, 0], [1, 1], [.87, 1], [.87, 0]],
         rect(.2775, .58, .3275, .7), rect(.475, .58, .525, .7), rect(.6725, .58, .7225, .7)],
-      toxics: [{ x: .4, y: .64, rx: 14, ry: 10 }],
+      toxics: [{ x: .4, y: .64, rx: 48, ry: 44 }],
       slugs: [{ x0: .2, y0: .4, x1: .8, y1: .4, period: 3.4, phase: 0 }, { x0: .8, y0: .2, x1: .2, y1: .2, period: 2.6, phase: .25 }],
       coins: [[.6, .64], [.6, .5], [.6, .32]],
       path: [[.5, 1], [.6, .8], [.6, .5], [.5, .3], [.5, 0]],
