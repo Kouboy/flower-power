@@ -1,89 +1,104 @@
-// Encounter Lab (v5.12.0, spec docs/superpowers/specs/2026-11-16-encounter-lab-design.md) : 6 micro-circuits faits à la main, un par
-// niveau (?lab=N), deux sols (argile, sable), une impulsion montante, une mesure par circuit.
-const LAB_IDS = ['slalom', 'slalom-argile', 'rigole', 'fourche', 'cheminee', 'combine'];
+// Encounter Lab : les 10 modules de la première livraison (v5.13.0, spec docs/superpowers/specs/2026-11-18-modules-premiere-livraison-design.md,
+// fiches docs/lab/modules.md), un par niveau (?lab=N), en miroir un passage réussi sur deux ; le mode Lab et sa mesure. Les mécaniques
+// (sols, impulsion, pièces posées, horloge, tourelle) sont testées sur des modules d'essai : lab-mechanics.test.js.
+const LAB_IDS = ['gueule', 'escalier', 'peigne', 'sablier', 'carrefour', 'dents-de-scie', 'tetris', 'tour-de-guet', 'herse', 'grand-huit'];
 const LAB_WIDTHS = [280, 300, 360, 440];
-const labRun = (n, W = 360) => {
+const labRun = (n, W = 360, mirror = false) => {
   const s = FP.state.createRun(7, { W, H: Math.round(W * 16 / 9) });
-  s.run.lab = n; FP.level.startRun(s); s.mode = 'playing';
+  s.run.lab = n; if (mirror) s.run.labPasses[LAB_IDS[n - 1]] = 1; FP.level.startRun(s); s.mode = 'playing';
   return s;
 };
-const labEach = (fn) => { for (const W of LAB_WIDTHS) LAB_IDS.forEach((id, i) => fn({ s: labRun(i + 1, W), W, id, n: i + 1, at: `${id} W=${W}` })); };
+const labEach = (fn) => { for (const W of LAB_WIDTHS) for (const mirror of [false, true]) LAB_IDS.forEach((id, i) => fn({ s: labRun(i + 1, W, mirror), W, id, n: i + 1, at: `${id} W=${W}${mirror ? ' miroir' : ''}` })); };
 const labPolys = (s) => s.world.solids.filter(o => o.kind === 'lab').map(o => o.collision.map(([x, y]) => [o.x + x, o.y + y]));
 const labSamples = (pts) => { const out = []; for (let i = 1; i < pts.length; i++) for (let k = 0; k <= 20; k++) out.push({ x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * k / 20, y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * k / 20 }); return out; };
+const labMod = (id) => window.FLOWER_POWER_LAB.find(c => c.id === id);
 
-FP.test('lab: 6 circuits, dans l’ordre de la spec', () => {
+FP.test('lab: 10 modules, dans l’ordre de la spec', () => {
   FP.assertEqual(window.FLOWER_POWER_LAB.map(c => c.id).join(), LAB_IDS.join());
-  for (const c of window.FLOWER_POWER_LAB) FP.assert(c.height >= .5 && c.height <= 1.5, c.id + ' : hauteur ' + c.height);
+  for (const c of window.FLOWER_POWER_LAB) {
+    FP.assert(c.height >= .5 && c.height <= 1.5, c.id + ' : hauteur ' + c.height);
+    FP.assert(c.name && c.idea, c.id + ' : nom et idée'); FP.assertEqual(c.soils.length, 0, c.id + ' : pas de sol (plus tard)');
+    FP.assert(c.alt.length >= 1 && c.coins.length > 0, c.id + ' : un dilemme et des pièces');
+  }
 });
 
-FP.test('lab: le slalom argile reprend le tracé du slalom nu', () => {
-  const [a, b] = window.FLOWER_POWER_LAB;
-  FP.assertEqual(JSON.stringify(b.walls), JSON.stringify(a.walls)); FP.assertEqual(JSON.stringify(b.path), JSON.stringify(a.path));
-  FP.assertEqual(a.soils.length, 0); FP.assert(b.soils.length > 0 && b.soils.every(z => z.kind === 'argile'), 'argile seulement');
-});
-
-FP.test('lab: chaque circuit se traverse', () => {
+FP.test('lab: chaque module se traverse, dans les deux sens', () => {
   labEach(({ s, at }) => {
     const L = s.world.labLevel, walls = labPolys(s), half = L.channelMin / 2;
     for (const path of [L.path, ...L.alt]) {
-      FP.assert(path[0].y > L.bottom && path[path.length - 1].y < L.top, 'du dessous au-dessus du circuit ' + at);
+      FP.assert(path[0].y > L.bottom && path[path.length - 1].y < L.top, 'du dessous au-dessus du module ' + at);
       for (const q of labSamples(path)) for (const P of walls) FP.assert(FP.geom.sdPoly(q.x, q.y, P) >= half - 1e-6, `trajet à ${FP.geom.sdPoly(q.x, q.y, P).toFixed(1)} px d'un mur en (${q.x | 0},${q.y | 0}) ` + at);
     }
   });
 });
 
-FP.test('lab: tout dans la bande sûre', () => {
+FP.test('lab: tout dans la bande sûre, dans les deux sens', () => {
   labEach(({ s, W, at }) => {
     const L = s.world.labLevel, m = FP.camera.safeX(W), r = FP.config.coins.radius, inBand = (x, pad = 0) => x - pad >= m - 1e-6 && x + pad <= W - m + 1e-6;
-    for (const z of L.soils) FP.assert(z.poly.every(([x]) => inBand(x)), 'sol ' + at);
     for (const l of L.lanes) FP.assert(inBand(l.x0) && inBand(l.x1), 'voie ' + at);
     for (const c of s.world.coins) FP.assert(inBand(c.x, r), 'pièce ' + at);
+    for (const l of s.world.leaks) for (const k of [-.5, .5]) FP.assert(inBand(l.x + Math.cos(l.angle) * l.len * k, l.r), 'limace ' + at);
+    for (const q of L.turrets) FP.assert(inBand(q.x, FP.config.boss.turret.size / 2), 'tourelle ' + at);
     for (const path of [L.path, ...L.alt]) for (const q of path.slice(1, -1)) FP.assert(inBand(q.x), 'trajet ' + at);
   });
 });
 
-FP.test('lab: sols et voies attendus', () => {
-  const kinds = (c) => [...new Set(c.soils.map(z => z.kind))].sort().join();
-  const C = Object.fromEntries(window.FLOWER_POWER_LAB.map(c => [c.id, c]));
-  FP.assertEqual(kinds(C.slalom), ''); FP.assertEqual(kinds(C['slalom-argile']), 'argile'); FP.assertEqual(kinds(C.rigole), 'sable');
-  FP.assertEqual(kinds(C.fourche), 'argile,sable'); FP.assertEqual(kinds(C.combine), 'argile,sable');
-  FP.assert(C.fourche.coins.length > 0, 'pièces de la fourche');
-  const s = labRun(4), L = s.world.labLevel, sand = L.soils.find(z => z.kind === 'sable');
-  FP.assert(s.world.coins.every(c => FP.geom.sdPoly(c.x, c.y, sand.poly) <= 0), 'les pièces de la fourche sont côté sable');
-  FP.assertEqual(C.cheminee.lanes.length, 2); FP.assertEqual(JSON.stringify(C.cheminee.pulse.lanes), '[0,1]');
-  FP.assertEqual(C.combine.pulse.lanes.length, 1); FP.assert(C.combine.pulse.slow < 1, 'impulsion plus lente'); FP.assert(C.combine.coins.length > 0, 'tentation');
-  for (const id of ['slalom', 'slalom-argile', 'rigole', 'fourche']) FP.assertEqual(C[id].pulse, null, id);
+FP.test('lab: les murs ferment les bords du monde', () => {
+  labEach(({ s, W, at }) => {
+    const L = s.world.labLevel, walls = labPolys(s);
+    for (let y = L.top + 2; y <= L.bottom - 2; y += 6) for (const x of [2, W - 2]) FP.assert(walls.some(P => FP.geom.sdPoly(x, y, P) <= 0), `bord ouvert en (${x},${y | 0}) ` + at);
+  });
+});
+
+// Ligne de tir libre entre une tourelle et un point (le béton l'arrête).
+const labSees = (s, q, p) => { const walls = labPolys(s); for (let k = 1; k < 60; k++) { const x = q.x + (p.x - q.x) * k / 60, y = q.y + (p.y - q.y) * k / 60; if (walls.some(P => FP.geom.sdPoly(x, y, P) <= 0)) return false; } return true; };
+const labExposed = (s, path) => { const L = s.world.labLevel, pts = labSamples(path).filter(q => q.y >= L.top && q.y <= L.bottom); return pts.filter(p => L.turrets.some(q => labSees(s, q, p))).length / pts.length; };
+FP.test('lab: chaque module tient sa promesse', () => {
+  const C = labMod, periods = (c) => c.slugs.map(l => l.period);
+  FP.assertEqual(C('gueule').slugs.length, 2); FP.assert(C('gueule').coins.every(([x]) => x > .37 && x < .63), 'les pièces dans la gorge');
+  FP.assertEqual(C('escalier').turrets.length, 2);
+  FP.assertEqual(C('peigne').slugs.length, 4); FP.assertEqual(new Set(periods(C('peigne'))).size, 4, 'quatre rythmes');
+  for (const id of ['sablier', 'grand-huit']) FP.assertEqual(JSON.stringify(C(id).pulse.lanes), '[0]', id);
+  FP.assert(C('carrefour').slugs.every(l => l.y0 === l.y1 && Math.min(l.x0, l.x1) < .5 && Math.max(l.x0, l.x1) > .5), 'la circulation coupe la route');
+  FP.assertEqual(C('dents-de-scie').toxics.length, 3); FP.assertEqual(C('tetris').turrets.length, 1);
+  FP.assertEqual(C('tour-de-guet').turrets.length, 2); FP.assert(C('tour-de-guet').turrets[0].offset !== C('tour-de-guet').turrets[1].offset, 'en alternance');
+  FP.assertEqual(C('herse').toxics.length, 1); FP.assertEqual(C('herse').slugs.length, 2);
+  const g = labRun(10), G = g.world.labLevel, lane = G.lanes[0], inLane = (q) => q.x >= lane.x0 && q.x <= lane.x1;
+  FP.assert(G.path.every(inLane), 'la corde sous l’impulsion'); FP.assert(G.alt[0].slice(1, -1).some(q => !inLane(q)), 'les boucles hors de l’impulsion');
+  const t = labRun(7); FP.assert(labExposed(t, t.world.labLevel.path) > labExposed(t, t.world.labLevel.alt[0]), 'tetris : le chemin court plus à découvert');
+  const e = labRun(2), x = labExposed(e, e.world.labLevel.path); FP.assert(x > .25 && x < .75, 'escalier : des abris en chemin, ' + x.toFixed(2));
 });
 
 FP.test('lab: hauteur du niveau', () => {
   labEach(({ s, at }) => {
-    const w = s.world, L = w.labLevel, c = window.FLOWER_POWER_LAB.find(q => q.id === L.circuit.id);
+    const w = s.world, L = w.labLevel, c = labMod(L.circuit.id);
     FP.assertEqual(w.height, FP.labLevel.heightFor(c, w), at);
     FP.assert(Math.abs(w.height - FP.config.plant.seedOffset - L.bottom - w.viewH / 2) < 1e-6, 'demi-écran libre au départ ' + at);
     FP.assert(Math.abs(L.top - w.surfaceY - w.viewH / 2) < 1e-6, 'demi-écran jusqu’à la surface ' + at);
-    FP.assertEqual(w.toxics.length + w.leaks.length + w.bonuses.length, 0, 'rien au hasard ' + at);
-    FP.assert(w.solids.every(o => o.kind === 'lab'), 'seuls les murs du circuit ' + at);
+    FP.assertEqual(w.bonuses.length, 0, 'pas de bonus ' + at);
+    FP.assertEqual(w.leaks.length, c.slugs.length, 'les limaces du module ' + at); FP.assertEqual(w.toxics.length, c.toxics.length, 'les nappes du module ' + at);
+    FP.assertEqual(w.solids.length, c.walls.length + c.obstacles.length, 'murs et obstacles du module ' + at);
   });
 });
 
-// --- Mode Lab (tâche 2) : lancement, enchaînement, morts, vitesse, jeu normal intact.
+// --- Mode Lab : lancement, enchaînement, morts, vitesse, jeu normal intact.
 FP.test('lab: paramètre', () => {
-  FP.assertEqual(FP.parseParams('?lab=3').lab, 3);
-  for (const q of ['?lab=7', '?lab=abc', '?lab=0', '?lab=', '?lab=-2', '?lab=2.5']) FP.assertEqual(FP.parseParams(q).lab, 1, q);
+  FP.assertEqual(FP.parseParams('?lab=3').lab, 3); FP.assertEqual(FP.parseParams('?lab=10').lab, 10);
+  for (const q of ['?lab=11', '?lab=abc', '?lab=0', '?lab=', '?lab=-2', '?lab=2.5', '?lab=01']) FP.assertEqual(FP.parseParams(q).lab, 1, q);
   FP.assertEqual(FP.parseParams('').lab, null);
   FP.assertEqual(FP.parseParams('?lab=2&stats=reset').stats, 'reset'); FP.assertEqual(FP.parseParams('?lab=2&stats').stats, true);
   FP.assertEqual(FP.parseParams('?lab=2').stats, false);
 });
 const labBloom = (s) => { s.events.length = 0; s.plant.tip.y = s.world.surfaceY - 1; FP.flow.update(s, 1 / 60); for (let i = 0; i < 600 && s.mode !== 'ready'; i++) { s.time += 1 / 60; FP.flow.update(s, 1 / 60); } };
-FP.test('lab: une éclosion passe au circuit suivant, le 6e ramène au 1er', () => {
-  for (const [from, to] of [[1, 2], [5, 6], [6, 1]]) {
-    const s = labRun(from); FP.plant.launch(s); const seen = [];
+FP.test('lab: une éclosion passe au module suivant, le 10e ramène au 1er', () => {
+  for (const [from, to] of [[1, 2], [9, 10], [10, 1]]) {
+    const s = labRun(from); FP.plant.launch(s);
     labBloom(s);
     FP.assertEqual(s.run.lab, to, `${from} → ${to}`); FP.assertEqual(s.mode, 'ready'); FP.assertEqual(s.world.labLevel.circuit.id, LAB_IDS[to - 1]);
     FP.assertEqual(s.shop, null, 'pas de boutique'); FP.assert(!s.run.boss, 'pas de boss');
   }
 });
-FP.test('lab: une mort relance le même circuit sans perdre de graine', () => {
+FP.test('lab: une mort relance le même module sans perdre de graine', () => {
   const s = labRun(3); FP.plant.launch(s); const before = s.plant.reserves;
   const wall = s.world.solids[0]; s.plant.tip = { x: wall.x, y: wall.y }; FP.collision.update(s); FP.flow.update(s, 1 / 60);
   FP.assertEqual(s.mode, 'dying'); FP.assertEqual(s.plant.reserves, before, 'graine gardée');
@@ -110,135 +125,14 @@ FP.test('lab: jeu normal intact', () => {
   FP.assertEqual(out.join(), '2481539369,4256782594');
 });
 
-// --- Dessin (tâche 3) : béton neutre, argile, sable. Aides : skinCtx (bossskin.test.js).
-const labDraw = (s, y) => { s.camera.y = y; const g = skinCtx(); FP.labRender.draw(g, s); return g; };
-const labMid = (s, z) => { const ys = z.poly.map(q => q[1]); return (Math.min(...ys) + Math.max(...ys)) / 2 - s.world.viewH / 2; };
-FP.test('labRender: béton et sols dessinés, rien hors Lab', () => {
-  const s = labRun(4), L = s.world.labLevel, P = FP.palette.lab;
-  const g = labDraw(s, labMid(s, L.soils[0]));
-  for (const [name, cols] of [['béton', P.concrete], ['argile', P.argile], ['sable', P.sable]]) FP.assert(g.rects.some(r => cols.includes(r.c)), name);
+FP.test('labRender: béton dessiné, rien hors Lab', () => {
+  const s = labRun(1), L = s.world.labLevel; s.camera.y = (L.top + L.bottom - s.world.viewH) / 2; const g = skinCtx(); FP.labRender.draw(g, s);
+  FP.assert(g.rects.some(r => FP.palette.lab.concrete.includes(r.c)), 'béton');
   const n = FP.state.createRun(3, { W: 360, H: 640 }); FP.level.startRun(n); const gn = skinCtx(); FP.labRender.draw(gn, n);
   FP.assertEqual(gn.rects.length, 0, 'hors Lab');
 });
-FP.test('labRender: la frontière d’un sol se voit', () => {
-  const s = labRun(2), L = s.world.labLevel, z = L.soils[0], g = labDraw(s, labMid(s, z)), cam = FP.px.toArt(s.camera.y);
-  const xs = z.poly.map(q => FP.px.toArt(q[0])), x0 = Math.min(...xs), x1 = Math.max(...xs);
-  FP.assert(g.rects.some(r => r.c === FP.palette.lab.argile[0] && (Math.abs(r.x - x0) <= 1 || Math.abs(r.x + r.w - 1 - x1) <= 1)), 'bord clair de l’argile');
-});
 
-// --- Sols (tâche 4) : l'argile ralentit le braquage et le suivi du doigt, le sable accélère et rend nerveux ; transition de 0,3 s.
-const labCenter = (z) => { const xs = z.poly.map(q => q[0]), ys = z.poly.map(q => q[1]); return { x: (Math.min(...xs) + Math.max(...xs)) / 2, y: (Math.min(...ys) + Math.max(...ys)) / 2 }; };
-const labSoil = (n, kind) => { const s = labRun(n); FP.plant.launch(s); const z = s.world.labLevel.soils.find(q => q.kind === kind); s.plant.tip = labCenter(z); return s; };
-FP.test('lab: l’argile ralentit le braquage, le sable accélère', () => {
-  const near = (a, b, at) => FP.assert(Math.abs(a - b) <= .02, `${at} : ${a.toFixed(3)} au lieu de ${b}`);
-  const a = labSoil(4, 'argile'); for (let i = 0; i < 60; i++) FP.plant.soilStep(a, 1 / 60);
-  let f = FP.plant.soilFactors(a); near(f.turn, .55, 'argile braquage'); near(f.guide, .55, 'argile doigt'); near(f.speed, 1, 'argile vitesse');
-  const s = labSoil(4, 'sable'), v = FP.plant.speed(s); for (let i = 0; i < 60; i++) FP.plant.soilStep(s, 1 / 60);
-  f = FP.plant.soilFactors(s); near(f.speed, 1.35, 'sable vitesse'); near(f.turn, 1.4, 'sable braquage'); near(FP.plant.speed(s) / v, 1.35, 'vitesse réelle');
-});
-FP.test('lab: transition douce', () => {
-  const s = labSoil(3, 'sable'); for (let i = 0; i < 6; i++) FP.plant.soilStep(s, 1 / 60);
-  FP.assert(s.plant.soil.sable >= .2 && s.plant.soil.sable <= .5, 'à 0,1 s : ' + s.plant.soil.sable);
-  for (let i = 0; i < 60; i++) FP.plant.soilStep(s, 1 / 60);
-  s.plant.tip = { x: s.world.width / 2, y: s.world.height - 30 };   // sortie : plus de sable
-  let prev = FP.plant.soilFactors(s).turn, maxStep = 0;
-  for (let i = 0; i < 60; i++) { FP.plant.soilStep(s, 1 / 60); const t = FP.plant.soilFactors(s).turn; maxStep = Math.max(maxStep, Math.abs(t - prev)); prev = t; }
-  FP.assert(maxStep <= .4 / 18 + 1e-9, 'pas de saut : ' + maxStep.toFixed(4));
-  const f = FP.plant.soilFactors(s); FP.assertEqual(JSON.stringify([f.turn, f.guide, f.speed]), '[1,1,1]', 'tout revenu à la normale');
-});
-FP.test('lab: hors Lab, aucun sol', () => {
-  const s = FP.state.createRun(3, { W: 360, H: 640 }); FP.level.startRun(s); FP.plant.launch(s);
-  FP.assertEqual(FP.labLevel.soilAt(s.world, s.plant.tip.x, s.plant.tip.y), null);
-  for (let i = 0; i < 30; i++) FP.plant.soilStep(s, 1 / 60);
-  const f = FP.plant.soilFactors(s); FP.assertEqual(JSON.stringify([f.turn, f.guide, f.speed]), '[1,1,1]');
-});
-
-// --- Impulsion montante (tâche 5) : annoncée ≥ 1 s avant d'atteindre la pointe, d'abord dans l'autre voie, puis en alternance.
-const laneX = (l) => (l.x0 + l.x1) / 2;
-// La pointe tenue à une hauteur fixe dans la voie k (la tige « fait du surplace » pour le test) ; rend les événements horodatés.
-const pulseSim = (n, k, frac, secs, tip0) => {
-  const s = labRun(n), L = s.world.labLevel, lane = L.lanes[k], log = [];
-  FP.plant.launch(s);
-  s.plant.tip = tip0 ? tip0(s) : { x: laneX(lane), y: lane.y1 - (lane.y1 - lane.y0) * frac };
-  for (let t = 0; t < secs; t += 1 / 60) {
-    s.events.length = 0; s.time += 1 / 60; FP.labPulse.update(s, 1 / 60);
-    for (const e of s.events) log.push({ t, ...e });
-    const hit = s.world.solids.some(o => o.kind === 'pulse' && !o.off && FP.collision.distanceTo(o, s.plant.tip.x, s.plant.tip.y) <= 0);
-    if (hit) log.push({ t, type: 'hit' });
-  }
-  return { s, L, log };
-};
-FP.test('lab: l’impulsion est annoncée au moins 1 s avant d’atteindre la pointe', () => {
-  for (const k of [0, 1]) for (const frac of [.02, .1, .4, .8]) {
-    const { log } = pulseSim(5, k, frac, 8);
-    const hits = log.filter(e => e.type === 'hit');
-    FP.assert(hits.length > 0, `touchée un jour (voie ${k}, ${frac})`);
-    const firstHit = hits[0].t, warn = log.filter(e => e.type === 'labWarn' && e.lane === k && e.t <= firstHit).pop();
-    FP.assert(warn && firstHit - warn.t >= 1 - 1e-6, `annonce ${warn ? (firstHit - warn.t).toFixed(2) : 'absente'} s avant (voie ${k}, ${frac})`);
-  }
-});
-FP.test('lab: la première impulsion vise l’autre voie, puis elles alternent', () => {
-  for (const k of [0, 1]) {
-    const lanes = pulseSim(5, k, .3, 6).log.filter(e => e.type === 'labWarn').map(e => e.lane);
-    FP.assert(lanes.length >= 3, 'plusieurs impulsions');
-    FP.assertEqual(lanes[0], 1 - k, 'la première dans l’autre voie');
-    for (let i = 1; i < lanes.length; i++) FP.assertEqual(lanes[i], 1 - lanes[i - 1], 'alternance');
-  }
-});
-FP.test('lab: une pointe dans l’autre voie n’est jamais touchée', () => {
-  const { s, log } = pulseSim(5, 0, .5, 6);
-  const L = s.world.labLevel, other = { x: laneX(L.lanes[1]), y: s.plant.tip.y };
-  FP.assert(!log.some(e => e.type === 'hit' && false), '');
-  for (let t = 0; t < 6; t += 1 / 60) {
-    s.time += 1 / 60; FP.labPulse.update(s, 1 / 60);
-    for (const o of s.world.solids.filter(q => q.kind === 'pulse' && !q.off && q.lane === 0)) FP.assert(FP.collision.distanceTo(o, other.x, other.y) > 0, 'voie 1 épargnée par la voie 0');
-  }
-});
-FP.test('lab: une impulsion tue', () => {
-  const s = labRun(5); FP.plant.launch(s); s.events.length = 0;
-  const L = s.world.labLevel; s.plant.tip = { x: laneX(L.lanes[1]), y: L.lanes[1].y1 - 40 };
-  for (let i = 0; i < 400 && s.mode === 'playing'; i++) { s.time += 1 / 60; FP.labPulse.update(s, 1 / 60); FP.collision.update(s); FP.flow.update(s, 1 / 60); }
-  const d = s.events.find(e => e.type === 'death');
-  FP.assert(d && d.kind === 'pulse', 'mort par l’impulsion'); FP.assertEqual(s.flow.overReason, FP.config.text.death.pulse);
-});
-FP.test('lab: rien ne reste après une mort, une génération ou hors du circuit', () => {
-  const live = (s) => s.world.solids.filter(o => o.kind === 'pulse' && !o.off).length;
-  let { s } = pulseSim(5, 0, .5, 3); FP.assert(live(s) > 0 || s.labPulse.active, 'actif');
-  s.mode = 'dying'; FP.labPulse.update(s, 1 / 60); FP.assertEqual(live(s), 0, 'mort'); FP.assertEqual(s.labPulse.active, false);
-  ({ s } = pulseSim(5, 0, .5, 3)); FP.level.generate(s); FP.labPulse.update(s, 0); FP.assertEqual(live(s), 0, 'génération');
-  ({ s } = pulseSim(5, 0, .5, 3)); s.plant.tip = { x: s.world.width / 2, y: s.world.labLevel.top - 80 }; FP.labPulse.update(s, 1 / 60); FP.assertEqual(live(s), 0, 'sortie');
-  const q = pulseSim(5, 0, .5, 3, (st) => ({ x: st.world.width / 2, y: st.world.labLevel.bottom + 120 }));
-  FP.assertEqual(q.log.filter(e => e.type === 'labWarn').length, 0, 'rien avant d’entrer');
-});
-FP.test('lab: le combiné, une seule voie et plus lent', () => {
-  const a = pulseSim(6, 0, .3, 8, (st) => ({ x: st.world.width * .68, y: st.world.labLevel.lanes[0].y1 - 10 }));
-  FP.assert(a.log.some(e => e.type === 'labPulse'), 'des impulsions'); FP.assert(a.log.filter(e => e.type === 'labWarn').every(e => e.lane === 0), 'une seule voie');
-  FP.assertEqual(FP.labPulse.speedFor(a.s, 0) / FP.labPulse.speedFor(pulseSim(5, 0, .3, .1).s, 0), .7);
-});
-FP.test('lab: hors Lab, rien', () => {
-  const s = FP.state.createRun(3, { W: 360, H: 640 }); FP.level.startRun(s); FP.plant.launch(s); s.events.length = 0;
-  FP.labPulse.update(s, .1); FP.assertEqual(s.events.length, 0); FP.assert(!s.world.solids.some(o => o.kind === 'pulse'), 'aucune colonne');
-});
-
-// Dessin et son de l'impulsion : la buse s'allume pendant l'annonce, la colonne de gaz se voit, une flèche au bas de l'écran signale une
-// buse sous l'écran ; l'annonce et le départ font un son.
-FP.test('labRender: buse annoncée, colonne de gaz et flèche', () => {
-  const P = FP.palette.lab;
-  const { s } = pulseSim(5, 0, .5, .2);   // une annonce en cours (voie 1)
-  const L = s.world.labLevel, lane = L.lanes[1];
-  s.camera.y = lane.y1 - s.world.viewH / 2; let g = skinCtx(); FP.labRender.drawThreats(g, s);
-  FP.assert(g.rects.some(r => r.c === P.glow), 'buse allumée');
-  for (let i = 0; i < 90; i++) { s.time += 1 / 60; FP.labPulse.update(s, 1 / 60); }
-  const shot = s.labPulse.shots.find(q => !q.solid.off); FP.assert(shot, 'une colonne en vol');
-  s.camera.y = shot.solid.y - s.world.viewH / 2; g = skinCtx(); FP.labRender.drawThreats(g, s);
-  FP.assert(g.rects.some(r => P.gas.includes(r.c)), 'colonne de gaz');
-  const n = FP.state.createRun(3, { W: 360, H: 640 }); FP.level.startRun(n); const gn = skinCtx(); FP.labRender.drawThreats(gn, n); FP.assertEqual(gn.rects.length, 0, 'hors Lab');
-});
-FP.test('lab: annonce et départ font un son', () => {
-  for (const type of ['labWarn', 'labPulse']) withBackend(b => { FP.audio.consume([{ type, lane: 0 }], auRun(), 0); FP.assert(sounding(b).length > 0, type); });
-});
-
-// --- Mesure (tâche 6) : par circuit, passages réussis, morts et causes, temps moyen, frôlements et pièces par passage.
+// --- Mesure (v5.12.0) : par module, passages réussis, morts et causes, temps moyen, frôlements et pièces par passage.
 const statsMem = () => { const m = {}; return { getItem: k => (k in m ? m[k] : null), setItem: (k, v) => { m[k] = String(v); }, removeItem: k => { delete m[k]; } }; };
 const withStore = (store, fn) => { const had = 'localStorage' in window, saved = window.localStorage; window.localStorage = store; FP.labStats.reset(); try { fn(); } finally { if (had) window.localStorage = saved; else delete window.localStorage; } };
 // Une frame de jeu au Lab : la pointe à y, les événements donnés, puis la mesure.
@@ -247,7 +141,7 @@ FP.test('lab: un passage réussi enregistre temps, frôlements et pièces', () =
   const s = labRun(4), L = s.world.labLevel, mid = (L.top + L.bottom) / 2;
   statsFrame(s, L.bottom + 50); statsFrame(s, mid); statsFrame(s, mid, [{ type: 'eco', kind: 'solid' }, { type: 'coin' }, { type: 'coin' }]); statsFrame(s, mid, [{ type: 'eco', kind: 'coin' }]);
   statsFrame(s, L.top - 10, [{ type: 'bloom' }]);
-  const r = FP.labStats.summary().find(q => q.id === 'fourche');
+  const r = FP.labStats.summary().find(q => q.id === 'sablier');
   FP.assertEqual(r.runs, 1); FP.assertEqual(r.deaths, 0); FP.assertEqual(r.avgTime, 1.5); FP.assertEqual(r.grazesPerRun, 1);
   FP.assertEqual(r.coinsPerRun, 2); FP.assertEqual(r.coinsTotal, s.world.coins.length);
 }));
@@ -255,21 +149,21 @@ FP.test('lab: une mort compte avec sa cause', () => withStore(statsMem(), () => 
   const s = labRun(5), L = s.world.labLevel;
   statsFrame(s, (L.top + L.bottom) / 2, [{ type: 'death', cause: 'solid', kind: 'pulse' }]);
   statsFrame(s, (L.top + L.bottom) / 2, [{ type: 'death', cause: 'solid', kind: 'lab' }]);
-  const r = FP.labStats.summary().find(q => q.id === 'cheminee');
+  const r = FP.labStats.summary().find(q => q.id === 'carrefour');
   FP.assertEqual(r.deaths, 2); FP.assertEqual(r.runs, 0); FP.assertEqual(JSON.stringify(r.causes), '{"pulse":1,"lab":1}');
 }));
 FP.test('lab: summary fait les moyennes, reset vide', () => withStore(statsMem(), () => {
   const s = labRun(1), L = s.world.labLevel, mid = (L.top + L.bottom) / 2;
   for (const t of [2, 4]) { statsFrame(s, mid, [], t); statsFrame(s, L.top - 5, [{ type: 'bloom' }], 0); }
-  const r = FP.labStats.summary().find(q => q.id === 'slalom');
+  const r = FP.labStats.summary().find(q => q.id === 'gueule');
   FP.assertEqual(r.runs, 2); FP.assertEqual(r.avgTime, 3);
-  FP.assertEqual(FP.labStats.summary().length, 6);
-  FP.labStats.reset(); FP.assertEqual(FP.labStats.summary().find(q => q.id === 'slalom').runs, 0);
+  FP.assertEqual(FP.labStats.summary().length, 10);
+  FP.labStats.reset(); FP.assertEqual(FP.labStats.summary().find(q => q.id === 'gueule').runs, 0);
 }));
 FP.test('lab: sans localStorage, rien ne casse', () => withStore({ getItem() { throw new Error('bloqué'); }, setItem() { throw new Error('bloqué'); }, removeItem() { throw new Error('bloqué'); } }, () => {
   const s = labRun(2), L = s.world.labLevel;
   statsFrame(s, (L.top + L.bottom) / 2); statsFrame(s, L.top - 5, [{ type: 'bloom' }]);
-  FP.assertEqual(FP.labStats.summary().find(q => q.id === 'slalom-argile').runs, 1, 'gardé en mémoire');
+  FP.assertEqual(FP.labStats.summary().find(q => q.id === 'escalier').runs, 1, 'gardé en mémoire');
 }));
 FP.test('lab: hors Lab, la mesure ne fait rien', () => withStore(statsMem(), () => {
   const s = FP.state.createRun(3, { W: 360, H: 640 }); FP.level.startRun(s); FP.plant.launch(s);
@@ -285,17 +179,14 @@ FP.test('labStats: le tableau se dessine au menu avec &stats', () => withStore(s
   for (const c of window.FLOWER_POWER_LAB) FP.assert(drawn.some(t => t.includes(c.name)), 'ligne ' + c.name);
 }));
 
-// --- Revue finale : la spore épargne le béton et le gaz, le Lab n'écrit pas les records, la flèche reste dans le cadre zoomé.
-FP.test('lab: une spore n’efface ni les murs ni le gaz', () => {
+// --- Revue finale : la spore épargne le béton, le Lab n'écrit pas les records, la flèche reste dans le cadre zoomé.
+FP.test('lab: une spore n’efface pas les murs', () => {
   for (const n of [1, 4, 5]) {
     const s = labRun(n), L = s.world.labLevel, before = s.world.solids.length;
     FP.labPulse.update(s, 0);
     FP.powerups.detonate(s, s.world.width / 2, L.top + (L.bottom - L.top) / 3);
-    FP.assertEqual(s.world.solids.filter(o => o.kind === 'lab').length, before, 'murs intacts, circuit ' + n);
+    FP.assertEqual(s.world.solids.filter(o => o.kind === 'lab').length, before, 'murs intacts, module ' + n);
   }
-  const { s } = pulseSim(5, 0, .5, 2.5), cols = s.world.solids.filter(o => o.kind === 'pulse').length;
-  FP.assert(cols > 0, 'des colonnes'); FP.powerups.detonate(s, s.world.width / 2, s.world.labLevel.lanes[0].y1 - 100);
-  FP.assertEqual(s.world.solids.filter(o => o.kind === 'pulse').length, cols, 'gaz intact');
 });
 FP.test('lab: le Lab n’écrit pas les records du jeu normal', () => {
   const r = FP.scoring.records, saved = JSON.stringify(r);
@@ -304,158 +195,4 @@ FP.test('lab: le Lab n’écrit pas les records du jeu normal', () => {
     FP.scoring.update(s, 1 / 60);
     FP.assertEqual(JSON.stringify(FP.scoring.records), saved, 'records inchangés');
   } finally { Object.assign(FP.scoring.records, JSON.parse(saved)); }
-});
-FP.test('labRender: la flèche reste dans le cadre zoomé', () => {
-  const { s } = pulseSim(5, 0, .5, .2);   // annonce dans la voie 1, pointe haut dans la voie 0
-  const L = s.world.labLevel, lane = L.lanes[1], H = Math.ceil(s.world.viewH / FP.px.SCALE);
-  s.camera.y = lane.y1 - s.world.viewH * .97;   // buse juste sous le bas visible (rognée par le zoom), mais au-dessus du bas de la toile
-  const f = FP.camera.zoomFrame(s); FP.assert(f && f.z > 1, 'cadrage zoomé');
-  const visBottom = (f.fy + (s.world.viewH - f.fy) / f.z) / FP.px.SCALE;
-  const g = skinCtx(); FP.labRender.drawThreats(g, s);
-  const arrow = g.rects.filter(r => r.c === FP.palette.lab.glow);
-  FP.assert(arrow.length > 0, 'une flèche pour une buse rognée');
-  FP.assert(arrow.every(r => r.y + r.h <= visBottom && r.y < H), 'dans le cadre visible : ' + JSON.stringify(arrow.map(r => r.y)) + ' / ' + visBottom.toFixed(1));
-});
-
-// v5.12.1 (retour de jeu : « comment je fais là ?! ») : des colonnes lentes et longues bloquaient les deux voies à la fois à hauteur de
-// la pointe. La pousse monte à sa vitesse, et à chaque instant une voie au moins reste libre à sa hauteur.
-FP.test('lab: toujours une voie libre à hauteur de la pointe', () => {
-  for (const W of [280, 360, 440]) for (const [n, start] of [[5, 0], [5, 1], [6, 0]]) {
-    const s = labRun(n, W), L = s.world.labLevel; FP.plant.launch(s);
-    const lanes = L.circuit.pulse.lanes.map(i => L.lanes[i]), x = (lanes[start % lanes.length].x0 + lanes[start % lanes.length].x1) / 2, pad = 6;
-    s.plant.tip = { x, y: L.bottom - 2 };
-    for (let f = 0; f < 60 * 12 && s.plant.tip.y > L.top; f++) {
-      s.time += 1 / 60; FP.labPulse.update(s, 1 / 60);
-      s.plant.tip.y -= FP.plant.speed(s) / 60;
-      const y = s.plant.tip.y;
-      const blocked = L.circuit.pulse.lanes.filter(i => s.world.solids.some(o => o.kind === 'pulse' && !o.off && o.lane === i && Math.abs(o.y - y) <= o.collision[2][1] + pad));
-      if (lanes.length > 1) FP.assert(blocked.length < lanes.length, `les deux voies bloquées à y=${y | 0} (circuit ${n}, W=${W}, t=${(f / 60).toFixed(2)})`);
-    }
-  }
-});
-
-// v5.12.2 (retour de jeu : « elles me rattrapent avant la prochaine intersection ») : la cloison de la cheminée est en pointillés,
-// un passage à moins d'une seconde de montée ; l'esquive elle-même est jugée par l'utilisateur (simulation trop lente pour le banc).
-const labGaps = (s) => {   // passages de la cloison de la cheminée : intervalles de y libres entre deux tronçons (monde)
-  const L = s.world.labLevel, mid = (L.lanes[0].x1 + L.lanes[1].x0) / 2;
-  const posts = s.world.solids.filter(o => o.kind === 'lab' && Math.abs(o.x - mid) < 4).map(o => [o.y - o.collision[2][1], o.y + o.collision[2][1]]).sort((a, b) => a[0] - b[0]);
-  const gaps = []; for (let i = 1; i < posts.length; i++) gaps.push([posts[i - 1][1], posts[i][0]]);
-  return gaps;
-};
-FP.test('lab: la cheminée a un passage à moins d’une seconde de montée', () => {
-  for (const W of [280, 360, 440]) {
-    const s = labRun(5, W), L = s.world.labLevel, gaps = labGaps(s), v = FP.plant.speed(s);
-    FP.assert(gaps.length >= 4, 'cloison en pointillés : ' + gaps.length + ' passages');
-    const ys = [L.bottom, ...gaps.map(([a, b]) => (a + b) / 2), L.top].sort((a, b) => a - b);
-    for (let i = 1; i < ys.length; i++) FP.assert((ys[i] - ys[i - 1]) / v <= 1, `${((ys[i] - ys[i - 1]) / v).toFixed(2)} s entre deux passages (W=${W})`);
-    for (const [a, b] of gaps) FP.assert(b - a >= L.channelMin, `passage de ${(b - a) | 0} px (W=${W})`);
-  }
-});
-
-// --- Modules (v5.13.0, tâche 1) : obstacles, limaces, nappes et tourelles posés à la main, miroir, horloge de module.
-const LAB_FIXTURE = {
-  id: 'essai', name: 'ESSAI', idea: 'module d’essai du banc', height: 1,
-  walls: [[[0, 0], [.2, 0], [.2, 1], [0, 1]], [[1, 0], [1, 1], [.8, 1], [.8, 0]]],
-  obstacles: [{ kind: 'tire', x: .35, y: .5, a: .3, flip: 1 }], slugs: [{ x0: .3, y0: .3, x1: .7, y1: .3, period: 2, phase: 0 }],
-  toxics: [{ x: .6, y: .7 }], turrets: [{ x: .3, y: .85, side: -1, period: 3, offset: .5 }],
-  soils: [], lanes: [], pulse: null, coins: [[.5, .5]], path: [[.6, 1], [.6, 0]], alt: [[[.6, 1], [.6, 0]]]
-};
-const fixtureRun = (W = 360) => { const s = FP.state.createRun(7, { W, H: Math.round(W * 16 / 9) }); s.run.lab = 1; FP.level.startRun(s); FP.labLevel.generate(s, LAB_FIXTURE); s.mode = 'playing'; return s; };
-FP.test('lab: obstacles, nappes et limaces posés', () => {
-  const a = fixtureRun(), b = fixtureRun(), w = a.world;
-  FP.assert(w.solids.some(o => o.kind === 'tire'), 'obstacle'); FP.assertEqual(w.toxics.length, 1); FP.assertEqual(w.leaks.length, 1);
-  FP.assertEqual(w.leaks[0].lab.period, 2); FP.assertEqual(w.labLevel.turrets.length, 1);
-  const key = (s) => JSON.stringify([s.world.solids.map(o => [o.kind, Math.round(o.x), Math.round(o.y)]), s.world.toxics.map(t => [Math.round(t.x), Math.round(t.y), Math.round(t.rx)]), s.world.leaks.map(l => [Math.round(l.x), Math.round(l.y), Math.round(l.len)])]);
-  FP.assertEqual(key(a), key(b), 'déterministe');
-});
-FP.test('lab: miroir', () => {
-  const s = fixtureRun(), W = s.world.width, n = FP.labLevel.place(LAB_FIXTURE, s.world, false), m = FP.labLevel.place(LAB_FIXTURE, s.world, true);
-  n.walls.forEach((P, i) => P.forEach(([x, y], k) => { FP.assert(Math.abs(m.walls[i][k][0] - (W - x)) < 1e-6 && m.walls[i][k][1] === y, 'mur'); }));
-  n.coins.forEach((c, i) => FP.assert(Math.abs(m.coins[i].x - (W - c.x)) < 1e-6, 'pièce'));
-  FP.assertEqual(m.turrets[0].side, 1); FP.assert(Math.abs(m.turrets[0].x - (W - n.turrets[0].x)) < 1e-6, 'tourelle');
-  FP.assertEqual(m.obstacles[0].a, -n.obstacles[0].a); FP.assertEqual(m.obstacles[0].flip, -n.obstacles[0].flip);
-});
-FP.test('lab: un passage réussi inverse le sens, une mort non', () => {
-  const s = labRun(1); FP.plant.launch(s);
-  FP.assertEqual(s.world.labLevel.mirror, false, 'premier passage normal');
-  const id = s.world.labLevel.circuit.id;
-  labBloom(s); FP.assertEqual(s.run.labPasses[id], 1, 'une réussite');
-  s.run.lab = 1; FP.level.generate(s); FP.assertEqual(s.world.labLevel.mirror, true, 'retour au même module : miroir');
-  FP.plant.prepare(s); FP.plant.launch(s); s.mode = 'playing';
-  const wall = s.world.solids.find(o => o.kind === 'lab'); s.plant.tip = { x: wall.x, y: wall.y }; FP.collision.update(s); FP.flow.update(s, 1 / 60);
-  for (let i = 0; i < 600 && s.mode !== 'ready'; i++) { s.time += 1 / 60; FP.flow.update(s, 1 / 60); }
-  FP.assertEqual(s.run.labPasses[id], 1, 'une mort ne compte pas'); FP.assertEqual(s.world.labLevel.mirror, true, 'même sens au retry');
-});
-FP.test('lab: horloge et patrouille', () => {
-  const at = (frac) => {
-    const s = fixtureRun(), L = s.world.labLevel, l = s.world.leaks[0];
-    s.plant.tip = { x: s.world.width / 2, y: L.bottom + 50 };
-    for (let i = 0; i < 60; i++) FP.labHazards.update(s, 1 / 60);   // 1 s avant l'entrée : rien ne bouge
-    const start = [l.cx, l.cy];
-    s.plant.tip.y = (L.top + L.bottom) / 2; FP.labHazards.update(s, 0);
-    for (let i = 0; i < Math.round(60 * 2 * frac); i++) FP.labHazards.update(s, 1 / 60);
-    return { s, l, start };
-  };
-  const a = at(0);
-  FP.assert(Math.abs(a.start[0] - a.s.world.width * .3) < 1e-6, 'phase de départ avant l’entrée : ' + a.start[0]);
-  const h = at(.5); FP.assert(Math.abs(h.l.cx - h.s.world.width * .7) < 1, 'tout le trajet à mi-période : ' + h.l.cx);
-  const q1 = at(.25), q2 = at(.25); FP.assertEqual(q1.l.cx, q2.l.cx, 'même position au même t');
-});
-// Empreinte relevée avant le Lab v5.13 : seed 3, 360 × 640, 30 pas de 1/60 s.
-FP.test('lab: les limaces du jeu normal ne changent pas', () => {
-  const s = FP.state.createRun(3, { W: 360, H: 640 }); FP.level.startRun(s); FP.plant.launch(s);
-  for (let i = 0; i < 30; i++) { s.time += 1 / 60; FP.hazards.update(s, 1 / 60); FP.labHazards.update(s, 1 / 60); }
-  FP.assertEqual(s.world.leaks.map(l => l.cx.toFixed(3) + ',' + l.cy.toFixed(3)).join(' '), '245.971,794.729 226.872,457.198 137.701,542.710');
-});
-
-// --- Tourelle hors des boss (tâche 2) : visée d'au moins 1 s, figée, rafale de 3 en éventail, à rythme fixe depuis l'entrée.
-const turretSim = (secs, tipAt) => {
-  const s = fixtureRun(), L = s.world.labLevel, log = [];
-  FP.plant.launch(s); s.plant.tip = tipAt ? tipAt(s) : { x: s.world.width * .6, y: (L.top + L.bottom) / 2 };
-  for (let t = 0; t < secs; t += 1 / 60) {
-    s.events.length = 0; s.time += 1 / 60; FP.labHazards.update(s, 1 / 60); FP.labTurret.update(s, 1 / 60);
-    for (const e of s.events) log.push({ t, ...e });
-  }
-  return { s, L, log };
-};
-FP.test('lab: la tourelle vise au moins 1 s avant de tirer', () => {
-  const { log } = turretSim(6), aim = log.find(e => e.type === 'bossAim'), shot = log.find(e => e.type === 'bossShot');
-  FP.assert(aim && shot, 'une visée puis un tir'); FP.assert(shot.t - aim.t >= 1 - 1e-6, 'visée de ' + (shot.t - aim.t).toFixed(2) + ' s');
-  FP.assert(log.some(e => e.type === 'bossLock' && e.t > aim.t && e.t < shot.t), 'la visée se fige avant le tir');
-});
-FP.test('lab: rafale de 3, en éventail', () => {
-  const { s, log } = turretSim(6), C = FP.config.boss.shot, shots = log.filter(e => e.type === 'bossShot');
-  FP.assert(shots.length >= 3, 'trois tirs'); const first = shots.slice(0, 3).map(e => e.t);
-  FP.assert(Math.abs(first[1] - first[0] - C.burstGap) < .02 && Math.abs(first[2] - first[1] - C.burstGap) < .02, 'espacés de burstGap : ' + first.map(t => t.toFixed(2)));
-});
-FP.test('lab: un tir s’arrête dans un mur', () => {
-  const { s } = turretSim(3.2, (st) => ({ x: st.world.width * .05, y: st.world.labLevel.top + 10 }));   // la pointe derrière le mur gauche
-  const shots = s.labTurret.shots;
-  for (let i = 0; i < 120; i++) { s.time += 1 / 60; FP.labTurret.update(s, 1 / 60); }
-  FP.assert(!s.world.solids.some(o => o.kind === 'shot' && FP.collision.distanceTo(s.world.solids.find(w => w.kind === 'lab'), o.x, o.y) < -2), 'aucun tir dans le béton');
-});
-FP.test('lab: la même mesure à chaque entrée', () => {
-  const times = () => turretSim(8).log.filter(e => e.type === 'bossAim').map(e => e.t.toFixed(2)).join();
-  FP.assertEqual(times(), times());
-});
-FP.test('lab: rien hors du module ni après une mort', () => {
-  let { s } = turretSim(4.5); FP.assert(s.labTurret.shots.length || Object.keys(s.labTurret.aims).length, 'actif');
-  s.mode = 'dying'; FP.labTurret.update(s, 1 / 60);
-  FP.assertEqual(s.labTurret.shots.length, 0); FP.assertEqual(s.world.solids.filter(o => o.kind === 'shot').length, 0, 'mort');
-  ({ s } = turretSim(4.5)); s.plant.tip = { x: s.world.width / 2, y: s.world.labLevel.top - 80 }; FP.labTurret.update(s, 1 / 60);
-  FP.assertEqual(s.world.solids.filter(o => o.kind === 'shot').length, 0, 'sortie');
-  const pre = turretSim(4, (st) => ({ x: st.world.width / 2, y: st.world.labLevel.bottom + 100 }));
-  FP.assertEqual(pre.log.filter(e => e.type === 'bossAim').length, 0, 'rien avant l’entrée');
-});
-FP.test('lab: un tir tue', () => {
-  const s = fixtureRun(); FP.plant.launch(s); s.events.length = 0; const L = s.world.labLevel;
-  s.plant.tip = { x: s.world.width * .45, y: L.top + (L.bottom - L.top) * .62 };
-  for (let i = 0; i < 600 && s.mode === 'playing'; i++) { s.time += 1 / 60; FP.labHazards.update(s, 1 / 60); FP.labTurret.update(s, 1 / 60); FP.collision.update(s); FP.flow.update(s, 1 / 60); }
-  const d = s.events.find(e => e.type === 'death'); FP.assert(d && d.kind === 'shot', 'mort par un tir');
-});
-FP.test('labRender: tourelle et ligne de visée dessinées', () => {
-  const { s } = turretSim(1.0), L = s.world.labLevel, q = L.turrets[0];
-  s.camera.y = q.y - s.world.viewH / 2; const g = skinCtx(); FP.labRender.drawThreats(g, s);
-  const M = FP.palette.boss.milieux.friche, A = FP.palette.boss.aim;
-  FP.assert(g.rects.some(r => r.c === M.edge), 'socle'); FP.assert(g.rects.some(r => A.includes(r.c)), 'ligne de visée');
 });
