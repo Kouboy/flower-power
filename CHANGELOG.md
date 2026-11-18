@@ -2,6 +2,14 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v5.14.0 — Modules en partie (?modules, à l'essai)
+
+- [`?modules`](https://kouboy.github.io/flower-power/?modules) (spec `docs/superpowers/specs/2026-11-18-modules-en-partie-design.md`) : à partir du 2e niveau de chaque biome, des modules du Lab posés dans le niveau tiré au hasard ; un au moins, plusieurs quand le niveau grandit ; sélection par biome (Friche : Gueule, Dents de scie, Herse, Carrefour ; Industrie : Peigne, Sablier, Grand Huit, Carrefour ; Décharge : Escalier, Tetris, Herse, Dents de scie ; Nucléaire : Tour de guet, Escalier, Grand Huit, Peigne), tirage au hasard dedans, miroir au hasard ; « MODULES » sur l'écran titre ;
+- le chemin sûr passe par l'entrée et la sortie de chaque module ; rien de tiré au hasard dans un module (obstacles, nappes, limaces, pièces, bonus) ; règles de la partie (une mort coûte une graine, nouveau niveau) ; rythmes des modules inchangés, à la vitesse réelle de la pousse ;
+- un niveau a désormais une liste de modules (`world.modules`), chacun avec son horloge, ses tourelles et son impulsion ; le Lab est un niveau à un seul module, inchangé ;
+- `world/level.js` découpé : nappes et limaces dans `world/level-hazards.js` ; sans `?modules`, jeu normal identique (empreinte du banc) ;
+- banc : 789 tests lancés (les 3 du robot de combat non relancés).
+
 ## v5.13.1 — Lab : de vraies nappes
 
 - retour de jeu (« ce ne sont que de petits points ») : les nappes des modules passent de 12 à 14 px de rayon à 48 px environ, la taille d'une nappe du jeu normal ;

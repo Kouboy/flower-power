@@ -25,7 +25,9 @@ src/
 │   ├── coins.js      ✅ circuits de pièces (v4.5.0) : un chapelet facile et un appât par hauteur d'écran, tirage propre
 │   ├── boss-plan.js  ✅ plans de boss → monde (v5.1.0, FP.bossPlan) : zone du boss, proportions → coordonnées, trajets depuis la graine, distance aux parois
 │   ├── boss.js       ✅ niveau de boss (v5.1.0, FP.bossLevel) : construit depuis le plan du milieu (assets/boss/plans.js) — parois, cibles, tête, plaques, salles, tourelles, nappes ; graine propre à (graine, saison, milieu)
-│   ├── lab.js        ✅ niveau de l'Encounter Lab (v5.12.0, FP.labLevel, ?lab=N) : un module de assets/lab/circuits.js (10 modules depuis v5.13.0, fiches docs/lab/modules.md) posé dans un niveau à lui (demi-écran libre, module, demi-écran), en miroir un passage réussi sur deux ; murs de béton solides, obstacles, nappes, limaces, tourelles, sols, voies d'impulsion, pièces ; soilAt
+│   ├── lab.js        ✅ modules de l'Encounter Lab (v5.12.0, FP.labLevel, ?lab=N) : un module de assets/lab/circuits.js (10 modules depuis v5.13.0, fiches docs/lab/modules.md) posé dans un niveau à lui (demi-écran libre, module, demi-écran), en miroir un passage réussi sur deux ; build pose un module à une hauteur donnée (v5.14.0) ; world.modules = liste des modules du niveau, chacun avec son état de jeu (live) ; murs de béton solides, obstacles, nappes, limaces, tourelles, sols, voies d'impulsion, pièces ; soilAt, moduleAt
+│   ├── modules.js    ✅ modules du Lab en partie normale (v5.14.0, FP.levelModules, ?modules) : choix par biome, bandes, chemin sûr par les portes, rien de tiré au hasard dans une bande (blocked)
+│   ├── level-hazards.js ✅ nappes et limaces d'un niveau tiré au hasard (FP.levelHazards, sorti de level.js en v5.14.0)
 │   ├── collision.js  ✅ requête de pointe : solide, intensité toxique, contact lixiviat (sous la bière : limaces à faire éclater), frôlements en cours, danger
 │   └── hazards.js    ✅ limaces en mouvement (cx, cy, cr, hitFlash), intensité des nappes
 ├── play/
@@ -33,7 +35,7 @@ src/
 │   ├── difficulty.js ✅ difficulté en dents de scie d'après l'avancée dans les milieux (v4.13.0)
 │   ├── flow.js       ✅ morts (solide, lixiviat, brûlure toxique), exposition, éclosion, transitions (plus de messages texte : l'interface se déduit de l'état)
 │   ├── boss.js       ✅ le combat de boss (v5.1.0, FP.boss) : `state.bossFight` (cibles détruites, tête à nu, cinématique de mort `collapse`), reset, assaut d’une cible, tête transpercée (`pierceHead`), déroulé de la cinématique (`update` : parois qui explosent depuis la tête puis s'effondrent)
-│   ├── lab-hazards.js ✅ horloge d'un module du Lab (v5.13.0, FP.labHazards) : part à l'entrée de la pointe ; patrouille des limaces de module
+│   ├── lab-hazards.js ✅ horloge de chaque module du Lab (v5.13.0, FP.labHazards ; une par module en v5.14.0) : part à l'entrée de la pointe dans sa bande ; patrouille des limaces de module
 │   ├── lab-pulse.js  ✅ impulsion montante du Lab (v5.12.0, FP.labPulse) : annonce, bouffée de gaz qui remonte une voie, alternance ; lab-stats.js : mesure par module (FP.labStats, localStorage)
 │   ├── lab-turret.js ✅ tourelle des modules du Lab (v5.13.0, FP.labTurret) : celle des boss sur l'horloge du module (visée, rafale, tirs arrêtés par le béton)
 │   ├── boss-threats.js ✅ les défenses signature des salles de boss (v5.1.0, FP.bossThreats) : la pointe entre → avertissement long, coup sur sa moitié de la salle, repos ; `timing` pur ; événements `bossWarn`, `bossStrike` ; tirs visés des boss 2 à 4, pendant le repos de la salle, tige dedans ou déjà sortie (`bossAim`, `bossLock`, `bossShot`)

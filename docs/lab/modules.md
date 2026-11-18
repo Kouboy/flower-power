@@ -27,3 +27,16 @@ Chaque module se traverse du bas vers le haut. On ajoute des éco-crédits en pr
 - Les sols (argile, sable) restent dans le code, mais aucun module de cette livraison ne s'en sert.
 
 Ces règles sont vérifiées par `dev/tests/lab.test.js`, à quatre largeurs et dans les deux sens.
+
+## En partie normale (v5.14.0, `?modules`)
+
+À partir du 2e niveau de chaque biome, un ou plusieurs modules tirés dans la sélection du biome (miroir au hasard) :
+
+| Biome | Sélection |
+|---|---|
+| Friche | La Gueule, Les Dents de scie, La Herse, Le Carrefour |
+| Industrie | Le Peigne, Le Sablier, Le Grand Huit, Le Carrefour |
+| Décharge | L'Escalier, Le Tetris, La Herse, Les Dents de scie |
+| Nucléaire | La Tour de guet, L'Escalier, Le Grand Huit, Le Peigne |
+
+Réglages (sélections, marges, intervalle) : `FP.config.lab.modules` dans `src/core/config-lab.js`.
