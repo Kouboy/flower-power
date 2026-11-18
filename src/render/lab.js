@@ -4,7 +4,7 @@
 // l'impulsion, allumées pendant l'annonce, la colonne de gaz qui remonte, et une flèche au bas de l'écran quand la buse annoncée est
 // sous l'écran. Rien hors du Lab.
 // Lit     : state.{camera.y, time, plant.tip}, state.world.{width, height, viewH, labLevel}, FP.labLevel.soilAt, FP.palette.lab, FP.px (dont layer
-//           et blit), FP.bossSkin.spans, state.labPulse.shots (impulsion), FP.camera.zoomFrame (bas visible).
+//           et blit), FP.bossSkin.spans, FP.labTurretView (tourelles), state.labPulse.shots (impulsion), FP.camera.zoomFrame (bas visible).
 // Écrit   : rien dans l'état (la toile reçue ; le calque en cache par circuit et taille de niveau).
 // Expose  : FP.labRender.draw(g, state), FP.labRender.drawThreats(g, state).
 (function () {
@@ -78,6 +78,7 @@
   // Menace : buses (grille au pied de chaque voie d'impulsion, allumée pendant l'annonce), colonnes de gaz, flèche hors écran.
   function drawThreats(g, state) {
     const w = state.world, L = w.labLevel, st = state.labPulse;
+    if (L) FP.labTurretView.draw(g, state);   // v5.13.0 : tourelles des modules
     if (!L || !L.circuit.pulse) return;
     const P = FP.palette.lab, cam = FP.px.toArt(state.camera.y), H = Math.ceil(w.viewH / FP.px.SCALE), t = state.time;
     // Bas réellement visible (le cadrage zoome la toile du monde autour de son point focal) : une buse plus bas est hors cadre.

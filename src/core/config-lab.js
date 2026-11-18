@@ -16,6 +16,9 @@
     soils: { blend: .3, argile: { turn: .55, guide: .55 }, sable: { speed: 1.35, turn: 1.4 } },
     // Impulsion (play/lab-pulse.js) : warn = annonce avant chaque départ (s) ; period = écart entre deux départs (s) ; length = longueur de
     // la colonne (× hauteur d'écran) ; speedK = vitesse × celle de la pousse (× pulse.slow du circuit).
+    // Tourelle des modules (play/lab-turret.js, v5.13.0) : aim = durée de la visée avant la rafale (s, au moins 1) ; speed = vitesse d'un tir (px/s).
+    // Le reste (figement, rafale, éventail, rayon) : config.boss.shot, comme au boss.
+    turret: { aim: 1.2, speed: 400 },
     pulse: { warn: 1.5, period: 2.4, length: .15, speedK: 3 }   // v5.12.2 : annonce plus longue, bouffées plus espacées (période propre au circuit : pulse.period)
   };
 })();

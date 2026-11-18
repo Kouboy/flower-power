@@ -407,3 +407,55 @@ FP.test('lab: les limaces du jeu normal ne changent pas', () => {
   for (let i = 0; i < 30; i++) { s.time += 1 / 60; FP.hazards.update(s, 1 / 60); FP.labHazards.update(s, 1 / 60); }
   FP.assertEqual(s.world.leaks.map(l => l.cx.toFixed(3) + ',' + l.cy.toFixed(3)).join(' '), '245.971,794.729 226.872,457.198 137.701,542.710');
 });
+
+// --- Tourelle hors des boss (tâche 2) : visée d'au moins 1 s, figée, rafale de 3 en éventail, à rythme fixe depuis l'entrée.
+const turretSim = (secs, tipAt) => {
+  const s = fixtureRun(), L = s.world.labLevel, log = [];
+  FP.plant.launch(s); s.plant.tip = tipAt ? tipAt(s) : { x: s.world.width * .6, y: (L.top + L.bottom) / 2 };
+  for (let t = 0; t < secs; t += 1 / 60) {
+    s.events.length = 0; s.time += 1 / 60; FP.labHazards.update(s, 1 / 60); FP.labTurret.update(s, 1 / 60);
+    for (const e of s.events) log.push({ t, ...e });
+  }
+  return { s, L, log };
+};
+FP.test('lab: la tourelle vise au moins 1 s avant de tirer', () => {
+  const { log } = turretSim(6), aim = log.find(e => e.type === 'bossAim'), shot = log.find(e => e.type === 'bossShot');
+  FP.assert(aim && shot, 'une visée puis un tir'); FP.assert(shot.t - aim.t >= 1 - 1e-6, 'visée de ' + (shot.t - aim.t).toFixed(2) + ' s');
+  FP.assert(log.some(e => e.type === 'bossLock' && e.t > aim.t && e.t < shot.t), 'la visée se fige avant le tir');
+});
+FP.test('lab: rafale de 3, en éventail', () => {
+  const { s, log } = turretSim(6), C = FP.config.boss.shot, shots = log.filter(e => e.type === 'bossShot');
+  FP.assert(shots.length >= 3, 'trois tirs'); const first = shots.slice(0, 3).map(e => e.t);
+  FP.assert(Math.abs(first[1] - first[0] - C.burstGap) < .02 && Math.abs(first[2] - first[1] - C.burstGap) < .02, 'espacés de burstGap : ' + first.map(t => t.toFixed(2)));
+});
+FP.test('lab: un tir s’arrête dans un mur', () => {
+  const { s } = turretSim(3.2, (st) => ({ x: st.world.width * .05, y: st.world.labLevel.top + 10 }));   // la pointe derrière le mur gauche
+  const shots = s.labTurret.shots;
+  for (let i = 0; i < 120; i++) { s.time += 1 / 60; FP.labTurret.update(s, 1 / 60); }
+  FP.assert(!s.world.solids.some(o => o.kind === 'shot' && FP.collision.distanceTo(s.world.solids.find(w => w.kind === 'lab'), o.x, o.y) < -2), 'aucun tir dans le béton');
+});
+FP.test('lab: la même mesure à chaque entrée', () => {
+  const times = () => turretSim(8).log.filter(e => e.type === 'bossAim').map(e => e.t.toFixed(2)).join();
+  FP.assertEqual(times(), times());
+});
+FP.test('lab: rien hors du module ni après une mort', () => {
+  let { s } = turretSim(4.5); FP.assert(s.labTurret.shots.length || Object.keys(s.labTurret.aims).length, 'actif');
+  s.mode = 'dying'; FP.labTurret.update(s, 1 / 60);
+  FP.assertEqual(s.labTurret.shots.length, 0); FP.assertEqual(s.world.solids.filter(o => o.kind === 'shot').length, 0, 'mort');
+  ({ s } = turretSim(4.5)); s.plant.tip = { x: s.world.width / 2, y: s.world.labLevel.top - 80 }; FP.labTurret.update(s, 1 / 60);
+  FP.assertEqual(s.world.solids.filter(o => o.kind === 'shot').length, 0, 'sortie');
+  const pre = turretSim(4, (st) => ({ x: st.world.width / 2, y: st.world.labLevel.bottom + 100 }));
+  FP.assertEqual(pre.log.filter(e => e.type === 'bossAim').length, 0, 'rien avant l’entrée');
+});
+FP.test('lab: un tir tue', () => {
+  const s = fixtureRun(); FP.plant.launch(s); s.events.length = 0; const L = s.world.labLevel;
+  s.plant.tip = { x: s.world.width * .45, y: L.top + (L.bottom - L.top) * .62 };
+  for (let i = 0; i < 600 && s.mode === 'playing'; i++) { s.time += 1 / 60; FP.labHazards.update(s, 1 / 60); FP.labTurret.update(s, 1 / 60); FP.collision.update(s); FP.flow.update(s, 1 / 60); }
+  const d = s.events.find(e => e.type === 'death'); FP.assert(d && d.kind === 'shot', 'mort par un tir');
+});
+FP.test('labRender: tourelle et ligne de visée dessinées', () => {
+  const { s } = turretSim(1.0), L = s.world.labLevel, q = L.turrets[0];
+  s.camera.y = q.y - s.world.viewH / 2; const g = skinCtx(); FP.labRender.drawThreats(g, s);
+  const M = FP.palette.boss.milieux.friche, A = FP.palette.boss.aim;
+  FP.assert(g.rects.some(r => r.c === M.edge), 'socle'); FP.assert(g.rects.some(r => A.includes(r.c)), 'ligne de visée');
+});
