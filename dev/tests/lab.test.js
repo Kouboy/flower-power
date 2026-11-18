@@ -196,3 +196,10 @@ FP.test('lab: le Lab n’écrit pas les records du jeu normal', () => {
     FP.assertEqual(JSON.stringify(FP.scoring.records), saved, 'records inchangés');
   } finally { Object.assign(FP.scoring.records, JSON.parse(saved)); }
 });
+
+// Revue finale : une pièce n'est jamais dans une nappe (les nappes ont une taille fixe en pixels, les pièces une place proportionnelle).
+FP.test('lab: aucune pièce dans une nappe', () => {
+  labEach(({ s, at }) => {
+    for (const c of s.world.coins) for (const t of s.world.toxics) FP.assert(Math.hypot(c.x - t.x, c.y - t.y) > Math.max(t.rx, t.ry) + FP.config.coins.radius, 'pièce dans une nappe ' + at);
+  });
+});

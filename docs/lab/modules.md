@@ -15,7 +15,7 @@ Chaque module se traverse du bas vers le haut. On ajoute des éco-crédits en pr
 | 6 | Les Dents de scie | deux parois en dents décalées | 3 nappes dans les creux | onduler au centre, ou coller aux pointes pour les frôlements et les pièces près des nappes | anticiper chaque virage d'une dent |
 | 7 | Le Tetris | des blocs imbriqués | 1 tourelle en bas | le chemin court, par le milieu, à découvert ; ou le détour par la droite, abrité derrière les blocs | se cacher derrière un bloc au moment du tir |
 | 8 | La Tour de guet | une chambre fermée, trois piliers | 2 tourelles en bas, en alternance | le centre rapporte les pièces sous deux feux ; les bords longent les piliers | aller de pilier en pilier au rythme des tirs |
-| 9 | La Herse | une rangée de piliers | une nappe dans un créneau ; 2 limaces derrière | choisir son créneau (le plus sûr, ou celui des pièces près de la nappe), puis improviser derrière | planifier l'entrée, improviser la sortie |
+| 9 | La Herse | une rangée de piliers | une nappe dans un créneau ; 2 limaces derrière | choisir son créneau (un des créneaux libres, celui des pièces, ou celui que la nappe resserre), puis improviser derrière | planifier l'entrée, improviser la sortie |
 | 10 | Le Grand Huit | deux blocs en S | une impulsion qui remonte la corde centrale | la corde, courte, sous l'impulsion ; ou les deux grandes boucles, longues, avec les pièces | le tempo de l'impulsion, ou la patience |
 
 ## Règles de dessin (rappel de la spec)

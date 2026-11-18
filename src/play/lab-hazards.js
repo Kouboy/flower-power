@@ -2,7 +2,7 @@
 // module (entre top et bottom) : les rythmes d'un module (limaces, tourelles) sont ainsi les mêmes à chaque passage, et s'apprennent.
 // Une limace de module fait un aller-retour sur son trajet, avec une période et une phase fixes ; elle n'accélère pas et ignore la bière.
 // Lit     : state.{mode, flow.freeze, plant.tip}, state.world.{labLevel.{top, bottom}, leaks (celles qui ont lab : { period, phase })}.
-// Écrit   : state.labClock = { level, t (s depuis l'entrée), on } ; leak.{cx, cy, cr, hitFlash} des limaces de module.
+// Écrit   : state.labClock = { level, t (s depuis l'entrée), on } ; leak.{cx, cy, cr, s (sens de marche), hitFlash} des limaces de module.
 // Expose  : FP.labHazards.update(state, dt).
 (function () {
   'use strict';
@@ -19,7 +19,8 @@
     if (c.on && live) c.t += dt;
     for (const l of state.world.leaks) {
       if (!l.lab) continue;
-      const k = tri(((c.t / l.lab.period + l.lab.phase) % 1 + 1) % 1) - .5;
+      const u = ((c.t / l.lab.period + l.lab.phase) % 1 + 1) % 1, k = tri(u) - .5;
+      l.s = u < .5 ? 0 : Math.PI;   // sens de marche lu par FP.hazards.leakHeading (cos(s + phase), phase 0) : aller puis retour
       l.cx = l.x + Math.cos(l.angle) * l.len * k; l.cy = l.y + Math.sin(l.angle) * l.len * k; l.cr = l.r;
       l.hitFlash = Math.max(0, l.hitFlash - dt);
     }

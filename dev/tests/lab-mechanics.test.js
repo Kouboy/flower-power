@@ -288,3 +288,17 @@ FP.test('labRender: tourelle et ligne de visée dessinées', () => {
   const M = FP.palette.boss.milieux.friche, A = FP.palette.boss.aim;
   FP.assert(g.rects.some(r => r.c === M.edge), 'socle'); FP.assert(g.rects.some(r => A.includes(r.c)), 'ligne de visée');
 });
+
+// Revue finale : une limace de module regarde où elle va (le joueur lit son sens de marche).
+FP.test('lab: une limace de module regarde où elle va', () => {
+  const s = fixtureRun(); FP.plant.launch(s); const L = s.world.labLevel, l = s.world.leaks[0];
+  s.plant.tip = { x: s.world.width * .6, y: (L.top + L.bottom) / 2 };
+  let prev = null, seen = new Set();
+  for (let i = 0; i < 240; i++) {
+    FP.labHazards.update(s, 1 / 60);
+    if (prev) { const along = (l.cx - prev.x) * Math.cos(l.angle) + (l.cy - prev.y) * Math.sin(l.angle);
+      if (Math.abs(along) > .5 && prev.h === FP.hazards.leakHeading(l)) { const dir = Math.sign(along); seen.add(dir); FP.assertEqual(prev.h, dir, 'sens à ' + i); } }   // hors image du demi-tour
+    prev = { x: l.cx, y: l.cy, h: FP.hazards.leakHeading(l) };
+  }
+  FP.assertEqual(seen.size, 2, 'aller et retour');
+});
