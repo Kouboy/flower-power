@@ -16,7 +16,7 @@ src/
 │   ├── fp.js         ✅ window.FP, maths, RNG seedée, paramètres d'URL, stockage sûr
 │   ├── geom.js       ✅ distance point-segment, local→monde, SAT, cône vers le haut, distance signée à un polygone
 │   ├── config.js     ✅ tous les réglages
-│   ├── config-lab.js ✅ réglages de l'Encounter Lab (v5.12.0, FP.config.lab : passages, sols, impulsion ; textes LAB et mort par le gaz)
+│   ├── config-lab.js ✅ réglages de l'Encounter Lab (v5.12.0, FP.config.lab : passages, sols, impulsion, tourelle (v5.13.0) ; textes LAB et mort par le gaz)
 │   ├── state.js      ✅ FP.state.createRun(seed) et FP.state.current
 │   └── loop.js       ✅ FP.loop.step / start, ordre fixe d'une frame
 ├── world/
@@ -25,7 +25,7 @@ src/
 │   ├── coins.js      ✅ circuits de pièces (v4.5.0) : un chapelet facile et un appât par hauteur d'écran, tirage propre
 │   ├── boss-plan.js  ✅ plans de boss → monde (v5.1.0, FP.bossPlan) : zone du boss, proportions → coordonnées, trajets depuis la graine, distance aux parois
 │   ├── boss.js       ✅ niveau de boss (v5.1.0, FP.bossLevel) : construit depuis le plan du milieu (assets/boss/plans.js) — parois, cibles, tête, plaques, salles, tourelles, nappes ; graine propre à (graine, saison, milieu)
-│   ├── lab.js        ✅ niveau de l'Encounter Lab (v5.12.0, FP.labLevel, ?lab=N) : un circuit de assets/lab/circuits.js posé dans un niveau à lui (demi-écran libre, circuit, demi-écran), murs de béton solides, sols, voies d'impulsion, pièces ; soilAt
+│   ├── lab.js        ✅ niveau de l'Encounter Lab (v5.12.0, FP.labLevel, ?lab=N) : un module de assets/lab/circuits.js (10 modules depuis v5.13.0, fiches docs/lab/modules.md) posé dans un niveau à lui (demi-écran libre, module, demi-écran), en miroir un passage réussi sur deux ; murs de béton solides, obstacles, nappes, limaces, tourelles, sols, voies d'impulsion, pièces ; soilAt
 │   ├── collision.js  ✅ requête de pointe : solide, intensité toxique, contact lixiviat (sous la bière : limaces à faire éclater), frôlements en cours, danger
 │   └── hazards.js    ✅ limaces en mouvement (cx, cy, cr, hitFlash), intensité des nappes
 ├── play/
@@ -33,7 +33,9 @@ src/
 │   ├── difficulty.js ✅ difficulté en dents de scie d'après l'avancée dans les milieux (v4.13.0)
 │   ├── flow.js       ✅ morts (solide, lixiviat, brûlure toxique), exposition, éclosion, transitions (plus de messages texte : l'interface se déduit de l'état)
 │   ├── boss.js       ✅ le combat de boss (v5.1.0, FP.boss) : `state.bossFight` (cibles détruites, tête à nu, cinématique de mort `collapse`), reset, assaut d’une cible, tête transpercée (`pierceHead`), déroulé de la cinématique (`update` : parois qui explosent depuis la tête puis s'effondrent)
-│   ├── lab-pulse.js  ✅ impulsion montante du Lab (v5.12.0, FP.labPulse) : annonce d'1 s, colonne de gaz qui remonte une voie, alternance ; lab-stats.js : mesure par circuit (FP.labStats, localStorage)
+│   ├── lab-hazards.js ✅ horloge d'un module du Lab (v5.13.0, FP.labHazards) : part à l'entrée de la pointe ; patrouille des limaces de module
+│   ├── lab-pulse.js  ✅ impulsion montante du Lab (v5.12.0, FP.labPulse) : annonce, bouffée de gaz qui remonte une voie, alternance ; lab-stats.js : mesure par module (FP.labStats, localStorage)
+│   ├── lab-turret.js ✅ tourelle des modules du Lab (v5.13.0, FP.labTurret) : celle des boss sur l'horloge du module (visée, rafale, tirs arrêtés par le béton)
 │   ├── boss-threats.js ✅ les défenses signature des salles de boss (v5.1.0, FP.bossThreats) : la pointe entre → avertissement long, coup sur sa moitié de la salle, repos ; `timing` pur ; événements `bossWarn`, `bossStrike` ; tirs visés des boss 2 à 4, pendant le repos de la salle, tige dedans ou déjà sortie (`bossAim`, `bossLock`, `bossShot`)
 │   ├── camera.js     ✅ défilement, cadrage ×1,18 (zoomFrame, toScreen, toWorld), zoom de frôlement ; bande sûre (v5.11.0, safeX : ce que rogne le cadrage + 12 px, où restent pièces, bonus, limaces, tourelles)
 │   ├── graze.js      ✅ frôlement : suivi par objet, paiement à la sortie, annulation au contact, mesures du flyover
@@ -50,7 +52,7 @@ src/
 │   ├── decor-tube.js  ✅ conduites usées (coudes, cassures, rouille, galeries effondrées) pour les décors enterrés (FP.decorTube)
 │   ├── decor-friche.js, decor-industrie.js, decor-decharge.js, decor-nucleaire.js ✅ décor de chaque milieu (v4.11.0) : astre et météo, horizon, accessoires de surface, décor enterré, petites animations (FP.decor[id], contrat commun)
 │   ├── boss.js       ✅ le corps du boss (v5.1.0, FP.bossRender) : parois (matière en image), pompes et cœur via boss-core.js, plaques ; menaces à part (`drawThreats` : liseré, visée, tirs), dessinées en dernier
-│   ├── lab.js        ✅ Encounter Lab (v5.12.0, FP.labRender) : béton neutre, argile, sable (calque) ; drawThreats : buses, gaz, flèche hors écran
+│   ├── lab.js        ✅ Encounter Lab (v5.12.0, FP.labRender) : béton neutre, argile, sable (calque) ; drawThreats : tourelles (lab-turret.js, FP.labTurretView, v5.13.0), buses, gaz, flèche hors écran
 │   ├── boss-skin.js  ✅ habillage des boss (v5.6.0, FP.bossSkin) : chargement des images de assets/boss/art.js, matière répétée dans les parois (ancrée au monde), images des pièces découpées par leur polygone
 │   ├── boss-pipes.js ✅ tuyaux de la machine (v5.7.0, FP.bossPipes) : des pompes au cœur (trajets des plans), flux vert, tuyau rompu qui fuit
 │   ├── boss-machines.js ✅ défenses en vraies machines (v5.7.0, FP.bossMachines) : goulotte, buses, brûleurs, émetteur (repos, avertissement, coup qui remplit la moitié frappée) ; tourelles (canon qui vise, lentille, recul)

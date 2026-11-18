@@ -2,6 +2,14 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v5.13.0 — Lab : dix modules à silhouette
+
+- première livraison de modules (spec `docs/superpowers/specs/2026-11-18-modules-premiere-livraison-design.md`, fiches `docs/lab/modules.md`) : les 6 circuits de la v5.12 laissent la place à 10 modules qu'on peut nommer, chacun avec son dilemme — [La Gueule](https://kouboy.github.io/flower-power/?lab=1), [L'Escalier](https://kouboy.github.io/flower-power/?lab=2), [Le Peigne](https://kouboy.github.io/flower-power/?lab=3), [Le Sablier](https://kouboy.github.io/flower-power/?lab=4), [Le Carrefour](https://kouboy.github.io/flower-power/?lab=5), [Les Dents de scie](https://kouboy.github.io/flower-power/?lab=6), [Le Tetris](https://kouboy.github.io/flower-power/?lab=7), [La Tour de guet](https://kouboy.github.io/flower-power/?lab=8), [La Herse](https://kouboy.github.io/flower-power/?lab=9), [Le Grand Huit](https://kouboy.github.io/flower-power/?lab=10) ; `?lab=N` de 1 à 10 ;
+- les modules posent à la main ce qui existe déjà : limaces (aller-retour à rythme fixe, sans accélérer ni boire), nappes, obstacles de la Friche, impulsion, et la tourelle des boss (visée de 1,2 s qui se fige, rafale de trois en éventail, tirs arrêtés par le béton) ; tous les rythmes partent quand la pointe entre dans le module : ils sont les mêmes à chaque passage et s'apprennent ;
+- après un passage réussi, le module revient en miroir (gauche ↔ droite) une fois sur deux ; une mort le relance dans le même sens ;
+- les sols (argile, sable) restent dans le code, sans module qui s'en serve pour l'instant ; leurs tests, et ceux de l'impulsion, tournent sur des modules d'essai (`dev/tests/lab-mechanics.test.js`) ;
+- banc : chaque module, à quatre largeurs et dans les deux sens, se traverse par ses deux trajets, garde tout dans la bande sûre, ferme les bords du monde et tient sa promesse.
+
 ## v5.12.2 — Lab : cheminée et combiné évitables
 
 - retour de jeu (« elles me rattrapent avant la prochaine intersection ») : les passages de la cloison de la cheminée étaient espacés d'environ 3 s de montée ; la cloison devient une rangée de piliers, un passage à moins d'une seconde de montée ;
