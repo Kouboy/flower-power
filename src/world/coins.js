@@ -1,6 +1,6 @@
 // world/coins.js — circuits de pièces (v4.5.0) : chapelets posés à la génération du niveau.
 // Lit     : state.seed, state.level, state.world.{width,height,viewH,surfaceY,safeRadius,safePath,solids,toxics,leaks},
-//           FP.config.coins, FP.camera.safeX, FP.createRng, FP.level.pathXAt, FP.collision.{distanceTo,grazeBand}.
+//           world.braid (v5.15.0 : la tresse), FP.config.lab.braid.{coinsOnB, radiusK}, FP.config.coins, FP.camera.safeX, FP.createRng, FP.level.pathXAt, FP.collision.{distanceTo,grazeBand}.
 // Écrit   : state.world.coins ({ x, y, chain, rank, taken }) et state.world.chains ({ kind, anchor, total, got, missed, done }).
 // Expose  : FP.coins.place(state), FP.coins.slices(world) (purs, testés).
 // Tirage propre (graine ^ salt ^ niveau) : state.rng n'est jamais consommé, les niveaux restent ceux d'avant.
@@ -49,9 +49,9 @@
   // Traînée facile : grande route sinueuse autour du chemin sûr (vagues d'amplitude amp × scale), décalée de offset ;
   // deux pièces voisines sont à `spacing` l'une de l'autre (on remonte le chemin pas à pas).
   // La courbe est échantillonnée tous les 2 px de hauteur, puis les pièces y sont posées à espacement exact (interpolation).
-  function easyPoints(world, slice, q, scale) {
+  function easyPoints(world, slice, q, scale, path = world.safePath) {   // path (v5.15.0) : la traînée peut suivre B, la tresse
     const k = FP.config.coins, lat = (dy) => q.offset + q.amp * scale * Math.sin(q.phase + Math.PI * 2 * q.waves * dy / q.span);
-    const at = (y) => ({ x: FP.level.pathXAt(world, y) + lat(q.y0 - y), y });
+    const at = (y) => ({ x: FP.level.pathXAt(world, y, path) + lat(q.y0 - y), y });
     const pts = [at(q.y0)], stop = slice.top - k.spacing * q.n;
     let prev = pts[0];
     for (let y = q.y0 - 2; y > stop && pts.length < q.n; y -= 2) {
@@ -70,16 +70,16 @@
 
   // Tirage d'une traînée facile, puis amplitude adaptative : si les obstacles ou les bords la coupent trop, on resserre
   // l'ondulation (× .7, .45, .25) ; on garde la première presque entière (≥ 85 %), sinon la plus longue.
-  function easyChain(world, rng, slice, offset = 0) {
+  function easyChain(world, rng, slice, offset = 0, path = world.safePath, ampK = 1) {
     const k = FP.config.coins, n = k.easy.min + Math.floor(rng.next() * (k.easy.max - k.easy.min + 1));
-    const q = { n, offset, amp: k.wave[0] + rng.next() * (k.wave[1] - k.wave[0]), waves: k.waves[0] + rng.next() * (k.waves[1] - k.waves[0]),
+    const q = { n, offset, amp: (k.wave[0] + rng.next() * (k.wave[1] - k.wave[0])) * ampK, waves: k.waves[0] + rng.next() * (k.waves[1] - k.waves[0]),
       phase: rng.next() * Math.PI * 2, span: (n - 1) * k.spacing * .8 };   // span : hauteur parcourue, à peu près
     // Départ tiré dans la tranche (v4.9.0) : la traînée peut déborder de la moitié de sa longueur sur la tranche du dessus,
     // la frontière entre deux tranches (le milieu du niveau) n'est plus un creux, sans dégarnir le bas.
     q.y0 = slice.bottom - rng.next() * Math.max(0, slice.bottom - slice.top - q.span / 2);
     let best = [];
     for (const scale of [1, .7, .45, .25]) {
-      const run = longestRun(world, easyPoints(world, slice, q, scale));
+      const run = longestRun(world, easyPoints(world, slice, q, scale, path));
       if (run.length > best.length) best = run;
       if (run.length >= .85 * n) break;
     }
@@ -170,7 +170,8 @@
     const rng = FP.createRng((state.seed ^ k.salt ^ Math.imul(state.level, 2654435761)) >>> 0);
     world.coins = []; world.chains = [];
     for (const slice of slices(world)) {
-      addChain(world, 'easy', 'path', easyChain(world, rng, slice));
+      const B = world.braid, onB = B && rng.next() < FP.config.lab.braid.coinsOnB;   // v5.15.0 : au Lab, la plupart des traînées suivent B
+      addChain(world, 'easy', 'path', easyChain(world, rng, slice, 0, onB ? B.path : world.safePath, onB ? FP.config.lab.braid.radiusK : 1));
       const bait = baitChain(world, rng, slice);
       addChain(world, 'bait', bait.anchor, bait.pts);
     }

@@ -7,7 +7,7 @@
 //           puis FP.coins.place écrit state.world.{coins,chains}.
 // Expose  : FP.level.startRun(state), FP.level.generate(state), FP.level.tableFor(milieu, band) (pur, testé),
 //           FP.level.makeToxic(rng, x, y, big),
-//           FP.level.distToSafePath(world,x,y), FP.level.pathXAt(world,y,path?), FP.level.depthK(world,y), FP.level.depthBand(world,y) ;
+//           FP.level.distToSafePath(world,x,y,path?), FP.level.pathXAt(world,y,path?), FP.level.depthK(world,y), FP.level.depthBand(world,y) ;
 //           aides de placement partagées avec world/level-hazards.js (nappes et limaces) : pickCell, cellPos, countFor, pathSamples, segmentToSafePath.
 // Porté de la v3.43.16 (generateSoil, generateSafePath, objectFits…) sans les familles vectorielles ni les portes.
 (function () {
@@ -88,8 +88,8 @@
     world.solidExtra = lerp(FP.config.level.fit.safeExtra, h.solidExtra, k);
   }
 
-  function distToSafePath(world, x, y) {
-    const path = world.safePath;
+  // path (v5.15.0) : un autre chemin que le chemin sûr (B, la tresse) ; idem pour segmentToSafePath et pathSamples.
+  function distToSafePath(world, x, y, path = world.safePath) {
     if (!path || path.length < 2) return Infinity;
     let m = Infinity;
     for (let i = 1; i < path.length; i++) {
@@ -101,8 +101,8 @@
 
   // Distance exacte du segment [a, b] au chemin sûr, 0 s'ils se croisent (v4.8.0 : la marge serrée des limaces l'exige).
   const turn = (ax, ay, bx, by, cx, cy) => (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
-  function segmentToSafePath(world, ax, ay, bx, by) {
-    const P = world.safePath, d = FP.geom.distPointToSegment;
+  function segmentToSafePath(world, ax, ay, bx, by, P = world.safePath) {
+    const d = FP.geom.distPointToSegment;
     let m = Infinity;
     for (let i = 1; i < P.length; i++) {
       const p = P[i - 1], q = P[i];
@@ -113,8 +113,8 @@
   }
 
   // Points du chemin sûr tous les ~6 px, pour vérifier qu'une nappe n'y mord pas.
-  function pathSamples(world) {
-    const P = world.safePath, pts = [];
+  function pathSamples(world, P = world.safePath) {
+    const pts = [];
     for (let i = 1; i < P.length; i++) {
       const a = P[i - 1], b = P[i], n = Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 6);
       for (let k = 0; k <= n; k++) pts.push({ x: a.x + (b.x - a.x) * k / n, y: a.y + (b.y - a.y) * k / n });
@@ -125,15 +125,16 @@
   // --- Placement -----------------------------------------------------------
 
   // Centre + 8 points du rectangle rendu : aucun ne doit mordre sur le chemin sûr.
-  function clearOfSafePath(world, o, extra) {
-    const hw = o.w / 2, hh = o.h / 2, limit = world.safeRadius + extra;
+  // limit, path (v5.15.0) : la marge et le chemin (par défaut, A et sa marge) ; B, la tresse, a la sienne.
+  function clearOfSafePath(world, o, extra, limit = world.safeRadius + extra, path = world.safePath) {
+    const hw = o.w / 2, hh = o.h / 2;
     const raw = [[0, 0], [-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh], [-hw, 0], [hw, 0], [0, -hh], [0, hh]];
     for (const [lx, ly] of raw) {
       const p = FP.geom.toWorld(o, lx, ly);
-      if (distToSafePath(world, p.x, p.y) < limit) return false;
+      if (distToSafePath(world, p.x, p.y, path) < limit) return false;
     }
     const approx = Math.hypot(o.w, o.h) * .5;
-    return distToSafePath(world, o.x, o.y) > limit + approx * FP.config.level.fit.safeApproxK;
+    return distToSafePath(world, o.x, o.y, path) > limit + approx * FP.config.level.fit.safeApproxK;
   }
 
   function objectFits(world, o) {
@@ -146,6 +147,7 @@
       if (p.y < world.surfaceY + f.edgeTop || p.y > world.height - f.edgeBottom) return false;
     }
     if (!clearOfSafePath(world, o, world.solidExtra)) return false;
+    if (world.braid && !clearOfSafePath(world, o, 0, world.braid.radius, world.braid.path)) return false;   // v5.15.0 : B, la tresse, à sa largeur
     for (const other of world.solids) {
       if (FP.geom.convexPolysOverlap(o.footprint, other.footprint)) return false;
     }
@@ -194,10 +196,11 @@
     const count = Math.round((s.base + Math.min(s.maxExtra, Math.floor(state.difficulty * s.perLevel))) * worldScale * s.scale * s.framing * k);
     const bands = ['upper', 'middle', 'deep'];
     let misses = 0;
-    for (let i = 0; i < count && misses < s.giveUpAfter; i++) {
+    const more = world.braid ? FP.config.lab.braid.triesK : 1;   // v5.15.0 : au Lab, plus d'essais pour garder la densité malgré B
+    for (let i = 0; i < count && misses < s.giveUpAfter * more; i++) {
       const preferred = bands[i % 3];
       let placed = false;
-      for (let tries = 0; tries < s.tries && !placed; tries++) {
+      for (let tries = 0; tries < s.tries * more && !placed; tries++) {
         const cell = pickCell(grid, rng, c => c.r > 0 && c.r < grid.rows - 1 &&
           !(c.c === 2 && c.r > grid.rows - 3) &&                      // dégage le départ de la graine
           (tries > s.relaxAfter || depthBand(world, c.y) === preferred));

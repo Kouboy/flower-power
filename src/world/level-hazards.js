@@ -1,6 +1,6 @@
 // world/level-hazards.js — nappes et limaces d'un niveau tiré au hasard (sorti de world/level.js en v5.14.0, sans changement).
-// Lit     : state.{rng, difficulty}, state.world.{width,height,surfaceY,hazardRadius,safePath,solids,toxics,leaks}, FP.config.{level.toxics,
-//           level.leaks, difficulty.levelAtMax}, FP.camera.safeX (limaces), FP.geom.distPointToSegment, FP.level.{pickCell, cellPos, countFor,
+// Lit     : state.{rng, difficulty}, state.world.{width,height,surfaceY,hazardRadius,safePath,braid (v5.15.0 : la tresse),solids,toxics,leaks}, FP.config.{level.toxics,
+//           level.leaks, difficulty.levelAtMax}, FP.camera.safeX (limaces), FP.geom.distPointToSegment, FP.config.lab.braid.toxicBite, FP.level.{pickCell, cellPos, countFor,
 //           pathSamples, segmentToSafePath, distToSafePath, pathXAt, depthK, makeToxic}.
 // Écrit   : state.world.{toxics, leaks (crossing : barre le chemin sûr, v4.17.0)}.
 // Expose  : FP.levelHazards.placeToxics(state, grid), FP.levelHazards.placeLeaks(state, grid).
@@ -23,6 +23,7 @@
 
   function placeToxics(state, grid) {
     const world = state.world, rng = state.rng, c = FP.config.level.toxics, pts = pathSamples(world);
+    const B = world.braid, ptsB = B ? pathSamples(world, B.path) : null, bite = B ? -FP.config.lab.braid.toxicBite * B.radius : 0;   // v5.15.0 : la tresse
     const count = countFor(c, state);
     for (let i = 0; i < count; i++) {
       // v4.2.3 : à tour de rôle dans les trois tiers de la hauteur (v3 : réservées aux profondeurs, la surface restait propre).
@@ -37,7 +38,7 @@
         const visible = (Math.min(world.width, o.x + o.rx) - Math.max(0, o.x - o.rx)) / (2 * o.rx);
         // Loin du chemin (centre), et l'ellipse elle-même ne s'en approche pas à moins d'une demi-marge.
         if (visible >= c.minVisible && distToSafePath(world, o.x, o.y) > world.hazardRadius + Math.max(o.rx, o.ry) * c.safeK + c.safeExtra &&
-          toxicClear(o, pts, world.hazardRadius * .5)) { world.toxics.push(o); placed = true; }
+          toxicClear(o, pts, world.hazardRadius * .5) && (!B || toxicClear(o, ptsB, bite))) { world.toxics.push(o); placed = true; }   // B : bords mordus, milieu libre
         else cell.used = false;
       }
     }
@@ -84,7 +85,8 @@
         if (crossing || rng.next() < c.nearRouteChance) {
           const y = rng.range(world.surfaceY + c.routeTop, world.height - c.routeBottom);
           const side = rng.next() < .5 ? -1 : 1;
-          pos = { x: clamp(pathXAt(world, y) + side * rng.range(c.routeOffset[0], c.routeOffset[1]), safe, W - safe), y };
+          const route = world.braid && rng.next() < .5 ? world.braid.path : world.safePath;   // v5.15.0 : au Lab, une fois sur deux autour de B
+          pos = { x: clamp(pathXAt(world, y, route) + side * rng.range(c.routeOffset[0], c.routeOffset[1]), safe, W - safe), y };
         } else {
           const cell = pickCell(grid, rng, cl => cl.r > 0 && cl.r < grid.rows - 1 && (tries > c.relaxAfter || depthK(world, cl.y) > c.minDepth));
           pos = cellPos(grid, rng, cell, c.jitter);
@@ -115,7 +117,11 @@
         const pathOpen = crossing
           ? Math.max(distToSafePath(world, pos.x - ca, pos.y - sa), distToSafePath(world, pos.x + ca, pos.y + sa)) >= clear + x.clearPad
           : segmentToSafePath(world, pos.x - ca, pos.y - sa, pos.x + ca, pos.y + sa) >= clear;
-        if (inBounds && notBuried && breathing && pathOpen) { world.leaks.push(leak); placed = true; }
+        // v5.15.0, la tresse : une limace peut barrer B dès le début, à condition de laisser libre un bout de sa course (à la largeur de B).
+        const B = world.braid, bClear = B ? B.radius + leak.r : 0, onB = (px, py) => FP.level.distToSafePath(world, px, py, B.path);
+        const braidOpen = !B || segmentToSafePath(world, pos.x - ca, pos.y - sa, pos.x + ca, pos.y + sa, B.path) >= bClear ||
+          Math.max(onB(pos.x - ca, pos.y - sa), onB(pos.x + ca, pos.y + sa)) >= bClear + x.clearPad;
+        if (inBounds && notBuried && breathing && pathOpen && braidOpen) { world.leaks.push(leak); placed = true; }
       }
     }
   }

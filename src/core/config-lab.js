@@ -9,6 +9,6 @@
   FP.config.text.lab = 'LAB';   // mention de l'écran titre en mode Lab
   // La tresse (world/braid.js) : cross = hauteur entre deux croisements (× hauteur d'écran) ; spread = écart maximal de B à A (× largeur) ;
   // radiusK = largeur garantie de B / celle de A (safeRadius) ; coinsOnB = part des traînées faciles qui suivent B ; toxicBite = une nappe
-  // peut couvrir B jusqu'à toxicBite × sa largeur garantie, pas plus ; salt = tirage propre de B (graine ^ salt ^ niveau).
-  FP.config.lab = { braid: { cross: .9, spread: .3, radiusK: .6, coinsOnB: 2 / 3, toxicBite: .5, salt: 0x627264 } };
+  // peut couvrir B jusqu'à toxicBite × sa largeur garantie, pas plus ; triesK = essais de placement des déchets × (densité gardée) ; salt = tirage propre de B (graine ^ salt ^ niveau).
+  FP.config.lab = { braid: { cross: .9, spread: .3, radiusK: .6, coinsOnB: 2 / 3, toxicBite: .5, triesK: 3, salt: 0x627264 } };
 })();

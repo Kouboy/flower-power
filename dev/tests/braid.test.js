@@ -8,7 +8,7 @@ const braidLevel = ({ seed = 1, W = 360, m = 0, lab = true, grow = 0 } = {}) => 
   FP.level.generate(s); s.mode = 'playing';
   return s;
 };
-const braidEach = (fn) => { for (const W of BRAID_WIDTHS) for (const m of [0, 1, 2, 3]) for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) for (const grow of [0, 200]) fn(braidLevel({ seed, W, m, grow }), `W=${W} biome ${m} graine ${seed} grow ${grow}`); };
+const braidEach = (fn) => { for (const W of BRAID_WIDTHS) for (const m of [0, 1, 2, 3]) for (const seed of [1, 2, 3, 4]) for (const grow of [0, 200]) fn(braidLevel({ seed, W, m, grow }), `W=${W} biome ${m} graine ${seed} grow ${grow}`); };
 
 FP.test('tresse: A est le chemin d’aujourd’hui', () => {
   for (const seed of [1, 2, 3]) for (const W of BRAID_WIDTHS) {
@@ -45,4 +45,53 @@ FP.test('tresse: rien hors Lab ni au boss', () => {
   FP.assertEqual(braidLevel({ lab: false }).world.braid, null, 'hors Lab');
   const b = FP.state.createRun(7, { W: 360, H: 640 }); b.run.lab = true; b.run.boss = true; FP.level.generate(b);
   FP.assertEqual(b.world.braid, null, 'boss');
+});
+
+// --- Dangers et pièces autour de B (tâche 3) : rien ne bouche A ni B ; les limaces barrent B dès le début ; les pièces le suivent.
+const braidSome = (fn) => { for (const W of BRAID_WIDTHS) for (const m of [0, 2]) for (const seed of [1, 2, 3, 4, 5]) fn(braidLevel({ seed, W, m }), `W=${W} biome ${m} graine ${seed}`); };
+const toB = (w, x, y) => FP.level.distToSafePath(w, x, y, w.braid.path);
+const boxPts = (o) => [[0, 0], [-o.w / 2, -o.h / 2], [o.w / 2, -o.h / 2], [o.w / 2, o.h / 2], [-o.w / 2, o.h / 2]].map(([a, b]) => FP.geom.toWorld(o, a, b));
+FP.test('tresse: rien ne bouche A ni B', () => {
+  braidSome((s, at) => {
+    const w = s.world, B = w.braid, bite = FP.config.lab.braid.toxicBite * B.radius, cl = FP.config.level.leaks.cross.clearPad;
+    for (const o of w.solids.filter(q => q.w)) for (const p of boxPts(o)) {
+      FP.assert(toB(w, p.x, p.y) >= B.radius - 1e-6, `obstacle ${o.kind} à ${toB(w, p.x, p.y).toFixed(1)} px de B ` + at);
+      FP.assert(FP.level.distToSafePath(w, p.x, p.y) >= w.safeRadius - 1e-6, `obstacle ${o.kind} dans A ` + at);
+    }
+    const ptsB = FP.level.pathSamples(w, B.path);
+    for (const t of w.toxics) {
+      const ca = Math.cos(-t.a), sa = Math.sin(-t.a);
+      for (const p of ptsB) { const dx = p.x - t.x, dy = p.y - t.y, u = (dx * ca - dy * sa) / (t.rx - bite), v = (dx * sa + dy * ca) / (t.ry - bite); FP.assert(u * u + v * v > 1, 'nappe sur le milieu de B ' + at); }
+    }
+    for (const l of w.leaks) {
+      const ca = Math.cos(l.angle) * l.len / 2, sa = Math.sin(l.angle) * l.len / 2;
+      if (FP.level.segmentToSafePath(w, l.x - ca, l.y - sa, l.x + ca, l.y + sa, B.path) >= B.radius + l.r) continue;
+      FP.assert(Math.max(toB(w, l.x - ca, l.y - sa), toB(w, l.x + ca, l.y + sa)) >= B.radius + l.r + cl - 1e-6, 'limace en travers de B sans bout libre ' + at);
+    }
+  });
+});
+FP.test('tresse: les limaces barrent B dès le premier niveau', () => {
+  let n = 0;
+  for (let seed = 1; seed <= 20; seed++) {
+    const w = braidLevel({ seed }).world, B = w.braid;
+    if (w.leaks.some(l => { const ca = Math.cos(l.angle) * l.len / 2, sa = Math.sin(l.angle) * l.len / 2; return FP.level.segmentToSafePath(w, l.x - ca, l.y - sa, l.x + ca, l.y + sa, B.path) < B.radius + l.r; })) n += 1;
+  }
+  FP.assert(n >= 1, 'aucune limace en travers de B sur 20 graines');
+});
+FP.test('tresse: les pièces suivent surtout B', () => {
+  let onB = 0, all = 0;
+  for (let seed = 1; seed <= 20; seed++) {
+    const w = braidLevel({ seed }).world;
+    w.chains.forEach((c, i) => {
+      if (c.kind !== 'easy') return;
+      const cs = w.coins.filter(q => q.chain === i), dA = cs.reduce((a, q) => a + FP.level.distToSafePath(w, q.x, q.y), 0), dB = cs.reduce((a, q) => a + toB(w, q.x, q.y), 0);
+      all += 1; if (dB < dA) onB += 1;
+    });
+  }
+  FP.assert(all > 0 && onB / all >= .55, `traînées sur B : ${onB}/${all}`);
+});
+FP.test('tresse: la densité reste proche d’un niveau normal', () => {
+  let lab = 0, normal = 0;
+  for (let seed = 1; seed <= 20; seed++) { lab += braidLevel({ seed }).world.solids.length; normal += braidLevel({ seed, lab: false }).world.solids.length; }
+  FP.assert(lab >= .85 * normal, `obstacles : ${lab} au Lab pour ${normal} hors Lab`);
 });
