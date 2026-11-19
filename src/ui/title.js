@@ -54,7 +54,7 @@
   }
 
   // Repère de la version playtest (v4.13.0) : affiché sous le logo quand l'adresse porte ?sansboss=1.
-  // v5.12.0 : « LAB » en mode Encounter Lab (?lab=N).
+  // « LAB » au Lab (?lab).
   const playtestLine = (params) => (params && params.lab ? FP.config.text.lab : params && params.sansboss ? FP.config.text.playtest : null);
 
   function draw(g, state) {
