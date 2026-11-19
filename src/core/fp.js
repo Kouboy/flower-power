@@ -30,9 +30,7 @@
       perf: q.get('perf') === '1',
       flydebug: q.get('flydebug') === '1',
       freecam: q.get('freecam') === '1',
-      sansboss: q.get('sansboss') === '1',   // v4.13.0 : version playtest sans boss
-      // Lab (v5.15.0) : ?lab (avec ou sans numéro) lance une partie normale avec la tresse.
-      lab: q.has('lab')
+      sansboss: q.get('sansboss') === '1'   // v4.13.0 : version playtest sans boss
     };
   };
 

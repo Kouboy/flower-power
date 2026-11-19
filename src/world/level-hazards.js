@@ -1,6 +1,6 @@
 // world/level-hazards.js — nappes et limaces d'un niveau tiré au hasard (sorti de world/level.js en v5.14.0, sans changement).
 // Lit     : state.{rng, difficulty}, state.world.{width,height,surfaceY,hazardRadius,safePath,braid (v5.15.0 : la tresse),solids,toxics,leaks}, FP.config.{level.toxics,
-//           level.leaks, difficulty.levelAtMax}, FP.camera.safeX (limaces), FP.geom.distPointToSegment, FP.config.lab.braid.toxicBite, FP.level.{pickCell, cellPos, countFor,
+//           level.leaks, difficulty.levelAtMax}, FP.camera.safeX (limaces), FP.geom.distPointToSegment, FP.config.braid.toxicBite, FP.level.{pickCell, cellPos, countFor,
 //           pathSamples, segmentToSafePath, distToSafePath, pathXAt, depthK, makeToxic}.
 // Écrit   : state.world.{toxics, leaks (crossing : barre le chemin sûr, v4.17.0)}.
 // Expose  : FP.levelHazards.placeToxics(state, grid), FP.levelHazards.placeLeaks(state, grid).
@@ -23,7 +23,7 @@
 
   function placeToxics(state, grid) {
     const world = state.world, rng = state.rng, c = FP.config.level.toxics, pts = pathSamples(world);
-    const B = world.braid, ptsB = B ? pathSamples(world, B.path) : null, bite = B ? (1 - FP.config.lab.braid.toxicBite) * B.radius : 0;   // le bord de la nappe reste à (1 − toxicBite) × radius du milieu de B   // v5.15.0 : la tresse
+    const B = world.braid, ptsB = B ? pathSamples(world, B.path) : null, bite = B ? (1 - FP.config.braid.toxicBite) * B.radius : 0;   // le bord de la nappe reste à (1 − toxicBite) × radius du milieu de B   // v5.15.0 : la tresse
     const count = countFor(c, state);
     for (let i = 0; i < count; i++) {
       // v4.2.3 : à tour de rôle dans les trois tiers de la hauteur (v3 : réservées aux profondeurs, la surface restait propre).
@@ -85,7 +85,7 @@
         if (crossing || rng.next() < c.nearRouteChance) {
           const y = rng.range(world.surfaceY + c.routeTop, world.height - c.routeBottom);
           const side = rng.next() < .5 ? -1 : 1;
-          const route = world.braid && rng.next() < .5 ? world.braid.path : world.safePath;   // v5.15.0 : au Lab, une fois sur deux autour de B
+          const route = world.braid && rng.next() < .5 ? world.braid.path : world.safePath;   // v5.15.0 : une fois sur deux autour de B
           pos = { x: clamp(pathXAt(world, y, route) + side * rng.range(c.routeOffset[0], c.routeOffset[1]), safe, W - safe), y };
         } else {
           const cell = pickCell(grid, rng, cl => cl.r > 0 && cl.r < grid.rows - 1 && (tries > c.relaxAfter || depthK(world, cl.y) > c.minDepth));

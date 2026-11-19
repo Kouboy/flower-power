@@ -2,6 +2,16 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v5.17.0 — La tresse dans le jeu normal, îlots peuplés
+
+- la tresse est validée au playtest (« ça rend les traversées plus intéressantes ») : chaque niveau tiré au hasard a maintenant ses deux chemins, A (sûr, inchangé) et B (plus étroit, plus payant) ; rien ne change aux niveaux de boss (spec `docs/superpowers/specs/2026-11-19-tresse-ilots-design.md`) ;
+- `?lab` disparaît (paramètre, mention LAB, records non écrits) : il ne contenait plus que la tresse ; ses réglages passent dans `src/core/config-braid.js` (`FP.config.braid`) ;
+- **îlots peuplés** : la terre entre A et B, d'un croisement au suivant, était toujours vide (trop étroite pour un déchet) ; des déchets du biome y sont posés tous les 70 px, réduits si besoin (jusqu'à 60 %) ; B s'écarte un peu plus de A (jusqu'à 42 % de la largeur au lieu de 30 %) pour leur laisser la place : 60 à 95 % des îlots sont peuplés selon la largeur d'écran (peu sur les écrans très étroits) ; la largeur de B ne change pas ;
+- **tourelles enfouies** : à partir du deuxième biome, un îlot sur trois à trois sur cinq (selon le biome) cache une tourelle, jamais plus d'une par îlot, à son endroit le plus large ; la pointe à portée (300 px) et la tourelle à l'écran, elle vise, se verrouille et tire une rafale de trois ondes dans la terre (comme celles des boss, un peu plus lentes), puis attend 3 s ; la toucher ou toucher un tir tue ; les obstacles arrêtent les tirs ; la spore la nettoie ;
+- le T-Rex signature a trois fois plus d'essais pour trouver sa place à côté de la tresse ; sur écran étroit, il arrive parfois un niveau plus tard ;
+- quand A longe un bord et que B doit alterner de force, B commence maintenant du côté qui laisse le plus de place (plus d'îlot de 28 px) ;
+- banc : tests des îlots et des tourelles (`dev/tests/islands.test.js`) ; `lab.test.js` devient `normal.test.js` ; empreintes du jeu normal relevées à nouveau (la génération change exprès), celle du chemin A gardée (inchangé).
+
 ## v5.16.0 — Lisibilité des boss
 
 - retours de jeu et de playtest (spec `docs/superpowers/specs/2026-11-19-lisibilite-boss-design.md`) ;

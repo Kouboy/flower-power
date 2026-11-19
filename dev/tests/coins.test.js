@@ -7,11 +7,16 @@ FP.test('coins: chaque tranche a un chapelet facile', () => {
     FP.assert(w.chains.filter(c => c.kind === 'easy').length >= FP.coins.slices(w).length, 'graine ' + seed);
   }
 });
+// v5.17.0 : autour de A, ou de B (la tresse), où l'ondulation est réduite à la largeur de B.
 FP.test('coins: les faciles ondulent autour du chemin sûr', () => {
   const amp = FP.config.coins.wave[1];
   for (let seed = 1; seed <= 20; seed++) {
     const w = coinRun(seed).world;
-    w.chains.forEach((ch, i) => { if (ch.kind === 'easy') for (const c of chainCoins(w, i)) FP.assert(Math.abs(c.x - FP.level.pathXAt(w, c.y)) <= amp + .01, 'graine ' + seed); });
+    w.chains.forEach((ch, i) => {
+      if (ch.kind !== 'easy') return;
+      const cs = chainCoins(w, i), along = (P, a) => cs.every(c => Math.abs(c.x - FP.level.pathXAt(w, c.y, P)) <= a + .01);
+      FP.assert(along(w.safePath, amp) || along(w.braid.path, amp * FP.config.braid.radiusK), 'graine ' + seed);
+    });
   }
 });
 // Traînées longues et sinueuses (v4.6.1) : la plupart font 10 pièces ou plus et passent des deux côtés du chemin.

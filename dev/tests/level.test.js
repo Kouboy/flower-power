@@ -29,15 +29,17 @@ FP.test('level: obstacles identifiables (rognés de quelques px au plus)', () =>
       FP.assert(p.x >= -8 && p.x <= w.width + 8 && p.y >= w.surfaceY + 34 && p.y <= w.height - 100, `${seed} ${o.kind}`);
   }
 });
+// v5.17.0 : à côté de la tresse, il ne tient pas toujours au niveau prévu ; resté armé, il tente sa chance au suivant.
 function trexFits() {
   let placed = 0;
   for (let seed = 1; seed <= 20; seed++) {
     const s = FP.state.createRun(seed, { W: 360, H: 780 });
     s.signature = { armed: true, spawned: false, targetLevel: 1 }; s.level = 1; s.run.milieu = 3;   // le T-Rex vit au site nucléaire
     FP.level.generate(s);
+    if (!s.signature.spawned) { s.level = 2; FP.level.generate(s); }
     if (s.world.solids.some(o => o.kind === 'trex_signature')) placed++;
   }
-  FP.assert(placed >= 15, `placé ${placed}/20`);
+  FP.assert(placed >= 17, `placé ${placed}/20 en deux niveaux`);
 }
 FP.test('level: le T-Rex signature trouve sa place sur écran étroit', trexFits);
 FP.test('level: densité plausible, familles du catalogue', () => {

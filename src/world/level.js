@@ -2,10 +2,10 @@
 // Lit     : state.rng, state.difficulty (niveau équivalent : réglages par niveau), state.level (réveil du T-Rex), state.run.{milieu,boss}, FP.config.shop.lobbyingK (option lobbying), state.world.{width,viewH,surfaceY,baseHeight,growK}, FP.state.levelHeightFor (hauteur du niveau), state.signature,
 //           FP.config.{level,spawnTables,signature,milieux,world.growMax,plant.speed}, FP.state.worldHeightFor, FP.catalog, FP.geom, FP.bossLevel.generate (niveau de boss),
 //           FP.levelHazards.{placeToxics, placeLeaks} (nappes et limaces, world/level-hazards.js),
-//           FP.braid.trace (v5.15.0 : la tresse au Lab, world/braid.js).
-// Écrit   : state.world.{height,baseHeight,growK (v5.3.0 : hauteur du niveau, décidée ici),milieu,level,boss,bossLevel,braid (v5.15.0 : la tresse, au Lab ; null sinon),skyVariant,lawnVariant,safePath,safeRadius,hazardRadius,solidExtra,solids,toxics,leaks (crossing : barre le chemin sûr, v4.17.0),bonuses}, state.signature ;
+//           FP.braid.trace (v5.15.0 : la tresse, world/braid.js), FP.islands.place (v5.17.0 : ses îlots, world/islands.js).
+// Écrit   : state.world.{height,baseHeight,growK (v5.3.0 : hauteur du niveau, décidée ici),milieu,level,boss,bossLevel,braid (v5.15.0 : la tresse ; null au boss),turrets,turretShots (v5.17.0 : vidés ici ; posés par world/islands.js),skyVariant,lawnVariant,safePath,safeRadius,hazardRadius,solidExtra,solids,toxics,leaks (crossing : barre le chemin sûr, v4.17.0),bonuses}, state.signature ;
 //           puis FP.coins.place écrit state.world.{coins,chains}.
-// Expose  : FP.level.startRun(state), FP.level.generate(state), FP.level.tableFor(milieu, band) (pur, testé),
+// Expose  : FP.level.startRun(state), FP.level.generate(state), FP.level.tableFor(milieu, band) (pur, testé), FP.level.makeCandidate(state, rng, pos), FP.level.objectFits(world, o),
 //           FP.level.makeToxic(rng, x, y, big),
 //           FP.level.distToSafePath(world,x,y,path?), FP.level.pathXAt(world,y,path?), FP.level.depthK(world,y), FP.level.depthBand(world,y) ;
 //           aides de placement partagées avec world/level-hazards.js (nappes et limaces) : pickCell, cellPos, countFor, pathSamples, segmentToSafePath.
@@ -205,7 +205,7 @@
     const count = Math.round((s.base + Math.min(s.maxExtra, Math.floor(state.difficulty * s.perLevel))) * worldScale * s.scale * s.framing * k);
     const bands = ['upper', 'middle', 'deep'];
     let misses = 0;
-    const more = world.braid ? FP.config.lab.braid.triesK : 1;   // v5.15.0 : au Lab, plus d'échecs tolérés avant d'abandonner (densité gardée malgré B)
+    const more = world.braid ? FP.config.braid.triesK : 1;   // v5.15.0 : avec la tresse, plus d'échecs tolérés avant d'abandonner (densité gardée malgré B)
     for (let i = 0; i < count && misses < s.giveUpAfter * more; i++) {
       const preferred = bands[i % 3];
       let placed = false;
@@ -271,15 +271,18 @@
     world.boss = !!state.run.boss;   // v4.10.0 : la musique suit le niveau réellement généré (milieu, boss)
     world.skyVariant = Math.floor(rng.next() * FP.config.level.skyVariants);
     world.lawnVariant = Math.floor(rng.next() * FP.config.level.lawnVariants);
-    world.bossLevel = null; world.braid = null;   // v5.15.0 : la tresse (Lab)
+    world.bossLevel = null; world.braid = null;   // v5.15.0 : la tresse
+    world.turrets = []; world.turretShots = [];   // v5.17.0 : tourelles des îlots (world/islands.js) et leurs tirs (play/island-turrets.js)
     if (state.run.boss) { FP.bossLevel.generate(state); return; }   // v4.12.0 : le niveau de boss a sa propre génération (world/boss.js)
     const grid = makeGrid(world.width, world.surfaceY + g.topPad, world.height - g.bottomPad);
     generateSafePath(world, rng, state.difficulty);
-    if (state.run.lab) {   // v5.15.0 : la tresse ; les cases dont le centre est sur B ne sont pas tirées pour les déchets (essais perdus)
-      world.braid = FP.braid.trace(world, FP.createRng((state.seed ^ FP.config.lab.braid.salt ^ Math.imul(state.level, 2654435761)) >>> 0), world.safePath, world.safeRadius);
-      for (const c of grid.cells) c.onBraid = distToSafePath(world, c.x, c.y, world.braid.path) < world.braid.radius + Math.min(grid.cellW, grid.cellH) * .5;
-    }
+    // v5.15.0 : la tresse (v5.17.0 : dans tous les niveaux tirés au hasard) ; les cases dont le centre est sur B ne sont pas tirées pour
+    // les déchets (essais perdus). Son tirage propre pose ensuite les îlots (après le T-Rex signature, avant les autres déchets).
+    const brng = FP.createRng((state.seed ^ FP.config.braid.salt ^ Math.imul(state.level, 2654435761)) >>> 0);
+    world.braid = FP.braid.trace(world, brng, world.safePath, world.safeRadius);
+    for (const c of grid.cells) c.onBraid = distToSafePath(world, c.x, c.y, world.braid.path) < world.braid.radius + Math.min(grid.cellW, grid.cellH) * .5;
     placeSignature(state, grid);
+    FP.islands.place(state, brng);
     placeSolids(state, grid, opts.lobbying ? FP.config.shop.lobbyingK : 1);
     FP.levelHazards.placeToxics(state, grid);
     FP.levelHazards.placeLeaks(state, grid);
@@ -296,5 +299,6 @@
   }
 
   FP.level = { startRun, generate, tableFor, makeToxic, distToSafePath, pathXAt, depthK, depthBand,
-    pickCell, cellPos, countFor, pathSamples, segmentToSafePath };   // les cinq dernières : pour world/level-hazards.js
+    pickCell, cellPos, countFor, pathSamples, segmentToSafePath,   // les cinq dernières : pour world/level-hazards.js
+    makeCandidate, objectFits };   // v5.17.0 : pour world/islands.js
 })();

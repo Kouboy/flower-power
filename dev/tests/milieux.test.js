@@ -28,7 +28,7 @@ FP.test('level: chaque milieu ne pose que ses familles', () => {
     for (const level of [0, 8]) for (let seed = 1; seed <= 20; seed++) {
       const w = genIn(seed, level, i).world;
       FP.assertEqual(w.milieu, m.id);
-      for (const o of w.solids) FP.assert(m.kinds.includes(o.kind) || o.kind === 'trex_signature', m.id + ' : ' + o.kind);
+      for (const o of w.solids) FP.assert(m.kinds.includes(o.kind) || o.kind === 'trex_signature' || o.kind === 'turret', m.id + ' : ' + o.kind);   // v5.17.0 : tourelles des îlots
     }
   });
 });

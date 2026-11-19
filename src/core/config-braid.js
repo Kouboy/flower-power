@@ -1,0 +1,18 @@
+// core/config-braid.js — réglages de la tresse (v5.15.0 au Lab ; v5.17.0 dans le jeu normal, avec ses îlots ; specs
+// docs/superpowers/specs/2026-11-19-tresse-design.md et 2026-11-19-tresse-ilots-design.md), à part de config.js (plein à 400 lignes).
+// Lit     : FP.config (déjà posé par config.js).
+// Écrit   : FP.config.braid.
+// Expose  : FP.config.braid.
+(function () {
+  'use strict';
+  const FP = window.FP = window.FP || {};
+  // La tresse (world/braid.js) : cross = hauteur entre deux croisements (× hauteur d'écran) ; spread = écart maximal de B à A (× largeur) ;
+  // radiusK = largeur garantie de B / celle de A (safeRadius) ; coinsOnB = part des traînées faciles qui suivent B ; toxicBite = une nappe
+  // peut couvrir B jusqu'à toxicBite × sa largeur garantie, pas plus ; triesK = échecs de suite tolérés avant d'arrêter de poser des déchets × (densité gardée) ; salt = tirage propre de B (graine ^ salt ^ niveau).
+  // Îlots (world/islands.js, v5.17.0) : la terre entre A et B, d'un croisement au suivant. step = écart vertical entre deux déchets d'îlot
+  // (px) ; minScale = taille minimale d'un déchet réduit pour y tenir. turret = la tourelle enfouie, au plus une par îlot (play/island-turrets.js) :
+  // chance = probabilité par îlot, par biome (index de FP.config.milieux : rien au premier) ; r = rayon (px) ; range = portée depuis la pointe
+  // (px) ; speed = vitesse d'un tir (px/s) ; gap = attente après une rafale (s). Visée, verrouillage et rafale : ceux des boss (boss.shot).
+  FP.config.braid = { cross: .9, spread: .42, radiusK: .6, coinsOnB: 2 / 3, toxicBite: .5, triesK: 3, salt: 0x627264,
+    islands: { step: 70, minScale: .6, turret: { chance: [0, .35, .5, .6], r: 14, range: 300, speed: 320, gap: 3 } } };
+})();

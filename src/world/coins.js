@@ -1,6 +1,6 @@
 // world/coins.js — circuits de pièces (v4.5.0) : chapelets posés à la génération du niveau.
 // Lit     : state.seed, state.level, state.world.{width,height,viewH,surfaceY,safeRadius,safePath,solids,toxics,leaks},
-//           world.braid (v5.15.0 : la tresse), FP.config.lab.braid.{coinsOnB, radiusK}, FP.config.coins, FP.camera.safeX, FP.createRng, FP.level.pathXAt, FP.collision.{distanceTo,grazeBand}.
+//           world.braid (v5.15.0 : la tresse), FP.config.braid.{coinsOnB, radiusK}, FP.config.coins, FP.camera.safeX, FP.createRng, FP.level.pathXAt, FP.collision.{distanceTo,grazeBand}.
 // Écrit   : state.world.coins ({ x, y, chain, rank, taken }) et state.world.chains ({ kind, anchor, total, got, missed, done }).
 // Expose  : FP.coins.place(state), FP.coins.slices(world) (purs, testés).
 // Tirage propre (graine ^ salt ^ niveau) : state.rng n'est jamais consommé, les niveaux restent ceux d'avant.
@@ -170,8 +170,8 @@
     const rng = FP.createRng((state.seed ^ k.salt ^ Math.imul(state.level, 2654435761)) >>> 0);
     world.coins = []; world.chains = [];
     for (const slice of slices(world)) {
-      const B = world.braid, onB = B && rng.next() < FP.config.lab.braid.coinsOnB;   // v5.15.0 : au Lab, la plupart des traînées suivent B
-      addChain(world, 'easy', 'path', easyChain(world, rng, slice, 0, onB ? B.path : world.safePath, onB ? FP.config.lab.braid.radiusK : 1));
+      const B = world.braid, onB = B && rng.next() < FP.config.braid.coinsOnB;   // v5.15.0 : la plupart des traînées suivent B
+      addChain(world, 'easy', 'path', easyChain(world, rng, slice, 0, onB ? B.path : world.safePath, onB ? FP.config.braid.radiusK : 1));
       const bait = baitChain(world, rng, slice);
       addChain(world, 'bait', bait.anchor, bait.pts);
     }

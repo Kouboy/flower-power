@@ -1,8 +1,8 @@
-// world/braid.js — la tresse du Lab (v5.15.0, ?lab ; spec docs/superpowers/specs/2026-11-19-tresse-design.md) : un deuxième chemin sûr, B,
+// world/braid.js — la tresse (v5.15.0 au Lab ; v5.17.0 dans le jeu normal ; spec docs/superpowers/specs/2026-11-19-tresse-design.md) : un deuxième chemin sûr, B,
 // tracé autour du chemin sûr d'aujourd'hui, A (world.safePath, inchangé). B s'écarte de A d'un côté, revient le croiser, part de l'autre
 // côté, et ainsi de suite jusqu'à la surface ; plus étroit que A (radius), il porte les risques et la plupart des pièces.
 // Tirage propre (graine ^ salt ^ niveau, fourni par world/level.js) : le tirage du niveau n'est pas décalé.
-// Lit     : state.world.{width, viewH, safePath, braid}, FP.config.{lab.braid, level.safePath.maxSlope}, FP.camera.safeX, FP.level.pathXAt.
+// Lit     : state.world.{width, viewH, safePath, braid}, FP.config.{braid, level.safePath.maxSlope}, FP.camera.safeX, FP.level.pathXAt.
 // Écrit   : rien (world.braid est posé par world/level.js).
 // Expose  : FP.braid.trace(world, rng, safePath, safeRadius) → { path: [{ x, y }] (de bas en haut), radius } (pur),
 //           FP.braid.crossings(world) → [y] (là où B passe d'un côté de A à l'autre ; pur).
@@ -12,7 +12,7 @@
   const STEP = 40;   // pas vertical entre deux nœuds de B (px ; plus fin, le placement des déchets ralentit)
 
   function trace(world, rng, safePath, safeRadius) {
-    const c = FP.config.lab.braid, W = world.width, y0 = safePath[0].y, y1 = safePath[safePath.length - 1].y, H = y0 - y1;
+    const c = FP.config.braid, W = world.width, y0 = safePath[0].y, y1 = safePath[safePath.length - 1].y, H = y0 - y1;
     const radius = c.radiusK * safeRadius, lo = FP.camera.safeX(W) + 4, hi = W - lo, slope = FP.config.level.safePath.maxSlope;
     const spans = Math.max(4, Math.round(H / (c.cross * world.viewH))), spanH = H / spans, ax = (y) => FP.level.pathXAt(world, y, safePath);
     // Un côté et une amplitude par tronçon : en alternance, sauf quand A colle à un bord (B part alors du côté où il y a de la place).
@@ -25,9 +25,10 @@
       side = -s;
     }
     // Au moins deux croisements dans tous les cas : si B est resté presque toujours du même côté (A longe un bord), on alterne de force,
-    // avec un écart plus court du côté serré (la spec l'accepte).
+    // avec un écart plus court du côté serré (la spec l'accepte) ; v5.17.0 : en commençant du côté qui laisse le moins serré des écarts.
     if (plan.filter((p, k) => k && p.side !== plan[k - 1].side).length < 2) {
-      plan.forEach((p, k) => { p.side = k % 2 ? -plan[0].side : plan[0].side; p.amp = Math.min(p.want, p.room(p.side)); });
+      const worst = (f) => Math.min(...plan.map((p, k) => p.room(k % 2 ? -f : f))), f = worst(1) >= worst(-1) ? 1 : -1;
+      plan.forEach((p, k) => { p.side = k % 2 ? -f : f; p.amp = Math.min(p.want, p.room(p.side)); });
     }
     const path = [];
     for (let y = y0; y > y1 - 1e-6; y -= STEP) {

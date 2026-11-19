@@ -5,7 +5,8 @@
 // Écrit   : rien dans l'état (la toile reçue ; un calque en cache, créé à la première utilisation).
 // Expose  : FP.bossRender.draw(g, state) (corps : parois, pompes, cœur, plaques) et FP.bossRender.drawThreats(g, state) (menaces :
 //           défenses, visée, projectiles en impulsions dans la terre (v5.16.0), réticules ; v5.6.0, dessinées après tout le reste du monde) — repère d'art, la caméra est appliquée ici ;
-//           rien hors niveau de boss ; fillPoly, artPoly (pour boss-fx.js).
+//           rien hors niveau de boss ; fillPoly, artPoly (pour boss-fx.js) ; aimLine(g, muzzle, to, locked, cam), shot(g, s, cam, t) (v5.17.0 : aussi
+//           pour render/island-turrets.js).
 // Cible détruite (off) : épave sombre qui fume ; plaque tombée ou paroi effondrée (off) : rien ; tête à nu (bossFight.headOpen) : lueur qui pulse ; tête transpercée (off) : épave.
 // Calque (revue finale) : parois, plaques et cibles intactes (sans leur cœur qui pulse) sont peintes une fois, sur toute la hauteur du niveau,
 // puis recopiées ; le calque est refait à chaque génération et quand une cible, une plaque ou une paroi (effondrée à la mort du boss : off,
@@ -193,5 +194,5 @@
     if (seen(bl.head.solid)) head(g, artPoly(bl.head.solid, cam, jolt), t, state);
   }
 
-  FP.bossRender = { draw, drawThreats, fillPoly, artPoly };
+  FP.bossRender = { draw, drawThreats, fillPoly, artPoly, aimLine, shot };   // aimLine, shot : aussi pour les tourelles des îlots (v5.17.0)
 })();

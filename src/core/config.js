@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '5.16.0',
+    version: '5.17.0',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -126,8 +126,8 @@
     },
 
     // T-Rex « NON AUX ESSAIS NUCLÉAIRES » : armé dans 38 % des runs, au plus une fois, à partir d'un niveau tiré entre 1 et 4.
-    // maxWidthK : le squelette (280 de large) se règle sur l'écran pour laisser passer la tige (62 % de la largeur au plus).
-    signature: { chance: .38, minLevel: 1, maxLevel: 4, tries: 110, minDepth: .55, jitter: .10, angle: .18, maxWidthK: .62 },
+    // maxWidthK : le squelette (280 de large) se règle sur l'écran pour laisser passer la tige (62 % de la largeur au plus) ; tries 330 (v5.17.0, 110 avant) : il doit tenir à côté de la tresse.
+    signature: { chance: .38, minLevel: 1, maxLevel: 4, tries: 330, minDepth: .55, jitter: .10, angle: .18, maxWidthK: .62 },
 
     // Pousse (v3.43.16, cadrage B : vitesse ×.88). v4.1.0 : accélération par pousse franche (v3 : perStem 2.7, perFlower 1.35),
     // v4.3.0 : départ 120 (v3 : 76), +6 par tige et par fleur, plafond 260 (v3 : 196) : les testeurs trouvaient le jeu trop facile.

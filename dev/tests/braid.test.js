@@ -1,20 +1,21 @@
-// La tresse (v5.15.0, ?lab ; spec docs/superpowers/specs/2026-11-19-tresse-design.md) : B, un deuxième chemin sûr tracé autour de A (le
-// chemin sûr d'aujourd'hui), qui le croise plusieurs fois ; plus étroit, plus risqué, plus payant.
+// La tresse (v5.15.0 au Lab, v5.17.0 dans le jeu normal ; spec docs/superpowers/specs/2026-11-19-tresse-design.md) : B, un deuxième chemin
+// sûr tracé autour de A (le chemin sûr d'aujourd'hui), qui le croise plusieurs fois ; plus étroit, plus risqué, plus payant.
 const BRAID_WIDTHS = [280, 360, 440];
-// Un niveau (biome m, graine, largeur), au Lab ou non ; grow : pousses et fleurs déjà faites (niveau plus haut).
-const braidLevel = ({ seed = 1, W = 360, m = 0, lab = true, grow = 0 } = {}) => {
+// Un niveau (biome m, graine, largeur) ; grow : pousses et fleurs déjà faites (niveau plus haut).
+const braidLevel = ({ seed = 1, W = 360, m = 0, grow = 0 } = {}) => {
   const s = FP.state.createRun(seed, { W, H: Math.round(W * 16 / 9) });
-  s.run.lab = lab; s.run.milieu = m; s.plant.stemCount = grow; s.score.flowers = grow;
+  s.run.milieu = m; s.plant.stemCount = grow; s.score.flowers = grow;
   FP.level.generate(s); s.mode = 'playing';
   return s;
 };
 const braidEach = (fn) => { for (const W of BRAID_WIDTHS) for (const m of [0, 1, 2, 3]) for (const seed of [1, 2, 3, 4]) for (const grow of [0, 200]) fn(braidLevel({ seed, W, m, grow }), `W=${W} biome ${m} graine ${seed} grow ${grow}`); };
 
+// Empreinte du chemin A relevée en v5.16.0, avant la tresse dans le jeu normal : A ne bouge pas.
 FP.test('tresse: A est le chemin d’aujourd’hui', () => {
-  for (const seed of [1, 2, 3]) for (const W of BRAID_WIDTHS) {
-    const key = (s) => JSON.stringify(s.world.safePath.map(p => [p.x.toFixed(3), p.y.toFixed(3)]));
-    FP.assertEqual(key(braidLevel({ seed, W })), key(braidLevel({ seed, W, lab: false })), `graine ${seed} W=${W}`);
-  }
+  const out = [];
+  for (const seed of [1, 2, 3]) for (const W of BRAID_WIDTHS) { const s = FP.state.createRun(seed, { W, H: Math.round(W * 16 / 9) }); FP.level.generate(s); out.push(s.world.safePath.map(p => p.x.toFixed(3) + ',' + p.y.toFixed(3)).join(' ')); }
+  let h = 2166136261; for (const ch of out.join('|')) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
+  FP.assertEqual(h, 3882868715);
 });
 
 FP.test('tresse: au moins deux croisements, un écart réel entre deux', () => {
@@ -41,10 +42,9 @@ FP.test('tresse: B monte toujours, respecte la pente et la bande sûre', () => {
   });
 });
 
-FP.test('tresse: rien hors Lab ni au boss', () => {
-  FP.assertEqual(braidLevel({ lab: false }).world.braid, null, 'hors Lab');
-  const b = FP.state.createRun(7, { W: 360, H: 640 }); b.run.lab = true; b.run.boss = true; FP.level.generate(b);
-  FP.assertEqual(b.world.braid, null, 'boss');
+FP.test('tresse: rien au boss', () => {
+  const b = FP.state.createRun(7, { W: 360, H: 640 }); b.run.boss = true; FP.level.generate(b);
+  FP.assertEqual(b.world.braid, null); FP.assertEqual(b.world.turrets.length, 0, 'pas de tourelle d’îlot');
 });
 
 // --- Dangers et pièces autour de B (tâche 3) : rien ne bouche A ni B ; les limaces barrent B dès le début ; les pièces le suivent.
@@ -53,7 +53,7 @@ const toB = (w, x, y) => FP.level.distToSafePath(w, x, y, w.braid.path);
 const boxPts = (o) => [[0, 0], [-o.w / 2, -o.h / 2], [o.w / 2, -o.h / 2], [o.w / 2, o.h / 2], [-o.w / 2, o.h / 2]].map(([a, b]) => FP.geom.toWorld(o, a, b));
 FP.test('tresse: rien ne bouche A ni B', () => {
   braidSome((s, at) => {
-    const w = s.world, B = w.braid, bite = FP.config.lab.braid.toxicBite * B.radius, cl = FP.config.level.leaks.cross.clearPad;
+    const w = s.world, B = w.braid, bite = FP.config.braid.toxicBite * B.radius, cl = FP.config.level.leaks.cross.clearPad;
     for (const o of w.solids.filter(q => q.w)) for (const p of boxPts(o)) {
       FP.assert(toB(w, p.x, p.y) >= B.radius - 1e-6, `obstacle ${o.kind} à ${toB(w, p.x, p.y).toFixed(1)} px de B ` + at);
       FP.assert(FP.level.distToSafePath(w, p.x, p.y) >= w.safeRadius - 1e-6, `obstacle ${o.kind} dans A ` + at);
@@ -90,10 +90,11 @@ FP.test('tresse: les pièces suivent surtout B', () => {
   }
   FP.assert(all > 0 && onB / all >= .55, `traînées sur B : ${onB}/${all}`);
 });
-FP.test('tresse: la densité reste proche d’un niveau normal', () => {
-  let lab = 0, normal = 0;
-  for (let seed = 1; seed <= 20; seed++) { lab += braidLevel({ seed }).world.solids.length; normal += braidLevel({ seed, lab: false }).world.solids.length; }
-  FP.assert(lab >= .85 * normal, `obstacles : ${lab} au Lab pour ${normal} hors Lab`);
+// 170 : obstacles des mêmes vingt niveaux en v5.16.0, sans la tresse.
+FP.test('tresse: la densité reste proche d’un niveau sans tresse', () => {
+  let n = 0;
+  for (let seed = 1; seed <= 20; seed++) n += braidLevel({ seed }).world.solids.length;
+  FP.assert(n >= .85 * 170, `obstacles : ${n} avec la tresse pour 170 sans`);
 });
 
 // Revue finale : quand A longe le bord gauche d'un écran étroit, B doit quand même changer de côté (au moins deux croisements).
