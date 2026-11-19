@@ -124,11 +124,11 @@
     for (const o of removed) state.graze.active.delete(o);   // effacés : leurs frôlements ne paient rien
   }
 
-  // Spore : onde de nettoyage ; 2 000 Ɇ par obstacle effacé, sans combo. Le boss et le Lab (murs, gaz : v5.12.0) y résistent.
+  // Spore : onde de nettoyage ; 2 000 Ɇ par obstacle effacé, sans combo. Le boss y résiste.
   function detonate(state, x, y) {
     const c = FP.config.powerups.spore, w = state.world, R = c.radius;
     const gone = (keep) => (o) => !keep(o);
-    const keepSolid = (o) => o.boss || o.lab || dist(x, y, o.x, o.y) > R + o.broadR * c.solidK;
+    const keepSolid = (o) => o.boss || dist(x, y, o.x, o.y) > R + o.broadR * c.solidK;
     const keepToxic = (o) => dist(x, y, o.x, o.y) > R + Math.max(o.rx, o.ry) * c.toxicK;
     const keepLeak = (l) => {
       const ca = Math.cos(l.angle), sa = Math.sin(l.angle);

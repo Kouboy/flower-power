@@ -1,5 +1,5 @@
 // world/hazards.js — dangers diffus : limaces de lixiviat en mouvement, intensité des zones toxiques.
-// Lit     : state.time, state.world.leaks (sauf celles des modules du Lab, l.lab : play/lab-hazards.js), state.plant.{stemCount,stemAge}, state.score.flowers, state.boosts.beer, FP.config.{hazards,shop.{beerK,beerSway,beerSwayHz}}.
+// Lit     : state.time, state.world.leaks, state.plant.{stemCount,stemAge}, state.score.flowers, state.boosts.beer, FP.config.{hazards,shop.{beerK,beerSway,beerSwayHz}}.
 // Écrit   : leak.{s,cx,cy,cr} (phase intégrée, position et rayon du corps cette frame, tangage de la bière compris), leak.hitFlash (décroissance).
 // Expose  : FP.hazards.update(state, dt), FP.hazards.leakSpeedScale(state), FP.hazards.toxicIntensityAt(o, x, y),
 //           FP.hazards.leakHeading(leak) (sens de marche : 1 ou −1).
@@ -35,7 +35,6 @@
   function update(state, dt) {
     const h = FP.config.hazards, shop = FP.config.shop, t = state.time, scale = leakSpeedScale(state), beer = state.boosts.beer;
     for (const l of state.world.leaks) {
-      if (l.lab) continue;   // v5.13.0 : limace d'un module du Lab, mue par play/lab-hazards.js
       l.s += dt * l.rate * h.leakRateK * scale * (beer ? shop.beerK : 1);   // Bière anti-limaces (boutique) : plus lentes…
       const k = leakOffset(l), sway = beer ? shop.beerSway * Math.sin(t * FP.TAU * shop.beerSwayHz + l.phase) : 0;   // … et saoules : elles tanguent, perpendiculairement au trajet
       l.cx = l.x + Math.cos(l.angle) * l.len * k - Math.sin(l.angle) * sway;

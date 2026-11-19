@@ -61,7 +61,7 @@ FP.test('tresse: rien ne bouche A ni B', () => {
     const ptsB = FP.level.pathSamples(w, B.path);
     for (const t of w.toxics) {
       const ca = Math.cos(-t.a), sa = Math.sin(-t.a);
-      for (const p of ptsB) { const dx = p.x - t.x, dy = p.y - t.y, u = (dx * ca - dy * sa) / (t.rx - bite), v = (dx * sa + dy * ca) / (t.ry - bite); FP.assert(u * u + v * v > 1, 'nappe sur le milieu de B ' + at); }
+      for (const p of ptsB) { const dx = p.x - t.x, dy = p.y - t.y, u = (dx * ca - dy * sa) / (t.rx + B.radius - bite), v = (dx * sa + dy * ca) / (t.ry + B.radius - bite); FP.assert(u * u + v * v > 1, 'nappe au-delà de toxicBite × la largeur de B ' + at); }
     }
     for (const l of w.leaks) {
       const ca = Math.cos(l.angle) * l.len / 2, sa = Math.sin(l.angle) * l.len / 2;
@@ -94,4 +94,12 @@ FP.test('tresse: la densité reste proche d’un niveau normal', () => {
   let lab = 0, normal = 0;
   for (let seed = 1; seed <= 20; seed++) { lab += braidLevel({ seed }).world.solids.length; normal += braidLevel({ seed, lab: false }).world.solids.length; }
   FP.assert(lab >= .85 * normal, `obstacles : ${lab} au Lab pour ${normal} hors Lab`);
+});
+
+// Revue finale : quand A longe le bord gauche d'un écran étroit, B doit quand même changer de côté (au moins deux croisements).
+FP.test('tresse: deux croisements même quand A longe un bord', () => {
+  for (let seed = 1; seed <= 30; seed++) {
+    const w = braidLevel({ seed, W: 280, grow: 40 }).world;
+    FP.assert(FP.braid.crossings(w).length >= 2, `graine ${seed} : ${FP.braid.crossings(w).length} croisement(s)`);
+  }
 });

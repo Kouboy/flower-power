@@ -23,7 +23,7 @@
 
   function placeToxics(state, grid) {
     const world = state.world, rng = state.rng, c = FP.config.level.toxics, pts = pathSamples(world);
-    const B = world.braid, ptsB = B ? pathSamples(world, B.path) : null, bite = B ? -FP.config.lab.braid.toxicBite * B.radius : 0;   // v5.15.0 : la tresse
+    const B = world.braid, ptsB = B ? pathSamples(world, B.path) : null, bite = B ? (1 - FP.config.lab.braid.toxicBite) * B.radius : 0;   // le bord de la nappe reste à (1 − toxicBite) × radius du milieu de B   // v5.15.0 : la tresse
     const count = countFor(c, state);
     for (let i = 0; i < count; i++) {
       // v4.2.3 : à tour de rôle dans les trois tiers de la hauteur (v3 : réservées aux profondeurs, la surface restait propre).

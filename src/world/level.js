@@ -94,6 +94,7 @@
     let m = Infinity;
     for (let i = 1; i < path.length; i++) {
       const a = path[i - 1], b = path[i];
+      if (y - Math.max(a.y, b.y) >= m || Math.min(a.y, b.y) - y >= m) continue;   // trop loin en hauteur : ne fera pas mieux (même résultat)
       m = Math.min(m, FP.geom.distPointToSegment(x, y, a.x, a.y, b.x, b.y));
     }
     return m;
@@ -137,6 +138,14 @@
     return distToSafePath(world, o.x, o.y, path) > limit + approx * FP.config.level.fit.safeApproxK;
   }
 
+  // B monte avec une pente d'au plus maxSlope : un point est au moins à |x − x de B à sa hauteur| / √(1 + maxSlope²) de B. Loin en
+  // largeur, l'objet est accepté sans le calcul exact (même résultat que clearOfSafePath, bien plus vite) ; sinon, le calcul exact.
+  function clearOfBraid(world, o) {
+    const B = world.braid, hd = Math.hypot(o.w, o.h) * .5, far = Math.abs(o.x - pathXAt(world, o.y, B.path)) / Math.hypot(1, FP.config.level.safePath.maxSlope);
+    if (far - hd >= B.radius && far > B.radius + hd * FP.config.level.fit.safeApproxK) return true;
+    return clearOfSafePath(world, o, 0, B.radius, B.path);
+  }
+
   function objectFits(world, o) {
     const f = FP.config.level.fit, W = world.width;
     if (o.x < f.centerMarginX || o.x > W - f.centerMarginX) return false;
@@ -147,7 +156,7 @@
       if (p.y < world.surfaceY + f.edgeTop || p.y > world.height - f.edgeBottom) return false;
     }
     if (!clearOfSafePath(world, o, world.solidExtra)) return false;
-    if (world.braid && !clearOfSafePath(world, o, 0, world.braid.radius, world.braid.path)) return false;   // v5.15.0 : B, la tresse, à sa largeur
+    if (world.braid && !clearOfBraid(world, o)) return false;   // v5.15.0 : B, la tresse, à sa largeur
     for (const other of world.solids) {
       if (FP.geom.convexPolysOverlap(o.footprint, other.footprint)) return false;
     }
@@ -196,13 +205,14 @@
     const count = Math.round((s.base + Math.min(s.maxExtra, Math.floor(state.difficulty * s.perLevel))) * worldScale * s.scale * s.framing * k);
     const bands = ['upper', 'middle', 'deep'];
     let misses = 0;
-    const more = world.braid ? FP.config.lab.braid.triesK : 1;   // v5.15.0 : au Lab, plus d'essais pour garder la densité malgré B
+    const more = world.braid ? FP.config.lab.braid.triesK : 1;   // v5.15.0 : au Lab, plus d'échecs tolérés avant d'abandonner (densité gardée malgré B)
     for (let i = 0; i < count && misses < s.giveUpAfter * more; i++) {
       const preferred = bands[i % 3];
       let placed = false;
-      for (let tries = 0; tries < s.tries * more && !placed; tries++) {
+      for (let tries = 0; tries < s.tries && !placed; tries++) {
         const cell = pickCell(grid, rng, c => c.r > 0 && c.r < grid.rows - 1 &&
           !(c.c === 2 && c.r > grid.rows - 3) &&                      // dégage le départ de la graine
+          !c.onBraid &&                                               // v5.15.0 : pas de case sur B (la tresse)
           (tries > s.relaxAfter || depthBand(world, c.y) === preferred));
         const o = makeCandidate(state, rng, cellPos(grid, rng, cell, s.jitter));
         if (o && objectFits(world, o)) { world.solids.push(o); placed = true; }
@@ -265,7 +275,10 @@
     if (state.run.boss) { FP.bossLevel.generate(state); return; }   // v4.12.0 : le niveau de boss a sa propre génération (world/boss.js)
     const grid = makeGrid(world.width, world.surfaceY + g.topPad, world.height - g.bottomPad);
     generateSafePath(world, rng, state.difficulty);
-    if (state.run.lab) world.braid = FP.braid.trace(world, FP.createRng((state.seed ^ FP.config.lab.braid.salt ^ Math.imul(state.level, 2654435761)) >>> 0), world.safePath, world.safeRadius);
+    if (state.run.lab) {   // v5.15.0 : la tresse ; les cases dont le centre est sur B ne sont pas tirées pour les déchets (essais perdus)
+      world.braid = FP.braid.trace(world, FP.createRng((state.seed ^ FP.config.lab.braid.salt ^ Math.imul(state.level, 2654435761)) >>> 0), world.safePath, world.safeRadius);
+      for (const c of grid.cells) c.onBraid = distToSafePath(world, c.x, c.y, world.braid.path) < world.braid.radius + Math.min(grid.cellW, grid.cellH) * .5;
+    }
     placeSignature(state, grid);
     placeSolids(state, grid, opts.lobbying ? FP.config.shop.lobbyingK : 1);
     FP.levelHazards.placeToxics(state, grid);

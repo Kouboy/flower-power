@@ -9,7 +9,7 @@
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
-  const STEP = 24;   // pas vertical entre deux nœuds de B (px)
+  const STEP = 40;   // pas vertical entre deux nœuds de B (px ; plus fin, le placement des déchets ralentit)
 
   function trace(world, rng, safePath, safeRadius) {
     const c = FP.config.lab.braid, W = world.width, y0 = safePath[0].y, y1 = safePath[safePath.length - 1].y, H = y0 - y1;
@@ -21,8 +21,13 @@
     for (let k = 0; k < spans; k++) {
       const mid = ax(y0 - (k + .5) * spanH), want = rng.range(.9, 1) * c.spread * W, room = (s) => (s < 0 ? mid - lo : hi - mid);
       const s = room(side) >= want * .8 || room(side) >= room(-side) ? side : -side;
-      plan.push({ side: s, amp: Math.min(want, room(s)) });
+      plan.push({ side: s, amp: Math.min(want, room(s)), want, room });
       side = -s;
+    }
+    // Au moins deux croisements dans tous les cas : si B est resté presque toujours du même côté (A longe un bord), on alterne de force,
+    // avec un écart plus court du côté serré (la spec l'accepte).
+    if (plan.filter((p, k) => k && p.side !== plan[k - 1].side).length < 2) {
+      plan.forEach((p, k) => { p.side = k % 2 ? -plan[0].side : plan[0].side; p.amp = Math.min(p.want, p.room(p.side)); });
     }
     const path = [];
     for (let y = y0; y > y1 - 1e-6; y -= STEP) {
