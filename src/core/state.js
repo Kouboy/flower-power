@@ -68,7 +68,7 @@
       world: {
         width: dims.W, height, baseHeight: height, growK: 1, viewH: dims.H,   // v5.3.0 : hauteur de départ et facteur d'agrandissement (world/level.js)
         surfaceY: surfaceYFor(dims.H), milieu: 'friche', level: 0,
-        skyVariant: 0, lawnVariant: 0, safePath: [], safeRadius: 0,
+        skyVariant: 0, lawnVariant: 0, safePath: [], safeRadius: 0, braid: null,
         solids: [], toxics: [], leaks: [], bonuses: [],    // bonuses : récompenses de flyover (play/powerups.js)
         coins: [], chains: []                               // circuits de pièces (world/coins.js)
       },

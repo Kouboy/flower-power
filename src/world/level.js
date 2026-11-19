@@ -1,12 +1,13 @@
 // world/level.js — génération d'un niveau à partir de la graine du run.
 // Lit     : state.rng, state.difficulty (niveau équivalent : réglages par niveau), state.level (réveil du T-Rex), state.run.{milieu,boss}, FP.config.shop.lobbyingK (option lobbying), state.world.{width,viewH,surfaceY,baseHeight,growK}, FP.state.levelHeightFor (hauteur du niveau), state.signature,
 //           FP.config.{level,spawnTables,signature,milieux,world.growMax,plant.speed}, FP.state.worldHeightFor, FP.catalog, FP.geom, FP.bossLevel.generate (niveau de boss),
-//           FP.levelHazards.{placeToxics, placeLeaks} (nappes et limaces, world/level-hazards.js).
-// Écrit   : state.world.{height,baseHeight,growK (v5.3.0 : hauteur du niveau, décidée ici),milieu,level,boss,bossLevel,skyVariant,lawnVariant,safePath,safeRadius,hazardRadius,solidExtra,solids,toxics,leaks (crossing : barre le chemin sûr, v4.17.0),bonuses}, state.signature ;
+//           FP.levelHazards.{placeToxics, placeLeaks} (nappes et limaces, world/level-hazards.js),
+//           FP.braid.trace (v5.15.0 : la tresse au Lab, world/braid.js).
+// Écrit   : state.world.{height,baseHeight,growK (v5.3.0 : hauteur du niveau, décidée ici),milieu,level,boss,bossLevel,braid (v5.15.0 : la tresse, au Lab ; null sinon),skyVariant,lawnVariant,safePath,safeRadius,hazardRadius,solidExtra,solids,toxics,leaks (crossing : barre le chemin sûr, v4.17.0),bonuses}, state.signature ;
 //           puis FP.coins.place écrit state.world.{coins,chains}.
 // Expose  : FP.level.startRun(state), FP.level.generate(state), FP.level.tableFor(milieu, band) (pur, testé),
 //           FP.level.makeToxic(rng, x, y, big),
-//           FP.level.distToSafePath(world,x,y), FP.level.pathXAt(world,y), FP.level.depthK(world,y), FP.level.depthBand(world,y) ;
+//           FP.level.distToSafePath(world,x,y), FP.level.pathXAt(world,y,path?), FP.level.depthK(world,y), FP.level.depthBand(world,y) ;
 //           aides de placement partagées avec world/level-hazards.js (nappes et limaces) : pickCell, cellPos, countFor, pathSamples, segmentToSafePath.
 // Porté de la v3.43.16 (generateSoil, generateSafePath, objectFits…) sans les familles vectorielles ni les portes.
 (function () {
@@ -212,8 +213,7 @@
 
   // --- Zones toxiques et limaces -------------------------------------------
 
-  function pathXAt(world, y) {
-    const path = world.safePath;
+  function pathXAt(world, y, path = world.safePath) {   // path (v5.15.0) : un autre chemin (B, la tresse)
     if (!path || path.length < 2) return world.width / 2;
     for (let i = 1; i < path.length; i++) {
       const a = path[i - 1], b = path[i];
@@ -258,10 +258,11 @@
     world.boss = !!state.run.boss;   // v4.10.0 : la musique suit le niveau réellement généré (milieu, boss)
     world.skyVariant = Math.floor(rng.next() * FP.config.level.skyVariants);
     world.lawnVariant = Math.floor(rng.next() * FP.config.level.lawnVariants);
-    world.bossLevel = null;
+    world.bossLevel = null; world.braid = null;   // v5.15.0 : la tresse (Lab)
     if (state.run.boss) { FP.bossLevel.generate(state); return; }   // v4.12.0 : le niveau de boss a sa propre génération (world/boss.js)
     const grid = makeGrid(world.width, world.surfaceY + g.topPad, world.height - g.bottomPad);
     generateSafePath(world, rng, state.difficulty);
+    if (state.run.lab) world.braid = FP.braid.trace(world, FP.createRng((state.seed ^ FP.config.lab.braid.salt ^ Math.imul(state.level, 2654435761)) >>> 0), world.safePath, world.safeRadius);
     placeSignature(state, grid);
     placeSolids(state, grid, opts.lobbying ? FP.config.shop.lobbyingK : 1);
     FP.levelHazards.placeToxics(state, grid);
