@@ -26,6 +26,7 @@ src/
 │   ├── boss-plan.js  ✅ plans de boss → monde (v5.1.0, FP.bossPlan) : zone du boss, proportions → coordonnées, trajets depuis la graine, distance aux parois
 │   ├── boss.js       ✅ niveau de boss (v5.1.0, FP.bossLevel) : construit depuis le plan du milieu (assets/boss/plans.js) — parois, cibles, tête, plaques, salles, tourelles, nappes ; graine propre à (graine, saison, milieu)
 │   ├── level-hazards.js ✅ nappes et limaces d'un niveau tiré au hasard (FP.levelHazards, sorti de level.js en v5.14.0)
+│   ├── braid.js      ✅ la tresse du Lab (v5.15.0, FP.braid, ?lab) : chemin B tracé autour du chemin sûr A, croisements ; world.braid = { path, radius }
 │   ├── collision.js  ✅ requête de pointe : solide, intensité toxique, contact lixiviat (sous la bière : limaces à faire éclater), frôlements en cours, danger
 │   └── hazards.js    ✅ limaces en mouvement (cx, cy, cr, hitFlash), intensité des nappes
 ├── play/

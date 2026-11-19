@@ -2,6 +2,15 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v5.15.0 — Lab : la tresse
+
+- les modules sont abandonnés (salles de béton faites à la main) : retirés du code avec tout ce qui ne servait qu'à eux (pose, horloge, limaces à rythme fixe, impulsion de gaz, tourelle hors boss, sols argile et sable, béton, mesure `&stats`, leurs sons et textes) ;
+- [`?lab`](https://kouboy.github.io/flower-power/?lab) (spec `docs/superpowers/specs/2026-11-19-tresse-design.md`) lance une partie normale (boutique, boss, graines, vitesse ; pas de record) où chaque niveau tiré au hasard a **deux chemins** : A, le chemin sûr d'aujourd'hui, inchangé ; et B, tracé autour de A, qui le croise au moins deux fois et s'en écarte entre deux croisements ; le joueur suit l'un, l'autre, ou coupe entre les deux ;
+- B est plus étroit (60 % de A) et plus risqué : les déchets le resserrent, les nappes peuvent mordre ses bords (jamais son milieu), les limaces peuvent le barrer dès le premier niveau (toujours avec un bout de course libre) ; deux traînées de pièces sur trois le suivent ;
+- même nombre de déchets qu'un niveau normal (plus d'essais de placement), à au moins 85 % en moyenne ;
+- sans `?lab`, jeu normal identique (empreintes du banc) ;
+- banc : 743 tests lancés (les 3 du robot de combat non relancés).
+
 ## v5.14.1 — Retrait de ?modules
 
 - retour de jeu sur l'essai de la v5.14.0 : les modules rendaient le jeu plus facile (couloirs larges, aucun déchet, rythmes d'un premier niveau), les transitions entre déchets et béton étaient brutales, le vide des modules semblait arbitraire, et les déchets, gardés en même nombre, se tassaient entre les modules ; conclusion de l'utilisateur : échec de l'intégration, retour au Lab, les modules manquent de personnalité, d'intérêt et de défi ;
