@@ -1,9 +1,10 @@
 // render/boss.js — le corps du boss (v5.1.0 ; matière et plaques en images depuis la v5.6.0, sinon formes du code) : parois, pompes et cœur (dessinés par render/boss-core.js, v5.8.0), plaques ; et ses menaces (liseré de la zone visée, visée depuis la bouche du canon, projectiles). Tuyaux, machines de défense, tourelles, terre et structures de liaison : render/boss-pipes.js, boss-machines.js, boss-earth.js, boss-struts.js.
 // Lit     : state.{time,camera.y,run.milieu,plant.tip,bossFight.{headOpen,destroyed},bossThreats.{rooms,aim,shots}}, state.world.{width,height,viewH,bossLevel.{walls,targets,head,plates,rooms,turrets}} (x, y, collision, off de chaque solide),
-//           FP.config.milieux, FP.palette.boss, FP.bossThreats.timing, FP.px (dont layer et blit), FP.bossSkin (images du milieu, v5.6.0 ; sans image : formes du code).
+//           FP.config.milieux, FP.palette.boss, FP.bossThreats.timing, FP.px (dont layer et blit), FP.bossSkin (images du milieu, v5.6.0 ; sans image : formes du code),
+//           FP.bossReticle (v5.16.0 : réticules des points faibles).
 // Écrit   : rien dans l'état (la toile reçue ; un calque en cache, créé à la première utilisation).
 // Expose  : FP.bossRender.draw(g, state) (corps : parois, pompes, cœur, plaques) et FP.bossRender.drawThreats(g, state) (menaces :
-//           défenses, visée, projectiles ; v5.6.0, dessinées après tout le reste du monde) — repère d'art, la caméra est appliquée ici ;
+//           défenses, visée, projectiles en impulsions dans la terre (v5.16.0), réticules ; v5.6.0, dessinées après tout le reste du monde) — repère d'art, la caméra est appliquée ici ;
 //           rien hors niveau de boss ; fillPoly, artPoly (pour boss-fx.js).
 // Cible détruite (off) : épave sombre qui fume ; plaque tombée ou paroi effondrée (off) : rien ; tête à nu (bossFight.headOpen) : lueur qui pulse ; tête transpercée (off) : épave.
 // Calque (revue finale) : parois, plaques et cibles intactes (sans leur cœur qui pulse) sont peintes une fois, sur toute la hauteur du niveau,
@@ -143,12 +144,19 @@
     }
   }
 
-  // Projectile : noyau clair dans un halo rouge, avec une traînée de deux points.
-  function shot(g, s, cam) {
-    const P = FP.palette.boss, x = FP.px.toArt(s.x), y = FP.px.toArt(s.y) - cam, sp = Math.hypot(s.vx, s.vy) || 1;
-    for (let k = 2; k >= 1; k--) FP.px.disc(g, x - s.vx / sp * k * 4, y - s.vy / sp * k * 4, 1, P.shot[0]);
-    FP.px.disc(g, x, y, FP.px.toArt(FP.config.boss.shot.r), P.shot[0]);
-    FP.px.disc(g, x, y, Math.max(1, FP.px.toArt(FP.config.boss.shot.r) - 2), P.shot[1]);
+  // Projectile (v5.16.0 : une impulsion qui traverse la terre, plus une boule de feu) : noyau clair de la taille du tir (sa zone de
+  // contact), anneaux d'onde qui battent autour, arcs d'onde laissés derrière lui, et mottes de terre soulevées sur son passage.
+  function shot(g, s, cam, t) {
+    const P = FP.palette.boss.pulse, x = FP.px.toArt(s.x), y = FP.px.toArt(s.y) - cam, sp = Math.hypot(s.vx, s.vy) || 1, ux = s.vx / sp, uy = s.vy / sp;
+    const r = Math.max(2, FP.px.toArt(FP.config.boss.shot.r)), beat = (t * 6) % 1;
+    for (let k = 1; k <= 3; k++) {   // arcs derrière : l'onde déjà passée, de plus en plus large et sombre
+      const bx = x - ux * k * 5, by = y - uy * k * 5, R = r + k * 2;
+      for (let a = -1.1; a <= 1.1; a += .35) { const c = Math.cos(a), sn = Math.sin(a); FP.px.rect(g, Math.round(bx - (ux * c - uy * sn) * R), Math.round(by - (uy * c + ux * sn) * R), 1, 1, P.wave[k > 1 ? 1 : 0]); }
+      FP.px.rect(g, Math.round(bx + uy * (R + 1) * (k % 2 ? 1 : -1)), Math.round(by - ux * (R + 1) * (k % 2 ? 1 : -1)), 2, 1, P.dirt[k % 2]);
+    }
+    const R = r + 1 + Math.round(beat * 3);   // anneau qui bat autour du noyau
+    for (let a = 0; a < FP.TAU; a += .5) FP.px.rect(g, Math.round(x + Math.cos(a) * R), Math.round(y + Math.sin(a) * R), 1, 1, P.wave[beat < .5 ? 0 : 1]);
+    FP.px.disc(g, x, y, r, P.wave[0]); FP.px.disc(g, x, y, Math.max(1, r - 1), P.core);
   }
 
   // Menaces (v5.6.0 : à part, dessinées après tout le reste du monde, premier plan compris) : défenses, visée, projectiles.
@@ -159,7 +167,8 @@
     for (const r of bl.rooms) if (th.rooms[r.id] && r.y1 >= top && r.y0 <= top + H) danger(g, r, th.rooms[r.id], cam, state);
     const a = th.aim, tur = a && bl.turrets.find(q => q.id === a.turret), to = a && (a.lockedAt || state.plant.tip);
     if (tur && to) aimLine(g, FP.bossMachines.turretPose(state, tur).muzzle, to, !!a.lockedAt, cam);   // v5.7.0 : depuis la bouche du canon
-    for (const s of th.shots) shot(g, s, cam);
+    for (const s of th.shots) shot(g, s, cam, state.time);
+    FP.bossReticle.draw(g, state);   // v5.16.0 : réticules dorés des points faibles repérés
   }
 
   function draw(g, state) {

@@ -107,9 +107,12 @@
     },
     weak: ['#ffff80', '#ffe838'], plate: ['#d8c8a0', '#14100a'],
     glow: ['#e86a28', '#ff9a3a'], smoke: ['#5a5650', '#8a867e'], hole: '#0c0806',
-    // Menaces (render/boss.js) : liseré orange de la zone visée (v5.7.0, à la place des hachures), ligne de visée qui suit puis figée, projectile ;
+    // Menaces (render/boss.js) : liseré orange de la zone visée (v5.7.0, à la place des hachures), ligne de visée qui suit puis figée ;
     // explosions (render/boss-fx.js).
-    alert: ['#ffc040', '#e86a28'], aim: ['#ffb060', '#ff3a2a'], shot: ['#ff3a2a', '#ffff80'], boom: ['#fff8b0', '#ffff80', '#ffe838', '#ff9a3a', '#e86a28'],
+    alert: ['#ffc040', '#e86a28'], aim: ['#ffb060', '#ff3a2a'],
+    // v5.16.0 : tir des tourelles = impulsion à travers la terre (noyau, anneaux d'onde clair et sombre, terre soulevée) ; réticule doré
+    // des points faibles (or clair, or sombre : la couleur de ce qui rapporte, jamais le rouge des menaces).
+    pulse: { core: '#fff2c0', wave: ['#ffb060', '#b86a2a'], dirt: ['#6a4a2a', '#3e2a18'] }, reticle: ['#ffd84a', '#a8781a'], boom: ['#fff8b0', '#ffff80', '#ffe838', '#ff9a3a', '#e86a28'],
     flash: '#f8ffd0',   // éclair du point faible détruit (render/boss-fx.js) : presque blanc, chaud, loin du rose pâle des limaces
     // Tuyaux de la machine (v5.7.0, render/boss-pipes.js) : fonte rouillée ; flow : flux vert toxique qui va des pompes au cœur (clair, sombre).
     pipe: { body: '#5a4a3e', light: '#80684f', dark: '#2e241c', joint: '#3a3028', rust: '#8a4a22' },

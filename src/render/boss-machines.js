@@ -5,7 +5,7 @@
 // il n'est dessiné que dans la part déployée (FP.bossThreats.reach), celle-là même qui tue. Zones et durées : play/boss-threats.js ;
 // le liseré de la zone visée est dessiné avec les autres menaces (render/boss.js, drawThreats).
 // Lit     : state.{time, camera.y, run.milieu, plant.tip, bossFight.destroyed, bossThreats.{rooms, aim, burst, cooldown, shots}},
-//           state.world.{viewH, bossLevel.{rooms, turrets, head}}, FP.config.{milieux, boss.{machines (drops, puffs, arcs), turret, shot.track,
+//           state.world.{viewH, bossLevel.{rooms, turrets, head}}, FP.config.{milieux, boss.{machines (drops, reach, arcs), turret, shot.track,
 //           ramp[id].shot.gap}}, FP.bossThreats.{timing, MOUNT, deployed, reach}, FP.bossSkin.{image, piece}, FP.palette.boss.{milieux, machines, aim, weak}, FP.px.
 // Écrit   : rien dans l'état (la toile reçue).
 // Expose  : FP.bossMachines.layout(room, half, defense) → { kind, mount: 'ceiling' | 'wall', side (-1 gauche, 1 droite), x0, y0, x1, y1 }
@@ -58,11 +58,15 @@
       }
     } else {
       const x = wallX(a, b.side), dir = -b.side;
+      // v5.16.0 (retour de jeu : « on ne sait pas de quel côté ça va torcher ») : l'annonce s'allonge vers la moitié frappée, jusqu'à
+      // K.reach px d'art à la fin de l'avertissement ; on lit le côté même quand le haut et le bas du cadre sont hors champ.
+      const len = 4 + Math.round(p * K.reach), flick = Math.floor(t * 18) % 2;
       for (const y of nozzles(a)) {
-        if (b.kind === 'flamme') { const r = 1 + Math.round(p * 2); FP.px.disc(g, x + 2 + dir * 3, y + 2, r, p > .5 ? Q.flame[1] : Q.pilot); }
-        else {
+        if (b.kind === 'flamme') {   // langue de veilleuse : cœur bleu qui s'allonge, pointe orangée quand le coup approche
+          for (let d = 0; d < len; d += 2) { const r = Math.max(1, Math.round((1 - d / len) * (1 + p * 2))); FP.px.disc(g, x + 2 + dir * (3 + d), y + 2 + (d % 4 ? 0 : flick), r, d > len * .6 && p > .5 ? Q.flame[1] : Q.pilot); }
+        } else {
           FP.px.rect(g, x + 1, y + 1, 2, 2, Q.hot);
-          for (let k = 0; k < K.puffs; k++) if ((Math.floor(t * 10) + k + y) % 3 === 0) FP.px.rect(g, x + 2 + dir * (4 + k * 3), y + 1 - (k % 2), 2, 2, Q.steam[k % 2]);
+          for (let d = 4, k = 0; d <= len; d += 3, k++) if ((Math.floor(t * 10) + k + y) % 3 === 0 || d > len - 4) FP.px.rect(g, x + 2 + dir * d, y + 1 - (k % 2), 2, 2, Q.steam[k % 2]);
         }
       }
     }

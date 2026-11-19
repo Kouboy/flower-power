@@ -7,7 +7,7 @@
   const FP = window.FP = window.FP || {};
 
   FP.config = {
-    version: '5.15.0',
+    version: '5.16.0',
     storageKey: 'flower_power_v4_best',
 
     view: {
@@ -270,9 +270,9 @@
       // piston d'une pompe ; headShake = tremblement du cœur blindé (px d'art) au rythme du flux qui arrive.
       pipes: { width: 6, flowSpeed: 60, pulseGap: 26, leakRate: 6, pumpHz: 1.6, headShake: 1 },
       // Machines de défense (v5.7.0, render/boss-machines.js, render/boss.js) : border = épaisseur du liseré de la zone visée (px d'art) ;
-      // drops, puffs, arcs = gouttes de béton, bouffées de vapeur par buse, arcs de radiation pendant l'avertissement.
+      // drops, arcs = gouttes de béton, arcs de radiation pendant l'avertissement ; reach (v5.16.0) = longueur de l'annonce des buses et brûleurs (px d'art) à sa fin ; spot (v5.16.0) = réticule des points faibles : margin (× écran) avant d'être repéré, close (s) pour se refermer.
       // cover (v5.8.0) = part minimale de chaque rangée de la moitié frappée qui porte l'effet du coup (sur fond transparent).
-      machines: { border: 1, drops: 5, puffs: 4, arcs: 3, cover: .35 },
+      machines: { border: 1, drops: 5, reach: 20, arcs: 3, cover: .35 }, spot: { margin: .08, close: .35 },
       // Tourelles (v5.7.0, render/boss-machines.js) : size = socle, barrel = canon, recoil = recul au tir (px d'art) ; recoilTime = durée du recul (s).
       turret: { size: 24, barrel: 14, recoil: 3, recoilTime: .15 },   // v5.8.0 : plus grosses (on ne les voyait pas)
       // Terre (v5.7.0, render/boss-earth.js) : fringe = frange max d'un bord rongé (px d'art) ; clods = densité des mottes ; roots = racines par bord.

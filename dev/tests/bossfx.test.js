@@ -69,7 +69,7 @@ FP.test('bossRender: dessine sans erreur chaque étape (idle, warn, strike, vis�
     FP.assert(locked.has(FP.palette.boss.aim[1]) && !locked.has(FP.palette.boss.aim[0]), 'ligne figée : autre couleur');
     s.bossThreats.aim = null;
     const shot = colors(() => { s.bossThreats.shots.push({ x: tip.x, y: tip.y, vx: 420, vy: 0, solid: {} }); });
-    FP.assert(shot.has(FP.palette.boss.shot[0]) && shot.has(FP.palette.boss.shot[1]), 'projectile');
+    FP.assert(shot.has(FP.palette.boss.pulse.core) && shot.has(FP.palette.boss.pulse.wave[0]), 'projectile (v5.16.0 : impulsion dans la terre)');
   }
 });
 

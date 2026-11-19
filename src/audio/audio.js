@@ -1,5 +1,5 @@
 // audio/audio.js — chef d'orchestre du son (Web Audio, aucun fichier) : déblocage au premier geste, événements de la frame →
-// effets (FP.sfx, dont les sons du boss : bossTarget, bossSeed, bossWarn, bossLock, bossShot, bossHead, bossBlast, bossCrumble, le rot burp au leakPop, et le jingle bossVictory au bossPeak ; un assaut ne joue ni impact ni jingle de mort) et musique (FP.music), pause quand l'onglet est caché.
+// effets (FP.sfx, dont les sons du boss : bossTarget, bossSeed, bossWarn, bossStrike, bossAim, bossSpot (v5.16.0), bossLock, bossShot, bossHead, bossBlast, bossCrumble, le rot burp au leakPop, et le jingle bossVictory au bossPeak ; un assaut ne joue ni impact ni jingle de mort) et musique (FP.music), pause quand l'onglet est caché.
 // Lit     : les événements de la frame, state (via FP.sfx.drone et FP.music.update ; state.bossFight.destroyed et state.run.milieu pour la durée de bossWarn, la gamme des ramassages et la tonique des sons — v5.10.0 —, state.mode : aucune tonique au menu ni sur l'écran de fin), FP.bossThreats.timing, FP.config.milieux, FP.synth, FP.state.current.
 // Écrit   : rien dans l'état.
 // Expose  : FP.audio.consume(events, state, dt), FP.audio.sfx(name, intensity?), FP.audio.unlock(),
@@ -88,6 +88,7 @@
       case 'death': if (e.cause === 'assault') return;   // l'assaut : l'explosion de la cible (bossTarget) tient lieu de son, pas de jingle de mort
         FP.sfx.play(b, e.cause === 'solid' ? 'hit' : 'acid', 1, key); return FP.sfx.jingle(b, 'death', key);
       case 'bossWarn': return FP.sfx.play(b, 'bossWarn', warnTime(state), key);   // monte sur toute la durée de l'avertissement
+      case 'bossStrike': case 'bossAim': case 'bossSpot':   // v5.16.0 : coup d'une défense, visée d'une tourelle, point faible repéré
       case 'bossTarget': case 'bossSeed': case 'bossLock': case 'bossShot': case 'bossHead': case 'bossBlast': case 'bossCrumble': return FP.sfx.play(b, e.type, 1, key);
       case 'bossPeak': return FP.sfx.jingle(b, 'bossVictory', key);   // la musique s'est tue à la tête transpercée (FP.music) : la victoire éclate dans le silence
       case 'leakPop': return FP.sfx.play(b, 'burp', 1, key);

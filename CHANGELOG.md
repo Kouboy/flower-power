@@ -2,6 +2,15 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v5.16.0 — Lisibilité des boss
+
+- retours de jeu et de playtest (spec `docs/superpowers/specs/2026-11-19-lisibilite-boss-design.md`) ;
+- **côté des brûleurs** : pendant l'avertissement, les veilleuses bleues des brûleurs (et les bouffées des buses de vapeur) s'allongent vers la moitié qui va être frappée, jusqu'à 20 px d'art, pointe orangée à l'approche du coup : on lit le côté même quand le haut ou le bas du cadre est hors champ ;
+- **tirs des tourelles** : plus de boules de feu, des impulsions qui traversent la terre (noyau clair de la taille du tir, anneau qui bat, arcs d'onde et mottes de terre derrière) ; vitesse, rafale et zone de contact inchangées ;
+- **sons** : le coup de chaque défense (brûleurs compris) a enfin un son, la tourelle a un son de visée, un verrouillage double plus net et un tir sourd « dans la terre » ; tous accordés sur la tonique et le mode du biome ;
+- **réticules dorés** (suggestion de playtest) : quand une pompe intacte, puis le cœur à nu, entre dans le champ pour la première fois du niveau, un réticule doré se referme sur sa silhouette avec deux petites clochettes (distinctes du clic des tourelles) ; il reste posé tant que la cible est intacte et à l'écran ;
+- banc : tests de lisibilité ajoutés (`dev/tests/bossread.test.js`).
+
 ## v5.15.0 — Lab : la tresse
 
 - les modules sont abandonnés (salles de béton faites à la main) : retirés du code avec tout ce qui ne servait qu'à eux (pose, horloge, limaces à rythme fixe, impulsion de gaz, tourelle hors boss, sols argile et sable, béton, mesure `&stats`, leurs sons et textes) ;
