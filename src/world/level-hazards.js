@@ -3,7 +3,8 @@
 //           level.leaks, difficulty.levelAtMax}, FP.camera.safeX (limaces), FP.geom.distPointToSegment, FP.config.braid.toxicBite, FP.level.{pickCell, cellPos, countFor,
 //           pathSamples, segmentToSafePath, distToSafePath, pathXAt, depthK, makeToxic}.
 // Écrit   : state.world.{toxics, leaks (crossing : barre le chemin sûr, v4.17.0)}.
-// Expose  : FP.levelHazards.placeToxics(state, grid), FP.levelHazards.placeLeaks(state, grid).
+// Expose  : FP.levelHazards.placeToxics(state, grid), FP.levelHazards.placeLeaks(state, grid), FP.levelHazards.toxicClear(o, pts, margin) (pur ;
+//           v5.17.1 : aussi pour les nappes des îlots, world/islands.js).
 (function () {
   'use strict';
   const FP = window.FP = window.FP || {};
@@ -126,5 +127,5 @@
     }
   }
 
-  FP.levelHazards = { placeToxics, placeLeaks };
+  FP.levelHazards = { placeToxics, placeLeaks, toxicClear };
 })();

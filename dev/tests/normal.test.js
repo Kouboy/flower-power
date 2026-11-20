@@ -18,7 +18,7 @@ FP.test('normal: plus aucune trace des modules', () => {
   FP.assertEqual(FP.loop.UPDATE_ORDER.filter(k => /^lab/.test(k)).length, 0);
 });
 
-// Empreinte de deux niveaux normaux (graines 3 et 11, 360 × 640), relevée à la v5.17.0 (la tresse et ses îlots) : la génération ne bouge plus sans le vouloir.
+// Empreinte de deux niveaux normaux (graines 3 et 11, 360 × 640), relevée à la v5.17.2 (la tresse et ses îlots) : la génération ne bouge plus sans le vouloir.
 FP.test('normal: empreinte des niveaux', () => {
   const out = [];
   for (const seed of [3, 11]) {
@@ -28,12 +28,12 @@ FP.test('normal: empreinte des niveaux', () => {
     let h = 2166136261; for (const ch of j) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
     out.push(h);
   }
-  FP.assertEqual(out.join(), '3000986403,2124523020');
+  FP.assertEqual(out.join(), '460772944,1701488530');
 });
 
-// Empreinte relevée à la v5.17.0 : seed 3, 360 × 640, 30 pas de 1/60 s.
+// Empreinte relevée à la v5.17.2 : seed 3, 360 × 640, 30 pas de 1/60 s.
 FP.test('normal: empreinte des limaces', () => {
   const s = FP.state.createRun(3, { W: 360, H: 640 }); FP.level.startRun(s); FP.plant.launch(s);
   for (let i = 0; i < 30; i++) { s.time += 1 / 60; FP.hazards.update(s, 1 / 60); }
-  FP.assertEqual(s.world.leaks.map(l => l.cx.toFixed(3) + ',' + l.cy.toFixed(3)).join(' '), '216.229,211.806 166.480,843.923 206.778,540.590');
+  FP.assertEqual(s.world.leaks.map(l => l.cx.toFixed(3) + ',' + l.cy.toFixed(3)).join(' '), '172.025,359.662 259.965,794.365 199.478,436.399');
 });

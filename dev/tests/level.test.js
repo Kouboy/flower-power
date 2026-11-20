@@ -17,7 +17,7 @@ FP.test('level: aucun chevauchement visuel', noOverlap);
 function safePathClear() {
   for (const seed of [1, 2, 3, 1234, 99999]) {
     const s = gen(seed), w = s.world;
-    for (const o of w.solids) for (const p of FP.catalog.visibleFootprint(o))
+    for (const o of w.solids.filter(q => !q.island)) for (const p of FP.catalog.visibleFootprint(o))   // v5.17.2 : les éléments d'îlot (island) ont leurs propres règles (islands.test.js)
       FP.assert(FP.level.distToSafePath(w, p.x, p.y) >= w.safeRadius, `seed ${seed}: ${o.kind}`);
   }
 }
@@ -86,7 +86,7 @@ FP.test('level: toxiques et limaces générés et déterministes', () => {
 FP.test('level: chemin sûr hors des toxiques', () => {
   for (const seed of [1, 2, 3, 1234, 99999]) {
     const w = gen(seed).world;
-    for (const o of w.toxics) FP.assert(FP.level.distToSafePath(w, o.x, o.y) > w.safeRadius + Math.max(o.rx, o.ry) * .62 + 4, `${seed}`);
+    for (const o of w.toxics.filter(q => !q.island)) FP.assert(FP.level.distToSafePath(w, o.x, o.y) > w.safeRadius + Math.max(o.rx, o.ry) * .62 + 4, `${seed}`);   // v5.17.2 : les éléments d'îlot (island) ont leurs propres règles (islands.test.js)
   }
 });
 FP.test('level: limaces n’obstruent pas le chemin', () => {
@@ -139,7 +139,8 @@ const toxicCover = (level) => {
   let n = 0, cov = 0;
   for (let seed = 1; seed <= 12; seed++) {
     const s = FP.state.createRun(seed, { W: 440, H: 783 }); s.level = level; s.difficulty = level; FP.level.startRun(s);
-    n += s.world.toxics.length; cov += s.world.toxics.reduce((a, o) => a + Math.PI * o.rx * o.ry, 0) / (s.world.width * (s.world.height - s.world.surfaceY));
+    const ts = s.world.toxics.filter(o => !o.island);   // v5.17.2 : les éléments d'îlot (island) ont leurs propres règles (islands.test.js)
+    n += ts.length; cov += ts.reduce((a, o) => a + Math.PI * o.rx * o.ry, 0) / (s.world.width * (s.world.height - s.world.surfaceY));
   }
   return { n: n / 12, cov: cov / 12 };
 };
@@ -208,7 +209,7 @@ FP.test('level: des limaces barrent le chemin dans les derniers niveaux, jamais 
 FP.test('level: à tous les niveaux, aucun déchet ne mord sur le chemin sûr', () => {
   for (const level of LEVELS) for (const seed of SEEDS) {
     const w = genAt(seed, level, seed % 4);   // les quatre milieux, tour à tour
-    for (const o of w.solids) for (const p of FP.catalog.visibleFootprint(o)) FP.assert(FP.level.distToSafePath(w, p.x, p.y) >= w.safeRadius, `niveau ${level}, graine ${seed}, ${o.kind}`);
+    for (const o of w.solids.filter(q => !q.island)) for (const p of FP.catalog.visibleFootprint(o)) FP.assert(FP.level.distToSafePath(w, p.x, p.y) >= w.safeRadius, `niveau ${level}, graine ${seed}, ${o.kind}`);   // v5.17.2 : les éléments d'îlot (island) ont leurs propres règles (islands.test.js)
   }
 });
 // Difficulté par la forme du chemin (v4.8.0) : plus étroit et plus sinueux avec les niveaux, dangers plafonnés.
@@ -234,7 +235,7 @@ FP.test('level: dangers et déchets se rapprochent du chemin avec les niveaux', 
   const w0 = genAt(3, 0), w10 = genAt(3, 10), w20 = genAt(3, 20), hard = FP.config.level.safePath.hard;
   FP.assertEqual(w0.hazardRadius, FP.config.level.safePath.radiusBase); FP.assertEqual(w10.hazardRadius, hard.hazardRadius); FP.assertEqual(w20.hazardRadius, hard.hazardRadius);
   FP.assertEqual(w0.solidExtra, FP.config.level.fit.safeExtra); FP.assertEqual(w10.solidExtra, hard.solidExtra);
-  for (const seed of SEEDS) { const w = genAt(seed, 10); for (const o of w.toxics) FP.assert(FP.level.distToSafePath(w, o.x, o.y) > w.hazardRadius + Math.max(o.rx, o.ry) * FP.config.level.toxics.safeK + FP.config.level.toxics.safeExtra, `graine ${seed}`); }
+  for (const seed of SEEDS) { const w = genAt(seed, 10); for (const o of w.toxics.filter(q => !q.island)) FP.assert(FP.level.distToSafePath(w, o.x, o.y) > w.hazardRadius + Math.max(o.rx, o.ry) * FP.config.level.toxics.safeK + FP.config.level.toxics.safeExtra, `graine ${seed}`); }
 });
 FP.test('level: la difficulté règle le chemin, pas le compteur de niveaux', () => {
   const at = (level, difficulty) => { const s = FP.state.createRun(5, { W: 440, H: 783 }); s.level = level; s.difficulty = difficulty; FP.level.generate(s); return s.world.safeRadius; };

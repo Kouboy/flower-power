@@ -2,6 +2,22 @@
 
 Une entrée par version (voir `AGENTS.md`).
 
+## v5.17.2 — Les déchets retrouvent leur taille, les tourelles anticipent
+
+Version jamais mise en ligne seule : elle réunit la correction de la taille des déchets (ci-dessous, v5.17.1) et deux retours de jeu.
+
+- **îlots** : un déchet d'îlot peut déborder sur les chemins et mordre jusqu'à la moitié de la largeur garantie de A et de B (« on est large ») : plus de déchets dans les îlots (environ 40 % des îlots en 360 px, 75 % en 440 ; les autres ont une nappe), et une densité presque d'origine (163 obstacles pour 170 sans tresse, sur vingt niveaux) ;
+- **tourelles des îlots** : au verrouillage, elles visent en amont de la pousse, là où elle sera quand le tir arrivera (80 % de son avance si elle file droit) ; la ligne de visée le montre ; les ignorer en filant droit ne marche plus ;
+- l'option lobbying de la boutique enlève aussi des déchets dans les îlots ; une traînée de pièces qui devait suivre B et le trouve barré par un déchet d'îlot passe sur A ;
+- banc : test de la visée en amont ; les déchets et nappes d'îlot sont marqués (`island`) et ont leurs propres règles (les tests des règles ordinaires les mettent de côté) ; empreintes du jeu normal relevées à nouveau.
+
+## v5.17.1 — Les déchets retrouvent leur taille
+
+- retour de jeu : des micro-ondes plus grands que des frigos, des matelas plus petits que des extincteurs… En v5.17.0, les déchets des îlots étaient réduits (jusqu'à 60 %) pour y tenir ; ils sont maintenant toujours à leur taille (au tirage habituel près) : un îlot reçoit, parmi quelques déchets du biome, le premier qui y tient ;
+- l'écart de B revient à celui de la v5.15.0 (30 % de la largeur) : à 42 %, B prenait la place d'environ 30 % des déchets du niveau (la réduction le masquait) ; densité revenue (154 obstacles pour 170 sans tresse, sur vingt niveaux) ;
+- un îlot trop étroit pour un déchet reçoit une nappe toxique à sa mesure, allongée dans son sens (40 à 90 px de large, environ deux fois plus haute), jamais dans le couloir de A, ne mordant que les bords de B : 84 à 98 % des îlots sont peuplés selon l'écran ; les tourelles ne changent pas ;
+- banc : tests de la taille des déchets et des nappes des îlots ; empreintes du jeu normal relevées à nouveau.
+
 ## v5.17.0 — La tresse dans le jeu normal, îlots peuplés
 
 - la tresse est validée au playtest (« ça rend les traversées plus intéressantes ») : chaque niveau tiré au hasard a maintenant ses deux chemins, A (sûr, inchangé) et B (plus étroit, plus payant) ; rien ne change aux niveaux de boss (spec `docs/superpowers/specs/2026-11-19-tresse-ilots-design.md`) ;

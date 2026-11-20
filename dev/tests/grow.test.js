@@ -99,8 +99,8 @@ FP.test('grow: au facteur max, règles des niveaux tenues', () => {
     const w = growAt(W, 40, seed, 6, seed % 4), so = w.solids, tag = W + ' / ' + seed;
     for (let i = 0; i < so.length; i++) for (let j = i + 1; j < so.length; j++)
       FP.assert(!FP.geom.convexPolysOverlap(so[i].footprint, so[j].footprint), 'chevauchement ' + tag);
-    for (const o of so) for (const p of FP.catalog.visibleFootprint(o)) FP.assert(FP.level.distToSafePath(w, p.x, p.y) >= w.safeRadius, 'chemin ' + tag + ' ' + o.kind);
-    for (const o of w.toxics) FP.assert(FP.level.distToSafePath(w, o.x, o.y) > w.safeRadius, 'nappe ' + tag);
+    for (const o of so.filter(q => !q.island)) for (const p of FP.catalog.visibleFootprint(o)) FP.assert(FP.level.distToSafePath(w, p.x, p.y) >= w.safeRadius, 'chemin ' + tag + ' ' + o.kind);   // v5.17.2 : les éléments d'îlot (island) ont leurs propres règles (islands.test.js)
+    for (const o of w.toxics.filter(q => !q.island)) FP.assert(FP.level.distToSafePath(w, o.x, o.y) > w.safeRadius, 'nappe ' + tag);
     for (const l of w.leaks) {
       const ends = [-.5, .5].map(q => ({ x: l.x + Math.cos(l.angle) * l.len * q, y: l.y + Math.sin(l.angle) * l.len * q }));
       const free = (e) => FP.level.distToSafePath(w, e.x, e.y) > l.r + h.leakWobble + h.leakHitPad;

@@ -1,9 +1,10 @@
 // play/island-turrets.js — les tourelles enfouies des îlots (v5.17.0, spec docs/superpowers/specs/2026-11-19-tresse-ilots-design.md),
 // posées par world/islands.js : celles des boss, hors des boss. Quand la pointe est à portée (braid.islands.turret.range) et la tourelle
-// à l'écran, elle vise boss.shot.track s (la visée se fige boss.shot.lock s avant la fin), puis tire sa rafale (boss.shot.burst tirs
+// à l'écran, elle vise boss.shot.track s (la visée se fige boss.shot.lock s avant la fin — v5.17.2 : en amont de la pousse, là où elle
+// sera quand le tir arrivera, × turret.lead), puis tire sa rafale (boss.shot.burst tirs
 // espacés de burstGap, l'axe puis ± spread°) à turret.speed px/s, et attend turret.gap s. Les tirs s'arrêtent dans les obstacles ; rien
 // ne vit hors du jeu (mort, éclosion, boutique). Une tourelle nettoyée par la spore (son solide a quitté world.solids) se tait.
-// Lit     : state.{mode, flow.freeze, plant.tip, camera.y}, state.world.{turrets, turretShots, solids, viewH, width, height},
+// Lit     : state.{mode, flow.freeze, plant.{tip, dir}, camera.y}, FP.plant.speed, state.world.{turrets, turretShots, solids, viewH, width, height},
 //           FP.config.{braid.islands.turret, boss.shot}, FP.collision.distanceTo.
 // Écrit   : turret.{aim: { t, lockedAt } | null, burst: { to, n, t } | null, cooldown} ; state.world.turretShots ([{ x, y, vx, vy, solid }]) ;
 //           solides 'shot' dans state.world.solids tant qu'un tir vole ; state.events (bossAim, bossLock, bossShot { turret: index, island: true } :
@@ -38,6 +39,13 @@
     state.events.push({ type: 'bossShot', turret: i, island: true });
   }
 
+  // Là où la pousse sera quand le tir arrivera : sa vitesse × (fin du verrouillage + trajet du tir) × turret.lead.
+  function ahead(state, q) {
+    const tip = state.plant.tip, dir = state.plant.dir, T = FP.config.braid.islands.turret;
+    const k = FP.plant.speed(state) * (FP.config.boss.shot.lock + Math.hypot(tip.x - q.x, tip.y - q.y) / T.speed) * T.lead;
+    return { x: tip.x + dir.x * k, y: tip.y + dir.y * k };
+  }
+
   function update(state, dt) {
     const w = state.world;
     if (!w.turrets.length && !w.turretShots.length) return;
@@ -53,7 +61,7 @@
       if (q.burst) q.burst.t += dt;
       if (q.aim) {
         q.aim.t += dt;
-        if (!q.aim.lockedAt && q.aim.t >= C.track - C.lock) { q.aim.lockedAt = { x: tip.x, y: tip.y }; state.events.push({ type: 'bossLock', turret: i, island: true }); }
+        if (!q.aim.lockedAt && q.aim.t >= C.track - C.lock) { q.aim.lockedAt = ahead(state, q); state.events.push({ type: 'bossLock', turret: i, island: true }); }
         if (q.aim.t >= C.track) { q.burst = { to: q.aim.lockedAt, n: 0, t: 0 }; q.aim = null; }
       } else if (!q.burst) {
         q.cooldown = Math.max(0, q.cooldown - dt);

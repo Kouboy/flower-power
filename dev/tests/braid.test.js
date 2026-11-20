@@ -55,8 +55,9 @@ FP.test('tresse: rien ne bouche A ni B', () => {
   braidSome((s, at) => {
     const w = s.world, B = w.braid, bite = FP.config.braid.toxicBite * B.radius, cl = FP.config.level.leaks.cross.clearPad;
     for (const o of w.solids.filter(q => q.w)) for (const p of boxPts(o)) {
-      FP.assert(toB(w, p.x, p.y) >= B.radius - 1e-6, `obstacle ${o.kind} à ${toB(w, p.x, p.y).toFixed(1)} px de B ` + at);
-      FP.assert(FP.level.distToSafePath(w, p.x, p.y) >= w.safeRadius - 1e-6, `obstacle ${o.kind} dans A ` + at);
+      // v5.17.2 : un déchet d'îlot peut mordre islands.bite de la largeur garantie de A et de B, jamais plus.
+      FP.assert(toB(w, p.x, p.y) >= B.radius * (1 - FP.config.braid.islands.bite) - 1e-6, `obstacle ${o.kind} à ${toB(w, p.x, p.y).toFixed(1)} px de B ` + at);
+      FP.assert(FP.level.distToSafePath(w, p.x, p.y) >= w.safeRadius * (1 - FP.config.braid.islands.bite) - 1e-6, `obstacle ${o.kind} dans A ` + at);
     }
     const ptsB = FP.level.pathSamples(w, B.path);
     for (const t of w.toxics) {

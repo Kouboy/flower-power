@@ -1,16 +1,27 @@
 // Îlots de la tresse (v5.17.0, spec docs/superpowers/specs/2026-11-19-tresse-ilots-design.md) : des déchets entre A et B, puis, à partir du
 // deuxième biome, au plus une tourelle enfouie par îlot. Aides : braidLevel (braid.test.js), recCtx (decor.test.js).
 
-// Les solides d'un îlot : entre A et B, à sa hauteur.
-const inIsland = (w, sp) => w.solids.filter(o => o.y <= sp.y0 && o.y >= sp.y1 && (o.x - FP.level.pathXAt(w, o.y)) * (o.x - FP.level.pathXAt(w, o.y, w.braid.path)) < 0);
+// Les solides (ou les nappes, list) d'un îlot : entre A et B, à sa hauteur.
+const inIsland = (w, sp, list = w.solids) => list.filter(o => o.y <= sp.y0 && o.y >= sp.y1 && (o.x - FP.level.pathXAt(w, o.y)) * (o.x - FP.level.pathXAt(w, o.y, w.braid.path)) < 0);
 
-FP.test('îlots: la plupart sont peuplés', () => {
+// v5.17.1 : à leur taille (jamais réduits), les déchets ne tiennent que dans les îlots assez larges ; les autres ont une nappe à leur mesure.
+FP.test('îlots: presque tous sont peuplés, d’un déchet ou d’une nappe', () => {
   let n = 0, full = 0;
   for (const W of [360, 440]) for (const m of [0, 1, 2, 3]) for (let seed = 1; seed <= 6; seed++) {
     const w = braidLevel({ seed, W, m }).world;
-    for (const sp of FP.islands.spans(w)) { n += 1; if (inIsland(w, sp).length) full += 1; }
+    for (const sp of FP.islands.spans(w)) { n += 1; if (inIsland(w, sp).length || inIsland(w, sp, w.toxics).length) full += 1; }
   }
-  FP.assert(full / n >= .6, `îlots peuplés : ${full}/${n}`);
+  FP.assert(full / n >= .8, `îlots peuplés : ${full}/${n}`);
+});
+FP.test('îlots: leurs nappes restent hors du couloir de A, et pas en petits points', () => {
+  const k = FP.config.braid.islands.pool.edgeK;
+  for (const W of [280, 360, 440]) for (const m of [0, 2]) for (let seed = 1; seed <= 5; seed++) {
+    const w = braidLevel({ seed, W, m }).world, pts = FP.level.pathSamples(w);
+    for (const sp of FP.islands.spans(w)) for (const t of inIsland(w, sp, w.toxics)) {
+      FP.assert(FP.levelHazards.toxicClear(t, pts, w.hazardRadius * k - 1e-6), `nappe dans A (W=${W} biome ${m} graine ${seed})`);
+      FP.assert(t.rx >= FP.config.braid.islands.pool.rx[0], `nappe ${t.rx | 0}×${t.ry | 0}`);   // (les nappes ordinaires peuvent aussi tomber dans un îlot)
+    }
+  }
 });
 
 FP.test('îlots: jamais plus d’une tourelle par îlot, aucune au premier biome', () => {
@@ -95,4 +106,27 @@ FP.test('tourelle d’îlot: dessinée sans pointe', () => {
   const { s, q } = turretGame(); s.plant.tip = null; s.mode = 'ready';
   FP.assertEqual(FP.islandTurrets.pose(s, q).angle, -Math.PI / 2); FP.assertEqual(FP.islandTurrets.pose(s, q).aim, null);
   FP.islandTurretView.drawBody(recCtx(), s); FP.islandTurretView.drawThreats(recCtx(), s);
+});
+
+// Retour de jeu (v5.17.1) : réduits pour tenir dans les îlots, des micro-ondes dépassaient des frigos. Chaque déchet garde sa taille de
+// référence (au tirage de taille près, sizeJitter) ; seul le T-Rex signature se règle sur l'écran.
+FP.test('îlots: chaque déchet garde sa taille de référence', () => {
+  const [lo, hi] = FP.config.level.solids.sizeJitter;
+  for (const W of [280, 360, 440]) for (const m of [0, 1, 2, 3]) for (let seed = 1; seed <= 5; seed++) for (const o of braidLevel({ seed, W, m }).world.solids) {
+    if (o.kind === 'turret' || o.kind === 'trex_signature') continue;
+    const k = o.w / FP.catalog.assets[o.kind].render.worldWidth;
+    FP.assert(k >= lo - 1e-9 && k <= hi + 1e-9, `${o.kind} à ${Math.round(k * 100)} % (W=${W} biome ${m} graine ${seed})`);
+  }
+});
+
+// Retour de jeu (v5.17.2) : « trop facile de les ignorer ». Au verrouillage, la tourelle vise là où la pousse sera quand le tir arrivera
+// (sa vitesse, le temps du verrouillage et du trajet, × turret.lead), pas là où elle est.
+FP.test('tourelle d’îlot: vise en amont de la pousse', () => {
+  const { s, q } = turretGame(), C = FP.config.boss.shot, T = FP.config.braid.islands.turret;
+  s.plant.dir = { x: 0, y: -1 }; const tip = { ...s.plant.tip }, v = FP.plant.speed(s);
+  turretRun(s, C.track - C.lock + .02);
+  const at = q.aim.lockedAt, d = Math.hypot(tip.x - q.x, tip.y - q.y);
+  FP.assert(at, 'figée'); FP.assertEqual(Math.round(at.x), Math.round(tip.x), 'droit devant');
+  const ahead = tip.y - at.y, want = v * (C.lock + d / T.speed) * T.lead;
+  FP.assert(ahead > want * .8 && ahead < want * 1.2, `en avance de ${ahead | 0} px (attendu ~${want | 0})`);
 });

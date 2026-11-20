@@ -37,3 +37,18 @@ La tresse (v5.15.0, spec 2026-11-19-tresse-design.md) quitte le Lab : chaque niv
 - Mesuré à l'implémentation : même réduits de moitié, les déchets (36 à 86 px) ne tenaient pas dans les îlots (15 à 55 px). B s'écarte
   donc plus de A (`spread` .3 → .42), et `minScale` est .6 (pas de déchets minuscules) : 60 à 95 % des îlots peuplés en 360–440 px.
 - L'alternance forcée de B (A le long d'un bord) commence du côté le moins serré (un îlot de 28 px sinon).
+
+## v5.17.1 (retour de jeu)
+
+- Réduits, les déchets perdaient leur échelle (micro-ondes plus grands que des frigos) : plus de réduction, un îlot prend le premier de
+  quelques déchets du biome qui tient à sa taille (`islands.tries`).
+- `spread` .42 coûtait ~30 % des déchets du niveau : retour à .3 (choix de l'utilisateur). Les îlots trop étroits reçoivent une nappe à
+  leur mesure, allongée (`islands.pool`), bord à `edgeK` × hazardRadius de A (contrôle exact du bord, sans la règle du centre des autres nappes).
+
+## v5.17.2 (retours de jeu)
+
+- « Permets que mes obstacles débordent de l'îlot, on est large » : un déchet d'îlot peut mordre `islands.bite` (.5) de la largeur
+  garantie de A et de B (`FP.level.objectFits(world, o, bite)`). À .65, presque tous les îlots auraient un déchet, mais A deviendrait
+  visiblement étroit : .5 retenu.
+- « Qu'elles visent un peu en amont de la trajectoire » : au verrouillage, le point visé est la pointe + sa direction × sa vitesse ×
+  (temps restant avant le tir + trajet du tir) × `turret.lead` (.8). Tourelles des îlots seulement ; celles des boss ne changent pas.

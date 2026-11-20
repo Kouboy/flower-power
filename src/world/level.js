@@ -5,7 +5,7 @@
 //           FP.braid.trace (v5.15.0 : la tresse, world/braid.js), FP.islands.place (v5.17.0 : ses îlots, world/islands.js).
 // Écrit   : state.world.{height,baseHeight,growK (v5.3.0 : hauteur du niveau, décidée ici),milieu,level,boss,bossLevel,braid (v5.15.0 : la tresse ; null au boss),turrets,turretShots (v5.17.0 : vidés ici ; posés par world/islands.js),skyVariant,lawnVariant,safePath,safeRadius,hazardRadius,solidExtra,solids,toxics,leaks (crossing : barre le chemin sûr, v4.17.0),bonuses}, state.signature ;
 //           puis FP.coins.place écrit state.world.{coins,chains}.
-// Expose  : FP.level.startRun(state), FP.level.generate(state), FP.level.tableFor(milieu, band) (pur, testé), FP.level.makeCandidate(state, rng, pos), FP.level.objectFits(world, o),
+// Expose  : FP.level.startRun(state), FP.level.generate(state), FP.level.tableFor(milieu, band) (pur, testé), FP.level.makeCandidate(state, rng, pos), FP.level.objectFits(world, o, bite?),
 //           FP.level.makeToxic(rng, x, y, big),
 //           FP.level.distToSafePath(world,x,y,path?), FP.level.pathXAt(world,y,path?), FP.level.depthK(world,y), FP.level.depthBand(world,y) ;
 //           aides de placement partagées avec world/level-hazards.js (nappes et limaces) : pickCell, cellPos, countFor, pathSamples, segmentToSafePath.
@@ -140,13 +140,14 @@
 
   // B monte avec une pente d'au plus maxSlope : un point est au moins à |x − x de B à sa hauteur| / √(1 + maxSlope²) de B. Loin en
   // largeur, l'objet est accepté sans le calcul exact (même résultat que clearOfSafePath, bien plus vite) ; sinon, le calcul exact.
-  function clearOfBraid(world, o) {
+  function clearOfBraid(world, o, r = world.braid.radius) {
     const B = world.braid, hd = Math.hypot(o.w, o.h) * .5, far = Math.abs(o.x - pathXAt(world, o.y, B.path)) / Math.hypot(1, FP.config.level.safePath.maxSlope);
-    if (far - hd >= B.radius && far > B.radius + hd * FP.config.level.fit.safeApproxK) return true;
-    return clearOfSafePath(world, o, 0, B.radius, B.path);
+    if (far - hd >= r && far > r + hd * FP.config.level.fit.safeApproxK) return true;
+    return clearOfSafePath(world, o, 0, r, B.path);
   }
 
-  function objectFits(world, o) {
+  // bite (v5.17.2, déchets des îlots) : l'objet peut mordre cette part de la largeur garantie de A et de B (sans la marge des déchets).
+  function objectFits(world, o, bite = 0) {
     const f = FP.config.level.fit, W = world.width;
     if (o.x < f.centerMarginX || o.x > W - f.centerMarginX) return false;
     if (o.y < world.surfaceY + f.centerTop || o.y > world.height - f.centerBottom) return false;
@@ -155,8 +156,8 @@
       if (p.x < -out || p.x > W + out) return false;
       if (p.y < world.surfaceY + f.edgeTop || p.y > world.height - f.edgeBottom) return false;
     }
-    if (!clearOfSafePath(world, o, world.solidExtra)) return false;
-    if (world.braid && !clearOfBraid(world, o)) return false;   // v5.15.0 : B, la tresse, à sa largeur
+    if (!clearOfSafePath(world, o, bite ? 0 : world.solidExtra, world.safeRadius * (1 - bite) + (bite ? 0 : world.solidExtra))) return false;
+    if (world.braid && !clearOfBraid(world, o, world.braid.radius * (1 - bite))) return false;   // v5.15.0 : B, la tresse, à sa largeur
     for (const other of world.solids) {
       if (FP.geom.convexPolysOverlap(o.footprint, other.footprint)) return false;
     }
@@ -282,7 +283,7 @@
     world.braid = FP.braid.trace(world, brng, world.safePath, world.safeRadius);
     for (const c of grid.cells) c.onBraid = distToSafePath(world, c.x, c.y, world.braid.path) < world.braid.radius + Math.min(grid.cellW, grid.cellH) * .5;
     placeSignature(state, grid);
-    FP.islands.place(state, brng);
+    FP.islands.place(state, brng, opts.lobbying ? FP.config.shop.lobbyingK : 1);   // lobbying : moins de déchets dans les îlots aussi
     placeSolids(state, grid, opts.lobbying ? FP.config.shop.lobbyingK : 1);
     FP.levelHazards.placeToxics(state, grid);
     FP.levelHazards.placeLeaks(state, grid);

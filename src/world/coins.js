@@ -171,7 +171,9 @@
     world.coins = []; world.chains = [];
     for (const slice of slices(world)) {
       const B = world.braid, onB = B && rng.next() < FP.config.braid.coinsOnB;   // v5.15.0 : la plupart des traînées suivent B
-      addChain(world, 'easy', 'path', easyChain(world, rng, slice, 0, onB ? B.path : world.safePath, onB ? FP.config.braid.radiusK : 1));
+      let easy = easyChain(world, rng, slice, 0, onB ? B.path : world.safePath, onB ? FP.config.braid.radiusK : 1);
+      if (onB && !easy.length) easy = easyChain(world, rng, slice);   // v5.17.2 : B barré par un déchet d'îlot qui déborde → sur A
+      addChain(world, 'easy', 'path', easy);
       const bait = baitChain(world, rng, slice);
       addChain(world, 'bait', bait.anchor, bait.pts);
     }
